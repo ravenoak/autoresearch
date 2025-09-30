@@ -44,6 +44,19 @@ Provenance panel to verify that graph reasoning supplied the cited evidence. At
 lower depths the panel explains which artefacts are hidden and how to reveal
 them.
 
+## Interactive re-verification
+
+Each response now exposes a state identifier whenever claim audits are present.
+The Streamlit claim panel adds a **Refresh claim audits** button plus optional
+controls for broadening retrieval or selecting an alternate
+`fact_checker.verification.<variant>` prompt. Pressing the button replays the
+FactChecker with the chosen settings and refreshes the badges, provenance,
+and source list without rerunning the full query. The CLI mirrors the workflow via
+`autoresearch reverify <state_id> --broaden-sources --max-results 12` so audits
+can be updated in scripted environments. The API also accepts
+`POST /query/reverify` with the same parameters, enabling integrations to
+refresh provenance programmatically.
+
 ## Socratic prompts and traces
 
 Socratic prompts adapt to the visible findings, citations, gate telemetry, and

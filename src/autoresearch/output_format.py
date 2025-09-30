@@ -103,6 +103,7 @@ class DepthPayload:
     graph_export_payloads: dict[str, str]
     sections: dict[str, bool]
     notes: dict[str, str] = field(default_factory=dict)
+    state_id: str | None = None
 
 
 _DEPTH_ALIASES: Dict[str, OutputDepth] = {
@@ -766,6 +767,7 @@ def build_depth_payload(
         graph_export_payloads=graph_export_payloads,
         sections=sections,
         notes=notes,
+        state_id=response.state_id,
     )
 
 
@@ -1370,6 +1372,8 @@ def _render_json(payload: DepthPayload) -> str:
         "notes": payload.notes,
         "sections": payload.sections,
     }
+    if payload.state_id:
+        data["state_id"] = payload.state_id
     if payload.task_graph is not None:
         data["task_graph"] = _json_safe(payload.task_graph)
     if payload.react_traces:
@@ -1505,6 +1509,7 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         "raw_response_note": payload.notes.get("raw_response", ""),
         "notes": payload.notes,
         "sections": payload.sections,
+        "state_id": payload.state_id,
     }
 
 

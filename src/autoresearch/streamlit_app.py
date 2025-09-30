@@ -30,6 +30,7 @@ from .config import ConfigLoader, ConfigModel
 from .orchestration.orchestrator import Orchestrator
 from .models import QueryResponse
 from .orchestration import ReasoningMode
+from .orchestration.reverify import ReverifyOptions, run_reverification
 from .error_utils import get_error_info, format_error_for_gui
 from .cli_utils import print_success
 from .config_utils import (
@@ -1806,6 +1807,11 @@ def display_results(result: QueryResponse) -> None:
     """Display the query results in a formatted way."""
 
     st.session_state.current_result = result
+    if result.state_id:
+        st.session_state["current_state_id"] = result.state_id
+    notice = st.session_state.pop("reverify_notice", None)
+    if notice:
+        st.success(notice)
 
     depth_options = depth_sequence()
     depth_values = [depth.value for depth in depth_options]
@@ -1828,6 +1834,8 @@ def display_results(result: QueryResponse) -> None:
 
     payload = OutputFormatter.plan_response_depth(result, selected_depth)
     st.session_state["current_payload"] = payload
+    if payload.state_id:
+        st.session_state["current_state_id"] = payload.state_id
 
     toggle_defaults = section_toggle_defaults(payload)
     depth_state_key = "last_selected_depth"
@@ -2090,6 +2098,75 @@ def display_results(result: QueryResponse) -> None:
         st.markdown("<h3>Claim Audits</h3>", unsafe_allow_html=True)
         if toggle_states.get("claim_audits"):
             if payload.claim_audits:
+                state_id = payload.state_id or getattr(result, "state_id", None)
+                if state_id:
+                    st.markdown("#### Re-run claim verification")
+                    ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1, 1, 1])
+                    broaden_key = "ui_reverify_broaden"
+                    max_results_key = "ui_reverify_max_results"
+                    prompt_variant_key = "ui_reverify_prompt_variant"
+                    with ctrl_col1:
+                        broaden_sources = st.checkbox(
+                            "Broaden sources",
+                            value=st.session_state.get(broaden_key, True),
+                            key=broaden_key,
+                            help=(
+                                "Increase retrieval breadth by expanding max results "
+                                "and query variations before re-scoring claims."
+                            ),
+                        )
+                    with ctrl_col2:
+                        max_results_value = st.number_input(
+                            "Max results",
+                            min_value=1,
+                            max_value=50,
+                            value=int(st.session_state.get(max_results_key, 10)),
+                            step=1,
+                            key=max_results_key,
+                            help="Optional hard cap for retrieval results during verification.",
+                        )
+                    with ctrl_col3:
+                        prompt_variant_value = st.text_input(
+                            "Prompt variant",
+                            value=st.session_state.get(prompt_variant_key, ""),
+                            key=prompt_variant_key,
+                            help=(
+                                "Append a suffix to the FactChecker verification template. "
+                                "For example, enter `aggressive` to use "
+                                "`fact_checker.verification.aggressive` when available."
+                            ),
+                        )
+                    if st.button("Refresh claim audits", key="ui_reverify_submit"):
+                        options = ReverifyOptions(
+                            broaden_sources=broaden_sources,
+                            max_results=int(max_results_value),
+                            prompt_variant=prompt_variant_value or None,
+                        )
+                        with st.spinner("Refreshing claim audits..."):
+                            try:
+                                refreshed = run_reverification(state_id, options=options)
+                            except LookupError:
+                                st.error(
+                                    "Stored query state was not found. Run a new query before re-verifying."
+                                )
+                            except Exception as exc:  # pragma: no cover - defensive UI fallback
+                                st.error(f"Re-verification failed: {exc}")
+                            else:
+                                result = refreshed
+                                payload = OutputFormatter.plan_response_depth(
+                                    refreshed, selected_depth
+                                )
+                                toggle_defaults = section_toggle_defaults(payload)
+                                st.session_state.current_result = refreshed
+                                st.session_state["current_payload"] = payload
+                                if payload.state_id:
+                                    st.session_state["current_state_id"] = payload.state_id
+                                st.session_state["reverify_notice"] = (
+                                    "Claim verification refreshed with updated provenance."
+                                )
+                                st.success(
+                                    "Claim verification refreshed with updated provenance."
+                                )
                 badge_styles = {
                     "supported": "#0f5132",
                     "unsupported": "#842029",

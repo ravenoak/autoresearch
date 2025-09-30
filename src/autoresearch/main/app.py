@@ -48,6 +48,7 @@ from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
 from ..output_format import OutputDepth
+from ..orchestration.reverify import ReverifyOptions, run_reverification
 
 app = typer.Typer(
     help=(
@@ -518,6 +519,15 @@ def search(
         print_success("Query processed successfully")
 
         OutputFormatter.format(result, fmt, depth=depth)
+        if result.state_id:
+            print_info(
+                f"State ID: {result.state_id}",
+                symbol=False,
+            )
+            print_info(
+                "Use `autoresearch reverify` to refresh claim audits with new sources.",
+                symbol=False,
+            )
         knowledge_meta = result.metrics.get("knowledge_graph")
         summary: Mapping[str, Any] | None = None
         exports_meta: Mapping[str, Any] | None = None
@@ -650,6 +660,91 @@ def search(
 
 # Add monitoring subcommands
 app.add_typer(monitor_app, name="monitor")
+
+
+@app.command()
+def reverify(
+    state_id: str = typer.Argument(
+        ..., help="State ID emitted after a previous `autoresearch search` run"
+    ),
+    broaden_sources: bool = typer.Option(
+        False,
+        "--broaden-sources",
+        help="Broaden retrieval by increasing max results and query variations.",
+    ),
+    max_results: Optional[int] = typer.Option(
+        None,
+        "--max-results",
+        help="Explicit max results override for re-verification retrieval.",
+    ),
+    max_variations: Optional[int] = typer.Option(
+        None,
+        "--max-variations",
+        help="Explicit limit for retrieval query variations during re-verification.",
+    ),
+    prompt_variant: Optional[str] = typer.Option(
+        None,
+        "--prompt-variant",
+        help=(
+            "Append a suffix to the `fact_checker.verification` prompt template. "
+            "For example, `--prompt-variant aggressive` selects "
+            "`fact_checker.verification.aggressive` if defined."
+        ),
+    ),
+    output: Optional[str] = typer.Option(
+        None, "-o", "--output", help="Output format: json|markdown|plain"
+    ),
+    depth: Optional[OutputDepth] = typer.Option(
+        None,
+        "--depth",
+        help=f"Depth of detail in CLI output ({depth_help_text()})",
+        callback=depth_option_callback,
+    ),
+) -> None:
+    """Re-run claim verification for a previously executed query."""
+
+    from ..output_format import OutputFormatter
+
+    try:
+        options = ReverifyOptions(
+            broaden_sources=broaden_sources,
+            max_results=max_results,
+            max_variations=max_variations,
+            prompt_variant=prompt_variant or None,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        print_error("Invalid re-verification options", suggestion=str(exc))
+        raise typer.Exit(code=1) from exc
+
+    try:
+        response = run_reverification(state_id, options=options)
+    except LookupError as exc:
+        print_error(f"No query state found for ID {state_id}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        error_info = get_error_info(exc)
+        error_msg, suggestion, code_example = format_error_for_cli(error_info)
+        print_error(
+            f"Error refreshing claim audits: {error_msg}",
+            suggestion=suggestion,
+            code_example=code_example,
+        )
+        if get_verbosity() == Verbosity.VERBOSE:
+            if error_info.traceback:
+                print_verbose(f"Traceback:\n{''.join(error_info.traceback)}")
+        else:
+            print_info("Run with --verbose for more details")
+        raise typer.Exit(code=1) from exc
+
+    print_success("Claim verification refreshed")
+    fmt = output or (
+        "markdown"
+        if os.getenv("PYTEST_CURRENT_TEST")
+        else ("json" if not sys.stdout.isatty() else "markdown")
+    )
+    OutputFormatter.format(response, fmt, depth=depth)
+    if response.state_id:
+        print_info(f"State ID: {response.state_id}", symbol=False)
 
 
 @app.command()

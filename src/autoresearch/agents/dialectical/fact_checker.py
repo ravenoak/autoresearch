@@ -35,9 +35,49 @@ class FactChecker(Agent):
         model = self.get_model(config)
 
         # Retrieve external references
+        overrides = state.metadata.get("_reverify_options")
+        override_map: dict[str, Any] = {}
+        if isinstance(overrides, Mapping):
+            override_map = {str(key): value for key, value in overrides.items()}
+        broaden_sources = bool(override_map.get("broaden_sources"))
         max_results = getattr(
             config, "max_results_per_query", 5
         )  # Default to 5 if not specified
+        override_max_results = override_map.get("max_results")
+        if override_max_results is not None:
+            try:
+                max_results = max(1, int(override_max_results))
+            except (TypeError, ValueError):
+                log.warning(
+                    "Invalid max_results override provided during reverify",
+                    extra={"override": override_max_results},
+                )
+        elif broaden_sources:
+            broaden_target = override_map.get("broaden_max_results")
+            if broaden_target is not None:
+                try:
+                    max_results = max(1, int(broaden_target))
+                except (TypeError, ValueError):
+                    log.warning(
+                        "Invalid broaden_max_results override provided during reverify",
+                        extra={"override": broaden_target},
+                    )
+                    max_results = max(max_results, max_results * 2)
+            else:
+                max_results = max(max_results, max_results * 2)
+        max_variations = 2
+        override_variations = override_map.get("max_variations")
+        if override_variations is not None:
+            try:
+                max_variations = max(1, int(override_variations))
+            except (TypeError, ValueError):
+                log.warning(
+                    "Invalid max_variations override provided during reverify",
+                    extra={"override": override_variations},
+                )
+        elif broaden_sources:
+            max_variations = max(4, max_variations)
+        prompt_variant = override_map.get("prompt_variant")
         lookup_bundle = Search.external_lookup(
             state.query, max_results=max_results, return_handles=True
         )
@@ -125,7 +165,9 @@ class FactChecker(Agent):
         for claim in state.claims:
             query_variations.extend(
                 expand_retrieval_queries(
-                    claim.get("content", ""), base_query=state.query, max_variations=2
+                    claim.get("content", ""),
+                    base_query=state.query,
+                    max_variations=max_variations,
                 )
             )
 
@@ -209,6 +251,8 @@ class FactChecker(Agent):
                     "claim_text": claim_text,
                     "query_variations": list(query_variations),
                     "events": relevant_events,
+                    "options": override_map or None,
+                    "max_variations": max_variations,
                 },
                 "backoff": {
                     "retry_count": retry_count,
@@ -245,7 +289,19 @@ class FactChecker(Agent):
 
         # Generate verification using the prompt template
         claims_text = "\n".join(c.get("content", "") for c in state.claims)
-        prompt = self.generate_prompt("fact_checker.verification", claims=claims_text)
+        template_name = "fact_checker.verification"
+        if prompt_variant:
+            candidate = f"{template_name}.{prompt_variant}"
+            try:
+                prompt = self.generate_prompt(candidate, claims=claims_text)
+            except KeyError:
+                log.warning(
+                    "Prompt variant %s not found; falling back to default",
+                    prompt_variant,
+                )
+                prompt = self.generate_prompt(template_name, claims=claims_text)
+        else:
+            prompt = self.generate_prompt(template_name, claims=claims_text)
         verification = adapter.generate(prompt, model=model)
 
         # Create and return the result
@@ -312,6 +368,7 @@ class FactChecker(Agent):
                 "query_variations": list(query_variations),
                 "events": retrieval_log,
                 "handle": handle_payload,
+                "options": override_map or None,
             },
             "backoff": {
                 "per_claim": claim_retry_stats,
@@ -321,10 +378,15 @@ class FactChecker(Agent):
                     for retry in [stats.get("retry_count")]
                     if isinstance(retry, (int, float))
                 ),
+                "max_results": max_results,
             },
             "evidence": {
                 "top_source_ids": [src.get("source_id") for src in top_sources if src.get("source_id")],
                 "claim_audit_ids": [payload.get("audit_id") for payload in claim_audits],
+            },
+            "prompt": {
+                "template": template_name,
+                "variant": prompt_variant,
             },
         }
 

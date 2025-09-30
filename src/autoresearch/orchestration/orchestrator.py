@@ -30,6 +30,7 @@ from .metrics import OrchestrationMetrics, record_query
 from .orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
+from .state_registry import QueryStateRegistry
 from .token_utils import _capture_token_usage
 from .types import CallbackMap, CycleCallback, TracerProtocol
 
@@ -400,7 +401,10 @@ class Orchestrator:
                     suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured",
                 )
 
-            return state.synthesize()
+            response = state.synthesize()
+            state_id = QueryStateRegistry.register(state, config)
+            response.state_id = state_id
+            return response
         finally:
             config.reasoning_mode = original_mode_setting
 
