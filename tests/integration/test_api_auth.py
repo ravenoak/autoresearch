@@ -31,7 +31,13 @@ def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
         callbacks: CallbackMap | None = None,
         **kwargs: object,
     ) -> QueryResponse:
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+        return QueryResponse(
+            query=query,
+            answer="ok",
+            citations=[],
+            reasoning=[],
+            metrics={},
+        )
 
     run_query_stub: QueryRunner = _run_query_stub
     monkeypatch.setattr(ConfigLoader, "load_config", _load_config_stub)
