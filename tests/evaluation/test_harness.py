@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -171,7 +172,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.example_csv and summary.example_csv.exists()
     assert summary.summary_csv and summary.summary_csv.exists()
 
-    with duckdb.connect(str(summary.duckdb_path)) as conn:
+    with closing(duckdb.connect(str(summary.duckdb_path))) as conn:
         count = conn.execute(
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],

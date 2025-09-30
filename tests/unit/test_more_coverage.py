@@ -1,6 +1,5 @@
 from queue import Queue
 from unittest.mock import MagicMock
-import types
 
 from autoresearch import search as search_module
 from autoresearch.orchestration import execution as exec_mod
@@ -9,6 +8,8 @@ from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.output_format import FormatTemplate
+
+from .typing_helpers import make_runtime_config, make_search_config
 
 
 def test_log_sources(monkeypatch):
@@ -51,7 +52,7 @@ def test_ndcg_perfect():
 
 
 def test_http_session_cycle(monkeypatch):
-    cfg = types.SimpleNamespace(search=types.SimpleNamespace(http_pool_size=1))
+    cfg = make_runtime_config(search=make_search_config(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     close_http_session()
     s1 = get_http_session()
