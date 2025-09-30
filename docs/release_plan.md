@@ -29,6 +29,16 @@ current while the documentation changes land.
 【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+The **September 30, 2025 at 14:52 UTC** rerun of
+`uv run task coverage EXTRAS="dev-minimal test"` now clears the
+`A2AMessage` schema and stops at the existing
+`QueryState.model_copy` deepcopy failure while we stage a fix. The new
+`tests/unit/test_a2a_interface.py::test_a2a_message_allows_sdk_instances`
+assertion guards the regression, and the standalone behavior suite rerun still
+fails earlier in the orchestration scenarios that depend on the unresolved
+state-copy bug.
+【02aa7b†L1-L78】【2b6f46†L1-L2】【8742a6†L1-L12】
+
 The **September 30, 2025 at 19:04 UTC** sweep completed `task release:alpha`
 end-to-end. `task verify` and `task coverage` captured the recalibrated scout
 gate telemetry, CLI path helper checks, and the 92.4 % coverage rate, while the

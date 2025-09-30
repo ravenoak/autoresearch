@@ -26,13 +26,14 @@ from typing import (
     TypedDict,
     cast,
     TypeVar,
+    runtime_checkable,
 )
 from uuid import uuid4
 
 import httpx
 import uvicorn
 from uvicorn.config import Config as UvicornConfig
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, ConfigDict
 
 from .api import capabilities_endpoint
 from .config import ConfigLoader, ConfigModel, get_config
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
         SendMessageResponse,
     )
 else:
+    @runtime_checkable
     class Message(Protocol):
         """Structural type for messages exchanged with the A2A SDK."""
 
@@ -74,6 +76,7 @@ else:
         def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
             ...
 
+    @runtime_checkable
     class MessageSendParams(Protocol):
         """Structural type describing message send parameters."""
 
@@ -83,6 +86,7 @@ else:
         def __init__(self, *, message: Message, metadata: Mapping[str, Any] | None = ...) -> None:
             ...
 
+    @runtime_checkable
     class SendMessageRequest(Protocol):
         """Structural type describing message send requests."""
 
@@ -92,6 +96,7 @@ else:
         def __init__(self, *, id: str, params: MessageSendParams) -> None:
             ...
 
+    @runtime_checkable
     class SendMessageResponse(Protocol):
         """Structural type for message responses from the A2A SDK."""
 
@@ -167,6 +172,11 @@ else:
     _RuntimeSendMessageResponse = _RuntimeSendMessageResponse
     _runtime_get_message_text = _runtime_get_message_text
     _runtime_new_agent_text_message = _runtime_new_agent_text_message
+
+    Message = cast("type[Message]", _RuntimeMessage)
+    MessageSendParams = cast("type[MessageSendParams]", _RuntimeMessageSendParams)
+    SendMessageRequest = cast("type[SendMessageRequest]", _RuntimeSendMessageRequest)
+    SendMessageResponse = cast("type[SendMessageResponse]", _RuntimeSendMessageResponse)
 
 
 def _require_runtime_cls(name: str, value: type[Any] | None) -> type[Any]:
@@ -266,6 +276,8 @@ if A2A_AVAILABLE:
 
     class A2AMessage(BaseModel):
         """Message wrapper used by the A2A interface."""
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
         type: A2AMessageType
         message: Message

@@ -22,6 +22,14 @@ evidence trail current without triggering the deferred TestPyPI steps.
 【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+The **14:52 UTC** rerun of
+`uv run task coverage EXTRAS="dev-minimal test"` now clears the `A2AMessage`
+schema and halts at the existing `QueryState.model_copy` deepcopy failure; the
+new `tests/unit/test_a2a_interface.py::test_a2a_message_allows_sdk_instances`
+assertion and the standalone behavior sweep confirm the validation fix while
+exposing the remaining orchestration blockers.
+【02aa7b†L1-L78】【2b6f46†L1-L2】【8742a6†L1-L12】
+
 For historical context, retain
 `baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify
 gate—the log shows the final red strict-typing wall in the HTTP layer before we

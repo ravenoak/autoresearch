@@ -10,10 +10,12 @@ from a2a.utils.message import get_message_text
 
 from autoresearch.a2a_interface import (
     A2AInterface,
+    A2AMessage,
+    A2AMessageType,
     A2AClient,
+    A2A_AVAILABLE,
     get_a2a_client,
     requires_a2a,
-    A2A_AVAILABLE,
 )
 from a2a.utils.message import new_agent_text_message
 from scripts.a2a_concurrency_sim import run_simulation
@@ -49,6 +51,15 @@ def make_a2a_message():
         return msg
 
     return _make
+
+
+def test_a2a_message_allows_sdk_instances(make_a2a_message):
+    """Ensure ``A2AMessage`` accepts SDK ``Message`` instances without validation errors."""
+
+    sdk_message = make_a2a_message(query="test")
+    wrapper = A2AMessage(type=A2AMessageType.QUERY, message=sdk_message)
+
+    assert wrapper.message is sdk_message
 
 
 @pytest.fixture
