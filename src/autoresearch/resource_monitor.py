@@ -11,6 +11,8 @@ import math
 import os
 import threading
 import time
+from collections.abc import Sequence
+from types import TracebackType
 from functools import lru_cache
 from typing import Any, Optional
 
@@ -47,6 +49,10 @@ def _gpu_extra_enabled() -> bool:
 def _coerce_float(value: Any) -> float:
     """Return ``value`` converted to ``float`` with NaN/inf protection."""
 
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for item in value:
+            return _coerce_float(item)
+        return 0.0
     try:
         result = float(value)
     except (TypeError, ValueError):
@@ -303,7 +309,12 @@ class ResourceMonitor:
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         """Ensure the monitor is stopped when leaving a context."""
 
         self.stop()

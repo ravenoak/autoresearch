@@ -17,14 +17,15 @@ def test_system_monitor_collects(monkeypatch):
 
     assert registry.get_sample_value("autoresearch_system_cpu_percent") == 12.0
     assert registry.get_sample_value("autoresearch_system_memory_percent") == 34.0
+    assert monitor.metrics == {"cpu_percent": 12.0, "memory_percent": 34.0}
 
 
-def test_collect_returns_expected_dict(monkeypatch):
+def test_collect_returns_expected_tuple(monkeypatch):
     monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: "55.0")
     mem = type("mem", (), {"percent": "44.0"})()
     monkeypatch.setattr(psutil, "virtual_memory", lambda: mem)
     data = SystemMonitor.collect()
-    assert data == {"cpu_percent": 55.0, "memory_percent": 44.0}
+    assert data == (55.0, 44.0)
 
 
 def test_collect_handles_failures(monkeypatch):
@@ -43,5 +44,18 @@ def test_collect_handles_failures(monkeypatch):
     monkeypatch.setattr(psutil, "virtual_memory", lambda: BrokenMem())
 
     data = SystemMonitor.collect()
-    assert data == {"cpu_percent": 0.0, "memory_percent": 0.0}
+    assert data == (0.0, 0.0)
     assert calls == {"cpu": 1, "mem": 1}
+
+
+def test_collect_normalizes_iterable_values(monkeypatch):
+    monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: ["77.5"])
+
+    class FakeMem:
+        percent = float("nan")
+
+    monkeypatch.setattr(psutil, "virtual_memory", lambda: FakeMem())
+
+    cpu, mem = SystemMonitor.collect()
+    assert cpu == 77.5
+    assert mem == 0.0
