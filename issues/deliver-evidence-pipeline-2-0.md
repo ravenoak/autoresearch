@@ -9,6 +9,15 @@ telemetry and audit badges, so downstream evidence exports must ingest those
 fields while we continue expanding retrieval depth.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:docs/deep_research_upgrade_plan.md†L19-L34】
 
+Final-answer audit documentation now records operator acknowledgement controls
+and audit policy knobs. The **September 30, 2025 at 14:28 UTC** `task verify`
+and **14:30 UTC** `task coverage` reruns captured after the docs refresh show
+the strict typing and `A2AMessage` schema gaps still blocking automation while
+the audit loop policies settle, keeping the evidence trail current without
+lifting the TestPyPI hold.
+【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
@@ -26,4 +35,4 @@ fields while we continue expanding retrieval depth.
 - Output schemas, documentation, and tests cover the audit data contract.
 
 ## Status
-Open
+In Review

@@ -14,6 +14,14 @@ release:alpha` sweep, and finalizing docs and packaging guidance before tagging.
 can follow the CLI and VSS remediation across the repository.
 【F:STATUS.md†L21-L59】【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L33】【F:docs/release_plan.md†L18-L38】
 
+After documenting the final-answer audit loop and operator acknowledgement
+controls we captured the **14:28 UTC** `task verify` and **14:30 UTC**
+`task coverage` reruns limited to the base extras. They expose the standing
+`QueryState.model_copy` and `A2AMessage` blockers while keeping the release
+evidence trail current without triggering the deferred TestPyPI steps.
+【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+
 For historical context, retain
 `baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify
 gate—the log shows the final red strict-typing wall in the HTTP layer before we

@@ -207,6 +207,12 @@ is fully attributable.
   and UI surfaces stay consistent.
 - Block synthesis on unsupported claims; require hedging or removal before
   completion. Persist audit metadata so clients can render detailed tables.
+- Run a final answer audit loop that can trigger targeted re-retrieval, apply
+  hedging, and wait for operator acknowledgment when policy flags require it.
+  Operators tune `audit.max_retry_results`, `audit.hedge_mode`,
+  `audit.require_human_ack`, `audit.operator_timeout_s`, and
+  `audit.explain_conflicts` to balance automation with human-in-the-loop
+  controls.
 
 ## 11. Planner and Coordinator
 

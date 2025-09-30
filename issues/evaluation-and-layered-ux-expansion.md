@@ -7,6 +7,15 @@ Work includes automating TruthfulQA, FEVER, and HotpotQA sweeps, wiring
 telemetry dashboards, and synchronizing CLI/GUI depth controls with per-claim
 citations.
 
+The refreshed documentation captures the final-answer audit loop, the
+operator acknowledgement controls surfaced in CLI and UI toggles, and the fresh
+14:28 UTC `task verify` / 14:30 UTC `task coverage` evidence gathered after the
+update. Those logs confirm strict typing and schema blockers remain, so layered
+UX reviewers can trace the outstanding work while TestPyPI stays deferred.
+【F:docs/release_plan.md†L11-L24】【F:docs/pseudocode.md†L78-L119】
+【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [session-graph-rag-integration](session-graph-rag-integration.md)
@@ -25,4 +34,4 @@ citations.
   workflow.
 
 ## Status
-Open
+In Review

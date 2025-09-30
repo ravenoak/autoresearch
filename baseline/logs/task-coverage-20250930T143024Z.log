@@ -1,0 +1,68 @@
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: cov-7.0.0, hypothesis-6.140.2, anyio-4.11.0, httpx-0.35.0, benchmark-5.1.0, bdd-8.1.0, langsmith-0.4.31
+collecting ... collected 74 items / 1 error
+
+============================================================ ERRORS ============================================================
+______________________________________ ERROR collecting tests/unit/test_a2a_interface.py _______________________________________
+tests/unit/test_a2a_interface.py:11: in <module>
+    from autoresearch.a2a_interface import (
+src/autoresearch/a2a_interface.py:267: in <module>
+    class A2AMessage(BaseModel):
+.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:2279: in inner_handler
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:1009: in _generate_schema_inner
+    return self.match_type(obj)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:1127: in match_type
+    return self._unknown_type_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:639: in _unknown_type_schema
+    raise PydanticSchemaGenerationError(
+E   pydantic.errors.PydanticSchemaGenerationError: Unable to generate pydantic-core schema for <class 'autoresearch.a2a_interface.Message'>. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
+E   
+E   If you got this error by calling handler(<some type>) within `__get_pydantic_core_schema__` then you likely need to call `handler.generate_schema(<some type>)` since we do not call `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.
+E   
+E   For further information visit https://errors.pydantic.dev/2.11/u/schema-for-unknown-type
+=================================================== short test summary info ====================================================
+ERROR tests/unit/test_a2a_interface.py - pydantic.errors.PydanticSchemaGenerationError: Unable to generate pydantic-core schema for <class 'autoresearch.a2a_interface.Message'>. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
+
+If you got this error by calling handler(<some type>) within `__get_pydantic_core_schema__` then you likely need to call `handler.generate_schema(<some type>)` since we do not call `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.
+
+For further information visit https://errors.pydantic.dev/2.11/u/schema-for-unknown-type
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================================================= 1 error in 2.69s =======================================================

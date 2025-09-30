@@ -18,6 +18,17 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 30, 2025 at 14:28 UTC** `task verify` rerun recorded after the
+final-answer audit documentation now halts in the existing
+`QueryState.model_copy` strict-typing gap while the new `audit.*` policy knobs
+settle into the registry. The paired **14:30 UTC** `task coverage` sweep limits
+itself to the base extras, reaches the Pydantic `A2AMessage` schema blocker, and
+captures the evidence needed to continue reconciling operator-acknowledged
+audits without toggling the TestPyPI directive. These logs keep the release gate
+current while the documentation changes land.
+【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+
 The **September 30, 2025 at 19:04 UTC** sweep completed `task release:alpha`
 end-to-end. `task verify` and `task coverage` captured the recalibrated scout
 gate telemetry, CLI path helper checks, and the 92.4 % coverage rate, while the

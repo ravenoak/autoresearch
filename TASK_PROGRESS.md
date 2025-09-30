@@ -1,5 +1,14 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-30** at 14:28 UTC the final-answer audit documentation now feeds
+fresh verification evidence: the `task verify` rerun stops in the known
+`QueryState.model_copy` strict typing gap after registering the new `audit.*`
+policy toggles, and the 14:30 UTC `task coverage` sweep (base extras only) fails
+in the `A2AMessage` schema regression. These logs anchor the audit-loop update
+while the TestPyPI directive stays deferred.
+【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+
 As of **2025-09-30** at 19:04 UTC `task release:alpha` runs end-to-end through
 linting, typing, verification, coverage, packaging, and the TestPyPI dry run.
 The verify and coverage stages archive the recalibrated scout gate telemetry,

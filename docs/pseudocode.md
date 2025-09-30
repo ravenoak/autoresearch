@@ -155,29 +155,34 @@ class OutputFormatter:
             print_metrics(result.metrics)
 ```
 
-## 6a. Answer Auditing & Hedging (state.py)
+## 6a. Answer Auditing, Re-Verification & Hedging (state.py)
 ```
 class AnswerAuditor:
-    function review(state):
+    function review(state, policy):
         audits = collect_claim_audits(state.claims)
         unsupported = filter(audits, status == "unsupported")
         for claim in unsupported:
             retry = Search.external_lookup(claim.text,
-                                           max_results=5,
+                                           max_results=policy.max_retry_results,
                                            return_handles=True)
             record = score_entailment(claim, retry)
             audits.append(record.to_payload())
-        hedged = hedge_answer(state.results.final_answer, audits)
+        if policy.require_human_ack and unsupported.any():
+            notify_operator(audits)
+            await_ack(policy.timeout_s)
+        hedged = hedge_answer(state.results.final_answer, audits,
+                              policy.hedge_mode)
         return {
             answer: hedged,
-            reasoning: annotate_claims(state.claims, audits),
+            reasoning: annotate_claims(state.claims, audits,
+                                       policy.explain_conflicts),
             claim_audits: audits,
             metrics: { answer_audit: snapshot(audits) }
         }
 
 class QueryState:
-    function synthesize():
-        audited = AnswerAuditor.review(self)
+    function synthesize(policy = AuditPolicy.load()):
+        audited = AnswerAuditor.review(self, policy)
         merge_sources(self.sources, audited.new_sources)
         return QueryResponse(
             query=self.query,
@@ -185,6 +190,16 @@ class QueryState:
             reasoning=audited.reasoning,
             claim_audits=audited.claim_audits,
             metrics=merge(metadata, audited.metrics)
+        )
+
+class AuditPolicy:
+    function load():
+        return AuditPolicy(
+            max_retry_results=config.audit.max_retry_results,
+            require_human_ack=config.audit.require_human_ack,
+            timeout_s=config.audit.operator_timeout_s,
+            hedge_mode=config.audit.hedge_mode,
+            explain_conflicts=config.audit.explain_conflicts
         )
 ```
 

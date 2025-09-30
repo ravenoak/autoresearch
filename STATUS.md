@@ -51,6 +51,18 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   verify` continues to surface 151 legacy mypy errors in unrelated modules.
 
 ## September 30, 2025
+- Documented the final-answer audit loop and operator acknowledgement controls
+  across the deep research plan, release plan, roadmap, specification, and
+  pseudocode, then captured the **14:28 UTC** `task verify` rerun that now stops
+  in the pre-existing `QueryState.model_copy` strict-typing gap while the
+  `audit.*` policy toggles settle into the state registry. The paired
+  **14:30 UTC** `task coverage` run (limited to base extras) fails in the known
+  `A2AMessage` schema regression, ensuring the verification gate has fresh logs
+  after the documentation change without lifting the TestPyPI hold.
+  【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:docs/release_plan.md†L11-L24】
+  【F:docs/specification.md†L60-L83】【F:docs/pseudocode.md†L78-L119】
+  【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+  【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 - Re-ran `uv run mypy --strict src tests` at 01:39 UTC after adding the dspy,
   fastmcp, and PIL shims; the sweep still reports 3,911 legacy errors, but the
   missing-stub diagnostics for those modules are gone, confirming the new
