@@ -10,7 +10,7 @@ directives.
 import contextlib
 import json
 import multiprocessing
-from typing import Any, Literal, Protocol, Sequence, TypedDict, cast
+from typing import Any, Literal, Protocol, Sequence, TypedDict, cast, runtime_checkable
 
 from ..logging_utils import get_logger
 from ._ray import RayLike, RayQueueProtocol, require_ray, require_ray_queue
@@ -128,10 +128,15 @@ class MessageQueueProtocol(Protocol):
     def join_thread(self) -> None: ...
 
 
-class StorageBrokerQueueProtocol(MessageQueueProtocol, Protocol):
-    """Queue protocol compatible with both broker and storage interfaces."""
+@runtime_checkable
+class StorageQueueProtocol(Protocol):
+    """Queue interface required by the storage module."""
 
-    def put(self, item: BrokerMessage) -> None: ...
+    def put(self, item: PersistClaimMessage) -> None: ...
+
+
+class StorageBrokerQueueProtocol(MessageQueueProtocol, StorageQueueProtocol, Protocol):
+    """Queue protocol compatible with both broker and storage interfaces."""
 
 
 class RedisClientProtocol(Protocol):

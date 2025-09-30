@@ -20,7 +20,7 @@ from .broker import (
     AgentResultMessage,
     BrokerType,
     MessageQueueProtocol,
-    StorageBrokerQueueProtocol,
+    StorageQueueProtocol,
     STOP_MESSAGE,
 )
 from .coordinator import (
@@ -60,19 +60,44 @@ def _resolve_requests_session(session_handle: Any | None) -> RequestsSessionProt
     return None
 
 
+def _resolve_storage_queue(queue_handle: Any | None) -> StorageQueueProtocol | None:
+    """Resolve a storage queue from a Ray handle or direct instance."""
+
+    if queue_handle is None:
+        return None
+
+    resolved = queue_handle
+    try:
+        if isinstance(resolved, ray.ObjectRef):
+            resolved = ray.get(resolved)
+    except Exception as exc:  # pragma: no cover - defensive guard
+        log.warning("Failed to retrieve distributed storage queue", exc_info=exc)
+        return None
+
+    if isinstance(resolved, StorageQueueProtocol):
+        return resolved
+
+    log.warning(
+        "Received unexpected storage queue payload for distributed worker: %s",
+        type(resolved).__name__,
+    )
+    return None
+
+
 @ray.remote
 def _execute_agent_remote(
     agent_name: str,
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: StorageBrokerQueueProtocol | None = None,
+    storage_queue: StorageQueueProtocol | None = None,
     http_session: Any | None = None,
     llm_session: Any | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a Ray worker."""
-    if storage_queue is not None:
-        storage.set_message_queue(storage_queue)
+    resolved_queue = _resolve_storage_queue(storage_queue)
+    if resolved_queue is not None:
+        storage.set_message_queue(resolved_queue)
     resolved_http = _resolve_requests_session(http_session)
     if resolved_http is not None:
         from .. import search
@@ -101,7 +126,7 @@ def _execute_agent_process(
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: StorageBrokerQueueProtocol | None = None,
+    storage_queue: StorageQueueProtocol | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a spawned process."""
     if storage_queue is not None:

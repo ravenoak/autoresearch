@@ -6,7 +6,12 @@ from typing import Any, Callable
 import pytest
 
 from autoresearch import storage_backup
-from autoresearch.storage_backup import BackupConfig, BackupInfo, BackupScheduler
+from autoresearch.storage_backup import (
+    BackupConfig,
+    BackupInfo,
+    BackupManager,
+    BackupScheduler,
+)
 
 
 @pytest.fixture()
@@ -106,3 +111,34 @@ def test_scheduler_restarts_existing_timer(
     assert previous_timer.cancelled is True
     assert len(backups) == 2
     assert timers[-1].interval == 7200.0
+
+
+def test_backup_manager_schedule_uses_resolved_scheduler(
+    scheduler_environment: tuple[
+        BackupScheduler, list[Any], list[tuple[str, str, str, bool, BackupConfig]]
+    ],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scheduler, timers, backups = scheduler_environment
+
+    monkeypatch.setattr(BackupManager, "_scheduler", scheduler)
+    try:
+        BackupManager.schedule_backup(
+            backup_dir="backups",
+            db_path="kg.duckdb",
+            rdf_path="kg.rdf",
+            interval_hours=3,
+            compress=False,
+            max_backups=2,
+            retention_days=7,
+        )
+        assert len(backups) == 1
+        _, _, _, compress, config = backups[0]
+        assert compress is False
+        assert config.max_backups == 2
+        assert config.retention_days == 7
+        assert len(timers) == 2
+        assert timers[0].interval == 0.0
+        assert timers[1].interval == pytest.approx(10800.0)
+    finally:
+        BackupManager._scheduler = None

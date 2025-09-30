@@ -66,13 +66,16 @@ from .storage_typing import (
     JSONDictList,
     JSONMapping,
     RDFTriple,
+    RDFTriplePattern,
     ensure_mutable_mapping,
     to_json_dict,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
-    from .distributed.broker import PersistClaimMessage, StorageBrokerQueueProtocol
+    from .distributed.broker import PersistClaimMessage, StorageQueueProtocol
+else:  # pragma: no cover - runtime typing compatibility
+    from .distributed.broker import StorageQueueProtocol
 
 # Typed reference to the optional Kuzu backend.
 KuzuBackend: type[KuzuStorageBackend] | None = None
@@ -142,6 +145,12 @@ def _persist_claim_message(claim: JSONDict, partial_update: bool) -> "PersistCla
     return payload
 
 
+def _as_rdf_triple(subject: Any, predicate: Any, obj: Any) -> RDFTriple:
+    """Return a typed RDF triple for mypy compatibility."""
+
+    return cast(RDFTriple, (subject, predicate, obj))
+
+
 # Optional injection point for tests
 
 
@@ -208,7 +217,7 @@ class StorageDelegateProtocol(Protocol):
 
 _delegate: StorageDelegateProtocol | None = None
 # Optional queue for distributed persistence
-_message_queue: "StorageBrokerQueueProtocol | None" = None
+_message_queue: "StorageQueueProtocol | None" = None
 
 _cached_config: StorageConfig | None = None
 
@@ -578,9 +587,11 @@ def _reset_context(ctx: StorageContext) -> None:
     ctx.config_fingerprint = None
 
 
-def set_message_queue(queue: "StorageBrokerQueueProtocol | None") -> None:
+def set_message_queue(queue: "StorageQueueProtocol | None") -> None:
     """Configure a message queue for distributed persistence."""
     global _message_queue
+    if queue is not None and not isinstance(queue, StorageQueueProtocol):
+        raise TypeError("storage message queue must implement StorageQueueProtocol")
     _message_queue = queue
 
 
@@ -1615,7 +1626,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            StorageManager.context.rdf_store.add((subj, pred, obj))
+            StorageManager.context.rdf_store.add(_as_rdf_triple(subj, pred, obj))
 
         # Apply ontology reasoning so advanced queries see inferred triples
         run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
@@ -1699,7 +1710,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                         subj_ref = rdflib.URIRef(f"urn:kg:{subj_id}")
                         pred_ref = rdflib.URIRef(f"urn:kgp:{pred}")
                         obj_ref = rdflib.URIRef(f"urn:kg:{obj_id}")
-                        rdf_triples.append((subj_ref, pred_ref, obj_ref))
+                        rdf_triples.append(_as_rdf_triple(subj_ref, pred_ref, obj_ref))
                 else:
                     for relation in relation_list:
                         subj_id_raw = relation.get("subject_id")
@@ -1713,7 +1724,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                             str(predicate_raw) if predicate_raw is not None else "related_to"
                         )
                         rdf_triples.append(
-                            (
+                            _as_rdf_triple(
                                 rdflib.URIRef(f"urn:kg:{subj_id}"),
                                 rdflib.URIRef(f"urn:kgp:{predicate}"),
                                 rdflib.URIRef(f"urn:kg:{obj_id}"),
@@ -1957,14 +1968,15 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         if not partial_update:
             # Remove all existing triples for this subject
-            for s, p, o in StorageManager.context.rdf_store.triples((subj, None, None)):
+            pattern = cast(RDFTriplePattern, (subj, None, None))
+            for s, p, o in StorageManager.context.rdf_store.triples(pattern):
                 StorageManager.context.rdf_store.remove((s, p, o))
 
         # Add new triples
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            StorageManager.context.rdf_store.add((subj, pred, obj))
+            StorageManager.context.rdf_store.add(_as_rdf_triple(subj, pred, obj))
         # Apply ontology reasoning so updates expose inferred triples
         run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
 
