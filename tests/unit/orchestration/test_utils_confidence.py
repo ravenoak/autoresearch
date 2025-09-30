@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.utils import MetricsSnapshot, TokenUsageSnapshot, calculate_result_confidence
+from autoresearch.orchestration.metrics import OrchestrationMetrics
+from autoresearch.orchestration.utils import (
+    MetricsSnapshot,
+    TokenUsageSnapshot,
+    calculate_result_confidence,
+)
 
 
 def build_response(**overrides: object) -> QueryResponse:
@@ -45,3 +50,34 @@ def test_confidence_adjusts_with_metrics_payload() -> None:
     expected_with_errors = expected_with_tokens - 0.1
 
     assert confidence == expected_with_errors
+
+
+def test_graph_metrics_payload_is_sanitized() -> None:
+    metrics = OrchestrationMetrics()
+    metadata = {
+        "ingestion": {
+            "entity_count": "3",
+            "relation_count": 4,
+            "seconds": "1.25",
+            "storage_latency": {
+                "persist": {"duckdb": "2.5", "rdf": -1},
+                "load": [0.125, "oops"],
+            },
+        },
+        "paths": [["node-a", 2]],
+    }
+
+    metrics.record_graph_build(metadata, summary={"provenance": ["ref"]})
+
+    assert metrics.graph_ingestions
+    record = metrics.graph_ingestions[-1]
+    latency = record["storage_latency"]
+    assert latency["persist.duckdb"] == 2.5
+    assert latency["persist.rdf"] == 0.0
+    assert latency["load[0]"] == 0.125
+    assert latency["load[1]"] == 0.0
+
+    summary = metrics.get_summary()["graph_ingestion"]
+    latest = summary["latest"]
+    assert latest["entity_count"] == 3.0
+    assert latest["storage_latency"] == latency
