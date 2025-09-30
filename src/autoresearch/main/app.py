@@ -42,7 +42,6 @@ from ..cli_utils import (
 from ..cli_utils import visualize_query_cli as _cli_visualize_query
 from ..cli_utils import visualize_rdf_cli as _cli_visualize
 from ..config.loader import ConfigLoader
-from ..config.models import ConfigModel
 from ..error_utils import format_error_for_cli, get_error_info
 from ..errors import StorageError
 from ..logging_utils import configure_logging
@@ -454,9 +453,9 @@ def search(
     if ontology_reasoner is not None:
         storage_updates["ontology_reasoner"] = ontology_reasoner
     if storage_updates:
-        updates["storage"] = {**config.storage.model_dump(), **storage_updates}
+        updates["storage"] = config.storage.model_copy(update=storage_updates)
     if updates:
-        config = ConfigModel.model_validate({**config.model_dump(), **updates})
+        config = config.model_copy(update=updates)
 
     if ontology:
         StorageManager.load_ontology(ontology)
