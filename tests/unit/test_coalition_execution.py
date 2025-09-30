@@ -1,6 +1,9 @@
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.agents.registry import AgentFactory, AgentRegistry
+import pytest
+from pathlib import Path
+from typing import Any
 
 
 class DummyAgent:
@@ -16,7 +19,7 @@ class DummyAgent:
         return {}
 
 
-def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
+def test_coalition_agents_run_together(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, orchestrator: Any) -> None:
     record: list[str] = []
 
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
@@ -41,7 +44,7 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
         assert set(record[:2]) == {"A", "B"}
 
 
-def test_configmodel_from_dict_allows_coalitions():
+def test_configmodel_from_dict_allows_coalitions() -> None:
     cfg = ConfigModel.from_dict(
         {"loops": 1, "agents": ["team"], "coalitions": {"team": ["A", "B"]}}
     )

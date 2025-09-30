@@ -8,7 +8,7 @@ from autoresearch.output_format import FormatTemplate, TemplateRegistry
 from autoresearch.models import QueryResponse
 
 
-def test_custom_template_render():
+def test_custom_template_render() -> None:
     template = FormatTemplate(name="t", template="A:${answer}")
     TemplateRegistry.register(template)
     resp = QueryResponse(answer="hi", citations=[], reasoning=[], metrics={})

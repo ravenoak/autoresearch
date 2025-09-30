@@ -25,12 +25,13 @@ from autoresearch.storage_backup import (
     BackupConfig,
 )
 from autoresearch.errors import BackupError
+from typing import Any
 
 pytestmark = pytest.mark.slow
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir() -> Any:
     """Create a temporary directory for backups."""
     temp_dir = tempfile.mkdtemp()
     yield temp_dir
@@ -38,7 +39,7 @@ def temp_dir():
 
 
 @pytest.fixture
-def mock_storage(temp_dir):
+def mock_storage(temp_dir: Any) -> Any:
     """Set up a mock storage system with test data."""
     # Create a test DuckDB database
     db_path = os.path.join(temp_dir, "test.duckdb")
@@ -76,7 +77,7 @@ def mock_storage(temp_dir):
     conn.close()
 
 
-def test_create_backup_basic(mock_storage, temp_dir):
+def test_create_backup_basic(mock_storage: Any, temp_dir: Any) -> None:
     """Test creating a basic backup without compression."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -100,7 +101,7 @@ def test_create_backup_basic(mock_storage, temp_dir):
     assert backup_info.size > 0
 
 
-def test_create_backup_with_compression(mock_storage, temp_dir):
+def test_create_backup_with_compression(mock_storage: Any, temp_dir: Any) -> None:
     """Test creating a backup with compression."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -123,7 +124,7 @@ def test_create_backup_with_compression(mock_storage, temp_dir):
     assert backup_info.size > 0
 
 
-def test_restore_backup_basic(mock_storage, temp_dir):
+def test_restore_backup_basic(mock_storage: Any, temp_dir: Any) -> None:
     """Test restoring a basic backup without compression."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -159,7 +160,7 @@ def test_restore_backup_basic(mock_storage, temp_dir):
     # and verify the schema and data, but that's beyond the scope of this test
 
 
-def test_restore_backup_with_compression(mock_storage, temp_dir):
+def test_restore_backup_with_compression(mock_storage: Any, temp_dir: Any) -> None:
     """Test restoring a backup with compression."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -186,7 +187,7 @@ def test_restore_backup_with_compression(mock_storage, temp_dir):
     assert os.path.exists(restored_paths["rdf_path"])
 
 
-def test_list_backups(mock_storage, temp_dir):
+def test_list_backups(mock_storage: Any, temp_dir: Any) -> None:
     """Test listing available backups."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -218,7 +219,7 @@ def test_list_backups(mock_storage, temp_dir):
     assert backups[0].timestamp > backups[1].timestamp
 
 
-def test_backup_rotation_policy(mock_storage, temp_dir):
+def test_backup_rotation_policy(mock_storage: Any, temp_dir: Any) -> None:
     """Test backup rotation policy."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -246,7 +247,7 @@ def test_backup_rotation_policy(mock_storage, temp_dir):
     assert len(backups) == 2
 
 
-def test_scheduled_backup(mock_storage, temp_dir):
+def test_scheduled_backup(mock_storage: Any, temp_dir: Any) -> None:
     """Test scheduled backup functionality."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -272,7 +273,7 @@ def test_scheduled_backup(mock_storage, temp_dir):
         assert kwargs["max_backups"] == 5
 
 
-def test_point_in_time_recovery(mock_storage, temp_dir):
+def test_point_in_time_recovery(mock_storage: Any, temp_dir: Any) -> None:
     """Test point-in-time recovery functionality."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -315,7 +316,7 @@ def test_point_in_time_recovery(mock_storage, temp_dir):
     # and verify the schema and data, but that's beyond the scope of this test
 
 
-def test_backup_error_handling(mock_storage, temp_dir):
+def test_backup_error_handling(mock_storage: Any, temp_dir: Any) -> None:
     """Test error handling during backup operations."""
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)

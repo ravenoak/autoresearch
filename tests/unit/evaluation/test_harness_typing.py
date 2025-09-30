@@ -8,9 +8,10 @@ from unittest.mock import MagicMock
 import duckdb
 
 from autoresearch.evaluation.harness import EvaluationHarness
+import pytest
 
 
-def test_open_duckdb_closes_connection(tmp_path, monkeypatch):
+def test_open_duckdb_closes_connection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """``EvaluationHarness._open_duckdb`` should close the connection on exit."""
 
     harness = EvaluationHarness(output_dir=tmp_path, duckdb_path=tmp_path / "truth.duckdb")

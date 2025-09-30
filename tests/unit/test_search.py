@@ -6,6 +6,8 @@ import pytest
 import requests
 import subprocess
 import importlib.util
+from pathlib import Path
+from typing import Any
 
 try:
     _spec = importlib.util.find_spec("git")
@@ -31,7 +33,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-def sample_search_results():
+def sample_search_results() -> Any:
     """Simple search results for ranking tests."""
     return [
         {"title": "Result 1", "url": "https://site1.com", "snippet": "A"},
@@ -41,7 +43,7 @@ def sample_search_results():
 
 
 @pytest.fixture
-def storage_vector_doc():
+def storage_vector_doc() -> Any:
     """Representative storage payload used to hydrate hybrid lookups."""
 
     return {
@@ -52,7 +54,7 @@ def storage_vector_doc():
 
 
 @responses.activate
-def test_external_lookup(monkeypatch):
+def test_external_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
@@ -75,7 +77,7 @@ def test_external_lookup(monkeypatch):
 
 
 @responses.activate
-def test_external_lookup_special_chars(monkeypatch):
+def test_external_lookup_special_chars(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
@@ -97,7 +99,7 @@ def test_external_lookup_special_chars(monkeypatch):
     assert results[0]["url"] == "https://cplusplus.com"
 
 
-def test_generate_queries():
+def test_generate_queries() -> None:
     queries = Search.generate_queries("some topic")
     assert "some topic" in queries
     assert any(q.startswith("What is") for q in queries)
@@ -109,7 +111,7 @@ def test_generate_queries():
 
 
 @responses.activate
-def test_external_lookup_backend_error(monkeypatch):
+def test_external_lookup_backend_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when a search backend fails."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -139,7 +141,7 @@ def test_external_lookup_backend_error(monkeypatch):
 
 
 @responses.activate
-def test_duckduckgo_timeout_error(monkeypatch):
+def test_duckduckgo_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a TimeoutError is raised when DuckDuckGo search times out."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -166,7 +168,7 @@ def test_duckduckgo_timeout_error(monkeypatch):
 
 
 @responses.activate
-def test_duckduckgo_json_decode_error(monkeypatch):
+def test_duckduckgo_json_decode_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when DuckDuckGo returns invalid JSON."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -192,7 +194,7 @@ def test_duckduckgo_json_decode_error(monkeypatch):
 
 
 @responses.activate
-def test_serper_backend_error(monkeypatch):
+def test_serper_backend_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when Serper search fails."""
     cfg = _cfg()
     cfg.search.backends = ["serper"]
@@ -222,7 +224,7 @@ def test_serper_backend_error(monkeypatch):
 
 
 @responses.activate
-def test_serper_timeout_error(monkeypatch):
+def test_serper_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a TimeoutError is raised when Serper search times out."""
     cfg = _cfg()
     cfg.search.backends = ["serper"]
@@ -248,7 +250,7 @@ def test_serper_timeout_error(monkeypatch):
     assert excinfo.value.context["backend"] == "serper"
 
 
-def test_local_file_backend(monkeypatch, tmp_path):
+def test_local_file_backend(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     file_path = docs_dir / "note.txt"
@@ -268,7 +270,7 @@ def test_local_file_backend(monkeypatch, tmp_path):
 
 
 @pytest.mark.slow
-def test_local_git_backend(monkeypatch, tmp_path):
+def test_local_git_backend(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init"], cwd=repo, check=True)
@@ -295,7 +297,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
     assert any(r["url"] == str(readme) for r in results)
 
 
-def test_external_lookup_vector_search(monkeypatch):
+def test_external_lookup_vector_search(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = []
     cfg.search.context_aware.enabled = False
@@ -325,7 +327,7 @@ def test_external_lookup_vector_search(monkeypatch):
     assert any("vector" in (r.get("storage_sources") or []) for r in results)
 
 
-def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
+def test_external_lookup_returns_handles(monkeypatch: pytest.MonkeyPatch, storage_vector_doc: Any) -> None:
     cfg = _cfg()
     cfg.search.backends = []
     cfg.search.embedding_backends = []
@@ -358,7 +360,7 @@ def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
         assert "vector" in (storage_docs[0].get("storage_sources") or [])
 
 
-def test_http_session_atexit_hook(monkeypatch):
+def test_http_session_atexit_hook(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.http_pool_size = 1
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -376,7 +378,7 @@ def test_http_session_atexit_hook(monkeypatch):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_semantic_only(mock_get_config: Any, monkeypatch: pytest.MonkeyPatch, sample_search_results: Any) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 1.0
     cfg.search.bm25_weight = 0.0
@@ -399,7 +401,7 @@ def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_bm25_only(mock_get_config: Any, monkeypatch: pytest.MonkeyPatch, sample_search_results: Any) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 1.0
@@ -421,7 +423,7 @@ def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_resu
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_credibility_only(mock_get_config: Any, monkeypatch: pytest.MonkeyPatch, sample_search_results: Any) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 0.0
@@ -442,7 +444,7 @@ def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_sear
     assert ranked[0]["url"] == "https://site3.com"
 
 
-def test_external_lookup_hybrid_query(monkeypatch):
+def test_external_lookup_hybrid_query(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["kw"]
     cfg.search.embedding_backends = ["emb"]

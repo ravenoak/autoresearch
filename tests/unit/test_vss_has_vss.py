@@ -4,7 +4,7 @@ from autoresearch import storage
 
 
 @pytest.mark.requires_vss
-def test_has_vss_with_dummy_backend(monkeypatch):
+def test_has_vss_with_dummy_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """StorageManager.has_vss should reflect backend capability."""
 
     class DummyBackend:

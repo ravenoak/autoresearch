@@ -1,7 +1,8 @@
 from autoresearch import cache
+from pathlib import Path
 
 
-def test_get_db_after_teardown(tmp_path):
+def test_get_db_after_teardown(tmp_path: Path) -> None:
     orig = cache._db_path
     cache.teardown(remove_file=False)
     cache._db_path = tmp_path / "c.json"

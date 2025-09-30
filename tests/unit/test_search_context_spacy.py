@@ -33,7 +33,7 @@ def _install_dummy_spacy(monkeypatch, load_behavior):
     return dummy_spacy, download_calls
 
 
-def test_initialize_nlp_no_auto_download(monkeypatch):
+def test_initialize_nlp_no_auto_download(monkeypatch: pytest.MonkeyPatch) -> None:
     """spaCy load failure without auto-download leaves NLP unset."""
     for name in ("spacy", "spacy.cli"):
         monkeypatch.delitem(sys.modules, name, raising=False)
@@ -48,7 +48,7 @@ def test_initialize_nlp_no_auto_download(monkeypatch):
     assert ctx.nlp is None
 
 
-def test_initialize_nlp_downloads_when_env(monkeypatch):
+def test_initialize_nlp_downloads_when_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Auto-download path loads model after download."""
     for name in ("spacy", "spacy.cli"):
         monkeypatch.delitem(sys.modules, name, raising=False)

@@ -27,7 +27,7 @@ from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.errors import SearchError  # noqa: E402
 
 
-def test_unknown_backend_raises(monkeypatch):
+def test_unknown_backend_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     with Search.temporary_state() as search:
         search.backends = {}
         cfg = ConfigModel(loops=1)
@@ -38,7 +38,7 @@ def test_unknown_backend_raises(monkeypatch):
             search.external_lookup("q")
 
 
-def test_backend_json_error(monkeypatch):
+def test_backend_json_error(monkeypatch: pytest.MonkeyPatch) -> None:
     def bad_backend(query, max_results=5):
         raise json.JSONDecodeError("bad", "", 0)
 
@@ -56,7 +56,7 @@ def test_backend_json_error(monkeypatch):
             sys.modules["pytest"] = was
 
 
-def test_http_session_reuse():
+def test_http_session_reuse() -> None:
     close_http_session()
     s1 = get_http_session()
     s2 = get_http_session()

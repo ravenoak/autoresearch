@@ -3,9 +3,10 @@ from hypothesis import strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.token_budget import round_with_margin
+import pytest
 
 
-def test_compression_threshold_reduces_with_history(monkeypatch):
+def test_compression_threshold_reduces_with_history(monkeypatch: pytest.MonkeyPatch) -> None:
     m = OrchestrationMetrics()
     long_prompt = "x " * 20
     m.compress_prompt_if_needed(long_prompt.strip(), 5)
@@ -23,7 +24,7 @@ def test_compression_threshold_reduces_with_history(monkeypatch):
     assert result == "short"
 
 
-def test_token_budget_expands_then_shrinks():
+def test_token_budget_expands_then_shrinks() -> None:
     m = OrchestrationMetrics()
     budget = 10
     m.record_tokens("A", 50, 0)
@@ -34,7 +35,7 @@ def test_token_budget_expands_then_shrinks():
     assert budget == 28
 
 
-def test_budget_shrinks_to_one_after_zero_usage():
+def test_budget_shrinks_to_one_after_zero_usage() -> None:
     m = OrchestrationMetrics()
     budget = 20
     m.record_tokens("A", 5, 0)
@@ -45,7 +46,7 @@ def test_budget_shrinks_to_one_after_zero_usage():
     assert budget == 1
 
 
-def test_budget_converges_for_constant_usage():
+def test_budget_converges_for_constant_usage() -> None:
     m = OrchestrationMetrics()
     margin = 0.2
     usage = 50
@@ -76,7 +77,7 @@ def test_budget_rounds_half_up(usage: int, margin: float) -> None:
     assert budget == expected
 
 
-def test_budget_respects_bounds_during_spike():
+def test_budget_respects_bounds_during_spike() -> None:
     m = OrchestrationMetrics()
     margin = 0.2
     spike = 100

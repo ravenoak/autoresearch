@@ -21,7 +21,7 @@ from autoresearch.search.core import RANKING_BUCKET_SCALE
 
 
 @pytest.fixture
-def mock_config():
+def mock_config() -> Any:
     """Create a mock configuration for testing."""
     search_config = SearchConfig(
         use_bm25=True,
@@ -37,7 +37,7 @@ def mock_config():
 
 
 @pytest.fixture
-def sample_results():
+def sample_results() -> Any:
     """Create sample search results for testing."""
     return [
         {
@@ -63,7 +63,7 @@ def sample_results():
     ]
 
 
-def test_preprocess_text():
+def test_preprocess_text() -> None:
     """Test the text preprocessing functionality."""
     text = "Python 3.9 is GREAT! It has many new features."
     tokens = Search.preprocess_text(text)
@@ -86,7 +86,7 @@ def test_preprocess_text():
 
 @patch("autoresearch.search.core.BM25_AVAILABLE", True)
 @patch("autoresearch.search.core.BM25Okapi")
-def test_calculate_bm25_scores(mock_bm25, sample_results):
+def test_calculate_bm25_scores(mock_bm25: Any, sample_results: Any) -> None:
     """Test the BM25 scoring functionality."""
     # Setup mock BM25 model
     mock_bm25_instance = MagicMock()
@@ -106,13 +106,13 @@ def test_calculate_bm25_scores(mock_bm25, sample_results):
     assert scores[2] > scores[0] > scores[1] > scores[3]
 
 
-def test_rank_results_empty_input(monkeypatch):
+def test_rank_results_empty_input(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("autoresearch.search.core.BM25_AVAILABLE", True)
     assert Search.rank_results("q", []) == []
 
 
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", True)
-def test_calculate_semantic_similarity(sample_results):
+def test_calculate_semantic_similarity(sample_results: Any) -> None:
     """Semantic scores follow the cosine spec and documented coverage.
 
     The regression links the production path to
@@ -169,7 +169,7 @@ def test_calculate_semantic_similarity(sample_results):
     assert scores[3] == pytest.approx(0.0, abs=1e-9)
 
 
-def test_assess_source_credibility(sample_results):
+def test_assess_source_credibility(sample_results: Any) -> None:
     """Test the source credibility assessment functionality."""
     scores = Search.assess_source_credibility(sample_results)
 
@@ -196,7 +196,7 @@ def test_assess_source_credibility(sample_results):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results(mock_get_config, mock_config, sample_results):
+def test_rank_results(mock_get_config: Any, mock_config: Any, sample_results: Any) -> None:
     """Test the overall ranking functionality."""
     mock_get_config.return_value = mock_config
 
@@ -234,8 +234,8 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
 
 @patch("autoresearch.search.core.get_config")
 def test_rank_results_with_disabled_features(
-    mock_get_config, mock_config, sample_results
-):
+    mock_get_config: Any, mock_config: Any, sample_results: Any
+) -> None:
     """Test ranking with some features disabled."""
     # Disable BM25 and source credibility
     mock_config.search.use_bm25 = False
@@ -269,8 +269,8 @@ def test_rank_results_with_disabled_features(
     "autoresearch.search.core._try_import_sentence_transformers", return_value=False
 )
 def test_rank_results_with_unavailable_libraries(
-    _mock_try_import, mock_get_config, mock_config, sample_results
-):
+    _mock_try_import: Any, mock_get_config: Any, mock_config: Any, sample_results: Any
+) -> None:
     """Test ranking when required libraries are not available."""
     mock_get_config.return_value = mock_config
 
@@ -286,7 +286,7 @@ def test_rank_results_with_unavailable_libraries(
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_results):
+def test_rank_results_weighted_combination(mock_get_config: Any, mock_config: Any, sample_results: Any) -> None:
     """Ranking should respect configured weights for keyword and semantic scores."""
     mock_config.search.semantic_similarity_weight = 0.8
     mock_config.search.bm25_weight = 0.2
@@ -309,7 +309,7 @@ def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
+def test_rank_results_bm25_only(mock_get_config: Any, mock_config: Any, sample_results: Any) -> None:
     """Ranking should rely solely on BM25 when other weights are zero."""
     mock_config.search.bm25_weight = 1.0
     mock_config.search.semantic_similarity_weight = 0.0
@@ -332,8 +332,8 @@ def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
 
 @patch("autoresearch.search.core.get_config")
 def test_rank_results_patched_bm25_function(
-    mock_get_config, mock_config, sample_results
-):
+    mock_get_config: Any, mock_config: Any, sample_results: Any
+) -> None:
     """`rank_results` should pass both query and documents to BM25 scorer."""
     mock_config.search.bm25_weight = 1.0
     mock_config.search.semantic_similarity_weight = 0.0
@@ -359,7 +359,7 @@ def test_rank_results_patched_bm25_function(
     assert len(ranked) == len(sample_results)
 
 
-def test_search_config_invalid_weights():
+def test_search_config_invalid_weights() -> None:
     """Invalid weight combinations should raise ConfigError."""
     with pytest.raises(ConfigError):
         SearchConfig(
@@ -371,7 +371,7 @@ def test_search_config_invalid_weights():
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(data=st.data())
-def test_rank_results_sorted(mock_config, data):
+def test_rank_results_sorted(mock_config: Any, data: Any) -> None:
     """Ranking must return results sorted by relevance_score."""
     n = data.draw(st.integers(min_value=1, max_value=5))
     results = [
@@ -416,7 +416,7 @@ def test_rank_results_sorted(mock_config, data):
 
 @settings(deadline=None, max_examples=10)
 @given(texts=st.lists(st.text(min_size=1), min_size=1, max_size=5))
-def test_external_lookup_uses_cache(texts):
+def test_external_lookup_uses_cache(texts: Any) -> None:
     """External lookups reuse cached results per the cache documentation.
 
     Coverage traces to ``docs/algorithms/cache.md`` and ``SPEC_COVERAGE.md``.
@@ -451,7 +451,7 @@ def test_external_lookup_uses_cache(texts):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_relevance_score_monotonic(mock_get_config, mock_config):
+def test_relevance_score_monotonic(mock_get_config: Any, mock_config: Any) -> None:
     """Increasing a component score should raise the final relevance score."""
     docs1 = [
         {"title": "a", "url": "https://a", "snippet": ""},
@@ -486,7 +486,7 @@ def test_relevance_score_monotonic(mock_get_config, mock_config):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_weight_sensitivity(mock_get_config, mock_config):
+def test_weight_sensitivity(mock_get_config: Any, mock_config: Any) -> None:
     """Adjusting weights should reorder results to match their emphasis."""
     docs = [
         {"title": "a", "url": "https://a", "snippet": ""},

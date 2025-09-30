@@ -8,6 +8,7 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+import pytest
 
 
 def _setup(monkeypatch):
@@ -25,7 +26,7 @@ def _setup(monkeypatch):
     return cfg, app
 
 
-def test_dynamic_limit(monkeypatch):
+def test_dynamic_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, _ = _setup(monkeypatch)
     cfg.api.rate_limit = 5
     assert dynamic_limit() == "5/minute"
@@ -33,7 +34,7 @@ def test_dynamic_limit(monkeypatch):
     assert dynamic_limit() == "1000000/minute"
 
 
-def test_api_key_roles(monkeypatch):
+def test_api_key_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.api_keys = {"secret": "user"}
     client = TestClient(app)
@@ -45,7 +46,7 @@ def test_api_key_roles(monkeypatch):
     assert resp.status_code == 401
 
 
-def test_batch_query_invalid_page(monkeypatch):
+def test_batch_query_invalid_page(monkeypatch: pytest.MonkeyPatch) -> None:
     _, app = _setup(monkeypatch)
     client = TestClient(app)
     payload = {"queries": [{"query": "q1"}]}
@@ -53,7 +54,7 @@ def test_batch_query_invalid_page(monkeypatch):
     assert resp.status_code == 400
 
 
-def test_fallback_no_limit(monkeypatch):
+def test_fallback_no_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 
@@ -71,7 +72,7 @@ def test_fallback_no_limit(monkeypatch):
     assert api_mod.get_request_logger(app).snapshot() == Counter()
 
 
-def test_fallback_multiple_ips(monkeypatch):
+def test_fallback_multiple_ips(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 1
 
@@ -114,7 +115,7 @@ def test_fallback_multiple_ips(monkeypatch):
         assert app.state.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
 
-def test_request_log_thread_safety(monkeypatch):
+def test_request_log_thread_safety(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 

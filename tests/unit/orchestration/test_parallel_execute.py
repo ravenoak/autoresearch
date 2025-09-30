@@ -75,7 +75,7 @@ class SelectorOrchestrator:
         raise OrchestrationError("unknown")
 
 
-def test_execute_parallel_query_error_and_timeout(monkeypatch):
+def test_execute_parallel_query_error_and_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
         SelectorOrchestrator,
@@ -96,7 +96,7 @@ def test_execute_parallel_query_error_and_timeout(monkeypatch):
     assert meta_timeout["timeout_groups"] == 1
 
 
-def test_execute_parallel_query_all_fail(monkeypatch):
+def test_execute_parallel_query_all_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
         SelectorOrchestrator,

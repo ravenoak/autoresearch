@@ -46,7 +46,7 @@ def _patch_config(
     ConfigLoader()._config = None
 
 
-def test_run_ontology_reasoner_owlrl(monkeypatch):
+def test_run_ontology_reasoner_owlrl(monkeypatch: pytest.MonkeyPatch) -> None:
     g = rdflib.Graph()
     g.add(
         (
@@ -59,7 +59,7 @@ def test_run_ontology_reasoner_owlrl(monkeypatch):
     run_ontology_reasoner(g)
 
 
-def test_register_reasoner_adds_plugin():
+def test_register_reasoner_adds_plugin() -> None:
     import autoresearch.kg_reasoning as kr
 
     @register_reasoner("unit_test")
@@ -70,7 +70,7 @@ def test_register_reasoner_adds_plugin():
     kr._REASONER_PLUGINS.pop("unit_test", None)
 
 
-def test_run_ontology_reasoner_external(monkeypatch):
+def test_run_ontology_reasoner_external(monkeypatch: pytest.MonkeyPatch) -> None:
     called = {}
 
     def dummy(store):
@@ -85,7 +85,7 @@ def test_run_ontology_reasoner_external(monkeypatch):
     assert called.get("ok") is True
 
 
-def test_run_ontology_reasoner_invokes_plugin_once(monkeypatch):
+def test_run_ontology_reasoner_invokes_plugin_once(monkeypatch: pytest.MonkeyPatch) -> None:
     import autoresearch.kg_reasoning as kr
 
     calls = []
@@ -101,7 +101,7 @@ def test_run_ontology_reasoner_invokes_plugin_once(monkeypatch):
     kr._REASONER_PLUGINS.pop("once", None)
 
 
-def test_run_ontology_reasoner_preserves_triple_count(monkeypatch):
+def test_run_ontology_reasoner_preserves_triple_count(monkeypatch: pytest.MonkeyPatch) -> None:
     import autoresearch.kg_reasoning as kr
 
     @register_reasoner("adder")
@@ -123,7 +123,7 @@ def test_run_ontology_reasoner_preserves_triple_count(monkeypatch):
     kr._REASONER_PLUGINS.pop("adder", None)
 
 
-def test_run_ontology_reasoner_external_error(monkeypatch):
+def test_run_ontology_reasoner_external_error(monkeypatch: pytest.MonkeyPatch) -> None:
     def fail(store):
         raise ValueError("boom")
 
@@ -136,7 +136,7 @@ def test_run_ontology_reasoner_external_error(monkeypatch):
         run_ontology_reasoner(g)
 
 
-def test_query_with_reasoning(monkeypatch):
+def test_query_with_reasoning(monkeypatch: pytest.MonkeyPatch) -> None:
     g = rdflib.Graph()
     s = rdflib.URIRef("http://ex/s")
     p = rdflib.URIRef("http://ex/p")
@@ -149,7 +149,7 @@ def test_query_with_reasoning(monkeypatch):
     assert res[0][0] == o
 
 
-def test_run_ontology_reasoner_without_owlrl(monkeypatch):
+def test_run_ontology_reasoner_without_owlrl(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delitem(sys.modules, "owlrl", raising=False)
     import autoresearch.kg_reasoning as kr
 
@@ -186,7 +186,7 @@ def test_run_ontology_reasoner_reload_without_owlrl(
     globals()["register_reasoner"] = module.register_reasoner
 
 
-def test_run_ontology_reasoner_timeout(monkeypatch):
+def test_run_ontology_reasoner_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     import autoresearch.kg_reasoning as kr
 
     def slow(store):
@@ -200,7 +200,7 @@ def test_run_ontology_reasoner_timeout(monkeypatch):
     assert "timed out" in str(excinfo.value).lower()
 
 
-def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch):
+def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
     def boom(store):
         raise KeyboardInterrupt()
 
@@ -214,7 +214,7 @@ def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch):
     assert "interrupted" in str(excinfo.value).lower()
 
 
-def test_run_ontology_reasoner_skips_when_limit_exceeded(monkeypatch, caplog):
+def test_run_ontology_reasoner_skips_when_limit_exceeded(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
     called = {}
 
     @register_reasoner("dummy_limit")
@@ -251,7 +251,7 @@ def test_run_ontology_reasoner_skips_when_limit_exceeded(monkeypatch, caplog):
     kr._REASONER_PLUGINS.pop("dummy_limit", None)
 
 
-def test_run_ontology_reasoner_unknown(monkeypatch):
+def test_run_ontology_reasoner_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
     g = rdflib.Graph()
     _patch_config(monkeypatch, "does_not_exist")
     with pytest.raises(StorageError) as excinfo:

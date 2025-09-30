@@ -4,9 +4,10 @@ import types
 import networkx as nx
 import autoresearch.storage as storage
 from autoresearch.storage import StorageManager
+import pytest
 
 
-def test_setup_thread_safe(monkeypatch):
+def test_setup_thread_safe(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[int] = []
     original_setup = storage.setup
 
@@ -45,7 +46,7 @@ def test_setup_thread_safe(monkeypatch):
     StorageManager.teardown(remove_db=True)
 
 
-def test_persist_claim_thread_safe(monkeypatch):
+def test_persist_claim_thread_safe(monkeypatch: pytest.MonkeyPatch) -> None:
     StorageManager.context.graph = nx.DiGraph()
     StorageManager.context.rdf_store = object()
 

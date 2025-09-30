@@ -4,9 +4,10 @@ import types
 
 from autoresearch.orchestration import utils
 from autoresearch.models import QueryResponse
+import pytest
 
 
-def test_get_memory_usage_psutil(monkeypatch):
+def test_get_memory_usage_psutil(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_psutil = types.SimpleNamespace(
         Process=lambda: types.SimpleNamespace(memory_info=lambda: types.SimpleNamespace(rss=42 * 1024 * 1024))
     )
@@ -14,7 +15,7 @@ def test_get_memory_usage_psutil(monkeypatch):
     assert utils.get_memory_usage() == 42.0
 
 
-def test_get_memory_usage_fallback(monkeypatch):
+def test_get_memory_usage_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     if "psutil" in sys.modules:
         del sys.modules["psutil"]
 
@@ -34,7 +35,7 @@ def test_get_memory_usage_fallback(monkeypatch):
     assert utils.get_memory_usage() == 2.0
 
 
-def test_calculate_result_confidence():
+def test_calculate_result_confidence() -> None:
     resp = QueryResponse(
         answer="a",
         citations=["c1", "c2"],
@@ -45,7 +46,7 @@ def test_calculate_result_confidence():
     assert 0.5 <= score <= 1.0
 
 
-def test_calculate_result_confidence_penalties():
+def test_calculate_result_confidence_penalties() -> None:
     resp = QueryResponse(
         answer="a",
         citations=[],

@@ -3,6 +3,8 @@ from typing import Any
 
 from autoresearch.distributed import StorageCoordinator
 from autoresearch import storage
+import pytest
+from pathlib import Path
 
 
 class ErrorQueue:
@@ -14,7 +16,7 @@ def _noop(*_a, **_k):
     pass
 
 
-def test_storage_coordinator_persists_message(monkeypatch, tmp_path):
+def test_storage_coordinator_persists_message(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     queue: multiprocessing.Queue[Any] = multiprocessing.Queue()
     calls: list[tuple[dict[str, str], bool]] = []
 
@@ -38,7 +40,7 @@ def test_storage_coordinator_persists_message(monkeypatch, tmp_path):
         queue.join_thread()
 
 
-def test_storage_coordinator_handles_stop(monkeypatch, tmp_path):
+def test_storage_coordinator_handles_stop(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     queue: multiprocessing.Queue[Any] = multiprocessing.Queue()
     calls: list[tuple[dict[str, str], bool]] = []
 
@@ -61,7 +63,7 @@ def test_storage_coordinator_handles_stop(monkeypatch, tmp_path):
         queue.join_thread()
 
 
-def test_storage_coordinator_queue_error(monkeypatch, tmp_path):
+def test_storage_coordinator_queue_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(storage, "setup", _noop)
     monkeypatch.setattr(storage, "teardown", _noop)
 

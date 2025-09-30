@@ -6,6 +6,8 @@ from autoresearch.config.loader import ConfigLoader
 from scripts.simulate_api_auth_errors import simulate
 import types
 import contextlib
+import pytest
+from typing import Any
 
 
 def _setup(monkeypatch):
@@ -22,7 +24,7 @@ def _setup(monkeypatch):
     return cfg
 
 
-def test_query_endpoint_runtime_error(monkeypatch, orchestrator):
+def test_query_endpoint_runtime_error(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     _setup(monkeypatch)
 
     orch = orchestrator
@@ -40,7 +42,7 @@ def test_query_endpoint_runtime_error(monkeypatch, orchestrator):
     assert data["metrics"]["error"] == "fail"
 
 
-def test_query_endpoint_invalid_response(monkeypatch, orchestrator):
+def test_query_endpoint_invalid_response(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     _setup(monkeypatch)
     orch = orchestrator
     monkeypatch.setattr(orch, "run_query", lambda q, c, callbacks=None: {"foo": "bar"})

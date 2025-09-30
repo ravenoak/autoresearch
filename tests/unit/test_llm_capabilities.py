@@ -16,12 +16,13 @@ from autoresearch.llm.capabilities import (
     get_model_capabilities,
 )
 from autoresearch.llm.registry import LLMFactory
+from typing import Any
 
 
 class TestModelCapabilities:
     """Tests for the ModelCapabilities class."""
 
-    def test_model_capabilities_creation(self):
+    def test_model_capabilities_creation(self) -> None:
         """Test creating a ModelCapabilities instance."""
         # Setup
         capabilities = ModelCapabilities(
@@ -45,7 +46,7 @@ class TestModelCapabilities:
         assert capabilities.cost_per_1k_input_tokens == 0.001
         assert capabilities.cost_per_1k_output_tokens == 0.002
 
-    def test_to_dict_method(self):
+    def test_to_dict_method(self) -> None:
         """Test the to_dict method of ModelCapabilities."""
         # Setup
         capabilities = ModelCapabilities(
@@ -77,7 +78,7 @@ class TestModelCapabilities:
 class TestCapabilityProber:
     """Tests for the CapabilityProber class."""
 
-    def test_singleton_pattern(self):
+    def test_singleton_pattern(self) -> None:
         """Test that CapabilityProber follows the singleton pattern."""
         # Execute
         prober1 = CapabilityProber.get_instance()
@@ -86,7 +87,7 @@ class TestCapabilityProber:
         # Verify
         assert prober1 is prober2
 
-    def test_probe_provider_caching(self):
+    def test_probe_provider_caching(self) -> None:
         """Test that probe_provider caches results."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -120,7 +121,7 @@ class TestCapabilityProber:
         assert result1 == result2  # Results should be identical
         assert "dummy" in prober._capabilities_cache  # Provider should be in cache
 
-    def test_probe_provider_unknown(self):
+    def test_probe_provider_unknown(self) -> None:
         """Test probing an unknown provider."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -132,7 +133,7 @@ class TestCapabilityProber:
         assert result == {}
 
     @patch.object(LLMFactory, "_registry", {"openai": None, "dummy": None})
-    def test_probe_all_providers(self):
+    def test_probe_all_providers(self) -> None:
         """Test probing all providers."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -151,7 +152,7 @@ class TestCapabilityProber:
         mock_probe.assert_any_call("openai")
         mock_probe.assert_any_call("dummy")
 
-    def test_get_model_capabilities_with_provider(self):
+    def test_get_model_capabilities_with_provider(self) -> None:
         """Test getting model capabilities with a specified provider."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -179,7 +180,7 @@ class TestCapabilityProber:
         # Verify
         assert result == test_capabilities
 
-    def test_get_model_capabilities_without_provider(self):
+    def test_get_model_capabilities_without_provider(self) -> None:
         """Test getting model capabilities without specifying a provider."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -207,7 +208,7 @@ class TestCapabilityProber:
         # Verify
         assert result == test_capabilities
 
-    def test_get_model_capabilities_not_found(self):
+    def test_get_model_capabilities_not_found(self) -> None:
         """Test getting capabilities for a model that doesn't exist."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -219,7 +220,7 @@ class TestCapabilityProber:
         # Verify
         assert result is None
 
-    def test_get_model_capabilities_search_across_providers(self):
+    def test_get_model_capabilities_search_across_providers(self) -> None:
         """Test getting model capabilities by searching across all providers."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -260,7 +261,7 @@ class TestCapabilityProber:
         assert result == test_capabilities
 
     @responses.activate
-    def test_probe_openrouter_with_api(self):
+    def test_probe_openrouter_with_api(self) -> None:
         """Test probing OpenRouter capabilities using the API."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -297,7 +298,7 @@ class TestCapabilityProber:
         assert result["anthropic/claude-3-opus"].cost_per_1k_input_tokens == 0.015
         assert result["anthropic/claude-3-opus"].cost_per_1k_output_tokens == 0.075
 
-    def test_probe_openrouter_without_api_key(self):
+    def test_probe_openrouter_without_api_key(self) -> None:
         """Test probing OpenRouter capabilities without an API key."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -313,7 +314,7 @@ class TestCapabilityProber:
         assert "mistralai/mistral-large" in result
 
     @responses.activate
-    def test_probe_openrouter_with_api_error(self):
+    def test_probe_openrouter_with_api_error(self) -> None:
         """OpenRouter probing falls back to defaults on API errors per ``specs/llm``."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -338,7 +339,7 @@ class TestCapabilityProber:
         assert "anthropic/claude-3-sonnet" in result
         assert "mistralai/mistral-large" in result
 
-    def test_probe_openai(self):
+    def test_probe_openai(self) -> None:
         """Test probing OpenAI capabilities."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -356,7 +357,7 @@ class TestCapabilityProber:
         assert result["gpt-4"].supports_function_calling is True
         assert result["gpt-4-turbo"].supports_vision is True
 
-    def test_probe_lmstudio(self):
+    def test_probe_lmstudio(self) -> None:
         """Test probing LM Studio capabilities."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -374,7 +375,7 @@ class TestCapabilityProber:
         assert result["lmstudio"].cost_per_1k_input_tokens == 0.0
         assert result["lmstudio"].cost_per_1k_output_tokens == 0.0
 
-    def test_probe_dummy(self):
+    def test_probe_dummy(self) -> None:
         """Test probing dummy provider capabilities."""
         # Setup
         prober = CapabilityProber.get_instance()
@@ -396,7 +397,7 @@ class TestCapabilityProber:
 class TestHelperFunctions:
     """Tests for the helper functions in the capabilities module."""
 
-    def test_get_capability_prober(self):
+    def test_get_capability_prober(self) -> None:
         """Test the get_capability_prober function."""
         # Execute
         prober = get_capability_prober()
@@ -406,7 +407,7 @@ class TestHelperFunctions:
         assert prober is CapabilityProber.get_instance()
 
     @patch("autoresearch.llm.capabilities.get_capability_prober")
-    def test_probe_all_providers_helper(self, mock_get_prober):
+    def test_probe_all_providers_helper(self, mock_get_prober: Any) -> None:
         """Test the probe_all_providers helper function."""
         # Setup
         mock_prober = MagicMock()
@@ -421,7 +422,7 @@ class TestHelperFunctions:
         mock_prober.probe_all_providers.assert_called_once()
 
     @patch("autoresearch.llm.capabilities.get_capability_prober")
-    def test_get_model_capabilities_helper(self, mock_get_prober):
+    def test_get_model_capabilities_helper(self, mock_get_prober: Any) -> None:
         """Test the get_model_capabilities helper function."""
         # Setup
         mock_prober = MagicMock()

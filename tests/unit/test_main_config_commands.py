@@ -6,19 +6,21 @@ import pytest
 from typer.testing import CliRunner
 
 from autoresearch.main import app
+from pathlib import Path
+from typing import Any
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
 @pytest.fixture
-def mock_config_loader():
+def mock_config_loader() -> Any:
     """Create a mock ConfigLoader for testing."""
     return MagicMock()
 
 
 @pytest.fixture
-def example_resources(tmp_path, monkeypatch):
+def example_resources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
     """Provide temporary example config files."""
     src_dir = importlib_resources.files("autoresearch.examples")
     temp_dir = tmp_path / "examples"
@@ -34,7 +36,7 @@ def example_resources(tmp_path, monkeypatch):
     return temp_dir
 
 
-def test_config_init_command(tmp_path, example_resources):
+def test_config_init_command(tmp_path: Path, example_resources: Any) -> None:
     """Test the config init command."""
     runner = CliRunner()
     result = runner.invoke(
@@ -44,7 +46,7 @@ def test_config_init_command(tmp_path, example_resources):
     assert "Configuration initialized successfully." in result.stdout
 
 
-def test_config_init_command_force(example_autoresearch_toml, example_env_file, example_resources):
+def test_config_init_command_force(example_autoresearch_toml: Any, example_env_file: Any, example_resources: Any) -> None:
     """Test the config init command with force flag."""
     runner = CliRunner()
     cfg = example_autoresearch_toml
@@ -66,8 +68,8 @@ def test_config_init_command_force(example_autoresearch_toml, example_env_file, 
 
 
 def test_config_validate_command_valid(
-    mock_config_loader, example_autoresearch_toml, example_env_file
-):
+    mock_config_loader: Any, example_autoresearch_toml: Any, example_env_file: Any
+) -> None:
     """Test the config validate command with valid configuration."""
     runner = CliRunner()
     cfg_path = example_autoresearch_toml
@@ -89,8 +91,8 @@ def test_config_validate_command_valid(
 
 
 def test_config_validate_command_invalid(
-    mock_config_loader, example_autoresearch_toml, example_env_file
-):
+    mock_config_loader: Any, example_autoresearch_toml: Any, example_env_file: Any
+) -> None:
     """Test the config validate command with invalid configuration."""
     runner = CliRunner()
     cfg_path = example_autoresearch_toml

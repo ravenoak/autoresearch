@@ -18,14 +18,14 @@ class DummyInfo:
         self.compressed = compressed
 
 
-def test_format_size_units():
+def test_format_size_units() -> None:
     assert _format_size(512) == "512 B"
     assert _format_size(2048).endswith("KB")
     assert _format_size(2 * 1024 * 1024).endswith("MB")
     assert _format_size(3 * 1024 * 1024 * 1024).endswith("GB")
 
 
-def test_backup_create_error(monkeypatch):
+def test_backup_create_error(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     def fail(**_):
@@ -38,7 +38,7 @@ def test_backup_create_error(monkeypatch):
     assert "try" in result.stdout
 
 
-def test_backup_create_missing_tables(monkeypatch):
+def test_backup_create_missing_tables(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     def fail(**_):
@@ -51,7 +51,7 @@ def test_backup_create_missing_tables(monkeypatch):
     assert "a, b" in result.stdout
 
 
-def test_backup_create_success(monkeypatch):
+def test_backup_create_success(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     info = DummyInfo(path="p", size=1, compressed=False)
     monkeypatch.setattr(
@@ -62,14 +62,14 @@ def test_backup_create_success(monkeypatch):
     assert "Backup created successfully" in result.stdout
 
 
-def test_backup_restore_cancelled(monkeypatch):
+def test_backup_restore_cancelled(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "n")
     result = runner.invoke(backup_app, ["restore", "p"])
     assert "Restore cancelled" in result.stdout
 
 
-def test_backup_restore_error(monkeypatch):
+def test_backup_restore_error(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     def fail(**_):
@@ -82,14 +82,14 @@ def test_backup_restore_error(monkeypatch):
     assert "oops" in result.stdout
 
 
-def test_backup_list_no_backups(monkeypatch):
+def test_backup_list_no_backups(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     monkeypatch.setattr("autoresearch.cli_backup.BackupManager.list_backups", lambda *_: [])
     result = runner.invoke(backup_app, ["list", "--dir", "d"])
     assert "No backups found" in result.stdout
 
 
-def test_backup_list_success(monkeypatch):
+def test_backup_list_success(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     monkeypatch.setattr(
         "autoresearch.cli_backup.BackupManager.list_backups",
@@ -100,14 +100,14 @@ def test_backup_list_success(monkeypatch):
     assert "Backups in d" in result.stdout
 
 
-def test_backup_recover_invalid_timestamp(monkeypatch):
+def test_backup_recover_invalid_timestamp(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     result = runner.invoke(backup_app, ["recover", "bad"])
     assert result.exit_code == 1
     assert "Invalid timestamp" in result.stdout
 
 
-def test_backup_recover_error(monkeypatch):
+def test_backup_recover_error(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     def fail(**_):

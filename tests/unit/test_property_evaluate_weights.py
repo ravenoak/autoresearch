@@ -3,6 +3,7 @@ import math
 from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch.search import Search
+from typing import Any
 
 # generate evaluation data: dictionary mapping query to list of docs
 
@@ -30,7 +31,7 @@ def random_doc():
     ),
     k=st.floats(0.1, 10),
 )
-def test_evaluate_weights_scale_invariant(data, weights, k):
+def test_evaluate_weights_scale_invariant(data: Any, weights: Any, k: Any) -> None:
     score1 = Search.evaluate_weights(weights, data)
     scaled = tuple(w * k for w in weights)
     score2 = Search.evaluate_weights(scaled, data)
@@ -38,6 +39,6 @@ def test_evaluate_weights_scale_invariant(data, weights, k):
     assert 0.0 <= score1 <= 1.0
 
 
-def test_evaluate_weights_empty():
+def test_evaluate_weights_empty() -> None:
     with pytest.raises(ZeroDivisionError):
         Search.evaluate_weights((0.5, 0.3, 0.2), {})

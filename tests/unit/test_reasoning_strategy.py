@@ -1,5 +1,6 @@
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.reasoning import ChainOfThoughtStrategy
+import pytest
 
 
 class DummySynth:
@@ -14,7 +15,7 @@ class DummySynth:
         return {"results": {"final_answer": f"step-{self.calls}"}}
 
 
-def test_chain_of_thought_strategy_loops(monkeypatch):
+def test_chain_of_thought_strategy_loops(monkeypatch: pytest.MonkeyPatch) -> None:
     synth = DummySynth()
     monkeypatch.setattr(
         "autoresearch.agents.registry.AgentFactory.get",

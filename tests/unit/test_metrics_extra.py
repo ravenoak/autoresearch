@@ -1,7 +1,9 @@
 from autoresearch.orchestration import metrics
+import pytest
+from pathlib import Path
 
 
-def test_cycle_and_agent_metrics(monkeypatch, tmp_path):
+def test_cycle_and_agent_metrics(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     def fake_time() -> float:
         return 1.0
 
@@ -25,7 +27,7 @@ def test_cycle_and_agent_metrics(monkeypatch, tmp_path):
         path.unlink()
 
 
-def test_resource_tracking(monkeypatch):
+def test_resource_tracking(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         metrics,
         "_get_system_usage",

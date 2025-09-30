@@ -7,6 +7,8 @@ from typer.testing import CliRunner
 
 from autoresearch.errors import BackupError
 from autoresearch.storage_backup import BackupInfo
+from pathlib import Path
+from typing import Any
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -17,7 +19,7 @@ def _get_app():
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_create_command(mock_manager):
+def test_backup_create_command(mock_manager: Any) -> None:
     """Test the backup create command."""
     # Setup
     runner = CliRunner()
@@ -40,7 +42,7 @@ def test_backup_create_command(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_list_command(mock_manager):
+def test_backup_list_command(mock_manager: Any) -> None:
     """Test the backup list command."""
     # Setup
     runner = CliRunner()
@@ -73,7 +75,7 @@ def test_backup_list_command(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_restore_command(mock_manager):
+def test_backup_restore_command(mock_manager: Any) -> None:
     """Test the backup restore command."""
     # Setup
     runner = CliRunner()
@@ -92,7 +94,7 @@ def test_backup_restore_command(mock_manager):
     assert "Backup restored successfully" in result.stdout
 
 
-def test_backup_create_invalid_dir(tmp_path):
+def test_backup_create_invalid_dir(tmp_path: Path) -> None:
     runner = CliRunner()
     file_path = tmp_path / "file.txt"
     file_path.write_text("data")
@@ -104,7 +106,7 @@ def test_backup_create_invalid_dir(tmp_path):
     assert "Invalid backup directory" in result.stdout
 
 
-def test_backup_restore_invalid_path(tmp_path):
+def test_backup_restore_invalid_path(tmp_path: Path) -> None:
     runner = CliRunner()
     missing = tmp_path / "missing.tar.gz"
     result = runner.invoke(
@@ -117,7 +119,7 @@ def test_backup_restore_invalid_path(tmp_path):
 
 @pytest.mark.slow
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_schedule_command(mock_manager):
+def test_backup_schedule_command(mock_manager: Any) -> None:
     """Test the backup schedule command."""
     # Setup
     runner = CliRunner()
@@ -147,7 +149,7 @@ def test_backup_schedule_command(mock_manager):
 
 @pytest.mark.slow
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_schedule_command_keyboard_interrupt(mock_manager, monkeypatch):
+def test_backup_schedule_command_keyboard_interrupt(mock_manager: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test stopping the backup schedule with Ctrl+C."""
     runner = CliRunner()
 
@@ -184,7 +186,7 @@ def test_backup_schedule_command_keyboard_interrupt(mock_manager, monkeypatch):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_recover_command(mock_manager):
+def test_backup_recover_command(mock_manager: Any) -> None:
     """Test the backup recover command."""
     # Setup
     runner = CliRunner()
@@ -213,7 +215,7 @@ def test_backup_recover_command(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_create_error(mock_manager):
+def test_backup_create_error(mock_manager: Any) -> None:
     runner = CliRunner()
     mock_manager.create_backup.side_effect = Exception("boom")
     result = runner.invoke(_get_app(), ["backup", "create"])
@@ -222,7 +224,7 @@ def test_backup_create_error(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_create_missing_tables(mock_manager):
+def test_backup_create_missing_tables(mock_manager: Any) -> None:
     runner = CliRunner()
     mock_manager.create_backup.side_effect = BackupError(
         "bad", missing_tables=["t1"]
@@ -234,7 +236,7 @@ def test_backup_create_missing_tables(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_list_error(mock_manager):
+def test_backup_list_error(mock_manager: Any) -> None:
     runner = CliRunner()
     mock_manager.list_backups.side_effect = BackupError("oops")
     result = runner.invoke(_get_app(), ["backup", "list"])
@@ -243,7 +245,7 @@ def test_backup_list_error(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_restore_error(mock_manager, monkeypatch):
+def test_backup_restore_error(mock_manager: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     mock_manager.restore_backup.side_effect = BackupError("fail")
     monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "y")
@@ -253,7 +255,7 @@ def test_backup_restore_error(mock_manager, monkeypatch):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_schedule_error(mock_manager):
+def test_backup_schedule_error(mock_manager: Any) -> None:
     runner = CliRunner()
     mock_manager.schedule_backup.side_effect = BackupError("bad")
     result = runner.invoke(_get_app(), ["backup", "schedule"])
@@ -262,7 +264,7 @@ def test_backup_schedule_error(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
-def test_backup_recover_error(mock_manager, monkeypatch):
+def test_backup_recover_error(mock_manager: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     mock_manager.restore_point_in_time.side_effect = BackupError("bad")
     monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "y")

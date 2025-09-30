@@ -3,6 +3,7 @@
 import logging
 
 from scripts.config_hot_reload_sim import simulate_reload
+import pytest
 
 
 def test_config_hot_reload_sim() -> None:
@@ -11,7 +12,7 @@ def test_config_hot_reload_sim() -> None:
     assert final == 4
 
 
-def test_invalid_update_logged(caplog) -> None:
+def test_invalid_update_logged(caplog: pytest.LogCaptureFixture) -> None:
     """Invalid updates should not change config and log a warning."""
     caplog.set_level(logging.WARNING)
     final = simulate_reload([2, 3, 4])

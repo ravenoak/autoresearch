@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
 
 import duckdb
 import pytest
@@ -26,7 +26,7 @@ def tmp_harness(tmp_path: Path) -> EvaluationHarness:
 def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness) -> None:
     """Dry runs honour the limit flag and never call the orchestrator runner."""
 
-    calls: List[str] = []
+    calls: list[str] = []
 
     def _runner(query: str, config: ConfigModel) -> QueryResponse:  # pragma: no cover - should not run
         calls.append(query)
@@ -171,7 +171,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.example_csv and summary.example_csv.exists()
     assert summary.summary_csv and summary.summary_csv.exists()
 
-    with duckdb.connect(str(summary.duckdb_path)) as conn:
+    with closing(duckdb.connect(str(summary.duckdb_path))) as conn:
         count = conn.execute(
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],

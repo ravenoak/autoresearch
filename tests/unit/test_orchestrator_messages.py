@@ -2,6 +2,8 @@ from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.config.models import ConfigModel
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.orchestration.state import QueryState
+import pytest
+from typing import Any
 
 
 class Sender(Agent):
@@ -23,7 +25,7 @@ class Receiver(Agent):
         return {"results": {"received": content}}
 
 
-def test_agents_exchange_messages(monkeypatch, orchestrator):
+def test_agents_exchange_messages(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     cfg = ConfigModel(agents=["Sender", "Receiver"], loops=1, enable_agent_messages=True)
 
     def get_agent(name):

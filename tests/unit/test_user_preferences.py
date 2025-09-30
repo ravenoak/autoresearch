@@ -6,10 +6,11 @@ from autoresearch.agents.specialized.user_agent import UserAgent
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.state import QueryState
+from typing import Any
 
 
 @pytest.fixture
-def simple_state():
+def simple_state() -> Any:
     # Reset preferences between tests
     UserAgent.preferences = {
         "detail_level": "balanced",
@@ -25,7 +26,7 @@ def simple_state():
     return state
 
 
-def test_user_agent_loads_preferences(monkeypatch, simple_state):
+def test_user_agent_loads_preferences(monkeypatch: pytest.MonkeyPatch, simple_state: Any) -> None:
     mock_adapter = MagicMock()
     mock_adapter.generate.return_value = "resp"
     with patch("autoresearch.llm.get_pooled_adapter", return_value=mock_adapter):
@@ -37,7 +38,7 @@ def test_user_agent_loads_preferences(monkeypatch, simple_state):
     assert result["metadata"]["user_preferences"]["focus_areas"] == ["ai"]
 
 
-def test_user_preferences_hot_reload(example_autoresearch_toml, monkeypatch, simple_state):
+def test_user_preferences_hot_reload(example_autoresearch_toml: Any, monkeypatch: pytest.MonkeyPatch, simple_state: Any) -> None:
     ConfigLoader.reset_instance()
     cfg_path = example_autoresearch_toml
     cfg_path.write_text(

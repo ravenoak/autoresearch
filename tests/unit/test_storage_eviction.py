@@ -14,13 +14,14 @@ from autoresearch.storage import (
     LRUEvictionPolicy,
     StorageManager,
 )
+from typing import Any
 
 
 @given(
     capacity=st.integers(min_value=1, max_value=5),
     ops=st.lists(st.text(min_size=1), min_size=1, max_size=20),
 )
-def test_fifo_eviction_property(capacity, ops):
+def test_fifo_eviction_property(capacity: Any, ops: Any) -> None:
     """FIFO evicts in insertion order for unique keys."""
     policy = FIFOEvictionPolicy(capacity)
     expected: deque[str] = deque()
@@ -40,7 +41,7 @@ def test_fifo_eviction_property(capacity, ops):
     capacity=st.integers(min_value=1, max_value=5),
     ops=st.lists(st.text(min_size=1), min_size=1, max_size=20),
 )
-def test_lru_eviction_property(capacity, ops):
+def test_lru_eviction_property(capacity: Any, ops: Any) -> None:
     """LRU evicts the stalest accessed key."""
     policy = LRUEvictionPolicy(capacity)
     mirror: OrderedDict[str, object] = OrderedDict()
@@ -62,7 +63,7 @@ def test_lru_eviction_property(capacity, ops):
     budget=st.integers(min_value=1, max_value=100),
     usage=st.integers(min_value=0, max_value=100),
 )
-def test_enforce_ram_budget_under_budget_property(budget, usage):
+def test_enforce_ram_budget_under_budget_property(budget: Any, usage: Any) -> None:
     """No eviction when usage does not exceed the budget."""
     assume(usage <= budget)
     mock_graph = MagicMock()
@@ -102,7 +103,7 @@ def _eviction_scenarios(draw: st.DrawFn) -> tuple[int, float, list[int], bool, i
 @example((3, 0.1, [1, 1, 1, 1], False, 1))
 @seed(170090525894866085979644260693064061602)
 @given(_eviction_scenarios())
-def test_enforce_ram_budget_reduces_usage_property(params):
+def test_enforce_ram_budget_reduces_usage_property(params: Any) -> None:
     """Eviction converges even when RAM metrics vanish mid-run."""
 
     budget, safety, reductions, stale_lru, drop_index = params
@@ -241,7 +242,7 @@ def test_enforce_ram_budget_handles_metric_dropout() -> None:
     assert mock_graph.remove_node.call_count == 3
 
 
-def test_pop_lru():
+def test_pop_lru() -> None:
     """Test that _pop_lru removes and returns the least recently used node."""
     # Setup
     mock_lru: OrderedDict[str, int] = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
@@ -255,7 +256,7 @@ def test_pop_lru():
         assert list(mock_lru.keys()) == ["b", "c"]
 
 
-def test_pop_lru_empty():
+def test_pop_lru_empty() -> None:
     """Test that _pop_lru returns None when the LRU cache is empty."""
     # Setup
     mock_lru: OrderedDict[str, int] = OrderedDict()
@@ -267,7 +268,7 @@ def test_pop_lru_empty():
         assert node_id is None
 
 
-def test_pop_low_score():
+def test_pop_low_score() -> None:
     """Test that _pop_low_score removes and returns the node with the lowest confidence score."""
     # Setup
     mock_graph = MagicMock()
@@ -288,7 +289,7 @@ def test_pop_low_score():
             assert "b" not in mock_lru
 
 
-def test_pop_low_score_empty():
+def test_pop_low_score_empty() -> None:
     """Test that _pop_low_score returns None when the graph is empty."""
     # Setup
     with patch.object(StorageManager.context, "graph", None):
@@ -310,7 +311,7 @@ def test_pop_low_score_empty():
         assert node_id is None
 
 
-def test_enforce_ram_budget_lru_policy():
+def test_enforce_ram_budget_lru_policy() -> None:
     """Test that _enforce_ram_budget evicts nodes using the LRU policy."""
     # Setup
     mock_graph = MagicMock()
@@ -343,7 +344,7 @@ def test_enforce_ram_budget_lru_policy():
                 assert EVICTION_COUNTER._value.get() == start + 2
 
 
-def test_enforce_ram_budget_score_policy():
+def test_enforce_ram_budget_score_policy() -> None:
     """Test that _enforce_ram_budget evicts nodes using the score policy."""
     # Setup
     mock_graph = MagicMock()
@@ -389,7 +390,7 @@ def test_enforce_ram_budget_score_policy():
                 assert "0" not in nodes_dict and "1" not in nodes_dict
 
 
-def test_enforce_ram_budget_hybrid_policy():
+def test_enforce_ram_budget_hybrid_policy() -> None:
     """Test that _enforce_ram_budget evicts nodes using the hybrid policy."""
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
@@ -424,7 +425,7 @@ def test_enforce_ram_budget_hybrid_policy():
                     assert EVICTION_COUNTER._value.get() == start + 2
 
 
-def test_enforce_ram_budget_adaptive_policy():
+def test_enforce_ram_budget_adaptive_policy() -> None:
     """Test that _enforce_ram_budget uses score policy when variance is high."""
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
@@ -460,7 +461,7 @@ def test_enforce_ram_budget_adaptive_policy():
                             mock_graph.remove_node.assert_any_call("a")
 
 
-def test_enforce_ram_budget_priority_policy():
+def test_enforce_ram_budget_priority_policy() -> None:
     """Test that _enforce_ram_budget evicts nodes using priority tiers."""
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
@@ -497,7 +498,7 @@ def test_enforce_ram_budget_priority_policy():
                     assert EVICTION_COUNTER._value.get() == start + 2
 
 
-def test_enforce_ram_budget_zero_budget():
+def test_enforce_ram_budget_zero_budget() -> None:
     """Test that _enforce_ram_budget does nothing when the budget is zero."""
     # Setup
     mock_graph = MagicMock()
@@ -510,7 +511,7 @@ def test_enforce_ram_budget_zero_budget():
         mock_graph.remove_node.assert_not_called()
 
 
-def test_enforce_ram_budget_no_nodes_to_evict():
+def test_enforce_ram_budget_no_nodes_to_evict() -> None:
     """Test that _enforce_ram_budget handles the case when there are no nodes to evict."""
     # Setup
     mock_graph = MagicMock()

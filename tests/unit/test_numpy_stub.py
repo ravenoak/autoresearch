@@ -5,9 +5,10 @@ import numpy as real_numpy
 from typing import Any, cast
 
 import tests.stubs.numpy as numpy_stub
+import pytest
 
 
-def test_numpy_stub_manual_install(monkeypatch):
+def test_numpy_stub_manual_install(monkeypatch: pytest.MonkeyPatch) -> None:
     """Real numpy remains untouched unless the stub is explicitly installed."""
     assert sys.modules["numpy"] is real_numpy
 

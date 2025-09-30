@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from autoresearch.api.routing import create_app
 from autoresearch.storage import StorageManager
+import pytest
 
 
 class DummyContext:
@@ -28,7 +29,7 @@ class DummyLoader:
         return self.ctx
 
 
-def test_lifespan_startup_shutdown(monkeypatch) -> None:
+def test_lifespan_startup_shutdown(monkeypatch: pytest.MonkeyPatch) -> None:
     loader = DummyLoader()
     setup_mock = MagicMock()
     monkeypatch.setattr(StorageManager, "setup", setup_mock)

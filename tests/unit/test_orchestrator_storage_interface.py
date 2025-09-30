@@ -5,16 +5,17 @@ from unittest.mock import patch
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import StorageManager
+import pytest
 
 
-def test_infer_relations_calls_storage():
+def test_infer_relations_calls_storage() -> None:
     """Orchestrator.infer_relations should delegate to StorageManager."""
     with patch.object(StorageManager, "infer_relations") as mock_infer:
         Orchestrator.infer_relations()
         mock_infer.assert_called_once()
 
 
-def test_query_ontology_calls_storage():
+def test_query_ontology_calls_storage() -> None:
     """Orchestrator.query_ontology should delegate to StorageManager."""
     sentinel = object()
     with patch.object(StorageManager, "query_ontology", return_value=sentinel) as mock_query:
@@ -23,7 +24,7 @@ def test_query_ontology_calls_storage():
         assert result is sentinel
 
 
-def test_run_parallel_query_delegates(monkeypatch):
+def test_run_parallel_query_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     """run_parallel_query should invoke parallel.execute_parallel_query."""
     called = {}
 

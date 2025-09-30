@@ -9,6 +9,7 @@ import autoresearch.kg_reasoning as kr
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.errors import StorageError
+from typing import Any
 
 
 def _mock_config(
@@ -49,7 +50,7 @@ def _patch_config(
         max_size=5,
     )
 )
-def test_reasoner_preserves_triples(monkeypatch, triples):
+def test_reasoner_preserves_triples(monkeypatch: pytest.MonkeyPatch, triples: Any) -> None:
     g = rdflib.Graph()
     for s, p, o in triples:
         g.add((rdflib.URIRef(s), rdflib.URIRef(p), rdflib.URIRef(o)))
@@ -73,7 +74,7 @@ def test_reasoner_preserves_triples(monkeypatch, triples):
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @pytest.mark.unit
 @given(timeout=st.floats(min_value=0.0, max_value=0.05))
-def test_reasoner_timeout(monkeypatch, timeout):
+def test_reasoner_timeout(monkeypatch: pytest.MonkeyPatch, timeout: Any) -> None:
     g = rdflib.Graph()
 
     def slow(store: rdflib.Graph) -> None:
@@ -91,7 +92,7 @@ def test_reasoner_timeout(monkeypatch, timeout):
     count=st.integers(min_value=0, max_value=5),
     limit=st.integers(min_value=1, max_value=5),
 )
-def test_reasoner_respects_triple_limit(monkeypatch, count, limit):
+def test_reasoner_respects_triple_limit(monkeypatch: pytest.MonkeyPatch, count: Any, limit: Any) -> None:
     g = rdflib.Graph()
     for i in range(count):
         g.add(

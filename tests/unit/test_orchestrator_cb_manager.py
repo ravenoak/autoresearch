@@ -1,7 +1,9 @@
 from autoresearch.config.models import ConfigModel
+import pytest
+from typing import Any
 
 
-def test_circuit_breaker_state_is_instance_isolated(monkeypatch, orchestrator_factory):
+def test_circuit_breaker_state_is_instance_isolated(monkeypatch: pytest.MonkeyPatch, orchestrator_factory: Any) -> None:
     cfg = ConfigModel(loops=1, agents=["Synthesizer"])
 
     call = {"count": 0}

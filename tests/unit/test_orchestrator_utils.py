@@ -10,10 +10,11 @@ from autoresearch.orchestration.orchestrator import (
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
+from typing import Any
 
 
 @given(st.lists(st.integers()), st.integers())
-def test_rotate_list_property(items, idx):
+def test_rotate_list_property(items: Any, idx: Any) -> None:
     rotated = OrchestrationUtils.rotate_list(items, idx)
     if not items:
         assert rotated == []
@@ -34,7 +35,7 @@ def test_rotate_list_property(items, idx):
         (Exception("bad"), "critical"),
     ],
 )
-def test_categorize_error(exc, expected):
+def test_categorize_error(exc: Any, expected: Any) -> None:
     assert OrchestrationUtils.categorize_error(exc) == expected
 
 
@@ -43,7 +44,7 @@ def test_categorize_error(exc, expected):
     st.integers(min_value=0, max_value=20),
     st.integers(min_value=0, max_value=5),
 )
-def test_calculate_result_confidence(num_citations, reasoning_len, error_count):
+def test_calculate_result_confidence(num_citations: Any, reasoning_len: Any, error_count: Any) -> None:
     resp = QueryResponse(
         answer="a",
         citations=["c"] * num_citations,
@@ -57,7 +58,7 @@ def test_calculate_result_confidence(num_citations, reasoning_len, error_count):
     assert 0.1 <= score <= 1.0
 
 
-def test_apply_recovery_strategy():
+def test_apply_recovery_strategy() -> None:
     state = QueryState(query="q")
     info = OrchestrationUtils.apply_recovery_strategy(
         "A", "transient", Exception("e"), state

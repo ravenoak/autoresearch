@@ -14,7 +14,7 @@ class DummyAgent(Agent):
         return {}
 
 
-def test_register_and_get_cached_instance():
+def test_register_and_get_cached_instance() -> None:
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         AgentFactory.register("Dummy", DummyAgent)
         agent1 = AgentFactory.get("Dummy")
@@ -24,13 +24,13 @@ def test_register_and_get_cached_instance():
         assert "Dummy" in AgentRegistry.list_available()
 
 
-def test_get_unknown_agent_raises():
+def test_get_unknown_agent_raises() -> None:
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         with pytest.raises(ValueError):
             AgentFactory.get("Missing")
 
 
-def test_reset_instances(monkeypatch):
+def test_reset_instances(monkeypatch: pytest.MonkeyPatch) -> None:
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         AgentFactory.register("Dummy", DummyAgent)
         agent1 = AgentFactory.get("Dummy")

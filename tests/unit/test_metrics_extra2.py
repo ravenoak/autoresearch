@@ -2,9 +2,10 @@ import sys
 import builtins
 import types
 from autoresearch.orchestration import metrics
+import pytest
 
 
-def test_get_system_usage_success(monkeypatch):
+def test_get_system_usage_success(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_psutil = types.SimpleNamespace(
         cpu_percent=lambda interval=None: 42.0,
         Process=lambda: types.SimpleNamespace(
@@ -16,7 +17,7 @@ def test_get_system_usage_success(monkeypatch):
     assert cpu == 42.0 and mem == 1.0 and gpu == 0.0 and gpu_mem == 0.0
 
 
-def test_get_system_usage_failure(monkeypatch):
+def test_get_system_usage_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_import(name, *args, **kwargs):
         if name == "psutil":
             raise ImportError

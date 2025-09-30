@@ -1,7 +1,7 @@
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
-def test_compress_prompt_threshold():
+def test_compress_prompt_threshold() -> None:
     m = OrchestrationMetrics()
     long = "x " * 20
     m.compress_prompt_if_needed(long.strip(), 5)
@@ -9,7 +9,7 @@ def test_compress_prompt_threshold():
     assert len(res.split()) <= 5
 
 
-def test_suggest_token_budget_shrink():
+def test_suggest_token_budget_shrink() -> None:
     m = OrchestrationMetrics()
     m.record_tokens("A", 1, 1)
     m.record_tokens("A", 1, 1)

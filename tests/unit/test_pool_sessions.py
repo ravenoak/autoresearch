@@ -2,9 +2,10 @@ from autoresearch.config.models import ConfigModel
 import autoresearch.search as search
 from autoresearch.llm import pool as llm_pool
 import requests
+import pytest
 
 
-def test_search_pool_reuse_and_cleanup(monkeypatch):
+def test_search_pool_reuse_and_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(loops=1)
     cfg.search.http_pool_size = 1
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -17,7 +18,7 @@ def test_search_pool_reuse_and_cleanup(monkeypatch):
     assert s3 is not s1
 
 
-def test_llm_pool_reuse_and_cleanup(monkeypatch):
+def test_llm_pool_reuse_and_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel()
     monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
     llm_pool.close_session()
@@ -29,7 +30,7 @@ def test_llm_pool_reuse_and_cleanup(monkeypatch):
     assert s3 is not s1
 
 
-def test_set_http_session(monkeypatch):
+def test_set_http_session(monkeypatch: pytest.MonkeyPatch) -> None:
     """Injected session is returned by ``get_http_session``."""
     search.close_http_session()
     session = requests.Session()

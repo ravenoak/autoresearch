@@ -6,6 +6,7 @@ from autoresearch.search import Search
 from autoresearch.search.core import _local_git_backend, hybridmethod
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError
+from pathlib import Path
 
 
 def _make_hybrid_stub(
@@ -40,7 +41,7 @@ def _make_hybrid_stub(
     return hybridmethod(_stub)
 
 
-def test_register_backend_and_lookup(monkeypatch):
+def test_register_backend_and_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
     with Search.temporary_state() as search:
         @search.register_backend("dummy")
         def dummy_backend(query: str, max_results: int = 5):
@@ -71,7 +72,7 @@ def test_register_backend_and_lookup(monkeypatch):
         assert results == [{"title": "t", "url": "u", "backend": "dummy"}]
 
 
-def test_external_lookup_unknown_backend(monkeypatch):
+def test_external_lookup_unknown_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     with Search.temporary_state() as search:
         cfg = ConfigModel(loops=1)
         cfg.search.backends = ["unknown"]
@@ -81,7 +82,7 @@ def test_external_lookup_unknown_backend(monkeypatch):
             search.external_lookup("q", max_results=1)
 
 
-def test_local_git_backend_ast_search(tmp_path, monkeypatch):
+def test_local_git_backend_ast_search(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
     py_file = repo_dir / "module.py"
@@ -109,7 +110,7 @@ def test_local_git_backend_ast_search(tmp_path, monkeypatch):
     assert any("my_special_function" in r["snippet"] for r in results)
 
 
-def test_local_git_backend_missing_repo(monkeypatch):
+def test_local_git_backend_missing_repo(monkeypatch: pytest.MonkeyPatch) -> None:
     """Return empty list when repo_path is not configured."""
 
     cfg = ConfigModel(loops=1)
@@ -118,7 +119,7 @@ def test_local_git_backend_missing_repo(monkeypatch):
     assert _local_git_backend("query") == []
 
 
-def test_local_git_backend_nonexistent_repo(monkeypatch, tmp_path):
+def test_local_git_backend_nonexistent_repo(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Return empty list when repo_path does not exist."""
 
     cfg = ConfigModel(loops=1)
@@ -128,7 +129,7 @@ def test_local_git_backend_nonexistent_repo(monkeypatch, tmp_path):
     assert _local_git_backend("query") == []
 
 
-def test_local_git_backend_requires_gitpython(monkeypatch, tmp_path):
+def test_local_git_backend_requires_gitpython(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Raise SearchError when gitpython is unavailable."""
 
     repo_dir = tmp_path / "repo"
@@ -142,7 +143,7 @@ def test_local_git_backend_requires_gitpython(monkeypatch, tmp_path):
         _local_git_backend("query")
 
 
-def test_rank_results_merges_scores(monkeypatch):
+def test_rank_results_merges_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(loops=1)
     cfg.search.bm25_weight = 0.7
     cfg.search.semantic_similarity_weight = 0.2

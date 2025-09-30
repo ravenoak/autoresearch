@@ -27,7 +27,7 @@ def _make_cfg(backends):
     )
 
 
-def test_external_lookup_network_failure(monkeypatch):
+def test_external_lookup_network_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     def failing_backend(query, max_results):
         raise requests.exceptions.RequestException("fail")
 
@@ -40,7 +40,7 @@ def test_external_lookup_network_failure(monkeypatch):
         assert isinstance(exc.value.__cause__, requests.exceptions.RequestException)
 
 
-def test_external_lookup_unknown_backend(monkeypatch):
+def test_external_lookup_unknown_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     with Search.temporary_state() as search:
         cfg = _make_cfg(["missing"])
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -56,7 +56,7 @@ def test_external_lookup_unknown_backend(monkeypatch):
             search.external_lookup("q", max_results=1)
 
 
-def test_external_lookup_fallback(monkeypatch):
+def test_external_lookup_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _make_cfg([])
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     results = Search.external_lookup("q", max_results=2)
@@ -64,14 +64,14 @@ def test_external_lookup_fallback(monkeypatch):
     assert results[0]["title"] == "Result 1 for q"
 
 
-def test_get_message_broker_invalid():
+def test_get_message_broker_invalid() -> None:
     with pytest.raises(ValueError):
         distributed.get_message_broker("unknown")
 
 
 @pytest.mark.requires_distributed
 @pytest.mark.redis
-def test_redis_broker_init_failure(monkeypatch):
+def test_redis_broker_init_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     class DummyRedis:
         @staticmethod
         def from_url(url):

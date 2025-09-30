@@ -3,6 +3,7 @@ import types
 
 from autoresearch import output_format, streamlit_app
 from autoresearch.storage_backup import BackupManager
+import pytest
 
 
 class DummySession(dict):
@@ -18,7 +19,7 @@ class DummySt(types.SimpleNamespace):
         super().__init__(session_state=DummySession(), markdown=lambda *a, **k: None)
 
 
-def test_output_formatter_initializes_once(monkeypatch):
+def test_output_formatter_initializes_once(monkeypatch: pytest.MonkeyPatch) -> None:
     called = []
     monkeypatch.setattr(output_format.TemplateRegistry, "load_from_config", lambda: called.append(True))
     resp = output_format.QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
@@ -26,7 +27,7 @@ def test_output_formatter_initializes_once(monkeypatch):
     assert called
 
 
-def test_streamlit_log_handler_appends_logs(monkeypatch):
+def test_streamlit_log_handler_appends_logs(monkeypatch: pytest.MonkeyPatch) -> None:
     st = DummySt()
     monkeypatch.setattr(streamlit_app, "st", st)
     handler = streamlit_app.StreamlitLogHandler()
@@ -35,7 +36,7 @@ def test_streamlit_log_handler_appends_logs(monkeypatch):
     assert st.session_state["logs"][0]["message"] == "msg"
 
 
-def test_backup_manager_singleton():
+def test_backup_manager_singleton() -> None:
     first = BackupManager.get_scheduler()
     second = BackupManager.get_scheduler()
 

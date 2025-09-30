@@ -15,7 +15,7 @@ def test_config_spec_exists() -> None:
     assert SPEC_PATH.is_file()
 
 
-def test_load_config_file_error(tmp_path, monkeypatch):
+def test_load_config_file_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that ConfigError is raised when the config file can't be loaded."""
     monkeypatch.chdir(tmp_path)
 
@@ -30,7 +30,7 @@ def test_load_config_file_error(tmp_path, monkeypatch):
         loader.load_config()
 
 
-def test_notify_observers_error():
+def test_notify_observers_error() -> None:
     """Test that ConfigError is raised when an observer callback fails."""
     loader = ConfigLoader.new_for_tests()
 
@@ -43,7 +43,7 @@ def test_notify_observers_error():
         loader.notify_observers(ConfigModel())
 
 
-def test_watch_config_files_error(tmp_path, monkeypatch):
+def test_watch_config_files_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that ConfigError is raised when watching config files fails."""
     monkeypatch.chdir(tmp_path)
 
@@ -59,7 +59,7 @@ def test_watch_config_files_error(tmp_path, monkeypatch):
             loader._watch_config_files()
 
 
-def test_watch_config_reload_error(tmp_path, monkeypatch):
+def test_watch_config_reload_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that ConfigError is raised when reloading config fails."""
     monkeypatch.chdir(tmp_path)
 
@@ -80,7 +80,7 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
                 loader._watch_config_files()
 
 
-def test_reset_instance_error():
+def test_reset_instance_error() -> None:
     """Test that ConfigError is raised when resetting the instance fails."""
     ConfigLoader.reset_instance()
     # Create a temporary instance and simulate failure stopping its watcher

@@ -1,15 +1,16 @@
 from types import SimpleNamespace
 
 from autoresearch.orchestration import metrics
+import pytest
 
 
-def test_reset_metrics():
+def test_reset_metrics() -> None:
     metrics.QUERY_COUNTER.inc(3)
     metrics.reset_metrics()
     assert metrics.QUERY_COUNTER._value.get() == 0
 
 
-def test_temporary_metrics_restores_state(monkeypatch):
+def test_temporary_metrics_restores_state(monkeypatch: pytest.MonkeyPatch) -> None:
     metrics.reset_metrics()
     monkeypatch.setattr(
         metrics.KUZU_QUERY_TIME,
@@ -22,7 +23,7 @@ def test_temporary_metrics_restores_state(monkeypatch):
     assert metrics.QUERY_COUNTER._value.get() == 0
 
 
-def test_get_system_usage_returns_floats():
+def test_get_system_usage_returns_floats() -> None:
     usage = metrics._get_system_usage()
     assert len(usage) == 4
     assert all(isinstance(v, float) for v in usage)

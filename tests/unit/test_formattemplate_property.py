@@ -1,10 +1,11 @@
 from hypothesis import given, strategies as st
 from autoresearch.output_format import FormatTemplate
 from autoresearch.models import QueryResponse
+from typing import Any
 
 
 @given(st.text(min_size=1), st.text(min_size=1))
-def test_formattemplate_render(answer, citation):
+def test_formattemplate_render(answer: Any, citation: Any) -> None:
     template = FormatTemplate(name="t", template="A:${answer};C:${citations}")
     resp = QueryResponse(answer=answer, citations=[citation], reasoning=[], metrics={})
     out = template.render(resp)

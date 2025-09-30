@@ -4,6 +4,9 @@ from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
+import pytest
+from pathlib import Path
+from typing import Any
 
 
 class SimpleAgent(Agent):
@@ -13,7 +16,7 @@ class SimpleAgent(Agent):
         return {}
 
 
-def test_message_exchange_and_feedback():
+def test_message_exchange_and_feedback() -> None:
     state = QueryState(query="q", coalitions={"team": ["Alice", "Bob"]})
     alice = SimpleAgent(name="Alice")
     bob = SimpleAgent(name="Bob")
@@ -31,7 +34,7 @@ def test_message_exchange_and_feedback():
     assert state.feedback_events[0].content == "good job"
 
 
-def test_coalition_management_in_state():
+def test_coalition_management_in_state() -> None:
     state = QueryState(query="q")
     state.add_coalition("c1", ["A", "B"])
     assert state.get_coalition_members("c1") == ["A", "B"]
@@ -39,7 +42,7 @@ def test_coalition_management_in_state():
     assert state.get_coalition_members("c1") == []
 
 
-def test_agent_registry_coalitions():
+def test_agent_registry_coalitions() -> None:
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         AgentFactory.register("Simple", SimpleAgent)
         AgentRegistry.create_coalition("squad", ["Simple"])
@@ -47,7 +50,7 @@ def test_agent_registry_coalitions():
         assert AgentRegistry.get_coalition("squad") == ["Simple"]
 
 
-def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator):
+def test_orchestrator_handles_coalitions(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, orchestrator: Any) -> None:
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         AgentFactory.register("A1", SimpleAgent)
         AgentFactory.register("A2", SimpleAgent)
@@ -91,7 +94,7 @@ def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator):
         assert executed == ["A1", "A2"]
 
 
-def test_message_protocols():
+def test_message_protocols() -> None:
     state = QueryState(query="q", coalitions={"team": ["Alice", "Bob", "Charlie"]})
     state.messages = []
     alice = SimpleAgent(name="Alice")

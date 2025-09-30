@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import duckdb
+import pytest
 
 spec = importlib.util.spec_from_file_location(
     "download_duckdb_extensions",
@@ -54,7 +55,7 @@ class DefaultPathConn:
         pass
 
 
-def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
+def test_download_extension_network_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Network failures load offline env and continue."""
     env_file = tmp_path / ".env.offline"
     stub_src = tmp_path / "extensions" / "vss_stub.duckdb_extension"
@@ -85,7 +86,7 @@ def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
     assert "Extensions downloaded successfully" in caplog.text
 
 
-def test_download_extension_creates_stub_when_offline(monkeypatch, tmp_path, caplog):
+def test_download_extension_creates_stub_when_offline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Network failure without offline path creates stub."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("VECTOR_EXTENSION_PATH", raising=False)
@@ -103,7 +104,7 @@ def test_download_extension_creates_stub_when_offline(monkeypatch, tmp_path, cap
     assert "created stub" in caplog.text
 
 
-def test_download_extension_offline_without_duckdb(monkeypatch, tmp_path, caplog):
+def test_download_extension_offline_without_duckdb(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Missing duckdb module uses offline copy."""
     env_file = tmp_path / ".env.offline"
     stub_src = tmp_path / "extensions" / "vss_stub.duckdb_extension"
@@ -121,7 +122,7 @@ def test_download_extension_offline_without_duckdb(monkeypatch, tmp_path, caplog
     assert "duckdb package not available" in caplog.text
 
 
-def test_download_extension_fallback_path(monkeypatch, tmp_path):
+def test_download_extension_fallback_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Extension copies from default DuckDB dir when output dir is empty."""
 
     def _connect(path):
@@ -135,7 +136,7 @@ def test_download_extension_fallback_path(monkeypatch, tmp_path):
     assert files, "extension file was not copied"
 
 
-def test_offline_fallback_skips_samefile_copy(monkeypatch, tmp_path, caplog):
+def test_offline_fallback_skips_samefile_copy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Offline fallback ignores copies when the cached file is already in place."""
 
     env_file = tmp_path / ".env.offline"
@@ -158,7 +159,7 @@ def test_offline_fallback_skips_samefile_copy(monkeypatch, tmp_path, caplog):
     assert "already present" in caplog.text
 
 
-def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch, tmp_path):
+def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Smoke test failures are ignored when only a stub extension exists."""
 
     monkeypatch.chdir(tmp_path)
@@ -186,7 +187,7 @@ def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch, tmp_path):
     assert "fail" not in completed.stdout
 
 
-def test_load_offline_env_sets_vector_extension_path(monkeypatch, tmp_path, caplog):
+def test_load_offline_env_sets_vector_extension_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Documentation example for VECTOR_EXTENSION_PATH is honored."""
     env_file = tmp_path / ".env.offline"
     stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"

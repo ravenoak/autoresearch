@@ -3,6 +3,7 @@ from pathlib import Path
 from types import ModuleType
 
 import tomllib
+import pytest
 
 # Provide dummy modules for optional dependencies before importing
 fake_streamlit = ModuleType("streamlit")
@@ -24,7 +25,7 @@ from autoresearch.config_utils import (  # noqa: E402
 )
 
 
-def test_save_config_to_toml(tmp_path, monkeypatch):
+def test_save_config_to_toml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = {"core_setting": "val", "storage": {"duckdb_path": "x.duckdb"}}
     monkeypatch.setattr(Path, "cwd", lambda: tmp_path)
     assert save_config_to_toml(cfg) is True
@@ -33,7 +34,7 @@ def test_save_config_to_toml(tmp_path, monkeypatch):
     assert data["storage"]["duckdb"]["duckdb_path"] == "x.duckdb"
 
 
-def test_apply_preset_names():
+def test_apply_preset_names() -> None:
     names = ["Default", "Fast Mode", "Thorough Mode", "Chain of Thought", "OpenAI Mode"]
     for name in names:
         preset = apply_preset(name)

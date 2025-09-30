@@ -5,9 +5,10 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
+import pytest
 
 
-def test_setup_tracing_idempotent():
+def test_setup_tracing_idempotent() -> None:
     tracing._tracer_provider = None
     tracing.setup_tracing(True)
     first = tracing._tracer_provider
@@ -19,13 +20,13 @@ def test_setup_tracing_idempotent():
     tracing._tracer_provider = None
 
 
-def test_setup_tracing_disabled():
+def test_setup_tracing_disabled() -> None:
     tracing._tracer_provider = None
     tracing.setup_tracing(False)
     assert tracing._tracer_provider is None
 
 
-def test_span_export(monkeypatch):
+def test_span_export(monkeypatch: pytest.MonkeyPatch) -> None:
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))

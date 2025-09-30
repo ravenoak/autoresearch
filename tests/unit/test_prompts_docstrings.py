@@ -7,7 +7,7 @@ from autoresearch.agents.prompts import (
 )
 
 
-def test_module_docstring():
+def test_module_docstring() -> None:
     """Test that the module has a comprehensive docstring."""
     import autoresearch.agents.prompts as prompts_module
 
@@ -24,7 +24,7 @@ def test_module_docstring():
     )
 
 
-def test_class_docstrings():
+def test_class_docstrings() -> None:
     """Test that classes have comprehensive docstrings."""
     from pydantic import BaseModel
 
@@ -99,7 +99,7 @@ def test_class_docstrings():
                 )
 
 
-def test_function_docstrings():
+def test_function_docstrings() -> None:
     """Test that functions have comprehensive docstrings."""
     functions = [get_prompt_template, render_prompt]
 

@@ -1,8 +1,10 @@
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
+import pytest
+from typing import Any
 
 
-def test_token_budget_adjustment(monkeypatch, orchestrator):
+def test_token_budget_adjustment(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     recorded = {}
 
     def fake_execute_cycle(

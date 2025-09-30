@@ -17,7 +17,7 @@ def _load_module():
     return module
 
 
-def test_run_benchmark_scaling():
+def test_run_benchmark_scaling() -> None:
     """More workers increase throughput and memory scales with tasks."""
     mod = _load_module()
     results = mod.run_benchmark(2, 3, 5, 20, 0.5)

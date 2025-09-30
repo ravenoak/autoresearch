@@ -4,7 +4,7 @@ from autoresearch import storage
 from autoresearch.errors import StorageError
 
 
-def test_initialize_storage_missing_backend(monkeypatch):
+def test_initialize_storage_missing_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_setup(db_path, context, state):
         pass
 

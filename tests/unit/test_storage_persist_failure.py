@@ -4,9 +4,10 @@ import pytest
 
 from autoresearch.storage import StorageManager
 from autoresearch.errors import StorageError
+from typing import Any
 
 
-def test_persist_claim_db_failure(mock_storage_components, claim_factory, assert_error):
+def test_persist_claim_db_failure(mock_storage_components: Any, claim_factory: Any, assert_error: Any) -> None:
     """Persisting a claim fails when the database backend raises an error."""
     mock_graph = nx.DiGraph()
     mock_rdf = MagicMock()

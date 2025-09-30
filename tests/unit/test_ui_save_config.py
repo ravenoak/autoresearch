@@ -3,10 +3,11 @@ import sys
 import types
 
 import pytest
+from pathlib import Path
 
 
 @pytest.mark.requires_ui
-def test_save_config_to_toml(tmp_path, monkeypatch):
+def test_save_config_to_toml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """save_config_to_toml should persist configuration without Streamlit."""
     stub = types.SimpleNamespace(error=lambda msg: None)
     monkeypatch.setitem(sys.modules, "streamlit", stub)

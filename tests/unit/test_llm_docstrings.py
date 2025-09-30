@@ -14,7 +14,7 @@ from autoresearch.llm.token_counting import (
 )
 
 
-def test_module_docstrings():
+def test_module_docstrings() -> None:
     """Test that all llm modules have comprehensive docstrings."""
     import autoresearch.llm as llm_module
     import autoresearch.llm.adapters as adapters_module
@@ -50,7 +50,7 @@ def test_module_docstrings():
             ), f"{name} module docstring should explain what the module provides"
 
 
-def test_class_docstrings():
+def test_class_docstrings() -> None:
     """Test that classes have comprehensive docstrings."""
     classes = [
         LLMAdapter,
@@ -124,7 +124,7 @@ def test_class_docstrings():
                 )
 
 
-def test_function_docstrings():
+def test_function_docstrings() -> None:
     """Test that functions have comprehensive docstrings."""
     functions = [get_llm_adapter, count_tokens, with_token_counting]
 

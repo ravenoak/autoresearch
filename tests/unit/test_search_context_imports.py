@@ -4,6 +4,7 @@ import types
 
 import autoresearch.search.context as context
 from tests.helpers import ConfigModelStub, make_config_model
+import pytest
 
 
 def _make_cfg(enabled: bool) -> ConfigModelStub:
@@ -18,14 +19,14 @@ def _reload_ctx(monkeypatch, enabled: bool):
     return ctx
 
 
-def test_try_imports_disabled(monkeypatch):
+def test_try_imports_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _reload_ctx(monkeypatch, False)
     assert ctx._try_import_spacy() is False
     assert ctx._try_import_bertopic() is False
     assert ctx._try_import_sentence_transformers() is False
 
 
-def test_try_import_spacy_success(monkeypatch):
+def test_try_import_spacy_success(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _reload_ctx(monkeypatch, True)
     dummy = types.ModuleType("spacy")
     cli = types.ModuleType("cli")
@@ -39,7 +40,7 @@ def test_try_import_spacy_success(monkeypatch):
         sys.modules.pop("spacy.cli", None)
 
 
-def test_try_import_bertopic_success(monkeypatch):
+def test_try_import_bertopic_success(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _reload_ctx(monkeypatch, True)
     dummy = types.ModuleType("bertopic")
     setattr(dummy, "BERTopic", object)
@@ -50,7 +51,7 @@ def test_try_import_bertopic_success(monkeypatch):
         sys.modules.pop("bertopic", None)
 
 
-def test_try_import_sentence_transformers_success(monkeypatch):
+def test_try_import_sentence_transformers_success(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _reload_ctx(monkeypatch, True)
     dummy = types.ModuleType("fastembed")
     setattr(dummy, "OnnxTextEmbedding", object)

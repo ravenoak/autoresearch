@@ -7,10 +7,11 @@ from autoresearch.streamlit_app import (
     format_result_as_json,
 )
 from autoresearch.models import QueryResponse
+from typing import Any
 
 
 @given(st.lists(st.text(min_size=1, max_size=20), max_size=5))
-def test_create_interaction_trace_contains_steps(steps):
+def test_create_interaction_trace_contains_steps(steps: Any) -> None:
     graph = create_interaction_trace(steps)
     assert graph.startswith("digraph Trace")
     for idx, step in enumerate(steps, start=1):
@@ -20,7 +21,7 @@ def test_create_interaction_trace_contains_steps(steps):
 
 
 @given(st.dictionaries(st.text(min_size=1, max_size=5), st.integers(min_value=0, max_value=5), min_size=1, max_size=4))
-def test_create_progress_graph(agent_execs):
+def test_create_progress_graph(agent_execs: Any) -> None:
     perf = {k: {"executions": v} for k, v in agent_execs.items()}
     graph = create_progress_graph(perf)
     assert graph.startswith("digraph Progress")
@@ -36,7 +37,7 @@ def test_create_progress_graph(agent_execs):
     citations=st.lists(st.text(min_size=1, max_size=15), max_size=3),
     reasoning=st.lists(st.text(min_size=1, max_size=15), max_size=3),
 )
-def test_format_result_markdown_json(answer, citations, reasoning):
+def test_format_result_markdown_json(answer: Any, citations: Any, reasoning: Any) -> None:
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})
     md = format_result_as_markdown(resp)
     assert answer in md

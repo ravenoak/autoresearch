@@ -4,9 +4,10 @@ import pytest
 
 from autoresearch.errors import StorageError
 from autoresearch.storage_backends import DuckDBStorageBackend
+from typing import Any
 
 
-def test_connection_context_no_pool():
+def test_connection_context_no_pool() -> None:
     backend = DuckDBStorageBackend()
     mock_conn = MagicMock()
     backend._conn = mock_conn
@@ -16,7 +17,7 @@ def test_connection_context_no_pool():
 
 
 @patch("autoresearch.storage_backends.duckdb.connect")
-def test_persist_claim_calls_execute(mock_connect):
+def test_persist_claim_calls_execute(mock_connect: Any) -> None:
     conn = MagicMock()
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()
@@ -46,7 +47,7 @@ def test_persist_claim_calls_execute(mock_connect):
 
 
 @patch("autoresearch.storage_backends.duckdb.connect")
-def test_persist_claim_failure(mock_connect):
+def test_persist_claim_failure(mock_connect: Any) -> None:
     conn = MagicMock()
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()
@@ -57,7 +58,7 @@ def test_persist_claim_failure(mock_connect):
 
 
 @patch("autoresearch.storage_backends.duckdb.connect")
-def test_vector_search_no_vss(mock_connect):
+def test_vector_search_no_vss(mock_connect: Any) -> None:
     conn = MagicMock()
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()
@@ -68,7 +69,7 @@ def test_vector_search_no_vss(mock_connect):
 
 
 @patch("autoresearch.storage_backends.duckdb.connect")
-def test_vector_search_failure(mock_connect):
+def test_vector_search_failure(mock_connect: Any) -> None:
     conn = MagicMock()
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()

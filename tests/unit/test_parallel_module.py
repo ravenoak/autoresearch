@@ -10,9 +10,10 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import parallel
 from autoresearch.errors import AgentError, OrchestrationError
+from typing import Any
 
 
-def test_get_memory_usage_fallback(monkeypatch):
+def test_get_memory_usage_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     if "psutil" in sys.modules:
         del sys.modules["psutil"]
 
@@ -32,7 +33,7 @@ def test_get_memory_usage_fallback(monkeypatch):
     assert parallel._get_memory_usage() == 2.0
 
 
-def test_calculate_result_confidence():
+def test_calculate_result_confidence() -> None:
     resp = QueryResponse(
         answer="a",
         citations=["c1", "c2"],
@@ -43,7 +44,7 @@ def test_calculate_result_confidence():
     assert 0.5 <= score <= 1.0
 
 
-def test_execute_parallel_query_basic(monkeypatch, orchestrator_factory):
+def test_execute_parallel_query_basic(monkeypatch: pytest.MonkeyPatch, orchestrator_factory: Any) -> None:
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
     class DummySpan:
@@ -122,7 +123,7 @@ def test_execute_parallel_query_basic(monkeypatch, orchestrator_factory):
     assert mock1.called and mock2.called
 
 
-def test_execute_parallel_query_agent_error(monkeypatch, caplog, orchestrator_factory):
+def test_execute_parallel_query_agent_error(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, orchestrator_factory: Any) -> None:
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
     class DummySpan:

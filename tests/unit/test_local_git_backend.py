@@ -9,6 +9,7 @@ from tests.optional_imports import import_or_skip
 from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import _local_git_backend
 from autoresearch.storage import StorageManager
+from pathlib import Path
 
 git = import_or_skip("git", reason="git extra not installed")
 if getattr(git, "Repo", object) is object:
@@ -16,7 +17,7 @@ if getattr(git, "Repo", object) is object:
 
 
 @pytest.mark.requires_git
-def test_local_git_backend_searches_repo(tmp_path, monkeypatch):
+def test_local_git_backend_searches_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
     file_path = repo_path / "file.txt"

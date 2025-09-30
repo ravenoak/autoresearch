@@ -9,7 +9,7 @@ def _patch_reasoner():
     return patch("autoresearch.storage.run_ontology_reasoner")
 
 
-def test_update_rdf_claim_replace():
+def test_update_rdf_claim_replace() -> None:
     store = MagicMock()
     store.triples.return_value = [("s", "p", "o"), ("s", "p2", "o2")]
     with patch.object(StorageManager.context, "rdf_store", store), _patch_reasoner() as r:
@@ -26,7 +26,7 @@ def test_update_rdf_claim_replace():
     r.assert_called_once_with(store)
 
 
-def test_update_rdf_claim_partial():
+def test_update_rdf_claim_partial() -> None:
     store = MagicMock()
     store.triples.return_value = [("s", "p", "o")]
     with patch.object(StorageManager.context, "rdf_store", store), _patch_reasoner() as r:

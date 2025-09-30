@@ -4,7 +4,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 
 
-def test_cross_backend_rank_combines_results():
+def test_cross_backend_rank_combines_results() -> None:
     results = {
         "a": [{"title": "A", "url": "a"}],
         "b": [{"title": "B", "url": "b"}],
@@ -17,7 +17,7 @@ def test_cross_backend_rank_combines_results():
     assert set(urls) == {"a", "b"}
 
 
-def test_rank_results_weight_sum_error():
+def test_rank_results_weight_sum_error() -> None:
     cfg = ConfigModel()
     cfg.search.semantic_similarity_weight = 0.6
     cfg.search.bm25_weight = 0.6

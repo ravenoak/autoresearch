@@ -6,6 +6,7 @@ from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import ConfigError
+from typing import Any
 
 
 def test_search_config_weight_validation() -> None:
@@ -33,7 +34,7 @@ def test_search_config_weight_validation() -> None:
             )
 
 
-def test_default_config_weights_sum_to_one(config_loader) -> None:
+def test_default_config_weights_sum_to_one(config_loader: Any) -> None:
     """Ensure default configuration loads with normalized ranking weights."""
     cfg = config_loader.load_config()
     total = (
@@ -68,7 +69,7 @@ def _setup_search(monkeypatch, w1: float, w2: float, w3: float) -> None:
     cfg.search.use_semantic_similarity = False
 
 
-def test_rank_results_sorted(monkeypatch):
+def test_rank_results_sorted(monkeypatch: pytest.MonkeyPatch) -> None:
     results = [
         {"title": "a", "url": "https://example.com/a"},
         {"title": "b", "url": "https://example.com/b"},
@@ -79,7 +80,7 @@ def test_rank_results_sorted(monkeypatch):
     assert scores == sorted(scores, reverse=True)
 
 
-def test_cross_backend_rank_sorted(monkeypatch):
+def test_cross_backend_rank_sorted(monkeypatch: pytest.MonkeyPatch) -> None:
     backend_results = {
         "b1": [{"title": "a", "url": "https://example.com/a"}],
         "b2": [{"title": "b", "url": "https://example.com/b"}],
@@ -90,7 +91,7 @@ def test_cross_backend_rank_sorted(monkeypatch):
     assert scores == sorted(scores, reverse=True)
 
 
-def test_rank_results_invalid_sum(monkeypatch):
+def test_rank_results_invalid_sum(monkeypatch: pytest.MonkeyPatch) -> None:
     results = [
         {"title": "a", "url": "https://example.com/a"},
         {"title": "b", "url": "https://example.com/b"},

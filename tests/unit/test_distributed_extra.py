@@ -1,6 +1,7 @@
 import pytest
 
 from tests.helpers.modules import ensure_stub_module
+from typing import Any
 
 # Stub heavy modules before importing distributed
 ensure_stub_module("ray", {"remote": lambda f: f})
@@ -22,14 +23,14 @@ pytestmark = [
 ]
 
 
-def test_get_message_broker_default():
+def test_get_message_broker_default() -> None:
     broker = get_message_broker(None)
     assert isinstance(broker, InMemoryBroker)
     broker.shutdown()
 
 
 @pytest.mark.redis
-def test_redis_queue_roundtrip(redis_client):
+def test_redis_queue_roundtrip(redis_client: Any) -> None:
     queue = RedisQueue(redis_client, "q")
     queue.put({"a": 1})
     assert queue.get() == {"a": 1}

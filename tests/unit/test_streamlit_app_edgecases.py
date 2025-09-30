@@ -2,6 +2,7 @@ import types
 from pathlib import Path
 
 from autoresearch import streamlit_app
+import pytest
 
 
 class DummySt(types.SimpleNamespace):
@@ -10,7 +11,7 @@ class DummySt(types.SimpleNamespace):
         self.session_state = {}
 
 
-def test_apply_theme_settings(monkeypatch):
+def test_apply_theme_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     st = DummySt()
     st.session_state['dark_mode'] = True
     monkeypatch.setattr(streamlit_app, 'st', st)
@@ -19,7 +20,7 @@ def test_apply_theme_settings(monkeypatch):
     streamlit_app.apply_theme_settings()
 
 
-def test_save_config_to_toml_error(tmp_path, monkeypatch):
+def test_save_config_to_toml_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     st = DummySt()
     monkeypatch.setattr(streamlit_app, 'st', st)
     monkeypatch.setattr('autoresearch.config_utils.st', st)

@@ -1,11 +1,13 @@
 import importlib
 
 from typer.testing import CliRunner
+import pytest
+from typing import Any
 
 
 def test_first_run_detection_respects_search_paths(
-    example_autoresearch_toml, monkeypatch, config_loader, dummy_storage
-):
+    example_autoresearch_toml: Any, monkeypatch: pytest.MonkeyPatch, config_loader: Any, dummy_storage: Any
+) -> None:
 
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader

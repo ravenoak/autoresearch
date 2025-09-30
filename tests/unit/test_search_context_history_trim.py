@@ -22,7 +22,7 @@ def make_config(max_history: int) -> ConfigModelStub:
 
 
 @patch("autoresearch.search.context.get_config", lambda: make_config(3))
-def test_add_to_history_trims_old_entries():
+def test_add_to_history_trims_old_entries() -> None:
     with SearchContext.temporary_instance() as ctx:
         for i in range(4):
             ctx.add_to_history(f"q{i}", [])

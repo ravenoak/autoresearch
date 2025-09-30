@@ -25,7 +25,7 @@ def make_config():
 
 @patch("autoresearch.search.context.get_config", make_config)
 @patch("autoresearch.search.context.SPACY_AVAILABLE", False)
-def test_extract_entities_without_spacy():
+def test_extract_entities_without_spacy() -> None:
     with SearchContext.temporary_instance() as ctx:
         ctx.nlp = None
         ctx._extract_entities("Hello World")

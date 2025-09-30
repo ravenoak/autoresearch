@@ -6,6 +6,7 @@ import time
 from prometheus_client import CollectorRegistry
 
 from autoresearch import resource_monitor
+import pytest
 
 
 def test_gauge_reuse_resets_value() -> None:
@@ -17,7 +18,7 @@ def test_gauge_reuse_resets_value() -> None:
     assert registry.get_sample_value("test_gauge") == 0
 
 
-def test_resource_monitor_records_stats(monkeypatch) -> None:
+def test_resource_monitor_records_stats(monkeypatch: pytest.MonkeyPatch) -> None:
     """Monitor thread updates gauges and token snapshots."""
     registry = CollectorRegistry()
 

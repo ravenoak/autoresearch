@@ -8,6 +8,8 @@ import json
 from hypothesis import given, strategies as st, settings, HealthCheck
 from autoresearch.output_format import OutputFormatter
 from autoresearch.models import QueryResponse
+import pytest
+from typing import Any
 
 
 @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
@@ -16,7 +18,7 @@ from autoresearch.models import QueryResponse
     citations=st.lists(st.text(min_size=1, max_size=15), max_size=3),
     reasoning=st.lists(st.text(min_size=1, max_size=15), max_size=3),
 )
-def test_output_formatter_json_markdown(answer, citations, reasoning, capsys):
+def test_output_formatter_json_markdown(answer: Any, citations: Any, reasoning: Any, capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})
     OutputFormatter.format(resp, "json")
     parsed = json.loads(capsys.readouterr().out)

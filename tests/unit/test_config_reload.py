@@ -4,6 +4,7 @@ from pathlib import Path
 import tomli_w
 
 from autoresearch.config.loader import ConfigLoader
+from typing import Any
 
 SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
 
@@ -13,7 +14,7 @@ def test_config_spec_exists() -> None:
     assert SPEC_PATH.is_file()
 
 
-def test_config_reload_on_change(example_autoresearch_toml):
+def test_config_reload_on_change(example_autoresearch_toml: Any) -> None:
     cfg_path = example_autoresearch_toml
 
     # Create a new ConfigLoader instance after changing the working directory

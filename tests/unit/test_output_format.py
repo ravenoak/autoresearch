@@ -19,13 +19,14 @@ from autoresearch.output_format import (
     TemplateRegistry,
 )
 from autoresearch.errors import ValidationError as AutoresearchValidationError
+from typing import Any
 
 
 # Disable logging for tests
 logging.getLogger("autoresearch.output_format").setLevel(logging.CRITICAL)
 
 
-def test_format_json(capsys):
+def test_format_json(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "json")
     captured = capsys.readouterr().out
@@ -36,7 +37,7 @@ def test_format_json(capsys):
     assert data["metrics"] == {"m": 1}
 
 
-def test_format_markdown(capsys):
+def test_format_markdown(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "markdown")
     captured = capsys.readouterr().out
@@ -49,7 +50,7 @@ def test_format_markdown(capsys):
     assert "## ReAct Trace" in captured
 
 
-def test_format_plain(capsys):
+def test_format_plain(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "plain")
     captured = capsys.readouterr().out
@@ -61,28 +62,28 @@ def test_format_plain(capsys):
     assert "ReAct Trace:" in captured
 
 
-def test_format_text_alias(capsys):
+def test_format_text_alias(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "text")
     captured = capsys.readouterr().out
     assert "Answer:" in captured
 
 
-def test_json_no_ansi(capsys):
+def test_json_no_ansi(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "json")
     out = capsys.readouterr().out
     assert "\x1b[" not in out
 
 
-def test_markdown_no_ansi(capsys):
+def test_markdown_no_ansi(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "markdown")
     out = capsys.readouterr().out
     assert "\x1b[" not in out
 
 
-def test_format_graph(capsys):
+def test_format_graph(capsys: pytest.CaptureFixture[str]) -> None:
     resp = QueryResponse(answer="a", citations=["c"], reasoning=[], metrics={})
     OutputFormatter.format(resp, "graph")
     out = capsys.readouterr().out
@@ -97,7 +98,7 @@ def test_format_graph(capsys):
         ("plain", "Answer:"),
     ],
 )
-def test_format_dict_input(fmt, content, capsys):
+def test_format_dict_input(fmt: Any, content: Any, capsys: pytest.CaptureFixture[str]) -> None:
     data = {
         "answer": "a",
         "citations": ["c"],
@@ -109,7 +110,7 @@ def test_format_dict_input(fmt, content, capsys):
     assert content in out
 
 
-def test_format_invalid_input():
+def test_format_invalid_input() -> None:
     """Test that an invalid input raises an AutoresearchValidationError."""
     # Create an invalid input
     invalid_input = {"wrong_field": "value"}
@@ -119,7 +120,7 @@ def test_format_invalid_input():
         OutputFormatter.format(invalid_input, "json")
 
 
-def test_format_unknown_defaults_to_markdown(capsys):
+def test_format_unknown_defaults_to_markdown(capsys: pytest.CaptureFixture[str]) -> None:
     """Test that unknown format types default to Markdown."""
     resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "unknown")
@@ -128,7 +129,7 @@ def test_format_unknown_defaults_to_markdown(capsys):
     assert "## Citations" in captured
 
 
-def test_format_complex_response(capsys):
+def test_format_complex_response(capsys: pytest.CaptureFixture[str]) -> None:
     """Test that the format method correctly handles a complex QueryResponse."""
     resp = QueryResponse(
         answer="This is a complex answer with multiple paragraphs.\n\nSecond paragraph.",
@@ -161,7 +162,7 @@ def test_format_complex_response(capsys):
     assert "- **sources**: ['web', 'knowledge_base']" in captured
 
 
-def test_format_template_class():
+def test_format_template_class() -> None:
     """Test the FormatTemplate class."""
     # Create a template
     template = FormatTemplate(
@@ -186,7 +187,7 @@ def test_format_template_class():
     assert "Citations: - Citation 1\n- Citation 2" in result
 
 
-def test_format_template_missing_variable():
+def test_format_template_missing_variable() -> None:
     """Test that FormatTemplate raises KeyError for missing variables."""
     # Create a template with a variable that doesn't exist
     template = FormatTemplate(
@@ -212,7 +213,7 @@ def test_format_template_missing_variable():
     assert "Available variables" in str(excinfo.value)
 
 
-def test_template_registry():
+def test_template_registry() -> None:
     """Test the TemplateRegistry class."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -234,7 +235,7 @@ def test_template_registry():
     assert retrieved.template == "Answer: ${answer}"
 
 
-def test_template_registry_default_templates():
+def test_template_registry_default_templates() -> None:
     """Test that TemplateRegistry loads default templates."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -248,7 +249,7 @@ def test_template_registry_default_templates():
     assert "## Citations" in template.template
 
 
-def test_template_registry_missing_template():
+def test_template_registry_missing_template() -> None:
     """Test that TemplateRegistry raises KeyError for missing templates."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -261,7 +262,7 @@ def test_template_registry_missing_template():
     assert "not found" in str(excinfo.value)
 
 
-def test_template_from_file():
+def test_template_from_file() -> None:
     """Test loading a template from a file."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -293,7 +294,7 @@ def test_template_from_file():
             assert "<html><body><h1>${answer}</h1>" in template.template
 
 
-def test_template_from_config():
+def test_template_from_config() -> None:
     """Test loading templates from configuration."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -321,7 +322,7 @@ def test_template_from_config():
         assert "<html><body><h1>${answer}</h1>" in template.template
 
 
-def test_format_with_custom_template(capsys):
+def test_format_with_custom_template(capsys: pytest.CaptureFixture[str]) -> None:
     """Test formatting with a custom template."""
     # Clear the registry
     TemplateRegistry._templates = {}
@@ -353,7 +354,7 @@ def test_format_with_custom_template(capsys):
     assert "CITATIONS: - Citation 1\n- Citation 2" in captured
 
 
-def test_format_with_missing_template(capsys):
+def test_format_with_missing_template(capsys: pytest.CaptureFixture[str]) -> None:
     """Test formatting with a missing template falls back to markdown."""
     # Clear the registry
     TemplateRegistry._templates = {}

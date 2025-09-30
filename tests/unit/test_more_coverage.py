@@ -9,9 +9,10 @@ from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.output_format import FormatTemplate
+import pytest
 
 
-def test_log_sources(monkeypatch):
+def test_log_sources(monkeypatch: pytest.MonkeyPatch) -> None:
     msgs = []
     monkeypatch.setattr(exec_mod, "log", MagicMock())
     exec_mod.log.info = lambda msg, **k: msgs.append(msg)
@@ -19,7 +20,7 @@ def test_log_sources(monkeypatch):
     assert any("provided 1 sources" in m for m in msgs)
 
 
-def test_log_sources_missing(monkeypatch):
+def test_log_sources_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     msgs = []
     monkeypatch.setattr(exec_mod, "log", MagicMock())
     exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
@@ -27,7 +28,7 @@ def test_log_sources_missing(monkeypatch):
     assert any("provided no sources" in m for m in msgs)
 
 
-def test_persist_claims(monkeypatch):
+def test_persist_claims(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
     monkeypatch.setattr(StorageManager, "persist_claim", lambda c: calls.append(c["id"]))
     result = {"claims": [{"id": "c1"}, {"id": "c2"}]}
@@ -35,7 +36,7 @@ def test_persist_claims(monkeypatch):
     assert calls == ["c1", "c2"]
 
 
-def test_persist_claims_invalid(monkeypatch):
+def test_persist_claims_invalid(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(StorageManager, "persist_claim", lambda c: None)
     msgs = []
     monkeypatch.setattr(exec_mod, "log", MagicMock())
@@ -45,12 +46,12 @@ def test_persist_claims_invalid(monkeypatch):
     assert any("Skipping invalid claim format" in m for m in msgs)
 
 
-def test_ndcg_perfect():
+def test_ndcg_perfect() -> None:
     rel = [3, 2, 1]
     assert Search._ndcg(rel) == Search._ndcg(sorted(rel, reverse=True))
 
 
-def test_http_session_cycle(monkeypatch):
+def test_http_session_cycle(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = types.SimpleNamespace(search=types.SimpleNamespace(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     close_http_session()
@@ -61,7 +62,7 @@ def test_http_session_cycle(monkeypatch):
     assert search_module._http_session is None
 
 
-def test_connection_context_manager_pool():
+def test_connection_context_manager_pool() -> None:
     backend = DuckDBStorageBackend()
     conn = MagicMock()
     backend._pool = Queue()
@@ -71,7 +72,7 @@ def test_connection_context_manager_pool():
     assert not backend._pool.empty()
 
 
-def test_connection_context_manager_single():
+def test_connection_context_manager_single() -> None:
     backend = DuckDBStorageBackend()
     conn = MagicMock()
     backend._conn = conn
@@ -79,7 +80,7 @@ def test_connection_context_manager_single():
         assert c is conn
 
 
-def test_formattemplate_metrics():
+def test_formattemplate_metrics() -> None:
     tpl = FormatTemplate(name="m", template="Tokens: ${metric_tokens}")
     resp = type("R", (), {"answer": "a", "citations": [], "reasoning": [], "metrics": {"tokens": 5}})()
     assert tpl.render(resp) == "Tokens: 5"

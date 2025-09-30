@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from autoresearch.api import app as api_app
 from autoresearch.main import app as cli_app
 from autoresearch.orchestration.orchestrator import Orchestrator
+from typing import Any
 
 SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
 
@@ -36,7 +37,7 @@ def fast_sleep(monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: original_sleep(0.001))
 
 
-def test_cli_watcher_cleanup(monkeypatch, mock_run_query):
+def test_cli_watcher_cleanup(monkeypatch: pytest.MonkeyPatch, mock_run_query: Any) -> None:
     initial = sum(1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive())
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
@@ -56,7 +57,7 @@ def test_cli_watcher_cleanup(monkeypatch, mock_run_query):
     )
 
 
-def test_api_watcher_cleanup(monkeypatch, mock_run_query):
+def test_api_watcher_cleanup(monkeypatch: pytest.MonkeyPatch, mock_run_query: Any) -> None:
     initial = sum(1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive())
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     with TestClient(api_app) as client:
@@ -75,7 +76,7 @@ def test_api_watcher_cleanup(monkeypatch, mock_run_query):
     )
 
 
-def test_cli_watcher_cleanup_error(monkeypatch):
+def test_cli_watcher_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
     initial = sum(1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive())
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
@@ -94,7 +95,7 @@ def test_cli_watcher_cleanup_error(monkeypatch):
     )
 
 
-def test_api_watcher_cleanup_error(monkeypatch):
+def test_api_watcher_cleanup_error(monkeypatch: pytest.MonkeyPatch) -> None:
     initial = sum(1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive())
     monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query_error)
     with TestClient(api_app) as client:

@@ -5,7 +5,7 @@ from autoresearch.distributed.broker import get_message_broker
 
 
 @pytest.mark.requires_distributed
-def test_redis_broker_missing_dependency(monkeypatch):
+def test_redis_broker_missing_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
     """Simulate missing redis package when requesting Redis broker."""
     original_import = builtins.__import__
 

@@ -14,13 +14,13 @@ def test_config_spec_exists() -> None:
     assert SPEC_PATH.is_file()
 
 
-def test_invalid_rdf_backend():
+def test_invalid_rdf_backend() -> None:
     """Invalid RDF backend should raise ConfigError."""
     with pytest.raises(ConfigError):
         ConfigModel(storage=StorageConfig(rdf_backend="bad"))
 
 
-def test_weights_must_sum_to_one():
+def test_weights_must_sum_to_one() -> None:
     """Relevance ranking weights that do not sum to one raise ConfigError."""
     with pytest.raises(ConfigError):
         ConfigModel(
@@ -39,7 +39,7 @@ def test_weights_must_sum_to_one():
         )
 
 
-def test_default_config_loads_without_error():
+def test_default_config_loads_without_error() -> None:
     """Default ConfigModel should load without raising ConfigError."""
     loader = ConfigLoader.new_for_tests()
     loader._update_watch_paths()

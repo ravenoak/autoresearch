@@ -7,7 +7,7 @@ import pytest
 pytestmark = pytest.mark.requires_nlp
 
 
-def test_optional_dependencies_not_imported_on_module_load(monkeypatch):
+def test_optional_dependencies_not_imported_on_module_load(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("spacy", "bertopic", "fastembed"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))
@@ -19,7 +19,7 @@ def test_optional_dependencies_not_imported_on_module_load(monkeypatch):
     assert "fastembed" not in sys.modules
 
 
-def test_spacy_loaded_when_needed(monkeypatch):
+def test_spacy_loaded_when_needed(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("spacy", "spacy.cli"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))
@@ -38,7 +38,7 @@ def test_spacy_loaded_when_needed(monkeypatch):
     assert ctx.nlp == "nlp"
 
 
-def test_topic_model_imports_when_built(monkeypatch):
+def test_topic_model_imports_when_built(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("spacy", "spacy.cli", "bertopic", "fastembed"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))
@@ -77,7 +77,7 @@ def test_topic_model_imports_when_built(monkeypatch):
     assert isinstance(ctx.topic_model, DummyBERTopic)
 
 
-def test_topic_model_imports_with_legacy_fastembed(monkeypatch):
+def test_topic_model_imports_with_legacy_fastembed(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("spacy", "spacy.cli", "bertopic", "fastembed", "fastembed.text"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))

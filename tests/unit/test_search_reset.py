@@ -1,7 +1,7 @@
 from autoresearch.search import Search
 
 
-def test_reset_clears_state_and_session():
+def test_reset_clears_state_and_session() -> None:
     session1 = Search.get_http_session()
     Search.backends["dummy"] = lambda q, max_results: []
     Search._sentence_transformer = object()

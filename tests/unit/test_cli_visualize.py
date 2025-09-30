@@ -6,19 +6,20 @@ from typer.testing import CliRunner
 from autoresearch.cli_utils import ascii_bar_graph, summary_table
 from autoresearch.models import QueryResponse
 import pytest
+from typing import Any
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
-def test_ascii_bar_graph_basic():
+def test_ascii_bar_graph_basic() -> None:
     graph = ascii_bar_graph({"a": 1, "b": 2}, width=10)
     lines = graph.splitlines()
     assert len(lines) == 2
     assert lines[0].count("#") < lines[1].count("#")
 
 
-def test_summary_table_render():
+def test_summary_table_render() -> None:
     table = summary_table({"x": 1})
     from rich.console import Console
 
@@ -29,7 +30,7 @@ def test_summary_table_render():
     assert "1" in output
 
 
-def test_search_visualize_option(monkeypatch, dummy_storage, orchestrator):
+def test_search_visualize_option(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any, orchestrator: Any) -> None:
     runner = CliRunner()
 
     orch = orchestrator

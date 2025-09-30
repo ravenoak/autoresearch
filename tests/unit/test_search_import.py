@@ -2,9 +2,10 @@ import builtins
 import importlib
 import sys
 import warnings
+import pytest
 
 
-def test_search_import_without_gitpython(monkeypatch):
+def test_search_import_without_gitpython(monkeypatch: pytest.MonkeyPatch) -> None:
     orig_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
@@ -20,6 +21,6 @@ def test_search_import_without_gitpython(monkeypatch):
     assert not getattr(module, "GITPYTHON_AVAILABLE", False)
 
 
-def test_search_import_with_gitpython():
+def test_search_import_with_gitpython() -> None:
     module = importlib.import_module("autoresearch.search.core")
     assert module.GITPYTHON_AVAILABLE

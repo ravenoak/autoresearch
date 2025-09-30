@@ -3,7 +3,7 @@ import requests
 from autoresearch.search import http as http_mod
 
 
-def test_http_session_lifecycle():
+def test_http_session_lifecycle() -> None:
     http_mod.close_http_session()
     session = http_mod.get_http_session()
     assert isinstance(session, requests.Session)

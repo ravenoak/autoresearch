@@ -10,7 +10,7 @@ pytestmark = pytest.mark.usefixtures("dummy_storage")
 class TestMainModule(unittest.TestCase):
     """Test the __main__ module."""
 
-    def test_main_module_direct_execution(self):
+    def test_main_module_direct_execution(self) -> None:
         """Test direct execution of the __main__ module."""
         # Create a mock for the app function
         with patch("autoresearch.main.app") as mock_app:

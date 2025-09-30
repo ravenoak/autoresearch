@@ -8,9 +8,12 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import StorageError
 from autoresearch.orchestration import metrics
 from autoresearch.storage import StorageManager
+import pytest
+from pathlib import Path
+from typing import Any
 
 
-def test_ram_eviction_skips_without_metrics(ensure_duckdb_schema, monkeypatch):
+def test_ram_eviction_skips_without_metrics(ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     """Unknown RAM metrics should skip eviction and leave counters untouched."""
 
     StorageManager.clear_all()
@@ -38,7 +41,7 @@ def test_ram_eviction_skips_without_metrics(ensure_duckdb_schema, monkeypatch):
     assert metrics.EVICTION_COUNTER._value.get() == start
 
 
-def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
+def test_ram_eviction(ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1)
@@ -70,7 +73,7 @@ def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
 
 
-def test_score_eviction(ensure_duckdb_schema, monkeypatch):
+def test_score_eviction(ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=2, graph_eviction_policy="score")
@@ -93,7 +96,7 @@ def test_score_eviction(ensure_duckdb_schema, monkeypatch):
     assert "high" in graph.nodes
 
 
-def test_lru_eviction_order(monkeypatch, ensure_duckdb_schema):
+def test_lru_eviction_order(monkeypatch: pytest.MonkeyPatch, ensure_duckdb_schema: Any) -> None:
     config = ConfigModel(ram_budget_mb=2)
     config.search.context_aware.enabled = False
     config.storage.rdf_backend = "memory"
@@ -120,7 +123,7 @@ def test_lru_eviction_order(monkeypatch, ensure_duckdb_schema):
     assert "c2" in graph.nodes
 
 
-def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
+def test_lru_eviction_sequence(ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify older nodes are evicted before newer ones with LRU policy."""
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
@@ -164,7 +167,7 @@ def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
     assert len(graph.nodes) == 1
 
 
-def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
+def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure LRU eviction keeps the newest node during the initial VSS-enabled pass."""
 
     StorageManager.clear_all()
@@ -208,8 +211,8 @@ def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
 
 
 def test_lru_eviction_with_vss_fallback_preserves_survivors(
-    ensure_duckdb_schema, monkeypatch
-):
+    ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Fallback eviction with VSS keeps at least the survivor floor per pass."""
 
     StorageManager.clear_all()
@@ -248,7 +251,7 @@ def test_lru_eviction_with_vss_fallback_preserves_survivors(
     assert len(graph.nodes) == 2
 
 
-def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_schema):
+def test_lru_eviction_respects_minimum_survivors(monkeypatch: pytest.MonkeyPatch, ensure_duckdb_schema: Any) -> None:
     """Deterministic fallback keeps two newest claims even when RAM metrics misbehave."""
 
     StorageManager.clear_all()
@@ -279,8 +282,8 @@ def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_sche
 
 
 def test_deterministic_override_clamped_to_minimum(
-    ensure_duckdb_schema, monkeypatch, capfd, caplog
-):
+    ensure_duckdb_schema: Any, monkeypatch: pytest.MonkeyPatch, capfd: pytest.CaptureFixture[str], caplog: pytest.LogCaptureFixture
+) -> None:
     """Overrides below the survivor floor are clamped even when VSS persistence fails."""
 
     StorageManager.clear_all()
@@ -347,7 +350,7 @@ def test_deterministic_override_clamped_to_minimum(
     assert clamp_message in combined_output
 
 
-def test_initialize_storage_in_memory(monkeypatch):
+def test_initialize_storage_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     """Regression test ensuring in-memory DuckDB creates required tables."""
 
     storage.teardown(remove_db=True)
@@ -382,7 +385,7 @@ def test_initialize_storage_in_memory(monkeypatch):
     assert called["flag"]
 
 
-def test_initialize_storage_file_path(monkeypatch, tmp_path):
+def test_initialize_storage_file_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Ensure initializing with a file path creates missing tables."""
 
     storage.teardown(remove_db=True)

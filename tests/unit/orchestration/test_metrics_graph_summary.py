@@ -3,7 +3,7 @@ from __future__ import annotations
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
-def test_graph_summary_uses_typed_floats():
+def test_graph_summary_uses_typed_floats() -> None:
     metrics = OrchestrationMetrics()
     metadata = {
         "ingestion": {
@@ -65,13 +65,13 @@ def test_graph_summary_uses_typed_floats():
     assert list(latest["neighbor_sample"].keys()) == ["node-1"]
 
 
-def test_graph_build_skips_empty_payload():
+def test_graph_build_skips_empty_payload() -> None:
     metrics = OrchestrationMetrics()
     metrics.record_graph_build({"ingestion": {"entity_count": 0, "relation_count": 0}})
     assert metrics.graph_ingestions == []
 
 
-def test_graph_ingestion_saved_payload_is_sanitized():
+def test_graph_ingestion_saved_payload_is_sanitized() -> None:
     metrics = OrchestrationMetrics()
     metadata = {
         "ingestion": {

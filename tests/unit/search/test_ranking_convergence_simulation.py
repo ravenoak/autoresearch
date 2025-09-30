@@ -23,7 +23,7 @@ def _load_module():
 
 
 @pytest.mark.unit
-def test_ranking_converges():
+def test_ranking_converges() -> None:
     module = _load_module()
     Doc = module.DocScores
     docs = [
@@ -37,7 +37,7 @@ def test_ranking_converges():
 
 
 @pytest.mark.unit
-def test_invalid_weights_raise():
+def test_invalid_weights_raise() -> None:
     module = _load_module()
     Doc = module.DocScores
     docs = [Doc(0.1, 0.2, 0.7)]

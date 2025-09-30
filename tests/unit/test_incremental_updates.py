@@ -3,13 +3,14 @@ from unittest.mock import MagicMock, patch
 from autoresearch.storage import StorageManager
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
+import pytest
 
 
 def _basic_config():
     return ConfigModel(storage=StorageConfig(), ram_budget_mb=0)
 
 
-def test_refresh_vector_index_calls_backend(monkeypatch):
+def test_refresh_vector_index_calls_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     backend = MagicMock()
     monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
@@ -19,7 +20,7 @@ def test_refresh_vector_index_calls_backend(monkeypatch):
     backend.refresh_hnsw_index.assert_called_once()
 
 
-def test_persist_claim_triggers_index_refresh(monkeypatch):
+def test_persist_claim_triggers_index_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
     backend = MagicMock()
     graph = MagicMock()
     store = MagicMock()
@@ -44,7 +45,7 @@ def test_persist_claim_triggers_index_refresh(monkeypatch):
     assert called.get("r") is True
 
 
-def test_update_rdf_claim_wrapper(monkeypatch):
+def test_update_rdf_claim_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
     store = MagicMock()
     monkeypatch.setattr(StorageManager.context, "rdf_store", store, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)

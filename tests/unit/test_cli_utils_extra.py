@@ -15,12 +15,13 @@ from autoresearch.cli_utils import (
 from rich.console import Console
 import os
 import pytest
+from typing import Any
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
-def test_print_error_suggestion(monkeypatch):
+def test_print_error_suggestion(monkeypatch: pytest.MonkeyPatch) -> None:
     records = []
     monkeypatch.setattr(
         "autoresearch.cli_utils.console.print",
@@ -32,7 +33,7 @@ def test_print_error_suggestion(monkeypatch):
     assert any("run" in r for r in records)
 
 
-def test_verbosity_roundtrip(monkeypatch):
+def test_verbosity_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     set_verbosity(Verbosity.VERBOSE)
     assert get_verbosity() == Verbosity.VERBOSE
     records = []
@@ -41,7 +42,7 @@ def test_verbosity_roundtrip(monkeypatch):
     assert any("hi" in r for r in records)
 
 
-def test_set_verbosity_sets_env(monkeypatch):
+def test_set_verbosity_sets_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AUTORESEARCH_VERBOSITY", raising=False)
     set_verbosity(Verbosity.QUIET)
     assert os.environ["AUTORESEARCH_VERBOSITY"] == "quiet"
@@ -52,7 +53,7 @@ def test_set_verbosity_sets_env(monkeypatch):
     "level",
     [Verbosity.QUIET, Verbosity.NORMAL, Verbosity.VERBOSE],
 )
-def test_print_error_emits_at_quiet_threshold(level, monkeypatch):
+def test_print_error_emits_at_quiet_threshold(level: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     records: list[str] = []
     monkeypatch.setattr(
         "autoresearch.cli_utils.console.print",
@@ -68,7 +69,7 @@ def test_print_error_emits_at_quiet_threshold(level, monkeypatch):
     assert records, f"print_error should emit output for level {level}"
 
 
-def test_print_error_suppressed_when_threshold_higher(monkeypatch):
+def test_print_error_suppressed_when_threshold_higher(monkeypatch: pytest.MonkeyPatch) -> None:
     records: list[str] = []
     monkeypatch.setattr(
         "autoresearch.cli_utils.console.print",
@@ -92,7 +93,7 @@ def test_print_error_suppressed_when_threshold_higher(monkeypatch):
         (Verbosity.VERBOSE, True),
     ],
 )
-def test_print_warning_respects_minimum(level, expected, monkeypatch):
+def test_print_warning_respects_minimum(level: Any, expected: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     records: list[str] = []
     monkeypatch.setattr(
         "autoresearch.cli_utils.console.print",
@@ -108,7 +109,7 @@ def test_print_warning_respects_minimum(level, expected, monkeypatch):
     assert bool(records) is expected
 
 
-def test_ascii_and_table_empty():
+def test_ascii_and_table_empty() -> None:
     assert ascii_bar_graph({}) == "(no data)"
     table = summary_table({})
     console = Console(record=True, color_system=None)
@@ -117,7 +118,7 @@ def test_ascii_and_table_empty():
     assert "(empty)" in out
 
 
-def test_format_functions():
+def test_format_functions() -> None:
     assert "✓" in format_success("ok")
     assert "✗" in format_error("bad")
     assert "⚠" in format_warning("warn")

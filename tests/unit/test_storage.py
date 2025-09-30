@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from autoresearch import storage
 from autoresearch.storage import ClaimAuditRecord
+from pathlib import Path
 
 
-def test_record_claim_audit_persists_provenance_round_trip(tmp_path) -> None:
+def test_record_claim_audit_persists_provenance_round_trip(tmp_path: Path) -> None:
     """Claim audit provenance should survive storage round-trips."""
 
     db_path = tmp_path / "audits.duckdb"

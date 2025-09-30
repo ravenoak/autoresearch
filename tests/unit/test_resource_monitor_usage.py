@@ -5,9 +5,10 @@ import sys
 import types
 
 from autoresearch.resource_monitor import _get_usage
+import pytest
 
 
-def test_get_usage_psutil(monkeypatch):
+def test_get_usage_psutil(monkeypatch: pytest.MonkeyPatch) -> None:
     """Return mocked CPU and memory statistics."""
 
     class FakeProcess:
@@ -24,7 +25,7 @@ def test_get_usage_psutil(monkeypatch):
     assert mem == 100.0
 
 
-def test_get_usage_no_psutil(monkeypatch):
+def test_get_usage_no_psutil(monkeypatch: pytest.MonkeyPatch) -> None:
     """Fallback to zeros when psutil is unavailable."""
     orig_import = builtins.__import__
 
@@ -40,7 +41,7 @@ def test_get_usage_no_psutil(monkeypatch):
     assert mem == 0.0
 
 
-def test_get_usage_handles_runtime_errors(monkeypatch):
+def test_get_usage_handles_runtime_errors(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeProcess:
         def memory_info(self):
             raise RuntimeError("boom")
@@ -58,7 +59,7 @@ def test_get_usage_handles_runtime_errors(monkeypatch):
     assert mem == 0.0
 
 
-def test_get_usage_normalizes_iterable_values(monkeypatch):
+def test_get_usage_normalizes_iterable_values(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeProcess:
         def memory_info(self):
             return types.SimpleNamespace(rss=[2097152])

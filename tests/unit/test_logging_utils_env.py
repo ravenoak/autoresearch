@@ -6,7 +6,7 @@ import pytest
 from autoresearch import logging_utils
 
 
-def test_configure_logging_from_env(monkeypatch):
+def test_configure_logging_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     captured = {}
 
     def fake_configure_logging(*, level: int) -> None:
@@ -20,7 +20,7 @@ def test_configure_logging_from_env(monkeypatch):
     assert captured["level"] == logging.DEBUG
 
 
-def test_configure_logging_from_env_invalid(monkeypatch):
+def test_configure_logging_from_env_invalid(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTORESEARCH_LOG_LEVEL", "INVALID")
 
     with pytest.raises(ValueError):

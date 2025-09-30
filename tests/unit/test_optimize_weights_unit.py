@@ -1,11 +1,12 @@
 import pytest
 
 from autoresearch.search import Search
+from typing import Any
 
 pytestmark = pytest.mark.requires_nlp
 
 
-def test_optimize_weights_improves_score(sample_eval_data):
+def test_optimize_weights_improves_score(sample_eval_data: Any) -> None:
     data = sample_eval_data
     baseline = Search.evaluate_weights((0.5, 0.3, 0.2), data)
     best, score = Search.optimize_weights(data, step=0.1)

@@ -10,7 +10,7 @@ def _fast_persist(claim: dict) -> None:
     StorageManager.state.lru[claim["id"]] = time.time()
 
 
-def test_eviction_removes_nodes_when_over_budget():
+def test_eviction_removes_nodes_when_over_budget() -> None:
     """Normal scenario evicts all nodes above the RAM budget."""
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
         remaining, _ = cast(
@@ -22,7 +22,7 @@ def test_eviction_removes_nodes_when_over_budget():
     assert remaining == 0
 
 
-def test_under_budget_keeps_nodes():
+def test_under_budget_keeps_nodes() -> None:
     """Nodes persist when usage never exceeds the budget."""
     threads, items = 2, 2
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
@@ -39,7 +39,7 @@ def test_under_budget_keeps_nodes():
     assert remaining == threads * items
 
 
-def test_zero_budget_disables_eviction():
+def test_zero_budget_disables_eviction() -> None:
     """Zero budget turns off eviction and retains nodes."""
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
         remaining, _ = cast(
@@ -55,7 +55,7 @@ def test_zero_budget_disables_eviction():
     assert remaining == 2
 
 
-def test_deterministic_override_enforces_cap():
+def test_deterministic_override_enforces_cap() -> None:
     """Explicit deterministic override bounds the graph despite unknown usage."""
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
         remaining, _ = cast(
@@ -71,7 +71,7 @@ def test_deterministic_override_enforces_cap():
     assert remaining == 2
 
 
-def test_metrics_dropout_regression_seed():
+def test_metrics_dropout_regression_seed() -> None:
     """Regression seed keeps eviction running when metrics collapse to 0 MB."""
 
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):

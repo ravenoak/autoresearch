@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 from autoresearch.storage import StorageManager, teardown
 
 
-def test_teardown_closes_resources():
+def test_teardown_closes_resources() -> None:
     """Test that teardown closes all resources properly."""
     # Setup
     mock_backend = MagicMock()
@@ -34,7 +34,7 @@ def test_teardown_closes_resources():
                     assert StorageManager.context.rdf_store is None
 
 
-def test_teardown_removes_db_file():
+def test_teardown_removes_db_file() -> None:
     """Test that teardown removes the database file when remove_db is True."""
     # Setup
     mock_backend = MagicMock()
@@ -62,7 +62,7 @@ def test_teardown_removes_db_file():
         mock_path.unlink()
 
 
-def test_teardown_handles_none_resources():
+def test_teardown_handles_none_resources() -> None:
     """Test that teardown handles None resources gracefully."""
     # Setup
     with patch.object(StorageManager.context, "db_backend", None):
@@ -75,7 +75,7 @@ def test_teardown_handles_none_resources():
                     # No assertions needed - the test passes if no exceptions are raised
 
 
-def test_teardown_handles_close_error():
+def test_teardown_handles_close_error() -> None:
     """Test that teardown handles errors when closing resources."""
     # Setup
     mock_backend = MagicMock()

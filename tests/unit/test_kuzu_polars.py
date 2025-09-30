@@ -4,13 +4,14 @@ from tests.optional_imports import import_or_skip
 
 from autoresearch.data_analysis import metrics_dataframe
 from autoresearch.storage_backends import KuzuStorageBackend
+from pathlib import Path
 
 pytestmark = pytest.mark.requires_analysis
 
 import_or_skip("polars")
 
 
-def test_kuzu_backend_roundtrip(tmp_path):
+def test_kuzu_backend_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "test_kuzu"
     backend = KuzuStorageBackend()
     backend.setup(str(path))
@@ -21,7 +22,7 @@ def test_kuzu_backend_roundtrip(tmp_path):
 
 
 # Spec: docs/specs/data-analysis.md#polars-enabled
-def test_metrics_dataframe():
+def test_metrics_dataframe() -> None:
     metrics = {"agent_timings": {"A": [1.0, 2.0], "B": [3.0]}}
     df = metrics_dataframe(metrics, polars_enabled=True)
     assert df.shape[0] == 2

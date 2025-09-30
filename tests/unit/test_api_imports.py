@@ -1,7 +1,7 @@
 import inspect
 
 
-def test_no_unused_imports():
+def test_no_unused_imports() -> None:
     """Test that api.py doesn't have unused imports."""
     # Import the module
     import autoresearch.api as api_module

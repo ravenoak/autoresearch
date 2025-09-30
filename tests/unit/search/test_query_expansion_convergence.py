@@ -7,6 +7,7 @@ import autoresearch.search.core as search_core
 from autoresearch.search.context import SearchContext
 from autoresearch.search.core import Search
 from tests.helpers import make_config_model
+import pytest
 
 
 @patch(
@@ -21,7 +22,7 @@ from tests.helpers import make_config_model
         }
     ),
 )
-def test_query_expansion_converges():
+def test_query_expansion_converges() -> None:
     """Assume repeated query expansion stabilizes once entity counts stop changing.
 
     After recording a single query and its entities, expanding the same query twice
@@ -34,7 +35,7 @@ def test_query_expansion_converges():
         assert first == second
 
 
-def test_reset_instance_creates_new_singleton():
+def test_reset_instance_creates_new_singleton() -> None:
     """Assume SearchContext enforces a singleton; resetting replaces it.
 
     After calling reset_instance a subsequent get_instance returns a new object,
@@ -47,7 +48,7 @@ def test_reset_instance_creates_new_singleton():
 
 
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
-def test_extract_entities_with_spacy(monkeypatch):
+def test_extract_entities_with_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume spaCy is available to tag entities.
 
     A dummy nlp object exposes a single ORG entity, which increments the
@@ -63,7 +64,7 @@ def test_extract_entities_with_spacy(monkeypatch):
     assert ctx.entities["acme"] == 1
 
 
-def test_build_topic_model_with_insufficient_docs(monkeypatch):
+def test_build_topic_model_with_insufficient_docs(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume topic modeling requires at least two documents.
 
     With only one query recorded, build_topic_model leaves topic_model unset,
@@ -79,7 +80,7 @@ def test_build_topic_model_with_insufficient_docs(monkeypatch):
         assert ctx.topic_model is None
 
 
-def test_try_imports_disabled(monkeypatch):
+def test_try_imports_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume optional NLP libraries stay unloaded when context is off.
 
     Disabling context-aware search causes all import helpers to return False
@@ -98,7 +99,7 @@ def test_try_imports_disabled(monkeypatch):
     assert not ctx.SENTENCE_TRANSFORMERS_AVAILABLE
 
 
-def test_try_import_sentence_transformers_success(monkeypatch):
+def test_try_import_sentence_transformers_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume sentence-transformers loads when dependencies are present.
 
     Injecting a dummy module simulates a successful import and flips the
@@ -117,7 +118,7 @@ def test_try_import_sentence_transformers_success(monkeypatch):
     assert ctx.SENTENCE_TRANSFORMERS_AVAILABLE
 
 
-def test_search_embedding_protocol_prefers_embed(monkeypatch):
+def test_search_embedding_protocol_prefers_embed(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume fastembed-style classes are accepted via the embedding protocol."""
 
     cfg = make_config_model()
@@ -151,7 +152,7 @@ def test_search_embedding_protocol_prefers_embed(monkeypatch):
     assert FakeFastEmbed.last_input == ["theta"]
 
 
-def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
+def test_search_embedding_protocol_falls_back_to_encode(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume sentence-transformers fallback loads when fastembed is unavailable."""
 
     cfg = make_config_model()

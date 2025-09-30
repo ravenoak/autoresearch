@@ -11,12 +11,12 @@ class DummyFactory:
         raise RuntimeError("missing")
 
 
-def test_get_agent_not_found():
+def test_get_agent_not_found() -> None:
     with pytest.raises(NotFoundError):
         OrchestrationUtils.get_agent("X", DummyFactory)
 
 
-def test_parse_config_direct_mode():
+def test_parse_config_direct_mode() -> None:
     cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)
     params = Orchestrator._parse_config(cfg)
     assert params["agents"] == ["Synthesizer"]
@@ -24,7 +24,7 @@ def test_parse_config_direct_mode():
     assert params["max_errors"] == 3
 
 
-def test_parse_config_direct_mode_agent_groups():
+def test_parse_config_direct_mode_agent_groups() -> None:
     """Ensure direct mode uses only the Synthesizer group."""
     cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)
     params = Orchestrator._parse_config(cfg)

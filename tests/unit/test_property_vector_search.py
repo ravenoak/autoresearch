@@ -5,6 +5,7 @@ import pytest
 
 from autoresearch.storage import StorageManager
 from autoresearch.errors import StorageError
+from typing import Any
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -12,7 +13,7 @@ from autoresearch.errors import StorageError
     st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=1, max_size=5),
     st.integers(min_value=1, max_value=5)
 )
-def test_vector_search_calls_backend(monkeypatch, query_embedding, k):
+def test_vector_search_calls_backend(monkeypatch: pytest.MonkeyPatch, query_embedding: Any, k: Any) -> None:
     backend = MagicMock()
     backend.vector_search.return_value = [{"node_id": "n", "embedding": [0.1]}]
     monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
@@ -33,7 +34,7 @@ def test_vector_search_calls_backend(monkeypatch, query_embedding, k):
     ),
     st.integers(min_value=1, max_value=10),
 )
-def test_vector_search_backend_receives_exact(monkeypatch, query_embedding, k):
+def test_vector_search_backend_receives_exact(monkeypatch: pytest.MonkeyPatch, query_embedding: Any, k: Any) -> None:
     """Backend should receive the exact query embedding and k."""
     backend = MagicMock()
     backend.vector_search.return_value = []
@@ -51,7 +52,7 @@ def test_vector_search_backend_receives_exact(monkeypatch, query_embedding, k):
     st.one_of(st.none(), st.text(), st.integers(), st.lists(st.text())),
     st.integers(max_value=0)
 )
-def test_vector_search_invalid(monkeypatch, query_embedding, k):
+def test_vector_search_invalid(monkeypatch: pytest.MonkeyPatch, query_embedding: Any, k: Any) -> None:
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     with pytest.raises(Exception):
@@ -74,7 +75,7 @@ def malformed_embeddings(draw):
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(malformed_embeddings(), st.integers(min_value=1, max_value=5))
-def test_vector_search_malformed_embedding(monkeypatch, query_embedding, k):
+def test_vector_search_malformed_embedding(monkeypatch: pytest.MonkeyPatch, query_embedding: Any, k: Any) -> None:
     backend = MagicMock()
     backend.vector_search.side_effect = RuntimeError("bad embedding")
     monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
@@ -110,7 +111,7 @@ def bad_embeddings(draw):
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(bad_embeddings(), st.integers(min_value=1, max_value=5))
-def test_validate_vector_search_params_rejects_malformed(query_embedding, k):
+def test_validate_vector_search_params_rejects_malformed(query_embedding: Any, k: Any) -> None:
     """_validate_vector_search_params should reject malformed embeddings."""
     with pytest.raises(StorageError):
         StorageManager._validate_vector_search_params(query_embedding, k)

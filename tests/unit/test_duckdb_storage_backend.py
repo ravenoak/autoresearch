@@ -11,6 +11,8 @@ import duckdb
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
 from autoresearch.config.loader import ConfigLoader
+from pathlib import Path
+from typing import Any
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +31,7 @@ def reset_config_loader():
 class TestDuckDBStorageBackend:
     """Test the DuckDBStorageBackend class."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of the DuckDBStorageBackend."""
         backend = DuckDBStorageBackend()
         assert backend._conn is None
@@ -38,7 +40,7 @@ class TestDuckDBStorageBackend:
         assert backend._has_vss is False
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_setup_with_default_path(self, mock_connect):
+    def test_setup_with_default_path(self, mock_connect: Any) -> None:
         """Test setup with default path."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -69,7 +71,7 @@ class TestDuckDBStorageBackend:
                 assert backend._path == ":memory:"
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_setup_with_custom_path(self, mock_connect):
+    def test_setup_with_custom_path(self, mock_connect: Any) -> None:
         """Test setup with custom path."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -99,7 +101,7 @@ class TestDuckDBStorageBackend:
             assert backend._path == "/path/to/db.duckdb"
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_setup_with_connection_error(self, mock_connect):
+    def test_setup_with_connection_error(self, mock_connect: Any) -> None:
         """Test setup with connection error."""
         # Mock the connection to raise an exception
         mock_connect.side_effect = Exception("Connection error")
@@ -116,7 +118,7 @@ class TestDuckDBStorageBackend:
         assert backend._conn is None
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_setup_table_creation_failure(self, mock_connect):
+    def test_setup_table_creation_failure(self, mock_connect: Any) -> None:
         """Errors during table creation raise ``StorageError``."""
 
         mock_conn = MagicMock()
@@ -128,7 +130,7 @@ class TestDuckDBStorageBackend:
             backend.setup(db_path=":memory:")
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_setup_missing_extension_continues(self, mock_connect, tmp_path):
+    def test_setup_missing_extension_continues(self, mock_connect: Any, tmp_path: Path) -> None:
         """Missing VSS extension leaves schema initialized and disables VSS."""
 
         mock_conn = MagicMock()
@@ -155,7 +157,7 @@ class TestDuckDBStorageBackend:
         assert backend._has_vss is False
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_create_tables(self, mock_connect):
+    def test_create_tables(self, mock_connect: Any) -> None:
         """Test creating tables."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -179,7 +181,7 @@ class TestDuckDBStorageBackend:
         mock_conn.execute.assert_has_calls(expected_calls, any_order=True)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_initialize_schema_version(self, mock_connect):
+    def test_initialize_schema_version(self, mock_connect: Any) -> None:
         """Test initializing schema version inserts a default entry."""
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
@@ -197,7 +199,7 @@ class TestDuckDBStorageBackend:
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_get_schema_version(self, mock_connect):
+    def test_get_schema_version(self, mock_connect: Any) -> None:
         """Test getting schema version."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -222,7 +224,7 @@ class TestDuckDBStorageBackend:
         assert version == 2
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_get_schema_version_no_version(self, mock_connect):
+    def test_get_schema_version_no_version(self, mock_connect: Any) -> None:
         """Test getting schema version when no version exists."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -247,7 +249,7 @@ class TestDuckDBStorageBackend:
         assert version is None
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_update_schema_version(self, mock_connect):
+    def test_update_schema_version(self, mock_connect: Any) -> None:
         """Test updating schema version."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -266,7 +268,7 @@ class TestDuckDBStorageBackend:
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_run_migrations(self, mock_connect):
+    def test_run_migrations(self, mock_connect: Any) -> None:
         """Test running migrations."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -287,7 +289,7 @@ class TestDuckDBStorageBackend:
                 mock_update_version.assert_not_called()
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_has_vss_true(self, mock_connect):
+    def test_has_vss_true(self, mock_connect: Any) -> None:
         """Test has_vss method when VSS is available."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -315,7 +317,7 @@ class TestDuckDBStorageBackend:
         assert has_vss is True
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_has_vss_false(self, mock_connect):
+    def test_has_vss_false(self, mock_connect: Any) -> None:
         """Test has_vss method when VSS is not available."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -360,7 +362,7 @@ class TestDuckDBStorageBackend:
                 assert has_vss is False
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_close(self, mock_connect):
+    def test_close(self, mock_connect: Any) -> None:
         """Test closing the connection."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -383,7 +385,7 @@ class TestDuckDBStorageBackend:
         assert backend._path is None
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_clear(self, mock_connect):
+    def test_clear(self, mock_connect: Any) -> None:
         """Test clearing the database."""
         # Mock the connection
         mock_conn = MagicMock()

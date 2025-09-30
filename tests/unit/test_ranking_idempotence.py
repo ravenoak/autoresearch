@@ -1,6 +1,7 @@
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search.core import RANKING_BUCKET_SCALE, Search
+import pytest
 
 
 def _setup(monkeypatch) -> None:
@@ -22,7 +23,7 @@ def _setup(monkeypatch) -> None:
     monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: [0.5, 0.6])
 
 
-def test_rank_results_idempotent(monkeypatch) -> None:
+def test_rank_results_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ranking twice matches docs/algorithms/relevance_ranking.md coverage."""
     results = [
         {"title": "a", "url": "https://a"},

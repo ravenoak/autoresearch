@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 import psutil
 from typer.testing import CliRunner
 import typer
+import pytest
 
 try:
     import docx  # noqa: F401
@@ -43,7 +44,7 @@ def dummy_run_query(query, config, callbacks=None, **kwargs):
     return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
 
-def test_monitor_prompts_and_passes_callbacks(monkeypatch):
+def test_monitor_prompts_and_passes_callbacks(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     monkeypatch.setattr(
         ConfigLoader,
@@ -62,7 +63,7 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
     assert result.exit_code == 0
 
 
-def test_monitor_metrics(monkeypatch):
+def test_monitor_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: type("C", (), {})())
@@ -99,7 +100,7 @@ def test_monitor_metrics(monkeypatch):
     assert orch_metrics.QUERY_COUNTER._value.get() == 5
 
 
-def test_monitor_metrics_default_counters(monkeypatch):
+def test_monitor_metrics_default_counters(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: type("C", (), {})())
@@ -127,7 +128,7 @@ def test_monitor_metrics_default_counters(monkeypatch):
     assert orch_metrics.QUERY_COUNTER._value.get() == 0
 
 
-def test_metrics_skips_storage(monkeypatch):
+def test_metrics_skips_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: type("C", (), {})())
@@ -148,7 +149,7 @@ def test_metrics_skips_storage(monkeypatch):
     assert not called["init"]
 
 
-def test_storage_teardown_handles_missing_config(monkeypatch):
+def test_storage_teardown_handles_missing_config(monkeypatch: pytest.MonkeyPatch) -> None:
     bare_config = type("BareConfig", (), {})()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: bare_config)
     ConfigLoader.reset_instance()

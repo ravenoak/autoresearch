@@ -3,7 +3,7 @@ import pytest
 
 
 @pytest.mark.requires_gpu
-def test_try_import_bertopic_missing(monkeypatch):
+def test_try_import_bertopic_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     """_try_import_bertopic should return False when dependency is absent."""
     from autoresearch.search import context
 

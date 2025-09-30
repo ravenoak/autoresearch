@@ -8,17 +8,18 @@ import logging
 
 from autoresearch.output_format import FormatTemplate, OutputFormatter, TemplateRegistry
 from autoresearch.models import QueryResponse
+import pytest
 
 logging.getLogger("autoresearch.output_format").setLevel(logging.CRITICAL)
 
 
-def test_metric_variable_rendering():
+def test_metric_variable_rendering() -> None:
     template = FormatTemplate(name="metrics", template="Tokens: ${metric_tokens}")
     resp = QueryResponse(answer="a", citations=[], reasoning=[], metrics={"tokens": 5})
     assert template.render(resp) == "Tokens: 5"
 
 
-def test_format_missing_variable_fallback(capsys):
+def test_format_missing_variable_fallback(capsys: pytest.CaptureFixture[str]) -> None:
     TemplateRegistry._templates = {}
     TemplateRegistry.register(FormatTemplate(name="bad", template="${missing}"))
     resp = QueryResponse(answer="a", citations=[], reasoning=[], metrics={})

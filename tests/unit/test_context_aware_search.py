@@ -5,12 +5,13 @@ from unittest.mock import patch, MagicMock
 
 from autoresearch.search import Search, SearchContext
 from autoresearch.config.models import SearchConfig, ContextAwareSearchConfig
+from typing import Any
 
 pytestmark = [pytest.mark.slow, pytest.mark.requires_nlp]
 
 
 @pytest.fixture
-def reset_search_context():
+def reset_search_context() -> Any:
     """Reset the ``SearchContext`` singleton before and after each test."""
     SearchContext.reset_instance()
     yield
@@ -18,7 +19,7 @@ def reset_search_context():
 
 
 @pytest.fixture
-def mock_context_config():
+def mock_context_config() -> Any:
     """Create a mock configuration with context-aware search enabled."""
     context_config = ContextAwareSearchConfig(
         enabled=True,
@@ -34,7 +35,7 @@ def mock_context_config():
 
 
 @pytest.fixture
-def sample_results():
+def sample_results() -> Any:
     """Create sample search results for testing."""
     return [
         {
@@ -55,7 +56,7 @@ def sample_results():
     ]
 
 
-def test_search_context_singleton(reset_search_context):
+def test_search_context_singleton(reset_search_context: Any) -> None:
     """Test that SearchContext is a singleton."""
     context1 = SearchContext.get_instance()
     context2 = SearchContext.get_instance()
@@ -66,7 +67,7 @@ def test_search_context_singleton(reset_search_context):
 
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
 @patch("autoresearch.search.context.spacy")
-def test_initialize_nlp(mock_spacy, reset_search_context):
+def test_initialize_nlp(mock_spacy: Any, reset_search_context: Any) -> None:
     """Test that the NLP model is initialized correctly."""
     # Setup mock
     mock_nlp = MagicMock()
@@ -83,7 +84,7 @@ def test_initialize_nlp(mock_spacy, reset_search_context):
 @patch.dict(os.environ, {"AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL": "true"})
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
 @patch("autoresearch.search.context.spacy")
-def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_context):
+def test_initialize_nlp_downloads_model_when_env_set(mock_spacy: Any, reset_search_context: Any) -> None:
     """spaCy model is downloaded if missing and env var is set."""
     second_load = MagicMock()
     mock_spacy.load.side_effect = [OSError(), second_load]
@@ -98,7 +99,7 @@ def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_co
 @patch.dict(os.environ, {}, clear=True)
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
 @patch("autoresearch.search.context.spacy")
-def test_initialize_nlp_no_download_by_default(mock_spacy, reset_search_context):
+def test_initialize_nlp_no_download_by_default(mock_spacy: Any, reset_search_context: Any) -> None:
     """No download occurs if model missing and env var is unset."""
     mock_spacy.load.side_effect = OSError()
 
@@ -110,8 +111,8 @@ def test_initialize_nlp_no_download_by_default(mock_spacy, reset_search_context)
 
 @patch("autoresearch.search.context.get_config")
 def test_add_to_history(
-    mock_get_config, mock_context_config, sample_results, reset_search_context
-):
+    mock_get_config: Any, mock_context_config: Any, sample_results: Any, reset_search_context: Any
+) -> None:
     """Test adding queries to the search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -130,7 +131,7 @@ def test_add_to_history(
 
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
 @patch("autoresearch.search.context.get_config")
-def test_extract_entities(mock_get_config, mock_context_config, reset_search_context):
+def test_extract_entities(mock_get_config: Any, mock_context_config: Any, reset_search_context: Any) -> None:
     """Test entity extraction from text."""
     mock_get_config.return_value = mock_context_config
 
@@ -167,12 +168,12 @@ def test_extract_entities(mock_get_config, mock_context_config, reset_search_con
 @patch("autoresearch.search.context.get_config")
 @patch("autoresearch.search.Search.get_sentence_transformer")
 def test_build_topic_model(
-    mock_get_transformer,
-    mock_get_config,
-    mock_context_config,
-    sample_results,
-    reset_search_context,
-):
+    mock_get_transformer: Any,
+    mock_get_config: Any,
+    mock_context_config: Any,
+    sample_results: Any,
+    reset_search_context: Any,
+) -> None:
     """Test building a topic model from search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -211,8 +212,8 @@ def test_build_topic_model(
 
 @patch("autoresearch.search.context.get_config")
 def test_expand_query_with_history(
-    mock_get_config, mock_context_config, sample_results, reset_search_context
-):
+    mock_get_config: Any, mock_context_config: Any, sample_results: Any, reset_search_context: Any
+) -> None:
     """Test query expansion based on search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -233,12 +234,12 @@ def test_expand_query_with_history(
 @patch("autoresearch.search.context.get_config")
 @patch("autoresearch.search.core.get_config")
 def test_context_aware_search_integration(
-    mock_core_get_config,
-    mock_context_get_config,
-    mock_context_config,
-    sample_results,
-    reset_search_context,
-):
+    mock_core_get_config: Any,
+    mock_context_get_config: Any,
+    mock_context_config: Any,
+    sample_results: Any,
+    reset_search_context: Any,
+) -> None:
     mock_core_get_config.return_value = mock_context_config
     mock_context_get_config.return_value = mock_context_config
     """Test the integration of context-aware search with the Search class."""
@@ -275,11 +276,11 @@ def test_context_aware_search_integration(
 @patch("autoresearch.search.context.get_config")
 @patch("autoresearch.search.core.get_config")
 def test_context_aware_search_disabled(
-    mock_core_get_config,
-    mock_context_get_config,
-    mock_context_config,
-    reset_search_context,
-):
+    mock_core_get_config: Any,
+    mock_context_get_config: Any,
+    mock_context_config: Any,
+    reset_search_context: Any,
+) -> None:
     mock_core_get_config.return_value = mock_context_config
     mock_context_get_config.return_value = mock_context_config
     """Test that context-aware search can be disabled."""
@@ -307,8 +308,8 @@ def test_context_aware_search_disabled(
 @patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
 @patch("autoresearch.search.context.get_config")
 def test_expand_query_respects_settings(
-    mock_get_config, reset_search_context
-):
+    mock_get_config: Any, reset_search_context: Any
+) -> None:
     cfg = MagicMock()
     cfg.search.context_aware.use_query_expansion = False
     cfg.search.context_aware.max_history_items = 10
@@ -324,8 +325,8 @@ def test_expand_query_respects_settings(
 @patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
 @patch("autoresearch.search.context.get_config")
 def test_expand_query_expansion_factor(
-    mock_get_config, reset_search_context
-):
+    mock_get_config: Any, reset_search_context: Any
+) -> None:
     cfg = MagicMock()
     cfg.search.context_aware.expansion_factor = 1.0
     cfg.search.context_aware.use_search_history = True

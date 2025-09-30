@@ -1,9 +1,10 @@
 from hypothesis import given, strategies as st
 from autoresearch.search import Search
+from typing import Any
 
 
 @given(st.text(min_size=1))
-def test_generate_queries_variants(query):
+def test_generate_queries_variants(query: Any) -> None:
     results = Search.generate_queries(query)
     cleaned = query.strip()
     if len(cleaned.split()) > 1:
@@ -14,7 +15,7 @@ def test_generate_queries_variants(query):
 
 
 @given(st.text(min_size=1))
-def test_generate_queries_embeddings(query):
+def test_generate_queries_embeddings(query: Any) -> None:
     results = Search.generate_queries(query, return_embeddings=True)
     cleaned = query.strip()
     expected = [float(ord(c)) for c in cleaned][:10]

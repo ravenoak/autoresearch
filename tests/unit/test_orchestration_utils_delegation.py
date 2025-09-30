@@ -2,9 +2,10 @@ import importlib
 from types import SimpleNamespace
 
 import autoresearch.orchestration.orchestration_utils as ou
+import pytest
 
 
-def test_get_agent_delegates(monkeypatch):
+def test_get_agent_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     def dummy(agent_id, factory):
         return "ok"
 
@@ -13,7 +14,7 @@ def test_get_agent_delegates(monkeypatch):
     assert mod.OrchestrationUtils.get_agent("A", SimpleNamespace(get=lambda x: x)) == "ok"
 
 
-def test_capture_token_usage_delegates(monkeypatch):
+def test_capture_token_usage_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     def dummy(agent_name, metrics, config):
         return "ctx"
 

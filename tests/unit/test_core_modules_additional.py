@@ -17,7 +17,7 @@ from autoresearch.storage import StorageManager
 
 
 @pytest.fixture
-def _stubbed_search_environment(monkeypatch, request):
+def _stubbed_search_environment(monkeypatch: pytest.MonkeyPatch, request: Any) -> Any:
     """Create a temporary Search instance with controllable backend stubs."""
 
     features: dict[str, Any] = getattr(request, "param", {}) or {}
@@ -274,7 +274,7 @@ def _stubbed_search_environment(monkeypatch, request):
         yield environment
 
 
-def test_orchestrator_parse_config_basic():
+def test_orchestrator_parse_config_basic() -> None:
     cfg = MagicMock()
     cfg.agents = ["A", "B"]
     cfg.loops = 2
@@ -322,7 +322,7 @@ def test_orchestrator_parse_config_basic():
     ],
     indirect=["_stubbed_search_environment"],
 )
-def test_search_stub_backend(_stubbed_search_environment, expected_embedding_calls):
+def test_search_stub_backend(_stubbed_search_environment: Any, expected_embedding_calls: Any) -> None:
     """Exercise both legacy and vector-enabled lookup flows using the shared stub.
 
     The fixture accepts a feature dictionary so we can simulate environments where the
@@ -444,7 +444,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert all(hit == {} for hit in env.cache_probes)
 
 
-def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment):
+def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment: Any) -> None:
     env = _stubbed_search_environment
     env.install_backend([])
 
@@ -461,7 +461,7 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     assert env.backend_calls == [("missing", 2, False)]
 
 
-def test_planner_execute(monkeypatch):
+def test_planner_execute(monkeypatch: pytest.MonkeyPatch) -> None:
     agent = PlannerAgent()
     state = QueryState(query="test")
     cfg = MagicMock()
@@ -480,7 +480,7 @@ def test_planner_execute(monkeypatch):
     assert graph["tasks"][0]["question"].startswith("PLAN")
 
 
-def test_storage_setup_teardown(monkeypatch):
+def test_storage_setup_teardown(monkeypatch: pytest.MonkeyPatch) -> None:
     from autoresearch import storage
 
     if storage.KuzuBackend is None:
@@ -532,7 +532,7 @@ def test_storage_setup_teardown(monkeypatch):
     storage.teardown()
 
 
-def test_storage_setup_without_kuzu(monkeypatch):
+def test_storage_setup_without_kuzu(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = {}
 
     class FakeDuck:

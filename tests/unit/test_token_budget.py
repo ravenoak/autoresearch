@@ -3,10 +3,11 @@ from hypothesis import given, strategies as st
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+from typing import Any
 
 
 @given(st.integers(min_value=1, max_value=4000), st.text(min_size=1, max_size=200))
-def test_budget_within_bounds(initial_budget, query):
+def test_budget_within_bounds(initial_budget: Any, query: Any) -> None:
     cfg = ConfigModel(token_budget=initial_budget)
     OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
     q_tokens = len(query.split())
@@ -16,7 +17,7 @@ def test_budget_within_bounds(initial_budget, query):
 
 
 @given(st.text(min_size=1))
-def test_budget_none_unmodified(query):
+def test_budget_none_unmodified(query: Any) -> None:
     cfg = ConfigModel(token_budget=None)
     OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
     assert cfg.token_budget is None
@@ -27,7 +28,7 @@ def test_budget_none_unmodified(query):
     st.integers(min_value=1, max_value=10),
     st.integers(min_value=1, max_value=20),
 )
-def test_budget_scaling_exact(initial_budget, loops, q_tokens):
+def test_budget_scaling_exact(initial_budget: Any, loops: Any, q_tokens: Any) -> None:
     query = " ".join("x" for _ in range(q_tokens))
     cfg = ConfigModel(token_budget=initial_budget, loops=loops)
     OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
@@ -46,7 +47,7 @@ def test_budget_scaling_exact(initial_budget, loops, q_tokens):
     assert cfg.token_budget == expected
 
 
-def test_budget_adaptive_history():
+def test_budget_adaptive_history() -> None:
     """Budget adapts to an agent's evolving token usage."""
 
     m = OrchestrationMetrics()
@@ -65,7 +66,7 @@ def test_budget_adaptive_history():
     assert budget == 11
 
 
-def test_compress_prompt_history():
+def test_compress_prompt_history() -> None:
     m = OrchestrationMetrics()
     budget = 5
     prompt = "one two three four five"

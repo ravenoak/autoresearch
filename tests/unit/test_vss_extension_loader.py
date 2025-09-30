@@ -7,13 +7,15 @@ import pytest
 
 from autoresearch.errors import StorageError
 from autoresearch.extensions import VSSExtensionLoader
+from pathlib import Path
+from typing import Any
 
 
 class TestVSSExtensionLoader:
     """Test the VSSExtensionLoader class."""
 
     @pytest.mark.real_vss
-    def test_verify_extension_success(self):
+    def test_verify_extension_success(self) -> None:
         """Test that verify_extension returns True when the extension is loaded."""
         # Create a mock connection that successfully executes the verification query
         conn = MagicMock()
@@ -28,7 +30,7 @@ class TestVSSExtensionLoader:
         )
 
     @pytest.mark.real_vss
-    def test_verify_extension_failure(self):
+    def test_verify_extension_failure(self) -> None:
         """Test that verify_extension returns False when the extension is not loaded."""
         # Create a mock connection that reports an empty extension list
         conn = MagicMock()
@@ -43,7 +45,7 @@ class TestVSSExtensionLoader:
         )
 
     @pytest.mark.real_vss
-    def test_verify_extension_fallback_to_stub_probe(self):
+    def test_verify_extension_fallback_to_stub_probe(self) -> None:
         """Fallback probe runs only when duckdb_extensions() raises."""
         conn = MagicMock()
         conn.execute.side_effect = [
@@ -64,7 +66,7 @@ class TestVSSExtensionLoader:
         )
 
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_from_filesystem_success(self, mock_config_loader, tmp_path):
+    def test_load_extension_from_filesystem_success(self, mock_config_loader: Any, tmp_path: Path) -> None:
         """Test loading the extension from the filesystem."""
         # Create a fake extension file
         fake_ext = tmp_path / "vss.duckdb_extension"
@@ -87,7 +89,7 @@ class TestVSSExtensionLoader:
             assert result is True
 
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_from_filesystem_invalid_path(self, mock_config_loader):
+    def test_load_extension_from_filesystem_invalid_path(self, mock_config_loader: Any) -> None:
         """Test loading the extension from an invalid filesystem path."""
         # Configure the mock config loader
         mock_config = MagicMock()
@@ -106,7 +108,7 @@ class TestVSSExtensionLoader:
             assert result is True
 
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_from_filesystem_file_not_found(self, mock_config_loader):
+    def test_load_extension_from_filesystem_file_not_found(self, mock_config_loader: Any) -> None:
         """Test loading the extension from a non-existent filesystem path."""
         # Configure the mock config loader with a nonexistent path
         mock_config = MagicMock()
@@ -126,8 +128,8 @@ class TestVSSExtensionLoader:
 
     @patch("autoresearch.extensions.ConfigLoader")
     def test_load_extension_from_filesystem_verification_failure(
-        self, mock_config_loader, tmp_path
-    ):
+        self, mock_config_loader: Any, tmp_path: Path
+    ) -> None:
         """Test loading the extension from the filesystem but verification fails."""
         # Create a fake extension file
         fake_ext = tmp_path / "vss.duckdb_extension"
@@ -152,7 +154,7 @@ class TestVSSExtensionLoader:
             assert result is True
 
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_download_success(self, mock_config_loader):
+    def test_load_extension_download_success(self, mock_config_loader: Any) -> None:
         """Test downloading and installing the extension."""
         # Configure the mock config loader
         mock_config = MagicMock()
@@ -183,13 +185,13 @@ class TestVSSExtensionLoader:
     )
     def test_offline_fallbacks_quiet_logs(
         self,
-        mock_config_loader,
-        caplog,
-        package_result,
-        local_result,
-        marker_result,
-        expected_calls,
-    ):
+        mock_config_loader: Any,
+        caplog: pytest.LogCaptureFixture,
+        package_result: Any,
+        local_result: Any,
+        marker_result: Any,
+        expected_calls: Any,
+    ) -> None:
         """Offline fallbacks avoid error-level logging."""
 
         mock_config = MagicMock()
@@ -229,8 +231,8 @@ class TestVSSExtensionLoader:
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
     def test_load_extension_download_failure_non_strict(
-        self, mock_config_loader, caplog
-    ):
+        self, mock_config_loader: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Test downloading and installing the extension fails but in non-strict mode."""
         # Configure the mock config loader
         mock_config = MagicMock()
@@ -253,7 +255,7 @@ class TestVSSExtensionLoader:
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_download_failure_strict(self, mock_config_loader):
+    def test_load_extension_download_failure_strict(self, mock_config_loader: Any) -> None:
         """Test downloading and installing the extension fails in strict mode."""
         # Configure the mock config loader
         mock_config = MagicMock()
@@ -272,7 +274,7 @@ class TestVSSExtensionLoader:
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_download_unhandled_exception(self, mock_config_loader):
+    def test_load_extension_download_unhandled_exception(self, mock_config_loader: Any) -> None:
         """Non-duckdb errors propagate without being suppressed."""
         mock_config = MagicMock()
         mock_config.config.storage.vector_extension_path = None
@@ -289,7 +291,7 @@ class TestVSSExtensionLoader:
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_missing_extension_path_skips_loading(self, mock_config_loader):
+    def test_missing_extension_path_skips_loading(self, mock_config_loader: Any) -> None:
         """When configured path is missing, loading is skipped gracefully."""
         mock_config = MagicMock()
         mock_config.config.storage.vector_extension_path = "/nonexistent/vss.duckdb_extension"
@@ -303,7 +305,7 @@ class TestVSSExtensionLoader:
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_invalid_extension_file_skips_loading(self, mock_config_loader, tmp_path):
+    def test_invalid_extension_file_skips_loading(self, mock_config_loader: Any, tmp_path: Path) -> None:
         """Invalid extension binaries are ignored and do not raise errors."""
         fake_ext = tmp_path / "vss.duckdb_extension"
         fake_ext.write_text("not a real extension")

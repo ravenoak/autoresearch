@@ -1,9 +1,10 @@
 import json
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+from pathlib import Path
 
 
-def test_record_and_regression(tmp_path):
+def test_record_and_regression(tmp_path: Path) -> None:
     metrics = OrchestrationMetrics()
     metrics.record_tokens("A", 2, 3)
     metrics.record_tokens("B", 1, 1)

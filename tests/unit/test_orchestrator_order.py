@@ -4,6 +4,7 @@ from unittest.mock import patch
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
+from typing import Any
 
 
 class DummyAgent:
@@ -19,7 +20,7 @@ class DummyAgent:
         return {}
 
 
-def test_custom_agents_order(orchestrator):
+def test_custom_agents_order(orchestrator: Any) -> None:
     record: list[str] = []
 
     def get_agent(name):
@@ -35,7 +36,7 @@ def test_custom_agents_order(orchestrator):
     assert record == ["A1", "A2", "A3"]
 
 
-def test_async_custom_agents_concurrent(orchestrator):
+def test_async_custom_agents_concurrent(orchestrator: Any) -> None:
     record: list[str] = []
 
     def get_agent(name):
@@ -52,7 +53,7 @@ def test_async_custom_agents_concurrent(orchestrator):
     assert sorted(record) == ["A1", "A2", "A3"]
 
 
-def test_parse_config_direct_mode_groups():
+def test_parse_config_direct_mode_groups() -> None:
     cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)
     params = Orchestrator._parse_config(cfg)
     assert params["agent_groups"] == [["Synthesizer"]]

@@ -4,9 +4,10 @@ import types
 
 from autoresearch import resource_monitor
 from structlog.testing import capture_logs
+import pytest
 
 
-def test_get_gpu_stats_pynvml(monkeypatch):
+def test_get_gpu_stats_pynvml(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_pynvml = types.SimpleNamespace(
         nvmlInit=lambda: None,
         nvmlShutdown=lambda: None,
@@ -21,7 +22,7 @@ def test_get_gpu_stats_pynvml(monkeypatch):
     assert mem == 3.0
 
 
-def test_get_gpu_stats_cli_psutil(monkeypatch):
+def test_get_gpu_stats_cli_psutil(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeProc:
         def communicate(self, timeout=None):
             return "25, 512", ""
@@ -41,7 +42,7 @@ def test_get_gpu_stats_cli_psutil(monkeypatch):
     assert mem == 512.0
 
 
-def test_get_gpu_stats_cli_subprocess(monkeypatch):
+def test_get_gpu_stats_cli_subprocess(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*args, **kwargs):
         class FakeRes:
             stdout = "30, 1024"
@@ -68,7 +69,7 @@ def test_get_gpu_stats_cli_subprocess(monkeypatch):
     assert mem == 1024.0
 
 
-def test_get_gpu_stats_logs_info_without_gpu_extra(monkeypatch):
+def test_get_gpu_stats_logs_info_without_gpu_extra(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(resource_monitor, "_gpu_extra_enabled", lambda: False)
     monkeypatch.delitem(sys.modules, "pynvml", raising=False)
     monkeypatch.delitem(sys.modules, "psutil", raising=False)
@@ -106,7 +107,7 @@ def test_get_gpu_stats_logs_info_without_gpu_extra(monkeypatch):
     assert all(entry["log_level"] == "info" for entry in dependency_events)
 
 
-def test_get_gpu_stats_logs_debug_with_gpu_extra(monkeypatch):
+def test_get_gpu_stats_logs_debug_with_gpu_extra(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(resource_monitor, "_gpu_extra_enabled", lambda: True)
     monkeypatch.delitem(sys.modules, "pynvml", raising=False)
     monkeypatch.delitem(sys.modules, "psutil", raising=False)

@@ -4,9 +4,10 @@ from pathlib import Path
 from threading import Event
 
 from autoresearch.storage_backup import BackupManager
+import pytest
 
 
-def test_create_and_restore_backup(tmp_path):
+def test_create_and_restore_backup(tmp_path: Path) -> None:
     """BackupManager should create and restore backups correctly."""
     db = tmp_path / "data.db"
     rdf = tmp_path / "store.rdf"
@@ -34,7 +35,7 @@ def test_create_and_restore_backup(tmp_path):
     assert (restore_dir / "store.rdf").exists()
 
 
-def test_backup_scheduler_start_stop(monkeypatch, tmp_path):
+def test_backup_scheduler_start_stop(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Scheduled backups should trigger and allow clean shutdown."""
     db = tmp_path / "data.db"
     rdf = tmp_path / "store.rdf"

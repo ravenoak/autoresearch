@@ -2,45 +2,45 @@ import pytest
 
 
 @pytest.mark.requires_nlp
-def test_nlp_marker():
+def test_nlp_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_ui
-def test_ui_marker():
+def test_ui_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_vss
-def test_vss_marker():
+def test_vss_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_git
-def test_git_marker():
+def test_git_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_distributed
-def test_distributed_marker():
+def test_distributed_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_analysis
-def test_analysis_marker():
+def test_analysis_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_llm
-def test_llm_marker():
+def test_llm_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_parsers
-def test_parsers_marker():
+def test_parsers_marker() -> None:
     assert True
 
 
 @pytest.mark.requires_gpu
-def test_gpu_marker():
+def test_gpu_marker() -> None:
     assert True

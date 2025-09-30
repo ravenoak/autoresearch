@@ -4,11 +4,12 @@ import types
 import pytest
 
 from autoresearch.distributed import get_message_broker
+from typing import Any
 
 pytestmark = [pytest.mark.requires_distributed, pytest.mark.redis]
 
 
-def test_get_message_broker_redis_roundtrip(monkeypatch, redis_client):
+def test_get_message_broker_redis_roundtrip(monkeypatch: pytest.MonkeyPatch, redis_client: Any) -> None:
     """Round trip messages through the Redis broker."""
 
     dummy_module = types.SimpleNamespace(
@@ -22,7 +23,7 @@ def test_get_message_broker_redis_roundtrip(monkeypatch, redis_client):
     broker.shutdown()
 
 
-def test_get_message_broker_redis_missing(monkeypatch):
+def test_get_message_broker_redis_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Raise an error when the Redis module cannot be imported."""
 
     monkeypatch.setitem(sys.modules, "redis", None)

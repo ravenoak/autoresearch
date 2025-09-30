@@ -1,9 +1,10 @@
 import responses
 from autoresearch.llm import get_llm_adapter, DummyAdapter
 from autoresearch.llm.token_counting import compress_prompt
+import pytest
 
 
-def test_dummy_adapter_generation():
+def test_dummy_adapter_generation() -> None:
     adapter = get_llm_adapter("dummy")
     assert isinstance(adapter, DummyAdapter)
     result = adapter.generate("test prompt")
@@ -11,7 +12,7 @@ def test_dummy_adapter_generation():
 
 
 @responses.activate
-def test_lmstudio_adapter(monkeypatch):
+def test_lmstudio_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     endpoint = "http://testserver/v1/chat/completions"
     monkeypatch.setenv("LMSTUDIO_ENDPOINT", endpoint)
     adapter = get_llm_adapter("lmstudio")
@@ -26,7 +27,7 @@ def test_lmstudio_adapter(monkeypatch):
 
 
 @responses.activate
-def test_openai_adapter(monkeypatch):
+def test_openai_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     endpoint = "https://api.openai.com/v1/chat/completions"
     monkeypatch.setenv("OPENAI_ENDPOINT", endpoint)
     monkeypatch.setenv("OPENAI_API_KEY", "test")
@@ -42,7 +43,7 @@ def test_openai_adapter(monkeypatch):
     assert headers.get("Authorization") == "Bearer test"
 
 
-def test_compress_prompt_falls_back_when_summary_exceeds_budget():
+def test_compress_prompt_falls_back_when_summary_exceeds_budget() -> None:
     """Ellipsis fallback when summary exceeds token budget per ``specs/llm``."""
 
     def summarizer(_: str, __: int) -> str:

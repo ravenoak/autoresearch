@@ -164,7 +164,7 @@ def test_ray_executor_cycle_callback() -> None:
         _unregister_dummy()
 
 
-def test_process_executor_uses_local_queue(monkeypatch) -> None:
+def test_process_executor_uses_local_queue(monkeypatch: pytest.MonkeyPatch) -> None:
     """ProcessExecutor reuses the message queue protocol implementation."""
 
     _register_dummy()

@@ -8,9 +8,10 @@ from unittest.mock import patch, MagicMock
 import networkx as nx
 
 from autoresearch.storage import StorageManager
+from typing import Any
 
 
-def test_current_ram_mb_empty_graph():
+def test_current_ram_mb_empty_graph() -> None:
     """Test that _current_ram_mb returns 0 for an empty graph."""
     # Setup
     mock_graph = nx.DiGraph()
@@ -36,7 +37,7 @@ def test_current_ram_mb_empty_graph():
         assert result == 0
 
 
-def test_current_ram_mb_with_nodes(realistic_claim_batch):
+def test_current_ram_mb_with_nodes(realistic_claim_batch: Any) -> None:
     """_current_ram_mb accounts for multiple nodes with varied content."""
     mock_graph = nx.DiGraph()
 
@@ -50,7 +51,7 @@ def test_current_ram_mb_with_nodes(realistic_claim_batch):
         assert result > 0
 
 
-def test_current_ram_mb_with_attributes(realistic_claim_batch):
+def test_current_ram_mb_with_attributes(realistic_claim_batch: Any) -> None:
     """Attributes, embeddings and relations contribute to RAM size."""
     mock_graph = nx.DiGraph()
 
@@ -65,7 +66,7 @@ def test_current_ram_mb_with_attributes(realistic_claim_batch):
         assert result > 0
 
 
-def test_current_ram_mb_none_graph():
+def test_current_ram_mb_none_graph() -> None:
     """Test that _current_ram_mb handles None graph gracefully."""
     # Setup
     # Mock the resource module's getrusage function to return 0
@@ -88,7 +89,7 @@ def test_current_ram_mb_none_graph():
         assert result == 0
 
 
-def test_current_ram_mb_large_graph():
+def test_current_ram_mb_large_graph() -> None:
     """Test that _current_ram_mb scales correctly with graph size."""
     # Setup
     mock_graph = nx.DiGraph()

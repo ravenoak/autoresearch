@@ -2,9 +2,10 @@ import pytest
 
 from autoresearch.storage import StorageManager
 from autoresearch.errors import StorageError
+from typing import Any
 
 
-def test_validate_claim_valid():
+def test_validate_claim_valid() -> None:
     """Test that _validate_claim accepts valid claims."""
     # Valid claim with all required fields
     valid_claim = {
@@ -26,7 +27,7 @@ def test_validate_claim_valid():
         (None, "Invalid claim format"),
     ],
 )
-def test_validate_claim_invalid_format(claim, error_message):
+def test_validate_claim_invalid_format(claim: Any, error_message: Any) -> None:
     """Test that _validate_claim rejects claims with invalid formats.
 
     Args:
@@ -51,7 +52,7 @@ def test_validate_claim_invalid_format(claim, error_message):
         ("content", {"id": "test-id", "type": "fact"}),
     ],
 )
-def test_validate_claim_missing_required_field(missing_field, claim_data):
+def test_validate_claim_missing_required_field(missing_field: Any, claim_data: Any) -> None:
     """Test that _validate_claim rejects claims with missing required fields.
 
     Args:
@@ -78,7 +79,7 @@ def test_validate_claim_missing_required_field(missing_field, claim_data):
         ("content", None, "Invalid 'content' field"),
     ],
 )
-def test_validate_claim_invalid_field_type(field, invalid_value, error_message):
+def test_validate_claim_invalid_field_type(field: Any, invalid_value: Any, error_message: Any) -> None:
     """Test that _validate_claim rejects claims with invalid field types.
 
     Args:
@@ -102,7 +103,7 @@ def test_validate_claim_invalid_field_type(field, invalid_value, error_message):
     assert "expected string" in str(excinfo.value)
 
 
-def test_validate_vector_search_params_valid():
+def test_validate_vector_search_params_valid() -> None:
     """Test that _validate_vector_search_params accepts valid parameters."""
     # Valid parameters
     query_embedding = [0.1, 0.2, 0.3]
@@ -121,7 +122,7 @@ def test_validate_vector_search_params_valid():
         (None, "Invalid query_embedding format"),
     ],
 )
-def test_validate_vector_search_params_invalid_format(query_embedding, error_message):
+def test_validate_vector_search_params_invalid_format(query_embedding: Any, error_message: Any) -> None:
     """Test that _validate_vector_search_params rejects query embeddings with invalid formats.
 
     Args:
@@ -146,7 +147,7 @@ def test_validate_vector_search_params_invalid_format(query_embedding, error_mes
         ([0.1, {}, 0.3], "Invalid query_embedding values"),
     ],
 )
-def test_validate_vector_search_params_invalid_values(query_embedding, error_message):
+def test_validate_vector_search_params_invalid_values(query_embedding: Any, error_message: Any) -> None:
     """Test that _validate_vector_search_params rejects query embeddings with non-numeric values.
 
     Args:
@@ -163,7 +164,7 @@ def test_validate_vector_search_params_invalid_values(query_embedding, error_mes
     assert "expected numeric values" in str(excinfo.value)
 
 
-def test_validate_vector_search_params_empty():
+def test_validate_vector_search_params_empty() -> None:
     """Test that _validate_vector_search_params rejects empty query embeddings."""
     # Setup
 
@@ -184,7 +185,7 @@ def test_validate_vector_search_params_empty():
         ({}, "Invalid k value"),
     ],
 )
-def test_validate_vector_search_params_invalid_k(k, error_message):
+def test_validate_vector_search_params_invalid_k(k: Any, error_message: Any) -> None:
     """Test that _validate_vector_search_params rejects invalid k values.
 
     Args:
@@ -200,7 +201,7 @@ def test_validate_vector_search_params_invalid_k(k, error_message):
     assert error_message in str(excinfo.value)
 
 
-def test_format_vector_literal():
+def test_format_vector_literal() -> None:
     """Test that _format_vector_literal correctly formats vector literals."""
     query_embedding = [0.1, 0.2, 0.3]
     expected = "[0.1, 0.2, 0.3]"

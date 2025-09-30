@@ -8,6 +8,7 @@ from hypothesis import given, strategies as st
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.parallel import execute_parallel_query
+from typing import Any
 
 
 class DummySynthesizer:
@@ -28,7 +29,7 @@ class DummyOrchestrator:
     )
 )
 @pytest.mark.reasoning_modes
-def test_parallel_groups_merge_metrics(agent_groups):
+def test_parallel_groups_merge_metrics(agent_groups: Any) -> None:
     """Metrics reflect total and successful group counts.
 
     Assumes each group returns a static response and synthesizer echoes a fixed

@@ -4,10 +4,12 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import metrics
 from autoresearch.storage import StorageManager
+from pathlib import Path
+from typing import Any
 
 
 @pytest.mark.parametrize("policy", ["lru", "score", "hybrid"])
-def test_persistence_and_eviction(storage_manager, tmp_path, monkeypatch, policy):
+def test_persistence_and_eviction(storage_manager: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: Any) -> None:
     cfg = ConfigModel(ram_budget_mb=1, graph_eviction_policy=policy)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None

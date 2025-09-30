@@ -19,6 +19,8 @@ from autoresearch.search.parsers import (
 )
 import autoresearch.search.parsers as parser_module
 import tests.fixtures.parsers as _parsers  # noqa: F401
+from pathlib import Path
+from typing import Any
 
 
 @contextlib.contextmanager
@@ -51,7 +53,7 @@ def _block_optional_dependency(monkeypatch: pytest.MonkeyPatch, prefix: str):
 
 
 @pytest.mark.requires_parsers
-def test_extract_pdf_text(sample_pdf_file, tmp_path):
+def test_extract_pdf_text(sample_pdf_file: Any, tmp_path: Path) -> None:
     """Verify PDF text extraction via the local_file backend."""
     text = extract_pdf_text(sample_pdf_file)
     assert "hello" in text
@@ -69,7 +71,7 @@ def test_extract_pdf_text(sample_pdf_file, tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_extract_docx_text(sample_docx_file, tmp_path):
+def test_extract_docx_text(sample_docx_file: Any, tmp_path: Path) -> None:
     """Verify DOCX text extraction via the local_file backend."""
     assert extract_docx_text(sample_docx_file) == "hello from docx"
     cfg = get_config()
@@ -81,7 +83,7 @@ def test_extract_docx_text(sample_docx_file, tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_search_local_file_backend(tmp_path, sample_pdf_file, sample_docx_file):
+def test_search_local_file_backend(tmp_path: Path, sample_pdf_file: Any, sample_docx_file: Any) -> None:
     """Ensure Search.external_lookup finds content in PDF and DOCX files."""
     (tmp_path / "broken.pdf").write_bytes(b"not a pdf")
     cfg = get_config()
@@ -97,7 +99,7 @@ def test_search_local_file_backend(tmp_path, sample_pdf_file, sample_docx_file):
 
 
 @pytest.mark.requires_parsers
-def test_pdf_parser_errors_on_corrupt_file(tmp_path):
+def test_pdf_parser_errors_on_corrupt_file(tmp_path: Path) -> None:
     """PDF parser raises ParserError when the document is unreadable."""
     pdf_path = tmp_path / "corrupt.pdf"
     pdf_path.write_bytes(b"not a real pdf")
@@ -106,7 +108,7 @@ def test_pdf_parser_errors_on_corrupt_file(tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_docx_parser_errors_on_corrupt_file(tmp_path):
+def test_docx_parser_errors_on_corrupt_file(tmp_path: Path) -> None:
     """DOCX parser raises ParserError when the document is unreadable."""
     docx_path = tmp_path / "corrupt.docx"
     docx_path.write_bytes(b"not a real docx")
@@ -115,7 +117,7 @@ def test_docx_parser_errors_on_corrupt_file(tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_extract_pdf_text_requires_dependency(monkeypatch, tmp_path):
+def test_extract_pdf_text_requires_dependency(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """PDF parser reports missing pdfminer through ParserDependencyError."""
 
     pdf_path = tmp_path / "stub.pdf"
@@ -131,7 +133,7 @@ def test_extract_pdf_text_requires_dependency(monkeypatch, tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_extract_docx_text_requires_dependency(monkeypatch, tmp_path):
+def test_extract_docx_text_requires_dependency(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """DOCX parser reports missing python-docx dependencies."""
 
     docx_path = tmp_path / "stub.docx"
@@ -147,7 +149,7 @@ def test_extract_docx_text_requires_dependency(monkeypatch, tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_read_document_text_normalizes_plain_text(tmp_path):
+def test_read_document_text_normalizes_plain_text(tmp_path: Path) -> None:
     """Plain text files are normalized for deterministic snippets."""
 
     text_path = tmp_path / "notes.txt"
@@ -158,7 +160,7 @@ def test_read_document_text_normalizes_plain_text(tmp_path):
 
 
 @pytest.mark.requires_parsers
-def test_read_document_text_rejects_doc_files(tmp_path):
+def test_read_document_text_rejects_doc_files(tmp_path: Path) -> None:
     """Binary .doc files raise ParserError so callers can skip them."""
 
     doc_path = tmp_path / "legacy.doc"

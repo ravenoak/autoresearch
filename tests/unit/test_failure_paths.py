@@ -16,20 +16,20 @@ class DummyAgent:
         return False
 
 
-def test_prompt_registry_unknown():
+def test_prompt_registry_unknown() -> None:
     """PromptTemplateRegistry.get raises KeyError for unknown template."""
     with pytest.raises(KeyError):
         PromptTemplateRegistry.get("missing")
 
 
-def test_prompt_render_missing_variable():
+def test_prompt_render_missing_variable() -> None:
     """PromptTemplate.render raises KeyError when a variable is missing."""
     tmpl = PromptTemplate(template="Hello ${name}", description="d")
     with pytest.raises(KeyError):
         tmpl.render()
 
 
-def test_check_agent_can_execute_false():
+def test_check_agent_can_execute_false() -> None:
     """_check_agent_can_execute returns False when the agent skips execution."""
     cfg = ConfigModel()
     state = QueryState(query="q")
@@ -37,7 +37,7 @@ def test_check_agent_can_execute_false():
     assert not OrchestrationUtils.check_agent_can_execute(agent, "Dummy", state, cfg)
 
 
-def test_external_lookup_unknown_backend(monkeypatch):
+def test_external_lookup_unknown_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unknown search backend triggers SearchError."""
     cfg = ConfigModel()
     cfg.search.backends = ["missing"]
@@ -53,7 +53,7 @@ def test_external_lookup_unknown_backend(monkeypatch):
         Search.external_lookup("q")
 
 
-def test_vector_search_vss_unavailable(monkeypatch):
+def test_vector_search_vss_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
     """Vector search returns an empty list when VSS is unavailable."""
     monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
@@ -61,7 +61,7 @@ def test_vector_search_vss_unavailable(monkeypatch):
     assert StorageManager.vector_search([0.1, 0.2, 0.3]) == []
 
 
-def test_query_endpoint_validation_error(monkeypatch):
+def test_query_endpoint_validation_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """/query returns 422 when required fields are missing."""
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]

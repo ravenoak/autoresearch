@@ -1,9 +1,10 @@
 from typer.testing import CliRunner
 
 from autoresearch.main import app as cli_app
+import pytest
 
 
-def test_monitor_cli_initializes_metrics(monkeypatch):
+def test_monitor_cli_initializes_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
     called = {"done": False}
 
     def fake_init() -> None:

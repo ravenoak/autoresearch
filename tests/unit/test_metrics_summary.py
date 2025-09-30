@@ -1,6 +1,7 @@
 import pytest
 
 from autoresearch.orchestration import metrics
+from typing import Any
 
 
 def _fake_time_gen():
@@ -20,7 +21,7 @@ def _fake_time_gen():
         [(5, 1)],
     ],
 )
-def test_metrics_summary(monkeypatch, records):
+def test_metrics_summary(monkeypatch: pytest.MonkeyPatch, records: Any) -> None:
     fake_time = _fake_time_gen()
     monkeypatch.setattr(metrics.time, "time", fake_time)
     assert callable(metrics.time.time)

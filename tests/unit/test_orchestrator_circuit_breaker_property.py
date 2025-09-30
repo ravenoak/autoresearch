@@ -6,12 +6,13 @@ import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
+from typing import Any
 
 
 @given(failures=st.integers(min_value=0, max_value=6))
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @pytest.mark.error_recovery
-def test_circuit_breaker_opens_and_recovers(monkeypatch, failures):
+def test_circuit_breaker_opens_and_recovers(monkeypatch: pytest.MonkeyPatch, failures: Any) -> None:
     """Failures open the breaker; cooldown and success close it.
 
     Assumes threshold 3 and cooldown 1 second. Verifies that repeated critical

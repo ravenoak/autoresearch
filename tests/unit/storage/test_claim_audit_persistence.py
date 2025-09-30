@@ -8,6 +8,7 @@ from autoresearch.storage import (
     StorageState,
 )
 from autoresearch.storage_backends import init_rdf_store
+from pathlib import Path
 
 
 class _StubBackend:
@@ -18,7 +19,7 @@ class _StubBackend:
         self.persisted.append(payload)
 
 
-def test_persist_claim_audit_payload_updates_backends(tmp_path) -> None:
+def test_persist_claim_audit_payload_updates_backends(tmp_path: Path) -> None:
     graph = nx.DiGraph()
     graph.add_node("claim-1")
 

@@ -11,9 +11,10 @@ from autoresearch.error_utils import (
     get_error_info,
 )
 from autoresearch.errors import ConfigError, LLMError, TimeoutError
+from typing import Any
 
 
-def test_error_info_to_dict_and_str():
+def test_error_info_to_dict_and_str() -> None:
     info = ErrorInfo(
         "msg",
         severity=ErrorSeverity.WARNING,
@@ -28,7 +29,7 @@ def test_error_info_to_dict_and_str():
     assert "WARNING" in s and "msg" in s
 
 
-def test_formatters():
+def test_formatters() -> None:
     info = ErrorInfo(
         "oops",
         severity=ErrorSeverity.ERROR,
@@ -45,13 +46,13 @@ def test_formatters():
     assert a2a["status"] == "error"
 
 
-def test_timeout_sets_warning():
+def test_timeout_sets_warning() -> None:
     exc = TimeoutError("late", timeout=3)
     info = get_error_info(exc)
     assert info.severity == ErrorSeverity.WARNING
 
 
-def test_redacted_context_preserved():
+def test_redacted_context_preserved() -> None:
     exc = LLMError("bad key", api_key="[REDACTED]")
     info = get_error_info(exc)
     assert info.context["api_key"] == "[REDACTED]"
@@ -65,7 +66,7 @@ def test_redacted_context_preserved():
         (TimeoutError("t", timeout=5), "5"),
     ],
 )
-def test_get_error_info(exc, substr):
+def test_get_error_info(exc: Any, substr: Any) -> None:
     info = get_error_info(exc)
     joined = json.dumps(info.to_dict())
     assert substr.lower() in joined.lower()

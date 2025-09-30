@@ -4,6 +4,7 @@ from importlib import metadata
 from pathlib import Path
 import builtins
 import pytest
+from typing import Any
 
 spec = importlib.util.spec_from_file_location(
     "check_env",
@@ -26,12 +27,12 @@ def missing_fakepkg(monkeypatch):
     monkeypatch.setattr(check_env.metadata, "version", fake_version)
 
 
-def test_missing_package_metadata_raises(missing_fakepkg):
+def test_missing_package_metadata_raises(missing_fakepkg: Any) -> None:
     with pytest.raises(check_env.VersionError, match="fakepkg not installed; run 'task install'"):
         check_env.check_package("fakepkg")
 
 
-def test_missing_pytest_bdd_raises(monkeypatch):
+def test_missing_pytest_bdd_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
@@ -44,7 +45,7 @@ def test_missing_pytest_bdd_raises(monkeypatch):
         check_env.check_pytest_bdd()
 
 
-def test_missing_go_task_raises(monkeypatch):
+def test_missing_go_task_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*args, **kwargs):
         raise FileNotFoundError
 
@@ -56,7 +57,7 @@ def test_missing_go_task_raises(monkeypatch):
         check_env.check_task()
 
 
-def test_missing_uv_raises_version_error(monkeypatch):
+def test_missing_uv_raises_version_error(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*args, **kwargs):
         raise FileNotFoundError
 
@@ -65,7 +66,7 @@ def test_missing_uv_raises_version_error(monkeypatch):
         check_env.check_uv()
 
 
-def test_task_command_failure(monkeypatch):
+def test_task_command_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Non-zero task exit should raise a VersionError with guidance."""
 
     class Proc:
@@ -77,7 +78,7 @@ def test_task_command_failure(monkeypatch):
         check_env.check_task()
 
 
-def test_main_reports_missing_metadata(missing_fakepkg, monkeypatch, capsys):
+def test_main_reports_missing_metadata(missing_fakepkg: Any, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(check_env, "EXTRA_REQUIREMENTS", {"fakepkg": "1.0"})
     dummy = check_env.CheckResult("ok", "1", "1")
     monkeypatch.setattr(check_env, "check_python", lambda: dummy)

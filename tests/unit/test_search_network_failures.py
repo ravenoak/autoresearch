@@ -6,7 +6,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 
 
-def test_external_lookup_request_exception(monkeypatch):
+def test_external_lookup_request_exception(monkeypatch: pytest.MonkeyPatch) -> None:
     """Search.external_lookup raises SearchError on network failure."""
     def failing_backend(query, max_results=5):
         raise requests.exceptions.RequestException("boom")
@@ -24,7 +24,7 @@ def test_external_lookup_request_exception(monkeypatch):
     assert "fail search failed" in str(excinfo.value)
 
 
-def test_external_lookup_timeout(monkeypatch):
+def test_external_lookup_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     """Timeout errors propagate as TimeoutError."""
     def timeout_backend(query, max_results=5):
         raise requests.exceptions.Timeout("slow")

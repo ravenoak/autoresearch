@@ -2,9 +2,10 @@ import logging
 import time
 from autoresearch.logging_utils import configure_logging
 from autoresearch.config.loader import ConfigLoader
+from pathlib import Path
 
 
-def test_stop_watching_after_logging_shutdown(tmp_path):
+def test_stop_watching_after_logging_shutdown(tmp_path: Path) -> None:
     configure_logging()
     loader = ConfigLoader()
     loader.watch_paths.clear()

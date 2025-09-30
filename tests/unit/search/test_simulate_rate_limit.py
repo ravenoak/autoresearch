@@ -19,12 +19,12 @@ def _load_module():
 
 
 @pytest.mark.unit
-def test_default_backoff():
+def test_default_backoff() -> None:
     mod = _load_module()
     assert mod.simulate_rate_limit() == [0.2, 0.4, 0.8]
 
 
 @pytest.mark.unit
-def test_custom_backoff():
+def test_custom_backoff() -> None:
     mod = _load_module()
     assert mod.simulate_rate_limit(backoff_factor=1.0, max_retries=4) == [1.0, 2.0, 4.0, 8.0]

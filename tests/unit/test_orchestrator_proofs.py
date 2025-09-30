@@ -11,6 +11,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.orchestration.parallel import execute_parallel_query
+from typing import Any
 
 
 class IdentitySynthesizer:
@@ -42,7 +43,7 @@ class MockOrchestrator:
     )
 )
 @pytest.mark.error_recovery
-def test_circuit_breaker_threshold_sequence(events):
+def test_circuit_breaker_threshold_sequence(events: Any) -> None:
     """Failure counts match increments and threshold controls state."""
 
     mgr = CircuitBreakerManager(threshold=3, cooldown=1)
@@ -69,7 +70,7 @@ def test_circuit_breaker_threshold_sequence(events):
     )
 )
 @pytest.mark.reasoning_modes
-def test_parallel_result_merging(agent_groups):
+def test_parallel_result_merging(agent_groups: Any) -> None:
     """Result claims include exactly one entry per agent group."""
 
     cfg = ConfigModel(agents=[], loops=1)

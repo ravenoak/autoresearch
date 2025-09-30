@@ -5,9 +5,11 @@ import autoresearch.storage as storage
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.storage import StorageManager
+import pytest
+from typing import Any
 
 
-def test_touch_node_updates_lru(monkeypatch):
+def test_touch_node_updates_lru(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         storage.StorageManager.state,
         "lru",
@@ -18,7 +20,7 @@ def test_touch_node_updates_lru(monkeypatch):
     assert list(storage.StorageManager.state.lru.keys()) == ["b", "a"]
 
 
-def test_clear_all(ensure_duckdb_schema):
+def test_clear_all(ensure_duckdb_schema: Any) -> None:
     with patch("autoresearch.storage.run_ontology_reasoner") as mock_reasoner:
         mock_reasoner.return_value = None
 
@@ -34,7 +36,7 @@ def test_clear_all(ensure_duckdb_schema):
     assert conn.execute("SELECT * FROM nodes").fetchall() == []
 
 
-def test_initialize_storage_creates_tables(monkeypatch):
+def test_initialize_storage_creates_tables(monkeypatch: pytest.MonkeyPatch) -> None:
     storage.teardown(remove_db=True)
 
     config = ConfigModel()

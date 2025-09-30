@@ -3,7 +3,7 @@ from autoresearch.search.context import SearchContext
 
 
 @pytest.mark.requires_nlp
-def test_extract_entities_without_spacy():
+def test_extract_entities_without_spacy() -> None:
     """Fallback tokenization should count entities without spaCy."""
     with SearchContext.temporary_instance() as ctx:
         ctx._extract_entities("Alice and Bob")

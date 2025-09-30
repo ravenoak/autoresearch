@@ -9,6 +9,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.parallel import execute_parallel_query
 from autoresearch.orchestration.orchestrator import Orchestrator
+from typing import Any
 
 
 class DummyOrchestrator:
@@ -30,7 +31,7 @@ class DummySynthesizer:
     )
 )
 @pytest.mark.reasoning_modes
-def test_parallel_merging_is_deterministic(agent_groups):
+def test_parallel_merging_is_deterministic(agent_groups: Any) -> None:
     """Each group contributes exactly one claim regardless of completion order."""
 
     cfg = ConfigModel(agents=[], loops=1)

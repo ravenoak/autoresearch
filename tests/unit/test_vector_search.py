@@ -61,7 +61,7 @@ def _mock_config():
     )
 
 
-def test_create_hnsw_index(monkeypatch):
+def test_create_hnsw_index(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
     monkeypatch.setattr(
@@ -82,7 +82,7 @@ def test_create_hnsw_index(monkeypatch):
     assert any("SET hnsw_ef_search=20" in cmd for cmd in dummy.commands)
 
 
-def test_vector_search_builds_query(monkeypatch):
+def test_vector_search_builds_query(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
     monkeypatch.setattr(
@@ -105,7 +105,7 @@ def test_vector_search_builds_query(monkeypatch):
     assert any("<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands)
 
 
-def test_vector_search_uses_config_nprobe(monkeypatch):
+def test_vector_search_uses_config_nprobe(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
     monkeypatch.setattr(
@@ -130,7 +130,7 @@ class FailingBackend(MockDuckDBBackend):
         raise RuntimeError("db fail")
 
 
-def test_vector_search_failure(monkeypatch):
+def test_vector_search_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy = FailingConn()
     mock_backend = FailingBackend(dummy)
     monkeypatch.setattr(
@@ -156,7 +156,7 @@ def test_vector_search_failure(monkeypatch):
     assert excinfo.value.__cause__ is not None
 
 
-def test_refresh_vector_index(monkeypatch):
+def test_refresh_vector_index(monkeypatch: pytest.MonkeyPatch) -> None:
     backend = MagicMock()
     monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
@@ -166,7 +166,7 @@ def test_refresh_vector_index(monkeypatch):
     backend.refresh_hnsw_index.assert_called_once()
 
 
-def test_embedding_update_triggers_index_refresh(monkeypatch):
+def test_embedding_update_triggers_index_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
     backend = MagicMock()
     graph = nx.DiGraph()
     store = MagicMock()

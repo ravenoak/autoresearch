@@ -1,6 +1,7 @@
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from typing import Any
 
 
 def rank_once(results):
@@ -34,7 +35,7 @@ def inversion_distance(order, target):
         max_size=8,
     )
 )
-def test_ranking_monotonic(scores):
+def test_ranking_monotonic(scores: Any) -> None:
     """Inversion count decreases with each ranking iteration."""
     results = [
         {"id": i, "bm25": b, "semantic": s, "cred": c}

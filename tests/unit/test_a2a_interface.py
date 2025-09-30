@@ -28,7 +28,7 @@ else:  # pragma: no cover - exercised via regression test
 
 
 @pytest.fixture
-def mock_a2a_server():
+def mock_a2a_server() -> Any:
     """Create a mock A2A server."""
     with patch("autoresearch.a2a_interface.A2AServer") as mock_server:
         mock_instance = MagicMock()
@@ -37,14 +37,14 @@ def mock_a2a_server():
 
 
 @pytest.fixture
-def mock_send_request():
+def mock_send_request() -> Any:
     """Patch the internal send_request helper."""
     with patch("autoresearch.a2a_interface.A2AClientWrapper._send_request") as mock:
         yield mock
 
 
 @pytest.fixture
-def make_a2a_message():
+def make_a2a_message() -> Any:
     """Create a real A2A message for tests."""
 
     if not A2A_AVAILABLE:  # pragma: no cover - runtime skip
@@ -59,7 +59,7 @@ def make_a2a_message():
 
 
 @pytest.fixture
-def mock_orchestrator():
+def mock_orchestrator() -> Any:
     """Create a mock Orchestrator."""
     with patch("autoresearch.a2a_interface.Orchestrator") as mock_orch:
         mock_instance = MagicMock()
@@ -68,7 +68,7 @@ def mock_orchestrator():
 
 
 @pytest.fixture
-def mock_config():
+def mock_config() -> Any:
     """Create a mock config and inject it for the duration of the test."""
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader, temporary_config
@@ -84,7 +84,7 @@ def mock_config():
                 ConfigLoader.reset_instance()
 
 
-def test_a2a_message_accepts_sdk_message(make_a2a_message):
+def test_a2a_message_accepts_sdk_message(make_a2a_message: Any) -> None:
     """``A2AMessage`` should accept concrete SDK messages without casting."""
 
     sdk_message = make_a2a_message(query="ping")
@@ -95,7 +95,7 @@ def test_a2a_message_accepts_sdk_message(make_a2a_message):
     assert envelope.message is sdk_message
 
 
-def test_runtime_requirements_raise(monkeypatch):
+def test_runtime_requirements_raise(monkeypatch: pytest.MonkeyPatch) -> None:
     """Missing runtime classes or helpers should produce helpful errors."""
 
     import autoresearch.a2a_interface as module
@@ -113,7 +113,7 @@ def test_runtime_requirements_raise(monkeypatch):
 class TestA2AInterface:
     """Tests for the A2AInterface class."""
 
-    def test_init(self, mock_a2a_server):
+    def test_init(self, mock_a2a_server: Any) -> None:
         """Test initialization of A2AInterface."""
         interface = A2AInterface(host="test_host", port=1234)
 
@@ -133,21 +133,21 @@ class TestA2AInterface:
             ]
         )
 
-    def test_start(self, mock_a2a_server):
+    def test_start(self, mock_a2a_server: Any) -> None:
         """Test starting the A2A interface."""
         interface = A2AInterface()
         interface.start()
 
         mock_a2a_server.start.assert_called_once()
 
-    def test_stop(self, mock_a2a_server):
+    def test_stop(self, mock_a2a_server: Any) -> None:
         """Test stopping the A2A interface."""
         interface = A2AInterface()
         interface.stop()
 
         mock_a2a_server.stop.assert_called_once()
 
-    def test_handle_query(self, mock_a2a_server, make_a2a_message, mock_orchestrator):
+    def test_handle_query(self, mock_a2a_server: Any, make_a2a_message: Any, mock_orchestrator: Any) -> None:
         """Test handling a query message."""
         # Setup
         interface = A2AInterface()
@@ -162,7 +162,7 @@ class TestA2AInterface:
         assert result["message"]["role"] == "agent"
         mock_orchestrator.run_query.assert_called_once()
 
-    def test_handle_command_get_capabilities(self, mock_a2a_server, make_a2a_message):
+    def test_handle_command_get_capabilities(self, mock_a2a_server: Any, make_a2a_message: Any) -> None:
         """Test handling a get_capabilities command."""
         interface = A2AInterface()
         msg = make_a2a_message(command="get_capabilities")
@@ -174,7 +174,7 @@ class TestA2AInterface:
         assert result == {"status": "success", "result": {"version": "1"}}
         cap.assert_called_once()
 
-    def test_handle_command_get_config(self, mock_a2a_server, make_a2a_message, mock_config):
+    def test_handle_command_get_config(self, mock_a2a_server: Any, make_a2a_message: Any, mock_config: Any) -> None:
         """Test handling a get_config command."""
         interface = A2AInterface()
         msg = make_a2a_message(command="get_config")
@@ -184,7 +184,7 @@ class TestA2AInterface:
         assert result["status"] == "success"
         assert "llm_backend" in result["result"]
 
-    def test_handle_command_set_config(self, mock_a2a_server, make_a2a_message, mock_config):
+    def test_handle_command_set_config(self, mock_a2a_server: Any, make_a2a_message: Any, mock_config: Any) -> None:
         """Test handling a set_config command."""
         interface = A2AInterface()
         msg = make_a2a_message(command="set_config", args={"loops": 3})
@@ -194,7 +194,7 @@ class TestA2AInterface:
         assert result["status"] == "success"
         assert result["result"]["loops"] == 3
 
-    def test_handle_command_unknown(self, mock_a2a_server, make_a2a_message):
+    def test_handle_command_unknown(self, mock_a2a_server: Any, make_a2a_message: Any) -> None:
         """Test handling an unknown command."""
         # Setup
         interface = A2AInterface()
@@ -209,7 +209,7 @@ class TestA2AInterface:
             "error": "Unknown command: unknown_command",
         }
 
-    def test_handle_info(self, mock_a2a_server, make_a2a_message):
+    def test_handle_info(self, mock_a2a_server: Any, make_a2a_message: Any) -> None:
         """Test handling an info message."""
         # Setup
         interface = A2AInterface()
@@ -225,7 +225,7 @@ class TestA2AInterface:
         assert "version" in result["agent_info"]
         assert "name" in result["agent_info"]
 
-    def test_handle_query_concurrent(self, mock_a2a_server, make_a2a_message):
+    def test_handle_query_concurrent(self, mock_a2a_server: Any, make_a2a_message: Any) -> None:
         """Ensure concurrent queries return distinct results."""
         interface = A2AInterface()
 
@@ -264,12 +264,12 @@ class TestA2AInterface:
 class TestA2AClient:
     """Tests for the A2AClient class."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of A2AClient."""
         client = A2AClient()
         assert isinstance(client, A2AClient)
 
-    def test_query_agent(self, mock_send_request):
+    def test_query_agent(self, mock_send_request: Any) -> None:
         """Test querying an agent."""
         client = A2AClient()
         mock_send_request.return_value = {
@@ -284,7 +284,7 @@ class TestA2AClient:
         assert result == {"answer": "test answer"}
         mock_send_request.assert_called_once()
 
-    def test_get_agent_capabilities(self, mock_send_request):
+    def test_get_agent_capabilities(self, mock_send_request: Any) -> None:
         """Test getting agent capabilities."""
         # Setup
         client = A2AClient()
@@ -295,7 +295,7 @@ class TestA2AClient:
         assert result == {"capabilities": "test"}
         mock_send_request.assert_called_once()
 
-    def test_get_agent_config(self, mock_send_request):
+    def test_get_agent_config(self, mock_send_request: Any) -> None:
         """Test getting agent config."""
         # Setup
         client = A2AClient()
@@ -306,7 +306,7 @@ class TestA2AClient:
         assert result == {"config": "test"}
         mock_send_request.assert_called_once()
 
-    def test_set_agent_config(self, mock_send_request):
+    def test_set_agent_config(self, mock_send_request: Any) -> None:
         """Test setting agent config."""
         # Setup
         client = A2AClient()
@@ -318,7 +318,7 @@ class TestA2AClient:
         mock_send_request.assert_called_once()
 
 
-def test_get_a2a_client():
+def test_get_a2a_client() -> None:
     """Test getting an A2A client."""
     with patch("autoresearch.a2a_interface.A2AClient") as mock_client_class:
         mock_client = MagicMock()
@@ -330,13 +330,13 @@ def test_get_a2a_client():
         mock_client_class.assert_called_once()
 
 
-def test_requires_a2a_decorator_available():
+def test_requires_a2a_decorator_available() -> None:
     """Test the requires_a2a decorator when A2A is available."""
     # Setup
     with patch("autoresearch.a2a_interface.A2A_AVAILABLE", True):
 
         @requires_a2a
-        def test_func():
+        def test_func() -> None:
             return "success"
 
         # Execute
@@ -346,13 +346,13 @@ def test_requires_a2a_decorator_available():
         assert result == "success"
 
 
-def test_requires_a2a_decorator_not_available():
+def test_requires_a2a_decorator_not_available() -> None:
     """Test the requires_a2a decorator when A2A is not available."""
     # Setup
     with patch("autoresearch.a2a_interface.A2A_AVAILABLE", False):
 
         @requires_a2a
-        def test_func():
+        def test_func() -> None:
             return "success"
 
         # Execute and Verify
@@ -362,7 +362,7 @@ def test_requires_a2a_decorator_not_available():
         assert "A2A SDK is not available" in str(excinfo.value)
 
 
-def test_handle_query_exception(mock_a2a_server, make_a2a_message, mock_orchestrator):
+def test_handle_query_exception(mock_a2a_server: Any, make_a2a_message: Any, mock_orchestrator: Any) -> None:
     interface = A2AInterface()
     msg = make_a2a_message(query="bad")
     mock_orchestrator.run_query.side_effect = RuntimeError("oops")
@@ -371,7 +371,7 @@ def test_handle_query_exception(mock_a2a_server, make_a2a_message, mock_orchestr
     assert "oops" in result["error"]
 
 
-def test_handle_set_config_invalid(monkeypatch, mock_a2a_server, make_a2a_message, mock_config):
+def test_handle_set_config_invalid(monkeypatch: pytest.MonkeyPatch, mock_a2a_server: Any, make_a2a_message: Any, mock_config: Any) -> None:
     interface = A2AInterface()
     msg = make_a2a_message(command="set_config", args={"loops": "bad"})
     result = interface._handle_command(msg)
@@ -401,7 +401,7 @@ def test_simulation_event_order() -> None:
 
 @pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 class TestA2AClientExtended(TestA2AClient):
-    def test_query_agent_error(self, mock_send_request):
+    def test_query_agent_error(self, mock_send_request: Any) -> None:
         client = A2AClient()
         mock_send_request.return_value = {"error": "bad"}
         result = client.query_agent("http://test-agent", "q")

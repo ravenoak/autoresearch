@@ -2,9 +2,11 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.extensions import VSSExtensionLoader
 from autoresearch.storage import StorageManager
+import pytest
+from pathlib import Path
 
 
-def test_storage_setup_with_stub_extension(tmp_path, monkeypatch):
+def test_storage_setup_with_stub_extension(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """StorageManager.setup succeeds when using a stubbed VSS extension."""
     stub = tmp_path / "extensions" / "vss.duckdb_extension"
     stub.parent.mkdir(parents=True, exist_ok=True)

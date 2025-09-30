@@ -4,6 +4,7 @@ from types import MethodType
 import sys
 import pytest
 import importlib
+from typing import Any
 
 
 sys.modules.setdefault("bertopic", MagicMock())
@@ -24,7 +25,7 @@ def _app_mod():
     return importlib.import_module("autoresearch.main.app")
 
 
-def test_search_default_output_tty(monkeypatch, mock_run_query, orchestrator):
+def test_search_default_output_tty(monkeypatch: pytest.MonkeyPatch, mock_run_query: Any, orchestrator: Any) -> None:
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     orch = orchestrator
@@ -35,7 +36,7 @@ def test_search_default_output_tty(monkeypatch, mock_run_query, orchestrator):
     assert "# Answer" in result.stdout
 
 
-def test_search_default_output_json(monkeypatch, mock_run_query, orchestrator):
+def test_search_default_output_json(monkeypatch: pytest.MonkeyPatch, mock_run_query: Any, orchestrator: Any) -> None:
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
@@ -48,7 +49,7 @@ def test_search_default_output_json(monkeypatch, mock_run_query, orchestrator):
 
 
 @pytest.mark.parametrize("mode", ["direct", "dialectical"])
-def test_search_reasoning_mode_option(monkeypatch, mode, config_loader, orchestrator):
+def test_search_reasoning_mode_option(monkeypatch: pytest.MonkeyPatch, mode: Any, config_loader: Any, orchestrator: Any) -> None:
     runner = CliRunner()
 
     captured = {}
@@ -77,7 +78,7 @@ def test_search_reasoning_mode_option(monkeypatch, mode, config_loader, orchestr
     assert captured["mode"].value == mode
 
 
-def test_search_primus_start_option(monkeypatch, config_loader, orchestrator):
+def test_search_primus_start_option(monkeypatch: pytest.MonkeyPatch, config_loader: Any, orchestrator: Any) -> None:
     runner = CliRunner()
 
     captured = {}
@@ -106,7 +107,7 @@ def test_search_primus_start_option(monkeypatch, config_loader, orchestrator):
     assert captured["start"] == 2
 
 
-def test_config_command(monkeypatch, config_loader):
+def test_config_command(monkeypatch: pytest.MonkeyPatch, config_loader: Any) -> None:
     runner = CliRunner()
     from autoresearch.config.models import ConfigModel
 
@@ -118,7 +119,7 @@ def test_config_command(monkeypatch, config_loader):
 
 
 @patch("autoresearch.main.app.create_server")
-def test_serve_command(mock_create_server, monkeypatch, config_loader):
+def test_serve_command(mock_create_server: Any, monkeypatch: pytest.MonkeyPatch, config_loader: Any) -> None:
     """Test the serve command that starts an MCP server."""
     runner = CliRunner()
 

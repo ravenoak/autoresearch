@@ -18,17 +18,18 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
+from typing import Any
 
 
 # Fixtures for common test setup
 @pytest.fixture
-def test_config():
+def test_config() -> Any:
     """Create a test configuration with minimal settings."""
     return ConfigModel(agents=["TestAgent"], loops=1, max_errors=1)
 
 
 @pytest.fixture
-def failing_agent():
+def failing_agent() -> Any:
     """Create a failing agent that raises an exception when executed."""
     agent = MagicMock()
     agent.can_execute.return_value = True
@@ -43,8 +44,8 @@ def setup_state_and_metrics():
 
 
 def test_execute_agent_records_errors_and_circuit_breaker(
-    monkeypatch, test_config, failing_agent
-):
+    monkeypatch: pytest.MonkeyPatch, test_config: Any, failing_agent: Any
+) -> None:
     """_execute_agent captures exceptions and exposes circuit breaker status."""
 
     cb_manager = CircuitBreakerManager()
@@ -81,7 +82,7 @@ def test_execute_agent_records_errors_and_circuit_breaker(
     )
 
 
-def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
+def test_retry_with_backoff_on_transient_error(monkeypatch: pytest.MonkeyPatch, test_config: Any) -> None:
     """Transient errors are retried with backoff and circuit breaker resets on success."""
 
     cb_manager = CircuitBreakerManager()
@@ -129,8 +130,8 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
 
 
 def test_orchestrator_raises_after_error(
-    monkeypatch, test_config, failing_agent, orchestrator
-):
+    monkeypatch: pytest.MonkeyPatch, test_config: Any, failing_agent: Any, orchestrator: Any
+) -> None:
     """Test that the orchestrator raises an OrchestrationError after an agent error.
 
     This test verifies that when an agent raises an exception during execution,
@@ -154,7 +155,7 @@ def test_orchestrator_raises_after_error(
     assert len(excinfo.value.context["errors"]) > 0
 
 
-def test_invalid_agent_name_raises(test_config, orchestrator):
+def test_invalid_agent_name_raises(test_config: Any, orchestrator: Any) -> None:
     """Test that using an invalid agent name raises an OrchestrationError.
 
     This test verifies that when an unknown agent name is specified in the
@@ -178,7 +179,7 @@ def test_invalid_agent_name_raises(test_config, orchestrator):
     assert any("Unknown" in msg and "agent" in msg.lower() for msg in error_messages)
 
 
-def test_callback_error_propagates(test_config, orchestrator):
+def test_callback_error_propagates(test_config: Any, orchestrator: Any) -> None:
     """Test that errors in callbacks propagate to the caller.
 
     This test verifies that when a callback function raises an exception,
@@ -207,8 +208,8 @@ def test_callback_error_propagates(test_config, orchestrator):
     ],
 )
 def test_agent_error_is_wrapped(
-    monkeypatch, test_config, error_type, error_message, orchestrator
-):
+    monkeypatch: pytest.MonkeyPatch, test_config: Any, error_type: Any, error_message: Any, orchestrator: Any
+) -> None:
     """Test that agent errors are wrapped in AgentError.
 
     This test verifies that when an agent raises an exception during execution,
@@ -250,7 +251,7 @@ def test_agent_error_is_wrapped(
     assert any(error_message in error for error in error_strings)
 
 
-def test_parallel_query_error_claims(monkeypatch, orchestrator):
+def test_parallel_query_error_claims(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     """Errors from parallel groups are added to the response claims."""
 
     cfg = ConfigModel(agents=[], loops=1)
@@ -297,7 +298,7 @@ def test_parallel_query_error_claims(monkeypatch, orchestrator):
     assert any("Error in agent group ['B']" in c for c in resp.reasoning)
 
 
-def test_parallel_query_timeout_claims(monkeypatch, orchestrator):
+def test_parallel_query_timeout_claims(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     """Timeouts from parallel groups are added to the response claims."""
 
     cfg = ConfigModel(agents=[], loops=1)

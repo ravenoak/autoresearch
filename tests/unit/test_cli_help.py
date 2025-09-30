@@ -2,9 +2,11 @@ import importlib
 from pathlib import Path
 
 from typer.testing import CliRunner
+import pytest
+from typing import Any
 
 
-def test_cli_help_no_ansi(monkeypatch, dummy_storage):
+def test_cli_help_no_ansi(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -22,7 +24,7 @@ def test_cli_help_no_ansi(monkeypatch, dummy_storage):
     assert "Usage:" in result.stdout
 
 
-def test_search_help_includes_interactive(monkeypatch, dummy_storage):
+def test_search_help_includes_interactive(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -40,7 +42,7 @@ def test_search_help_includes_interactive(monkeypatch, dummy_storage):
     assert "--loops" in result.stdout
 
 
-def test_search_help_includes_visualize(monkeypatch, dummy_storage):
+def test_search_help_includes_visualize(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -57,7 +59,7 @@ def test_search_help_includes_visualize(monkeypatch, dummy_storage):
     assert "--visualize" in result.stdout
 
 
-def test_search_loops_option(monkeypatch, dummy_storage):
+def test_search_loops_option(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
     from autoresearch.models import QueryResponse
@@ -91,7 +93,7 @@ def test_search_loops_option(monkeypatch, dummy_storage):
     assert captured["loops"] == 4
 
 
-def test_search_help_includes_ontology_flags(monkeypatch, dummy_storage):
+def test_search_help_includes_ontology_flags(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -110,7 +112,7 @@ def test_search_help_includes_ontology_flags(monkeypatch, dummy_storage):
     assert "--infer-relations" in result.stdout
 
 
-def test_visualize_help_includes_layout(monkeypatch, dummy_storage):
+def test_visualize_help_includes_layout(monkeypatch: pytest.MonkeyPatch, dummy_storage: Any) -> None:
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 

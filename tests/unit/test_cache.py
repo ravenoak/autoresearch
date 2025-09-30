@@ -3,6 +3,7 @@ from threading import Thread  # for thread-safety test
 from typing import Any, Dict, List
 
 import pytest
+from pathlib import Path
 
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
@@ -28,7 +29,7 @@ def _skip_ontology_reasoner(monkeypatch) -> None:
     )
 
 
-def test_search_uses_cache(monkeypatch):
+def test_search_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 
@@ -68,7 +69,7 @@ def test_search_uses_cache(monkeypatch):
         assert results2[0]["url"] == results1[0]["url"]
 
 
-def test_cache_lifecycle(tmp_path):
+def test_cache_lifecycle(tmp_path: Path) -> None:
     """Exercise basic cache operations using a temporary database."""
     db_path = tmp_path / "cache.json"
     cache = SearchCache(str(db_path))
@@ -91,7 +92,7 @@ def test_cache_lifecycle(tmp_path):
     assert not db_path.exists()
 
 
-def test_setup_thread_safe(tmp_path):
+def test_setup_thread_safe(tmp_path: Path) -> None:
     """Ensure multiple setup calls from threads share the same database."""
     cache = SearchCache(str(tmp_path / "cache.json"))
     results = []
@@ -111,7 +112,7 @@ def test_setup_thread_safe(tmp_path):
     cache.teardown(remove_file=True)
 
 
-def test_cache_is_backend_specific(monkeypatch):
+def test_cache_is_backend_specific(monkeypatch: pytest.MonkeyPatch) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 
@@ -178,7 +179,7 @@ def test_cache_is_backend_specific(monkeypatch):
         assert results3[0]["url"] == results1[0]["url"]
 
 
-def test_cache_is_backend_specific_without_embeddings(monkeypatch):
+def test_cache_is_backend_specific_without_embeddings(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure cache separation without relying on embeddings."""
     cache = SearchCache()
     search = Search(cache=cache)
@@ -232,7 +233,7 @@ def test_cache_is_backend_specific_without_embeddings(monkeypatch):
         assert calls == {"b1": 1, "b2": 1}
 
 
-def test_context_aware_query_expansion_uses_cache(monkeypatch):
+def test_context_aware_query_expansion_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 

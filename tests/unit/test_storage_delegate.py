@@ -17,19 +17,19 @@ class DummyStorage(StorageManager):
         return context
 
 
-def test_set_and_get_delegate():
+def test_set_and_get_delegate() -> None:
     set_delegate(DummyStorage)
     assert get_delegate() is DummyStorage
 
 
-def test_delegate_setup_called():
+def test_delegate_setup_called() -> None:
     set_delegate(DummyStorage)
     StorageManager.setup("path")
     assert DummyStorage.called
     set_delegate(None)
 
 
-def test_message_queue_put():
+def test_message_queue_put() -> None:
     q: Queue[dict[str, object]] = Queue()
     set_message_queue(q)
     StorageManager.persist_claim({"id": "1", "content": "c"})

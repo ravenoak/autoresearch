@@ -5,7 +5,7 @@ from autoresearch.llm import pool as llm_pool
 
 
 @pytest.mark.requires_llm
-def test_get_session_reuses_existing_instance(monkeypatch) -> None:
+def test_get_session_reuses_existing_instance(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel()
     monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
     llm_pool.close_session()

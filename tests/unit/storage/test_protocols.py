@@ -4,6 +4,7 @@ import rdflib
 
 from autoresearch.storage_backends import init_rdf_store
 from autoresearch.storage_typing import GraphProtocol, to_json_dict
+from pathlib import Path
 
 
 def test_to_json_dict_returns_copy() -> None:
@@ -15,7 +16,7 @@ def test_to_json_dict_returns_copy() -> None:
     assert source["score"] == 0.9
 
 
-def test_init_rdf_store_supports_protocol(tmp_path) -> None:
+def test_init_rdf_store_supports_protocol(tmp_path: Path) -> None:
     store = init_rdf_store("memory", str(tmp_path / "rdf"))
     assert isinstance(store, GraphProtocol)
 

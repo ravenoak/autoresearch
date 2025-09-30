@@ -12,7 +12,7 @@ def test_models_spec_exists() -> None:
     assert SPEC_PATH.is_file()
 
 
-def test_module_docstrings():
+def test_module_docstrings() -> None:
     """Test that the models module has a comprehensive docstring."""
     import autoresearch.models as models_module
 
@@ -36,7 +36,7 @@ def test_module_docstring_mentions_spec() -> None:
     assert "docs/algorithms/models.md" in (models_module.__doc__ or "")
 
 
-def test_class_docstrings():
+def test_class_docstrings() -> None:
     """Test that classes have comprehensive docstrings."""
     classes = [QueryResponse]
 

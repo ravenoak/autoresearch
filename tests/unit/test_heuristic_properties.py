@@ -2,6 +2,7 @@ import pytest
 from hypothesis import assume, given, strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+from typing import Any
 
 
 @pytest.mark.unit
@@ -9,7 +10,7 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
     scores=st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=3, max_size=3),
     weights=st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=3, max_size=3),
 )
-def test_weighted_score_normalization(scores, weights):
+def test_weighted_score_normalization(scores: Any, weights: Any) -> None:
     total = sum(weights)
     assume(total > 0)
     weights = [w / total for w in weights]
@@ -22,7 +23,7 @@ def test_weighted_score_normalization(scores, weights):
     baseline=st.integers(min_value=1, max_value=50),
     delta=st.integers(min_value=0, max_value=50),
 )
-def test_token_budget_monotonicity(baseline, delta):
+def test_token_budget_monotonicity(baseline: Any, delta: Any) -> None:
     small = baseline
     large = baseline + delta
     metrics_small = OrchestrationMetrics()
@@ -35,7 +36,7 @@ def test_token_budget_monotonicity(baseline, delta):
 
 
 @pytest.mark.unit
-def test_token_budget_monotonicity_deterministic():
+def test_token_budget_monotonicity_deterministic() -> None:
     metrics_small = OrchestrationMetrics()
     metrics_large = OrchestrationMetrics()
 
@@ -60,7 +61,7 @@ def test_token_budget_monotonicity_deterministic():
 
 
 @pytest.mark.unit
-def test_token_budget_zero_usage_regression():
+def test_token_budget_zero_usage_regression() -> None:
     idle = OrchestrationMetrics()
     active = OrchestrationMetrics()
     idle.record_tokens("a", 0, 0)

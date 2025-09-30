@@ -7,6 +7,7 @@ import pytest
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError
 from autoresearch.storage_backends import DuckDBStorageBackend
+from pathlib import Path
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +23,7 @@ def reset_config_loader() -> Generator[None, None, None]:
     ConfigLoader.reset_instance()
 
 
-def test_concurrent_setup_is_idempotent(tmp_path) -> None:
+def test_concurrent_setup_is_idempotent(tmp_path: Path) -> None:
     """Concurrent setup calls create the schema only once."""
 
     backend = DuckDBStorageBackend()
@@ -44,7 +45,7 @@ def test_concurrent_setup_is_idempotent(tmp_path) -> None:
     backend.close()
 
 
-def test_initialize_schema_version_failure(tmp_path) -> None:
+def test_initialize_schema_version_failure(tmp_path: Path) -> None:
     """Errors during schema version init raise ``StorageError``."""
 
     backend = DuckDBStorageBackend()
@@ -57,7 +58,7 @@ def test_initialize_schema_version_failure(tmp_path) -> None:
                 backend.setup(db_path=str(tmp_path / "db.duckdb"))
 
 
-def test_persist_claims_concurrent(tmp_path) -> None:
+def test_persist_claims_concurrent(tmp_path: Path) -> None:
     """Concurrent ``persist_claim`` calls remain thread safe."""
 
     backend = DuckDBStorageBackend()

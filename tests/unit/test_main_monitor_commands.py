@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 import importlib
 import pytest
 from typer.testing import CliRunner  # Typer's CLI test runner
+from typing import Any
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -11,7 +12,7 @@ def _main():
     return importlib.import_module("autoresearch.main")
 
 
-def test_monitor_command(monkeypatch):
+def test_monitor_command(monkeypatch: pytest.MonkeyPatch) -> None:
     """Monitor command prints system metrics."""
     runner = CliRunner()
     monkeypatch.setattr(
@@ -23,7 +24,7 @@ def test_monitor_command(monkeypatch):
 
 
 @patch("autoresearch.a2a_interface.A2AInterface")
-def test_serve_a2a_command(mock_a2a_interface_class):
+def test_serve_a2a_command(mock_a2a_interface_class: Any) -> None:
     """Test the serve-a2a command."""
     # Setup
     runner = CliRunner()
@@ -41,7 +42,7 @@ def test_serve_a2a_command(mock_a2a_interface_class):
 
 
 @patch("autoresearch.a2a_interface.A2AInterface")
-def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class):
+def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class: Any) -> None:
     """Test the serve-a2a command with KeyboardInterrupt."""
     # Setup
     runner = CliRunner()
@@ -58,7 +59,7 @@ def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class):
 
 
 @patch("autoresearch.monitor.cli.NodeHealthMonitor")
-def test_monitor_serve_command(mock_monitor_class):
+def test_monitor_serve_command(mock_monitor_class: Any) -> None:
     """Test the monitor serve command."""
     runner = CliRunner()
     mock_monitor = MagicMock()
@@ -75,7 +76,7 @@ def test_monitor_serve_command(mock_monitor_class):
 
 
 @patch("autoresearch.monitor.cli.NodeHealthMonitor")
-def test_monitor_serve_command_keyboard_interrupt(mock_monitor_class):
+def test_monitor_serve_command_keyboard_interrupt(mock_monitor_class: Any) -> None:
     """Test the monitor serve command with KeyboardInterrupt."""
     runner = CliRunner()
     mock_monitor = MagicMock()

@@ -16,7 +16,7 @@ class Session(dict):
         self[key] = value
 
 
-def test_apply_accessibility_settings_no_high_contrast(monkeypatch):
+def test_apply_accessibility_settings_no_high_contrast(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
     fake_st = types.SimpleNamespace(
         markdown=lambda *a, **k: calls.append(a),
@@ -27,7 +27,7 @@ def test_apply_accessibility_settings_no_high_contrast(monkeypatch):
     assert len(calls) == 1
 
 
-def test_apply_theme_settings_light(monkeypatch):
+def test_apply_theme_settings_light(monkeypatch: pytest.MonkeyPatch) -> None:
     m = MagicMock()
     fake_st = types.SimpleNamespace(markdown=m, session_state={"dark_mode": False})
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
@@ -47,7 +47,7 @@ class _DummyContext:
         pass
 
 
-def test_display_guided_tour_dismiss(monkeypatch):
+def test_display_guided_tour_dismiss(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _DummyContext()
     calls = {"modal": 0}
 
@@ -67,7 +67,7 @@ def test_display_guided_tour_dismiss(monkeypatch):
     assert calls["modal"] == 1 and ctx.entered
 
 
-def test_display_help_sidebar_dismiss(monkeypatch):
+def test_display_help_sidebar_dismiss(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _DummyContext()
     sidebar = types.SimpleNamespace(expander=lambda *a, **k: ctx)
     fake_st = types.SimpleNamespace(

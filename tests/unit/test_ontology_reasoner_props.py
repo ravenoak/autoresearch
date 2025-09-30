@@ -6,6 +6,7 @@ from hypothesis import strategies as st
 import autoresearch.kg_reasoning as kr
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
+from typing import Any
 
 
 def _mock_config(reasoner: str) -> ConfigModel:
@@ -50,7 +51,7 @@ def _transitive_closure(store: rdflib.Graph) -> None:
         max_size=5,
     )
 )
-def test_reasoner_reaches_closure(monkeypatch: pytest.MonkeyPatch, triples):
+def test_reasoner_reaches_closure(monkeypatch: pytest.MonkeyPatch, triples: Any) -> None:
     """Running the reasoner twice does not add new triples."""
     g = rdflib.Graph()
     p = rdflib.URIRef("urn:p")

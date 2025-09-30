@@ -6,6 +6,8 @@ import pytest
 
 from autoresearch.models import QueryResponse
 from autoresearch.visualization import save_knowledge_graph
+from pathlib import Path
+from typing import Any
 
 
 class DummyGraph:
@@ -43,7 +45,7 @@ def fake_deps(monkeypatch):
     yield fake_plt
 
 
-def test_save_knowledge_graph(monkeypatch, tmp_path, fake_deps):
+def test_save_knowledge_graph(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_deps: Any) -> None:
     plt = fake_deps
     response = QueryResponse(
         answer="a",
@@ -56,7 +58,7 @@ def test_save_knowledge_graph(monkeypatch, tmp_path, fake_deps):
     plt.savefig.assert_called_once_with(str(out_file))
 
 
-def test_save_knowledge_graph_spring_fallback(monkeypatch, tmp_path, fake_deps):
+def test_save_knowledge_graph_spring_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_deps: Any) -> None:
     plt = fake_deps
     response = QueryResponse(answer="a", citations=[], reasoning=["r"], metrics={})
     out_file = tmp_path / "graph.png"

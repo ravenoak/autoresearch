@@ -7,14 +7,14 @@ import pytest
 from autoresearch.orchestrator_perf import benchmark_scheduler, queue_metrics, simulate
 
 
-def test_queue_metrics_more_workers():
+def test_queue_metrics_more_workers() -> None:
     """Adding workers reduces expected queue length."""
     metrics_two = queue_metrics(2, 3, 5)
     metrics_four = queue_metrics(4, 3, 5)
     assert metrics_four["avg_queue_length"] < metrics_two["avg_queue_length"]
 
 
-def test_benchmark_scheduler_scales():
+def test_benchmark_scheduler_scales() -> None:
     """Throughput scales and profiling returns stats.
 
     The scaling threshold can be adjusted with the
@@ -32,14 +32,14 @@ def test_benchmark_scheduler_scales():
     assert one.profile
 
 
-def test_queue_metrics_mm1_values():
+def test_queue_metrics_mm1_values() -> None:
     """Queue metrics match analytic results for an M/M/1 system."""
     metrics = queue_metrics(1, 1, 2)
     assert metrics["utilization"] == 0.5
     assert metrics["avg_queue_length"] == pytest.approx(0.5, rel=1e-3)
 
 
-def test_simulate_adds_memory_usage():
+def test_simulate_adds_memory_usage() -> None:
     """Simulation appends expected memory to queue metrics."""
     metrics = simulate(2, 3, 5, 10, 0.5)
     base = queue_metrics(2, 3, 5)

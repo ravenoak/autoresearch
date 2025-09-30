@@ -2,7 +2,7 @@ from autoresearch.orchestration.budgeting import _apply_adaptive_token_budget
 from tests.helpers import make_config_model
 
 
-def test_apply_adaptive_token_budget_paths():
+def test_apply_adaptive_token_budget_paths() -> None:
     cfg = make_config_model(
         token_budget=100,
         loops=2,

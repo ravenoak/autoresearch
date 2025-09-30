@@ -26,7 +26,7 @@ def test_capture_token_usage_respects_budget(
     words: list[str],
     budget: int,
     monkeypatch: pytest.MonkeyPatch,
-    flexible_llm_adapter,
+    flexible_llm_adapter: Any,
 ) -> None:
     """Prompts exceeding ``token_budget`` are compressed before counting.
 

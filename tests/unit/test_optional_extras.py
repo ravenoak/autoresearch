@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from typing import Any
 
 
 @pytest.mark.requires_ui
-def test_ui_extra(has_ui) -> None:
+def test_ui_extra(has_ui: Any) -> None:
     if not has_ui:
         pytest.skip("ui extra not installed")
     import streamlit
@@ -13,7 +14,7 @@ def test_ui_extra(has_ui) -> None:
 
 
 @pytest.mark.requires_vss
-def test_vss_extra(has_vss) -> None:
+def test_vss_extra(has_vss: Any) -> None:
     if not has_vss:
         pytest.skip("vss extra not installed")
     import duckdb_extension_vss as vss
@@ -22,7 +23,7 @@ def test_vss_extra(has_vss) -> None:
 
 
 @pytest.mark.requires_git
-def test_git_extra(has_git) -> None:
+def test_git_extra(has_git: Any) -> None:
     if not has_git:
         pytest.skip("git extra not installed")
     import git
@@ -31,7 +32,7 @@ def test_git_extra(has_git) -> None:
 
 
 @pytest.mark.requires_distributed
-def test_distributed_extra(has_distributed) -> None:
+def test_distributed_extra(has_distributed: Any) -> None:
     if not has_distributed:
         pytest.skip("distributed extra not installed")
     import ray
@@ -40,7 +41,7 @@ def test_distributed_extra(has_distributed) -> None:
 
 
 @pytest.mark.requires_analysis
-def test_analysis_extra(has_analysis) -> None:
+def test_analysis_extra(has_analysis: Any) -> None:
     if not has_analysis:
         pytest.skip("analysis extra not installed")
     import polars
@@ -49,7 +50,7 @@ def test_analysis_extra(has_analysis) -> None:
 
 
 @pytest.mark.requires_nlp
-def test_nlp_extra(has_nlp) -> None:
+def test_nlp_extra(has_nlp: Any) -> None:
     if not has_nlp:
         pytest.skip("nlp extra not installed")
     try:
@@ -61,7 +62,7 @@ def test_nlp_extra(has_nlp) -> None:
 
 
 @pytest.mark.requires_llm
-def test_llm_extra(has_llm) -> None:
+def test_llm_extra(has_llm: Any) -> None:
     if not has_llm:
         pytest.skip("llm extra not installed")
     try:
@@ -73,7 +74,7 @@ def test_llm_extra(has_llm) -> None:
 
 
 @pytest.mark.requires_parsers
-def test_parsers_extra(has_parsers) -> None:
+def test_parsers_extra(has_parsers: Any) -> None:
     if not has_parsers:
         pytest.skip("parsers extra not installed")
     import pdfminer

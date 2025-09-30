@@ -6,9 +6,10 @@ References `docs/specification.md` and
 
 from autoresearch.output_format import OutputFormatter, TemplateRegistry
 from autoresearch.models import QueryResponse
+import pytest
 
 
-def test_template_fallback_to_markdown(capsys, monkeypatch):
+def test_template_fallback_to_markdown(capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch) -> None:
     def raise_key(name):
         raise KeyError(name)
 

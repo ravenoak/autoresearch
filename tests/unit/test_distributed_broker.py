@@ -29,13 +29,13 @@ def test_get_message_broker_invalid() -> None:
 
 
 @pytest.mark.requires_distributed
-def test_redis_broker_requires_dependency(monkeypatch) -> None:
+def test_redis_broker_requires_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(__import__("sys").modules, "redis", None)
     with pytest.raises(ModuleNotFoundError):
         RedisBroker()
 
 
-def test_ray_broker_publish(monkeypatch) -> None:
+def test_ray_broker_publish(monkeypatch: pytest.MonkeyPatch) -> None:
     class StubQueue:
         def __init__(self, *a, **k):
             pass

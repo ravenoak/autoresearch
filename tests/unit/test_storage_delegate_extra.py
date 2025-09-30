@@ -20,7 +20,7 @@ def _reset_delegate():
     set_delegate(None)
 
 
-def test_touch_node_uses_delegate():
+def test_touch_node_uses_delegate() -> None:
     set_delegate(DummyStorage)
     StorageManager.touch_node("n1")
     assert DummyStorage.touched == ["n1"]

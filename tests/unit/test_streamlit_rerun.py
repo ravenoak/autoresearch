@@ -5,13 +5,14 @@ from __future__ import annotations
 import types
 
 from autoresearch import streamlit_app
+import pytest
 
 
 class _DummyStreamlit(types.SimpleNamespace):
     """Minimal stub of the Streamlit module used for rerun tests."""
 
 
-def test_trigger_rerun_falls_back_to_experimental(monkeypatch):
+def test_trigger_rerun_falls_back_to_experimental(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure the helper uses the experimental rerun path when necessary."""
 
     calls: list[str] = []
@@ -27,7 +28,7 @@ def test_trigger_rerun_falls_back_to_experimental(monkeypatch):
     assert calls == ["experimental"]
 
 
-def test_trigger_rerun_prefers_stable_api(monkeypatch):
+def test_trigger_rerun_prefers_stable_api(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure the helper calls the stable rerun API when both exist."""
 
     calls: list[str] = []

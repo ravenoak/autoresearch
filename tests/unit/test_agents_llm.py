@@ -7,6 +7,7 @@ from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.orchestration.state import QueryState
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm.adapters import LLMAdapter
+from typing import Any
 
 
 class MockAdapter(LLMAdapter):
@@ -29,7 +30,7 @@ class MockAdapter(LLMAdapter):
 
 
 # Tests using dependency injection (new approach)
-def test_synthesizer_with_injected_adapter():
+def test_synthesizer_with_injected_adapter() -> None:
     """Test SynthesizerAgent with an injected adapter."""
     state = QueryState(query="q")
     cfg = ConfigModel.model_construct()
@@ -39,7 +40,7 @@ def test_synthesizer_with_injected_adapter():
     assert result["claims"][0]["content"].startswith("mocked:")
 
 
-def test_contrarian_with_injected_adapter():
+def test_contrarian_with_injected_adapter() -> None:
     """Test ContrarianAgent with an injected adapter."""
     state = QueryState(
         query="q",
@@ -54,7 +55,7 @@ def test_contrarian_with_injected_adapter():
 
 
 @patch("autoresearch.agents.dialectical.fact_checker.Search.external_lookup")
-def test_fact_checker_with_injected_adapter(mock_search):
+def test_fact_checker_with_injected_adapter(mock_search: Any) -> None:
     """Test FactChecker with an injected adapter."""
     mock_search.return_value = [{"title": "t", "url": "u"}]
     state = QueryState(
@@ -70,7 +71,7 @@ def test_fact_checker_with_injected_adapter(mock_search):
 
 
 # Tests using AgentFactory with injected adapters
-def test_agent_factory_with_injected_adapter():
+def test_agent_factory_with_injected_adapter() -> None:
     """Test creating agents through the factory with injected adapters."""
     # Register the agent classes if not already registered
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
@@ -109,7 +110,7 @@ def test_agent_factory_with_injected_adapter():
 
 # Legacy tests using patching (kept for backward compatibility)
 @patch("autoresearch.agents.base.Agent.get_adapter")
-def test_synthesizer_dynamic(mock_get_adapter):
+def test_synthesizer_dynamic(mock_get_adapter: Any) -> None:
     mock_get_adapter.return_value = MockAdapter()
     state = QueryState(query="q")
     cfg = ConfigModel.model_construct()
@@ -119,7 +120,7 @@ def test_synthesizer_dynamic(mock_get_adapter):
 
 
 @patch("autoresearch.agents.base.Agent.get_adapter")
-def test_contrarian_dynamic(mock_get_adapter):
+def test_contrarian_dynamic(mock_get_adapter: Any) -> None:
     mock_get_adapter.return_value = MockAdapter()
     state = QueryState(
         query="q",
@@ -134,7 +135,7 @@ def test_contrarian_dynamic(mock_get_adapter):
 
 @patch("autoresearch.agents.base.Agent.get_adapter")
 @patch("autoresearch.agents.dialectical.fact_checker.Search.external_lookup")
-def test_fact_checker_sources(mock_search, mock_get_adapter):
+def test_fact_checker_sources(mock_search: Any, mock_get_adapter: Any) -> None:
     mock_get_adapter.return_value = MockAdapter()
     mock_search.return_value = [{"title": "t", "url": "u"}]
     state = QueryState(

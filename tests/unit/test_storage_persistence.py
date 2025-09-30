@@ -9,9 +9,11 @@ import duckdb
 
 from autoresearch import storage
 from autoresearch.extensions import VSSExtensionLoader
+import pytest
+from pathlib import Path
 
 
-def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypatch):
+def test_initialize_creates_tables_and_teardown_removes_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure table creation runs and teardown removes the DB file."""
 
     db_file = tmp_path / "temp.duckdb"
@@ -43,7 +45,7 @@ def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypat
     assert not db_file.exists()
 
 
-def test_initialize_handles_missing_extension(tmp_path, monkeypatch):
+def test_initialize_handles_missing_extension(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Initialization proceeds when the vector extension cannot be loaded."""
 
     db_file = tmp_path / "temp.duckdb"

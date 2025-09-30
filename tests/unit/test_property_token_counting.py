@@ -2,6 +2,7 @@ from hypothesis import given, strategies as st, settings, HealthCheck
 import string
 
 from autoresearch.llm.token_counting import compress_prompt, prune_context
+from typing import Any
 
 
 @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
@@ -9,7 +10,7 @@ from autoresearch.llm.token_counting import compress_prompt, prune_context
     words=st.lists(st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=3, max_size=20),
     budget=st.integers(min_value=1, max_value=20),
 )
-def test_compress_prompt_preserves_edges(words, budget):
+def test_compress_prompt_preserves_edges(words: Any, budget: Any) -> None:
     prompt = " ".join(words)
     compressed = compress_prompt(prompt, budget)
     c_tokens = compressed.split()
@@ -23,7 +24,7 @@ def test_compress_prompt_preserves_edges(words, budget):
     messages=st.lists(st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=0, max_size=10),
     budget=st.integers(min_value=0, max_value=20),
 )
-def test_prune_context_respects_budget(messages, budget):
+def test_prune_context_respects_budget(messages: Any, budget: Any) -> None:
     pruned = prune_context(messages, budget)
     total = sum(len(m.split()) for m in pruned)
     assert total <= budget

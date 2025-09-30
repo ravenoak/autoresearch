@@ -5,11 +5,13 @@ from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch import storage
 from autoresearch.storage import StorageManager
+import pytest
+from typing import Any
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(st.lists(st.text(min_size=1), unique=True, min_size=1, max_size=5))
-def test_pop_lru_order(monkeypatch, ids):
+def test_pop_lru_order(monkeypatch: pytest.MonkeyPatch, ids: Any) -> None:
     lru = OrderedDict((i, 0.0) for i in ids)
     monkeypatch.setattr(storage.StorageManager.state, "lru", lru, raising=False)
     popped = [StorageManager._pop_lru() for _ in ids]
@@ -23,7 +25,7 @@ def test_pop_lru_order(monkeypatch, ids):
         st.text(min_size=1), st.floats(min_value=0, max_value=1), min_size=1, max_size=5
     )
 )
-def test_pop_low_score(monkeypatch, node_conf):
+def test_pop_low_score(monkeypatch: pytest.MonkeyPatch, node_conf: Any) -> None:
     graph = nx.DiGraph()
     for node, score in node_conf.items():
         graph.add_node(node, confidence=float(score))
@@ -37,5 +39,5 @@ def test_pop_low_score(monkeypatch, node_conf):
     assert result not in storage.StorageManager.state.lru
 
 
-def test_current_ram_mb_non_negative():
+def test_current_ram_mb_non_negative() -> None:
     assert StorageManager._current_ram_mb() >= 0.0

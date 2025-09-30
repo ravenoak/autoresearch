@@ -3,9 +3,10 @@ import networkx as nx
 from unittest.mock import patch, MagicMock
 from autoresearch.storage import StorageManager, setup
 from autoresearch.errors import StorageError, NotFoundError
+from typing import Any
 
 
-def test_setup_rdf_store_error(mock_config, assert_error):
+def test_setup_rdf_store_error(mock_config: Any, assert_error: Any) -> None:
     """Test that setup handles RDF store errors properly."""
     # Setup
     # Create a mock config
@@ -40,7 +41,7 @@ def test_setup_rdf_store_error(mock_config, assert_error):
     assert_error(excinfo, "Failed to open RDF store", has_cause=True)
 
 
-def test_setup_rdf_plugin_missing(mock_config, assert_error):
+def test_setup_rdf_plugin_missing(mock_config: Any, assert_error: Any) -> None:
     """Test that setup raises a clear error when the RDF plugin is missing."""
     config = MagicMock()
     config.storage.rdf_backend = "oxigraph"
@@ -67,7 +68,7 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
     assert_error(excinfo, "Missing RDF backend plugin", has_cause=True)
 
 
-def test_setup_vector_extension_error(mock_storage_components, mock_config, assert_error):
+def test_setup_vector_extension_error(mock_storage_components: Any, mock_config: Any, assert_error: Any) -> None:
     """Test that setup handles vector extension errors properly."""
     # Setup
     # Create a mock for the DuckDB connection that raises an exception for LOAD vector
@@ -107,7 +108,7 @@ def test_setup_vector_extension_error(mock_storage_components, mock_config, asse
             assert_error(excinfo, "Failed to load vector extension", has_cause=True)
 
 
-def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_error):
+def test_create_hnsw_index_error(mock_storage_components: Any, mock_config: Any, assert_error: Any) -> None:
     """Test that create_hnsw_index handles errors properly."""
     # Setup
     # Create a mock DuckDB backend that raises an exception when create_hnsw_index is called
@@ -131,7 +132,7 @@ def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_er
     assert_error(excinfo, "Failed to create HNSW index", has_cause=True)
 
 
-def test_vector_search_error(mock_storage_components, mock_config, assert_error):
+def test_vector_search_error(mock_storage_components: Any, mock_config: Any, assert_error: Any) -> None:
     """Test that vector_search handles errors properly."""
     # Setup
     # Create a mock DuckDB connection
@@ -161,7 +162,7 @@ def test_vector_search_error(mock_storage_components, mock_config, assert_error)
             assert_error(excinfo, "Vector search failed", has_cause=True)
 
 
-def test_get_graph_not_initialized(mock_storage_components, assert_error):
+def test_get_graph_not_initialized(mock_storage_components: Any, assert_error: Any) -> None:
     """Test that get_graph raises NotFoundError when graph is not initialized."""
     # Setup
     # Mock the setup function to raise an exception
@@ -177,7 +178,7 @@ def test_get_graph_not_initialized(mock_storage_components, assert_error):
             assert_error(excinfo, "Graph not initialized", has_cause=True)
 
 
-def test_get_duckdb_conn_not_initialized(mock_storage_components, assert_error):
+def test_get_duckdb_conn_not_initialized(mock_storage_components: Any, assert_error: Any) -> None:
     """Test that get_duckdb_conn raises NotFoundError when connection is not initialized."""
     # Setup
     # Mock the setup function to raise an exception
@@ -193,7 +194,7 @@ def test_get_duckdb_conn_not_initialized(mock_storage_components, assert_error):
             assert_error(excinfo, "DuckDB connection not initialized", has_cause=True)
 
 
-def test_get_rdf_store_not_initialized(mock_storage_components, assert_error):
+def test_get_rdf_store_not_initialized(mock_storage_components: Any, assert_error: Any) -> None:
     """Test that get_rdf_store raises NotFoundError when store is not initialized."""
     # Setup
     # Mock the setup function to raise an exception

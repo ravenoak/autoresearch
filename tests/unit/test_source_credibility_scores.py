@@ -6,7 +6,7 @@ from autoresearch.config.models import SearchConfig
 from autoresearch.search import Search
 
 
-def test_assess_source_credibility_partial_domains():
+def test_assess_source_credibility_partial_domains() -> None:
     docs = [
         {"url": "https://dept.university.edu/paper"},
         {"url": "https://agency.gov/report"},
@@ -16,7 +16,7 @@ def test_assess_source_credibility_partial_domains():
     assert scores == [0.8, 0.85, 0.5]
 
 
-def test_rank_results_prefers_higher_credibility():
+def test_rank_results_prefers_higher_credibility() -> None:
     docs = [
         {"url": "https://dept.university.edu/paper"},
         {"url": "https://unknown.io/post"},

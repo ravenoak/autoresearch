@@ -2,6 +2,8 @@ import duckdb
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
+import pytest
+from typing import Any
 
 
 class DummyConn:
@@ -9,7 +11,7 @@ class DummyConn:
         return self
 
 
-def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
+def test_metrics_collection_and_endpoint(monkeypatch: pytest.MonkeyPatch, orchestrator: Any) -> None:
     metrics.reset_metrics()
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
@@ -53,7 +55,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     assert "autoresearch_tokens_in_total" in body
 
 
-def test_reset_metrics_clears_counters():
+def test_reset_metrics_clears_counters() -> None:
     metrics.QUERY_COUNTER.inc()
     metrics.ERROR_COUNTER.inc()
     metrics.reset_metrics()

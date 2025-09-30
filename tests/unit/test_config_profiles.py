@@ -34,7 +34,7 @@ def mock_stat(*args, **kwargs):
     return MockStat()
 
 
-def test_config_profiles_default():
+def test_config_profiles_default() -> None:
     """Test that the default profile is used when no profile is specified."""
     # Mock the tomllib.load function to return a config with profiles
     mock_config = {
@@ -66,7 +66,7 @@ def test_config_profiles_default():
                 assert config.active_profile is None
 
 
-def test_config_profiles_switch():
+def test_config_profiles_switch() -> None:
     """Test switching between configuration profiles."""
     # Mock the tomllib.load function to return a config with profiles
     mock_config = {
@@ -111,7 +111,7 @@ def test_config_profiles_switch():
                     assert config.active_profile == "online"
 
 
-def test_config_profiles_invalid():
+def test_config_profiles_invalid() -> None:
     """Test that an error is raised when an invalid profile is specified."""
     # Mock the tomllib.load function to return a config with profiles
     mock_config = {
@@ -143,7 +143,7 @@ def test_config_profiles_invalid():
                     assert "offline" in str(excinfo.value)  # Should suggest valid profiles
 
 
-def test_config_profiles_merge():
+def test_config_profiles_merge() -> None:
     """Test that profile settings are merged with core settings."""
     # Mock the tomllib.load function to return a config with profiles
     mock_config = {

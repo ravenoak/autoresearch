@@ -1,7 +1,7 @@
 from autoresearch.orchestration.state import QueryState
 
 
-def test_get_dialectical_structure():
+def test_get_dialectical_structure() -> None:
     state = QueryState(
         query="q",
         claims=[

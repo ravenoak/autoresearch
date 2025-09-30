@@ -7,6 +7,8 @@ from hypothesis import HealthCheck, given, settings, strategies as st
 from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.config.loader import ConfigLoader
+import pytest
+from typing import Any
 
 
 def _setup(monkeypatch) -> None:
@@ -39,7 +41,7 @@ def _setup(monkeypatch) -> None:
     )
 )
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_rank_results_preserves_input_order(monkeypatch, titles) -> None:
+def test_rank_results_preserves_input_order(monkeypatch: pytest.MonkeyPatch, titles: Any) -> None:
     """Ranking should be stable when scores are identical."""
     results = [
         {"title": t, "url": f"https://example.com/{i}"} for i, t in enumerate(titles)

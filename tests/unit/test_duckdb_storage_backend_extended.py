@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock, call
 
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError, NotFoundError
+from typing import Any
 
 
 class DummyConn:
@@ -36,7 +37,7 @@ class TestDuckDBStorageBackendExtended:
     """Extended tests for the DuckDBStorageBackend class."""
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_create_hnsw_index(self, mock_connect):
+    def test_create_hnsw_index(self, mock_connect: Any) -> None:
         """Test creating an HNSW index."""
         # Mock the connection
         mock_conn = DummyConn()
@@ -74,7 +75,7 @@ class TestDuckDBStorageBackendExtended:
                 assert any("CREATE INDEX" in sql for sql in mock_conn.calls)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_create_hnsw_index_extension_not_loaded(self, mock_connect):
+    def test_create_hnsw_index_extension_not_loaded(self, mock_connect: Any) -> None:
         """Test creating an HNSW index when the VSS extension is not loaded."""
         # Mock the connection
         mock_conn = DummyConn()
@@ -112,7 +113,7 @@ class TestDuckDBStorageBackendExtended:
                 assert any("CREATE INDEX" in sql for sql in mock_conn.calls)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_create_hnsw_index_error(self, mock_connect):
+    def test_create_hnsw_index_error(self, mock_connect: Any) -> None:
         """Test error handling when creating an HNSW index."""
         # Mock the connection
         mock_conn = DummyConn(fail_on_create=True)
@@ -155,7 +156,7 @@ class TestDuckDBStorageBackendExtended:
                     assert "Failed to create HNSW index" in str(excinfo.value)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_persist_claim(self, mock_connect):
+    def test_persist_claim(self, mock_connect: Any) -> None:
         """Test persisting a claim."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -193,7 +194,7 @@ class TestDuckDBStorageBackendExtended:
         mock_conn.execute.assert_has_calls(expected_calls, any_order=True)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_persist_claim_minimal(self, mock_connect):
+    def test_persist_claim_minimal(self, mock_connect: Any) -> None:
         """Test persisting a minimal claim with only an ID."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -214,7 +215,7 @@ class TestDuckDBStorageBackendExtended:
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_persist_claim_error(self, mock_connect):
+    def test_persist_claim_error(self, mock_connect: Any) -> None:
         """Test error handling when persisting a claim."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -235,7 +236,7 @@ class TestDuckDBStorageBackendExtended:
         assert "Failed to persist claim to DuckDB" in str(excinfo.value)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_vector_search(self, mock_connect):
+    def test_vector_search(self, mock_connect: Any) -> None:
         """Test vector search."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -279,7 +280,7 @@ class TestDuckDBStorageBackendExtended:
             assert results[1]["similarity"] == 0.7
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_vector_search_vss_not_available(self, mock_connect):
+    def test_vector_search_vss_not_available(self, mock_connect: Any) -> None:
         """Test vector search when VSS is not available."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -300,7 +301,7 @@ class TestDuckDBStorageBackendExtended:
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_vector_search_error(self, mock_connect):
+    def test_vector_search_error(self, mock_connect: Any) -> None:
         """Test error handling during vector search."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -328,7 +329,7 @@ class TestDuckDBStorageBackendExtended:
             assert "Vector search failed" in str(excinfo.value)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_get_connection(self, mock_connect):
+    def test_get_connection(self, mock_connect: Any) -> None:
         """Test getting the DuckDB connection."""
         # Mock the connection
         mock_conn = MagicMock()
@@ -345,7 +346,7 @@ class TestDuckDBStorageBackendExtended:
         assert conn == mock_conn
 
     @patch("autoresearch.storage_backends.duckdb.connect")
-    def test_get_connection_not_initialized(self, mock_connect):
+    def test_get_connection_not_initialized(self, mock_connect: Any) -> None:
         """Test getting the DuckDB connection when it's not initialized."""
         # Setup the backend
         backend = DuckDBStorageBackend()
@@ -358,7 +359,7 @@ class TestDuckDBStorageBackendExtended:
         # Verify that the error message is correct
         assert "DuckDB connection not initialized" in str(excinfo.value)
 
-    def test_update_claim_full_replace(self):
+    def test_update_claim_full_replace(self) -> None:
         """Update existing claim with full replacement."""
         conn = MagicMock()
         backend = DuckDBStorageBackend()
@@ -390,7 +391,7 @@ class TestDuckDBStorageBackendExtended:
         ]
         conn.execute.assert_has_calls(expected)
 
-    def test_update_claim_partial(self):
+    def test_update_claim_partial(self) -> None:
         """Update only provided fields when partial_update=True."""
         conn = MagicMock()
         backend = DuckDBStorageBackend()

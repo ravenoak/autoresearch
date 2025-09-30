@@ -7,9 +7,10 @@ from starlette.responses import Response
 from autoresearch.api.middleware import AuthMiddleware
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+import pytest
 
 
-def test_resolve_role_valid_key():
+def test_resolve_role_valid_key() -> None:
     cfg = ConfigModel(api=APIConfig(api_keys={"good": "user"}))
     middleware = AuthMiddleware(lambda *_: None)
     role, err = middleware._resolve_role("good", cfg.api)
@@ -17,7 +18,7 @@ def test_resolve_role_valid_key():
     assert err is None
 
 
-def test_resolve_role_invalid_key():
+def test_resolve_role_invalid_key() -> None:
     cfg = ConfigModel(api=APIConfig(api_keys={"good": "user"}))
     middleware = AuthMiddleware(lambda *_: None)
     role, err = middleware._resolve_role("bad", cfg.api)
@@ -27,7 +28,7 @@ def test_resolve_role_invalid_key():
     assert err.status_code == 401
 
 
-def test_resolve_role_missing_key():
+def test_resolve_role_missing_key() -> None:
     cfg = ConfigModel(api=APIConfig(api_keys={"good": "user"}))
     middleware = AuthMiddleware(lambda *_: None)
     role, err = middleware._resolve_role(None, cfg.api)
@@ -36,7 +37,7 @@ def test_resolve_role_missing_key():
     assert err.status_code == 401
 
 
-def test_dispatch_invalid_token(monkeypatch):
+def test_dispatch_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(api=APIConfig(bearer_token="secret"))
     ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -59,7 +60,7 @@ def test_dispatch_invalid_token(monkeypatch):
     assert resp.status_code == 401
 
 
-def test_dispatch_valid_token(monkeypatch):
+def test_dispatch_valid_token(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(api=APIConfig(bearer_token="secret"))
     ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
