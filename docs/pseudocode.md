@@ -363,3 +363,25 @@ function run_benchmarks(config, suite):
     persist_results(results, aggregate, config)
     return aggregate
 ```
+
+## 12. PRDV Verification Loop (planner/research/debate/validate)
+```
+function run_prdv_cycle(state, harness):
+    plan = PlannerAgent.execute(state, config)
+    research = Researcher.collect(plan, state, config)
+    debate = DebateLoop.run(research, state, config)
+    validated = Validator.confirm(debate, state, config)
+
+    telemetry = gather_prdv_metrics(state, plan, debate)
+    summary = EvaluationSummary(
+        avg_planner_depth=telemetry.planner.avg_depth,
+        avg_routing_delta=telemetry.routing.avg_delta,
+        total_routing_delta=telemetry.routing.total_delta,
+        avg_routing_decisions=telemetry.routing.avg_decisions,
+        routing_strategy=telemetry.routing.strategy,
+        example_csv=telemetry.artifacts.example_csv,
+        summary_csv=telemetry.artifacts.summary_csv,
+    )
+    harness.persist(summary)
+    return validated
+```

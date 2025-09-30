@@ -30,5 +30,14 @@ artifacts plus contradiction signals to the orchestrator.
   now exercises planner graph conditioning prompts and telemetry so graph
   signals stay regression-proof.
 
+## Checklist
+- [x] Note in `docs/deep_research_upgrade_plan.md` that Phase 3 is blocked by
+  the **14:55 UTC** `task verify` strict-typing failure and coverage backlog.
+- [x] Align PRDV telemetry docs (performance and pseudocode) with the expanded
+  `EvaluationSummary` fields needed for GraphRAG exports.
+- [ ] Resume GraphRAG work after
+  `baseline/logs/task-verify-20250930T145541Z.log` no longer reports the strict
+  typing backlog and the 92.4 % coverage sweep is reproducible.
+
 ## Status
 Open

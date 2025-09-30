@@ -71,6 +71,16 @@ October 9, 2025: the HTTP API middleware and request state now expose explicit
 types, and a dedicated mypy sweep plus integration coverage confirm the API
 typing gap is closed ahead of the alpha tag.【F:src/autoresearch/api/middleware.py†L18-L169】【F:tests/integration/api/test_middleware_state.py†L1-L91】
 
+## Tasks
+- [x] Document the strict `mypy` regression and `EvaluationSummary` signature
+  failure in `STATUS.md`, `TASK_PROGRESS.md`, `CODE_COMPLETE_PLAN.md`, and
+  `docs/release_plan.md` using the **14:55 UTC** log for traceability.
+- [x] Reconcile the deep research plan, performance guide, and pseudocode with
+  the PRDV telemetry loop and new `EvaluationSummary` fields.
+- [ ] Clear the strict typing backlog and restore coverage by updating the test
+  fixtures and evaluation harness highlighted in
+  `baseline/logs/task-verify-20250930T145541Z.log`.
+
 ## Dependencies
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)

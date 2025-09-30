@@ -1,11 +1,19 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-30** at 14:55 UTC the strict `task verify` sweep reaches
+`mypy --strict` before stopping on 118 untyped fixtures and the
+`EvaluationSummary` constructor, which now expects planner depth and routing
+metrics. The regression blocks the strict gate and evaluation coverage until the
+tests adopt the expanded signature documented in the log.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
+
 As of **2025-09-30** at 14:28 UTC the final-answer audit documentation now feeds
 fresh verification evidence: the `task verify` rerun stops in the known
 `QueryState.model_copy` strict typing gap after registering the new `audit.*`
-policy toggles, and the 14:30 UTC `task coverage` sweep (base extras only) fails
-in the `A2AMessage` schema regression. These logs anchor the audit-loop update
-while the TestPyPI directive stays deferred.
+policy toggles, and the 14:30 UTC `task coverage` sweep (base extras only)
+fails in the `A2AMessage` schema regression. These logs anchor the audit-loop
+update while the TestPyPI directive stays deferred.
 【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 

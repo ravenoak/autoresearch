@@ -23,5 +23,15 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
 - Documentation updates in `docs/orchestration.md` and `docs/pseudocode.md`
   explain the new data structures and replay workflow.
 
+## Checklist
+- [x] Capture the strict typing prerequisite for Phase 2 in
+  `docs/deep_research_upgrade_plan.md` so planner work pauses until the
+  **14:55 UTC** `task verify` failures clear.
+- [x] Update `docs/pseudocode.md` with the PRDV verification loop and expanded
+  `EvaluationSummary` fields to align planner telemetry with verification docs.
+- [ ] Resume implementation after clearing
+  `baseline/logs/task-verify-20250930T145541Z.log` and restoring the 92.4 %
+  coverage sweep.
+
 ## Status
 Open

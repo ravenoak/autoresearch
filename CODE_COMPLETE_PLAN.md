@@ -7,16 +7,18 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 As of **September 30, 2025**, Autoresearch still targets an **0.1.0a1** preview
 on **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-The 17:45 UTC `task verify` sweep now completes linting, strict mypy, and the
-full unit, integration, and behavior suites, confirming the scout gate and VSS
-telemetry are stable while clearing the strict typing wall. The paired
-18:19 UTC `task coverage` run finishes with a 92.4 % statement rate through the
-Task CLI entrypoint, so both quality gates are green again. TestPyPI remains on
-hold per the release directive until publish rights open, but the alpha gate
-monitors the passing logs in the roadmap, status rollup, and release plan.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+The strict gate is red again: the **14:55 UTC** `task verify` sweep reaches
+`mypy --strict` before surfacing 118 untyped fixtures and the
+`EvaluationSummary` constructor regression that now expects planner depth and
+routing metrics. Coverage evidence from the 18:19 UTC run still records a
+92.4 % statement rate, yet the harness must absorb the new signature before the
+gate can turn green again. TestPyPI remains on hold until publish rights open,
+and the alpha gate tracks the failing strict log alongside the earlier
+successful release sweep for context.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
 【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
-【F:docs/release_plan.md†L18-L48】
+【F:docs/release_plan.md†L18-L85】
 
 XPASS cleanup and the Phase 1 Deep Research objectives are complete: the unit
 suite no longer reports XPASS cases after archiving
@@ -37,6 +39,10 @@ the alpha gate stays transparent.
 - [x] Retire the six XPASS cases documented in
   [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
   so the unit suite fails fast on regressions.
+- [ ] Clear the strict typing backlog captured in
+  `baseline/logs/task-verify-20250930T145541Z.log` and update the evaluation
+  harness for the expanded `EvaluationSummary` signature before resuming
+  Phase 2 delivery.
 - [ ] Complete the
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones while keeping optional-extra coverage sweeps synchronized with

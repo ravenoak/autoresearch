@@ -22,5 +22,14 @@ savings alongside quality guarantees.
   `docs/deep_research_upgrade_plan.md` cover routing strategy, telemetry fields,
   and tuning guidance.
 
+## Checklist
+- [x] Document in `docs/deep_research_upgrade_plan.md` that Phase 5 is gated on
+  resolving the **14:55 UTC** strict `mypy` failures and restoring coverage.
+- [x] Update `docs/performance.md` and `docs/pseudocode.md` so routing metrics
+  include the expanded `EvaluationSummary` fields required for budget tracking.
+- [ ] Resume routing work once
+  `baseline/logs/task-verify-20250930T145541Z.log` is clear and the 92.4 %
+  coverage log is reproducible.
+
 ## Status
 Open
