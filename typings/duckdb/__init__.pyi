@@ -42,6 +42,15 @@ class DuckDBPyConnection:
 
     def load_extension(self, name: str) -> None: ...
 
+    def __enter__(self) -> DuckDBPyConnection: ...
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object | None,
+    ) -> bool | None: ...
+
 
 def connect(
     database: str | PathLike[str] | None = ...,

@@ -2,26 +2,35 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
+import inspect
+from collections.abc import Awaitable, Mapping
 from types import ModuleType, TracebackType
-from typing import Any, Callable, Protocol, cast
+from typing import Protocol, TypeVar, cast
 
 from ._registry import install_stub_module
 
+ResultT = TypeVar("ResultT", covariant=True)
+
+
+class ToolCallable(Protocol[ResultT]):
+    __name__: str
+
+    def __call__(self, **params: object) -> Awaitable[ResultT] | ResultT: ...
+
 
 class FastMCP:
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.tools: dict[str, Callable[..., Awaitable[Any] | Any]] = {}
+    def __init__(self) -> None:
+        self.tools: dict[str, ToolCallable[object]] = {}
 
-    def tool(self, func: Callable[..., Awaitable[Any] | Any]) -> Callable[..., Awaitable[Any] | Any]:
-        self.tools[func.__name__] = func
+    def tool(self, func: ToolCallable[ResultT]) -> ToolCallable[ResultT]:
+        self.tools[func.__name__] = cast(ToolCallable[object], func)
         return func
 
-    async def call_tool(self, name: str, params: dict[str, Any]) -> Any:
+    async def call_tool(self, name: str, params: Mapping[str, object]) -> object:
         tool = self.tools[name]
-        result = tool(**params)
-        if isinstance(result, Awaitable):
-            return await result
+        result = tool(**dict(params))
+        if inspect.isawaitable(result):
+            return await cast(Awaitable[object], result)
         return result
 
 
@@ -40,10 +49,8 @@ class Client:
     ) -> None:  # pragma: no cover - trivial
         return None
 
-    async def call_tool(self, name: str, params: dict[str, Any]) -> Any:
-        if hasattr(self.target, "call_tool"):
-            return await self.target.call_tool(name, params)
-        return {}
+    async def call_tool(self, name: str, params: Mapping[str, object]) -> object:
+        return await self.target.call_tool(name, params)
 
 
 class FastMCPModule(Protocol):
@@ -61,4 +68,4 @@ class _FastMCPModule(ModuleType):
 
 fastmcp = cast(FastMCPModule, install_stub_module("fastmcp", _FastMCPModule))
 
-__all__ = ["Client", "FastMCP", "FastMCPModule", "fastmcp"]
+__all__ = ["Client", "FastMCP", "FastMCPModule", "ToolCallable", "fastmcp"]

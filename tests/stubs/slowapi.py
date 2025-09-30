@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import threading
 from collections import Counter
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable, Sequence
 from types import ModuleType
-from typing import Any, Callable, Protocol, TypeAlias, cast
+from typing import Concatenate, Generic, ParamSpec, Protocol, TypeAlias, TypeVar, cast
 
 from ._registry import install_stub_module
 
@@ -35,19 +35,28 @@ class RateLimitExceeded(Exception):
     """Exception raised when a rate limit is exceeded."""
 
 
-class Limiter:
+TRequest = TypeVar("TRequest")
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+class Limiter(Generic[TRequest]):
     """Very small rate limiter used in tests."""
 
     IS_STUB = True
 
     def __init__(
         self,
-        key_func: Callable[[Any], str] | None = None,
-        application_limits: list[str] | None = None,
+        key_func: Callable[[TRequest], str] | None = None,
+        application_limits: Sequence[str | Callable[[], str | int]] | None = None,
         request_log: RequestLog | None = None,
     ) -> None:
-        self.key_func = key_func or (lambda _request: "127.0.0.1")
-        self.application_limits = application_limits or []
+        self.key_func: Callable[[TRequest], str]
+        if key_func is not None:
+            self.key_func = key_func
+        else:
+            self.key_func = cast(Callable[[TRequest], str], lambda _request: "127.0.0.1")
+        self.application_limits = list(application_limits or [])
         self.request_log = request_log or REQUEST_LOG
 
     def _parse_limit(self, spec: str | Callable[[], str | int]) -> int:
@@ -61,21 +70,31 @@ class Limiter:
         except Exception:
             return 0
 
-    def check(self, request: Any) -> None:
+    def check(
+        self,
+        request: TRequest,
+        *,
+        limit_override: str | Callable[[], str | int] | None = None,
+    ) -> None:
         ip = self.key_func(request)
         count = self.request_log.log(ip)
         limit = 0
-        if self.application_limits:
+        if limit_override is not None:
+            limit = self._parse_limit(limit_override)
+        elif self.application_limits:
             limit = self._parse_limit(self.application_limits[0])
         if limit and count > limit:
             raise RateLimitExceeded()
 
     def limit(
-        self, *_args: Any, **_kwargs: Any
-    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-            def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
-                self.check(request)
+        self, *limit_specs: str | Callable[[], str | int]
+    ) -> Callable[[Callable[Concatenate[TRequest, P], R]], Callable[Concatenate[TRequest, P], R]]:
+        def decorator(
+            func: Callable[Concatenate[TRequest, P], R]
+        ) -> Callable[Concatenate[TRequest, P], R]:
+            def wrapper(request: TRequest, /, *args: P.args, **kwargs: P.kwargs) -> R:
+                limit_override = limit_specs[0] if limit_specs else None
+                self.check(request, limit_override=limit_override)
                 return func(request, *args, **kwargs)
 
             return wrapper
@@ -83,7 +102,7 @@ class Limiter:
         return decorator
 
 
-def _rate_limit_exceeded_handler(*_args: Any, **_kwargs: Any) -> str:
+def _rate_limit_exceeded_handler(_request: object, _exc: Exception) -> str:
     return "rate limit exceeded"
 
 
@@ -92,14 +111,14 @@ def reset_request_log() -> None:
 
 
 class ReceiveCallable(Protocol):
-    def __call__(self) -> Awaitable[dict[str, Any]]: ...
+    def __call__(self) -> Awaitable[dict[str, object]]: ...
 
 
 class SendCallable(Protocol):
-    def __call__(self, message: dict[str, Any]) -> Awaitable[None]: ...
+    def __call__(self, message: dict[str, object]) -> Awaitable[None]: ...
 
 
-Scope: TypeAlias = dict[str, Any]
+Scope: TypeAlias = dict[str, object]
 ASGIApp: TypeAlias = Callable[[Scope, ReceiveCallable, SendCallable], Awaitable[None]]
 
 
@@ -107,9 +126,9 @@ class SlowAPIMiddleware:
     def __init__(
         self,
         app: ASGIApp,
-        limiter: Limiter | None = None,
-        *_args: Any,
-        **_kwargs: Any,
+        limiter: Limiter[object] | None = None,
+        *_args: object,
+        **_kwargs: object,
     ) -> None:
         from starlette.requests import Request
 
@@ -129,18 +148,19 @@ class SlowAPIMiddleware:
         await self.app(scope, receive, send)
 
 
-def get_remote_address(*_args: Any, **_kwargs: Any) -> str:
+def get_remote_address(scope: Scope) -> str:
+    del scope
     return "127.0.0.1"
 
 
 class SlowapiModule(Protocol):
     IS_STUB: bool
-    Limiter: type[Limiter]
+    Limiter: type[Limiter[object]]
     REQUEST_LOG: RequestLog
 
     def reset_request_log(self) -> None: ...
 
-    def _rate_limit_exceeded_handler(self, *_args: Any, **_kwargs: Any) -> str: ...
+    def _rate_limit_exceeded_handler(self, request: object, exc: Exception) -> str: ...
 
 
 class _SlowapiModule(ModuleType):
@@ -154,8 +174,8 @@ class _SlowapiModule(ModuleType):
     def reset_request_log(self) -> None:
         reset_request_log()
 
-    def _rate_limit_exceeded_handler(self, *_args: Any, **_kwargs: Any) -> str:
-        return _rate_limit_exceeded_handler(*_args, **_kwargs)
+    def _rate_limit_exceeded_handler(self, request: object, exc: Exception) -> str:
+        return _rate_limit_exceeded_handler(request, exc)
 
 
 class SlowapiErrorsModule(Protocol):
@@ -181,15 +201,15 @@ class _SlowapiMiddlewareModule(ModuleType):
 
 
 class SlowapiUtilModule(Protocol):
-    def get_remote_address(self, *_args: Any, **_kwargs: Any) -> str: ...
+    def get_remote_address(self, scope: Scope) -> str: ...
 
 
 class _SlowapiUtilModule(ModuleType):
     def __init__(self) -> None:
         super().__init__("slowapi.util")
 
-    def get_remote_address(self, *_args: Any, **_kwargs: Any) -> str:
-        return get_remote_address(*_args, **_kwargs)
+    def get_remote_address(self, scope: Scope) -> str:
+        return get_remote_address(scope)
 
 
 slowapi = cast(SlowapiModule, install_stub_module("slowapi", _SlowapiModule))
