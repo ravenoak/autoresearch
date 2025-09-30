@@ -18,6 +18,15 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 30, 2025 at 14:55 UTC** `task verify` sweep now reaches
+`mypy --strict` before failing on 118 untyped test fixtures and the
+`EvaluationSummary` constructor, which expects planner depth and routing
+metrics. Until those annotations and harness updates land, the strict gate stays
+red and coverage remains at risk even though the prior 92.4 % log is still the
+latest green record.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
+
 The **September 30, 2025 at 14:28 UTC** `task verify` rerun recorded after the
 final-answer audit documentation now halts in the existing
 `QueryState.model_copy` strict-typing gap while the new `audit.*` policy knobs
@@ -35,14 +44,13 @@ this environment, so we retain the earlier **14:30 UTC** coverage log as the
 latest complete evidence until the extras sync can succeed.
 【583440†L1-L29】【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
-The **September 30, 2025 at 14:55 UTC** verify sweep reaches
-`uv run mypy src` without tripping the `QueryState.model_copy` regression,
-confirming the registry fixes clear the strict typing gate before the run
-stops on the longstanding untyped test backlog. The log at
-`baseline/logs/task-verify-20250930T145541Z.log` records the run, and a focused
-`uv run mypy --strict` pass over the registry and regression tests stays clean
-to document the cleared path.
-【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L50】
+The **September 30, 2025 at 14:55 UTC** verify sweep still clears
+`QueryState.model_copy`, yet the same log captures the untyped test backlog and
+the `EvaluationSummary` call failure noted above. The registry-specific
+`mypy --strict` probe remains green, so the blocking work now lives entirely in
+the shared fixtures and harness.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
 【df5aef†L1-L1】
 
 The **September 30, 2025 at 19:04 UTC** sweep completed `task release:alpha`

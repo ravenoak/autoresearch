@@ -85,9 +85,11 @@ the planner produces low-confidence plans.
 `EvaluationHarness.compare_routing_strategies` summarises accuracy, latency,
 token usage, and cost deltas between a baseline configuration and alternative
 model routing strategies. The helper accepts two sets of
-`EvaluationSummary` results and returns the difference in key metrics so teams
-can quantify the trade-offs between aggressive cost-saving strategies and
-premium accuracy-focused profiles before rolling them out broadly.
+`EvaluationSummary` results—including planner depth, routing deltas, routing
+strategy labels, and CSV artifact paths—and returns the difference in key
+metrics so teams can quantify the trade-offs between aggressive cost-saving
+strategies and premium accuracy-focused profiles before rolling them out
+broadly.
 
 ## Retrieval Cache and Parallel Controls
 

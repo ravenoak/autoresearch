@@ -33,5 +33,15 @@ UX reviewers can trace the outstanding work while TestPyPI stays deferred.
   `docs/deep_research_upgrade_plan.md` describe the layered UX and evaluation
   workflow.
 
+## Checklist
+- [x] Record the strict typing and coverage prerequisites for Phase 4 in
+  `docs/deep_research_upgrade_plan.md`, referencing the **14:55 UTC** strict
+  `mypy` log.
+- [x] Sync the performance and pseudocode docs with the expanded
+  `EvaluationSummary` metrics needed for layered exports.
+- [ ] Resume layered UX delivery once
+  `baseline/logs/task-verify-20250930T145541Z.log` is green and the 92.4 %
+  coverage sweep repeats without regressions.
+
 ## Status
 In Review

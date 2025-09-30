@@ -19,6 +19,15 @@ keep truthfulness, verifiability, and cost discipline in balance.
 
 ## Phase Breakdown
 
+Phase 2 and beyond are paused until the strict typing backlog and evaluation
+coverage regression logged in the **September 30, 2025 at 14:55 UTC** `task
+verify` run are cleared. Planner upgrades and GraphRAG expansion will restart
+only after the tests adopt the widened `EvaluationSummary` signature and the
+coverage sweep re-establishes the 92.4 % baseline.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+
 1. **Phase 1 – Adaptive Gate and Claim Audits**
    - Implement the scout pass and gating heuristics with clear metrics.
    - Surface configuration toggles (`gate_policy_enabled`, overlap,
@@ -42,7 +51,8 @@ keep truthfulness, verifiability, and cost discipline in balance.
      statement rate restored, so Phase 1 objectives and evidence trails are all
      green. Fresh **14:28 UTC** `task verify` and **14:30 UTC** `task coverage`
      runs captured after documenting the final-answer audit loop keep the gate
-     current while the `QueryState.model_copy` and `A2AMessage` gaps remain open.
+     current while the `QueryState.model_copy` and `A2AMessage` gaps remain
+     open.
      【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
      【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
      【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
@@ -62,6 +72,12 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - **Acceptance criteria:** Ship typed planner graphs with audited ReAct
      traces, coordinator scheduling that honors affinity tie-breakers, and
      regression coverage that locks telemetry formats before expanding scope.
+   - **Prerequisite:** Resume only after the strict typing backlog and
+     evaluation harness regression in the **14:55 UTC** log are resolved and the
+     92.4 % coverage sweep is reproducible.
+     【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+     【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
+     【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 3. **Phase 3 – Graph-Augmented Retrieval**
    - Build session-scoped knowledge graphs by extracting entities and
      relations from retrieval snippets and persisting them to DuckDB and
@@ -84,6 +100,8 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - **Acceptance criteria:** Deliver contradiction checks wired into the scout
      gate, persist exportable session graphs, and lock telemetry dashboards that
      report ingestion and contradiction metrics under the context-aware toggles.
+   - **Prerequisite:** Blocked behind the same strict typing and coverage work
+     as Phase 2 so planner telemetry and graph exports build on a green harness.
 4. **Phase 4 – Evaluation Harness and Layered UX**
    - Automate TruthfulQA, FEVER, and HotpotQA smoke runs with KPIs.
    - Add layered summaries, Socratic prompts, per-claim audit toggles, and
@@ -94,6 +112,9 @@ keep truthfulness, verifiability, and cost discipline in balance.
      published KPIs, synchronize layered UX controls across CLI and GUI,
      deliver interactive claim re-verification across UI/CLI/API, and export
      regression-ready CSV/Parquet artifacts with audited schemas.
+   - **Prerequisite:** Requires the strict typing backlog and
+     `EvaluationSummary` regression to be resolved so documentation, harness
+     CSVs, and metrics stay aligned.
 5. **Phase 5 – Cost-Aware Model Routing**
    - Assign models per role with budget-aware fallbacks.
    - Monitor token, latency, and accuracy metrics for regressions.
@@ -107,6 +128,8 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - **Acceptance criteria:** Prove budget routing stability with telemetry and
      savings dashboards, document operator override flows, and maintain tests
      that guard role-based fallbacks across regression suites.
+   - **Prerequisite:** Defer until strict typing debt and evaluation coverage
+     regressions clear so routing instrumentation layers onto a stable baseline.
 
 ## Cross-Cutting Requirements
 

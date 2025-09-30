@@ -63,6 +63,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:docs/specification.md†L60-L83】【F:docs/pseudocode.md†L78-L119】
   【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
   【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+- Logged the **14:55 UTC** `task verify` failure that reaches `mypy --strict`
+  before hitting 118 untyped test fixtures and the
+  `EvaluationSummary` constructor regression that now requires planner depth
+  and routing metrics. The strict gate remains red until the tests and
+  evaluation harness adopt the expanded signature.
+  【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
+  【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
 - Re-ran `uv run mypy --strict src tests` at 01:39 UTC after adding the dspy,
   fastmcp, and PIL shims; the sweep still reports 3,911 legacy errors, but the
   missing-stub diagnostics for those modules are gone, confirming the new
