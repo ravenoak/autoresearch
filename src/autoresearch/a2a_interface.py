@@ -115,6 +115,18 @@ _runtime_get_message_text: Callable[[Message], str] | None = None
 _runtime_new_agent_text_message: Callable[..., Message] | None = None
 
 
+class ASGIApplication(Protocol):
+    """Structural ASGI callable type avoiding optional dependencies."""
+
+    def __call__(
+        self,
+        scope: Mapping[str, Any],
+        receive: Callable[..., Awaitable[Any]],
+        send: Callable[..., Awaitable[Any]],
+    ) -> Awaitable[None]:
+        ...
+
+
 class AgentInfo(TypedDict):
     """Summary of agent metadata surfaced via the info handler."""
 
@@ -327,7 +339,7 @@ if A2A_AVAILABLE:
                 message_data = payload.get("message", {})
                 return await self._dispatch(msg_type, message_data)
 
-            asgi_app = cast(Any, app)
+            asgi_app: ASGIApplication = cast(ASGIApplication, app)
             config = UvicornConfig(
                 app=asgi_app,
                 host=self.host,
@@ -423,7 +435,7 @@ class A2AInterface:
 
             return {
                 "status": "success",
-                "message": response_msg.model_dump(mode="json"),
+                "message": response_msg.model_dump(mode="python"),
             }
         except Exception as e:
             # Get error information with suggestions and code examples
@@ -511,7 +523,7 @@ class A2AInterface:
             response: InfoResponse = {
                 "status": "success",
                 "agent_info": agent_info,
-                "message": info_msg.model_dump(mode="json"),
+                "message": info_msg.model_dump(mode="python"),
             }
             return dict(response)
         except Exception as e:
@@ -541,7 +553,7 @@ class A2AInterface:
             The current configuration as a dictionary.
         """
         config = get_config()
-        config_data: dict[str, Any] = config.model_dump(mode="json")
+        config_data: dict[str, Any] = config.model_dump(mode="python")
         return config_data
 
     def _handle_set_config(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -565,7 +577,7 @@ class A2AInterface:
 
         loader._config = new_config
         loader.notify_observers(new_config)
-        updated_config: dict[str, Any] = new_config.model_dump(mode="json")
+        updated_config: dict[str, Any] = new_config.model_dump(mode="python")
         return updated_config
 
 

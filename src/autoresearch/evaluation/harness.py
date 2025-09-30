@@ -205,7 +205,7 @@ class EvaluationHarness:
                     )
                 )
                 continue
-            config_copy = config.model_copy(deep=True)
+            config_copy = config.model_copy(update={}, deep=True)
             response = runner(example.prompt, config_copy)
             results.append(self._build_result(example, response))
         return results

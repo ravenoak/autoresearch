@@ -82,7 +82,7 @@ def running_server(monkeypatch):
 
 def _build_payload(text: str) -> dict:
     msg = new_agent_text_message(text)
-    return {"type": "query", "message": msg.model_dump(mode="json")}
+    return {"type": "query", "message": msg.model_dump(mode="python")}
 
 
 @pytest.mark.slow

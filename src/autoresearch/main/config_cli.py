@@ -11,7 +11,6 @@ import typer
 
 from ..cli_backup import backup_app
 from ..config.loader import ConfigLoader
-from ..config.models import ConfigModel
 from ..config_utils import validate_config
 from ..errors import ConfigError
 from .app import _config_loader
@@ -24,7 +23,7 @@ def config_callback(ctx: typer.Context) -> None:
     """Manage configuration commands."""
     if ctx.invoked_subcommand is None:
         config = _config_loader.load_config()
-        payload = config.model_dump(mode="json")
+        payload = config.model_dump(mode="python")
         typer.echo(json.dumps(payload, indent=2))
 
 
@@ -217,7 +216,7 @@ def config_reasoning(
                 provided=gate_user_overrides,
                 cause=ValueError("Overrides must be a JSON object"),
             )
-    new_cfg = ConfigModel.model_validate({**data, **updates})
+    new_cfg = cfg.model_copy(update=updates)
     path = next(
         (p for p in _config_loader.search_paths if p.exists()),
         _config_loader.search_paths[0],

@@ -64,7 +64,7 @@ def _serialise_mapping(value: Any) -> dict[str, Any] | Any:
     """Return a JSON-serialisable representation of ``value``."""
 
     if hasattr(value, "model_dump") and callable(value.model_dump):
-        dumped = value.model_dump(mode="json")
+        dumped = value.model_dump(mode="python")
         return cast(dict[str, Any], dumped)
     if isinstance(value, Mapping):
         return {str(key): val for key, val in value.items()}
