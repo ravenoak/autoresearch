@@ -68,28 +68,28 @@ class EvaluationSummary:
     started_at: datetime
     completed_at: datetime
     total_examples: int
-    accuracy: Optional[float]
-    citation_coverage: Optional[float]
-    contradiction_rate: Optional[float]
-    avg_latency_seconds: Optional[float]
-    avg_tokens_input: Optional[float]
-    avg_tokens_output: Optional[float]
-    avg_tokens_total: Optional[float]
-    avg_cycles_completed: Optional[float]
-    gate_debate_rate: Optional[float]
-    gate_exit_rate: Optional[float]
-    gated_example_ratio: Optional[float]
-    avg_planner_depth: Optional[float]
-    avg_routing_delta: Optional[float]
-    total_routing_delta: Optional[float]
-    avg_routing_decisions: Optional[float]
-    routing_strategy: Optional[str]
     config_signature: str
-    duckdb_path: Optional[Path]
-    example_parquet: Optional[Path]
-    summary_parquet: Optional[Path]
-    example_csv: Optional[Path]
-    summary_csv: Optional[Path]
+    accuracy: Optional[float] = None
+    citation_coverage: Optional[float] = None
+    contradiction_rate: Optional[float] = None
+    avg_latency_seconds: Optional[float] = None
+    avg_tokens_input: Optional[float] = None
+    avg_tokens_output: Optional[float] = None
+    avg_tokens_total: Optional[float] = None
+    avg_cycles_completed: Optional[float] = None
+    gate_debate_rate: Optional[float] = None
+    gate_exit_rate: Optional[float] = None
+    gated_example_ratio: Optional[float] = None
+    avg_planner_depth: Optional[float] = None
+    avg_routing_delta: Optional[float] = None
+    total_routing_delta: Optional[float] = None
+    avg_routing_decisions: Optional[float] = None
+    routing_strategy: Optional[str] = None
+    duckdb_path: Optional[Path] = field(default=None)
+    example_parquet: Optional[Path] = field(default=None)
+    summary_parquet: Optional[Path] = field(default=None)
+    example_csv: Optional[Path] = field(default=None)
+    summary_csv: Optional[Path] = field(default=None)
 
 
 @dataclass
@@ -388,6 +388,7 @@ class EvaluationHarness:
             started_at=started_at,
             completed_at=completed_at,
             total_examples=len(results),
+            config_signature=config_signature,
             accuracy=accuracy,
             citation_coverage=citation_coverage,
             contradiction_rate=contradiction_rate,
@@ -404,7 +405,6 @@ class EvaluationHarness:
             total_routing_delta=total_routing_delta,
             avg_routing_decisions=avg_routing_decisions,
             routing_strategy=routing_strategy,
-            config_signature=config_signature,
             duckdb_path=self.duckdb_path if store_duckdb else None,
             example_parquet=example_parquet,
             summary_parquet=summary_parquet,

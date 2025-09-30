@@ -63,9 +63,12 @@ optional extra and began the unit matrix, but the log at
 `baseline/logs/task-coverage-20250929T173738Z.log` stops at the unit
 coverage check for `tests/unit/test_additional_coverage.py`
 (`test_render_evaluation_summary_joins_artifacts`) after a manual interrupt
-at roughly 10 % progress. The TestPyPI dry run
-stays deferred under the release directive while we clear the strict typing
-wall and unblock the coverage sweep.
+at roughly 10 % progress. The CLI summary table now defaults planner depth and
+routing telemetry to em-dash placeholders when the harness omits those metrics,
+and a regression fixture exercises the populated columns so coverage stays
+aligned with the printed output.[cli-summary-formatting][coverage-fixture]
+The TestPyPI dry run stays deferred under the release directive while we clear
+the strict typing wall and unblock the coverage sweep.
 【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
 【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
 【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
@@ -100,6 +103,8 @@ These references align with the acceptance criteria in
 [phase5-ticket]: ../issues/cost-aware-model-routing.md
 [prepare-alpha]: ../issues/prepare-first-alpha-release.md
 [scout-gate-test]: ../tests/unit/orchestration/test_gate_policy.py
+[cli-summary-formatting]: ../src/autoresearch/cli_utils.py#L300-L347
+[coverage-fixture]: ../tests/unit/test_additional_coverage.py#L160-L236
 
 The **September 30, 2025 at 18:19 UTC** sweeps confirm the Task CLI exposes
 `verify` and `coverage` again. The 17:45 UTC verification run covers linting,
