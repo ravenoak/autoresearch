@@ -156,32 +156,9 @@ def test_streamlit_metrics(monkeypatch):
     assert metrics_data["tokens_out_total"] == 2
 
 
-def test_render_evaluation_summary_joins_artifacts(monkeypatch):
-    now = datetime.now(timezone.utc)
-    summary = EvaluationSummary(
-        dataset="truthfulqa",
-        run_id="run-123",
-        started_at=now,
-        completed_at=now,
-        total_examples=1,
-        accuracy=0.5,
-        citation_coverage=1.0,
-        contradiction_rate=0.0,
-        avg_latency_seconds=2.5,
-        avg_tokens_input=100.0,
-        avg_tokens_output=50.0,
-        avg_tokens_total=150.0,
-        avg_cycles_completed=1.0,
-        gate_debate_rate=0.0,
-        gate_exit_rate=0.25,
-        gated_example_ratio=None,
-        config_signature="cfg",
-        duckdb_path=Path("artifacts/run.duckdb"),
-        example_parquet=Path("artifacts/examples.parquet"),
-        summary_parquet=Path("artifacts/summary.parquet"),
-    )
-
-    created_tables: list["DummyTable"] = []
+@pytest.fixture
+def dummy_table(monkeypatch: pytest.MonkeyPatch):
+    created_tables: list = []
 
     class DummyTable:
         def __init__(self, *args, **kwargs):
@@ -194,16 +171,59 @@ def test_render_evaluation_summary_joins_artifacts(monkeypatch):
         def add_row(self, *args) -> None:
             self.rows.append(args)
 
-    def fake_print(*_args, **_kwargs) -> None:
-        return None
-
     monkeypatch.setattr(cli_utils, "Table", DummyTable)
-    monkeypatch.setattr(cli_utils.console, "print", fake_print)
+    monkeypatch.setattr(cli_utils.console, "print", lambda *_args, **_kwargs: None)
+    return created_tables
 
-    cli_utils.render_evaluation_summary([summary])
 
-    assert created_tables
-    artifacts_cell = created_tables[0].rows[0][-1]
+@pytest.fixture
+def populated_summary() -> EvaluationSummary:
+    now = datetime.now(timezone.utc)
+    return EvaluationSummary(
+        dataset="truthfulqa",
+        run_id="run-123",
+        started_at=now,
+        completed_at=now,
+        total_examples=2,
+        config_signature="cfg",
+        accuracy=0.5,
+        citation_coverage=1.0,
+        contradiction_rate=0.0,
+        avg_latency_seconds=2.5,
+        avg_tokens_input=100.0,
+        avg_tokens_output=50.0,
+        avg_tokens_total=150.0,
+        avg_cycles_completed=1.0,
+        gate_debate_rate=0.0,
+        gate_exit_rate=0.25,
+        gated_example_ratio=1.0,
+        avg_planner_depth=2.5,
+        avg_routing_delta=1.75,
+        total_routing_delta=3.5,
+        avg_routing_decisions=1.5,
+        routing_strategy="balanced",
+    )
+
+
+def test_render_evaluation_summary_joins_artifacts(dummy_table):
+    now = datetime.now(timezone.utc)
+    summary = EvaluationSummary(
+        dataset="truthfulqa",
+        run_id="run-123",
+        started_at=now,
+        completed_at=now,
+        total_examples=1,
+        config_signature="cfg",
+        duckdb_path=Path("artifacts/run.duckdb"),
+        example_parquet=Path("artifacts/examples.parquet"),
+        summary_parquet=Path("artifacts/summary.parquet"),
+    )
+
+    render_evaluation_summary([summary])
+
+    assert dummy_table
+    row = dummy_table[0].rows[0]
+    artifacts_cell = row[-1]
     expected = ", ".join(
         [
             "duckdb: artifacts/run.duckdb",
@@ -212,6 +232,19 @@ def test_render_evaluation_summary_joins_artifacts(monkeypatch):
         ]
     )
     assert artifacts_cell == expected
+    assert row[4] == "—"
+    assert row[5] == "—"
+
+
+def test_render_evaluation_summary_formats_planner_and_routing(
+    dummy_table, populated_summary
+):
+    render_evaluation_summary([populated_summary])
+
+    assert dummy_table
+    row = dummy_table[0].rows[0]
+    assert row[4] == "2.5"
+    assert row[5] == "1.75/3.50 (avg 1.5 routes)"
 
 
 def test_format_percentage_variants():

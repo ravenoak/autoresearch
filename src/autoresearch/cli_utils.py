@@ -329,11 +329,20 @@ def _format_routing(summary: "EvaluationSummary") -> str:
     avg = _format_optional(summary.avg_routing_delta)
     total = _format_optional(summary.total_routing_delta)
     if avg == "—" and total == "—":
-        return "—"
+        base = "—"
+    elif avg == "—":
+        base = total
+    elif total == "—":
+        base = avg
+    else:
+        base = f"{avg}/{total}"
+
     decision_avg = _format_optional(summary.avg_routing_decisions, precision=1)
-    if decision_avg != "—":
-        return f"{avg}/{total} (avg {decision_avg} routes)"
-    return f"{avg}/{total}"
+    if decision_avg == "—":
+        return base
+    if base == "—":
+        return f"avg {decision_avg} routes"
+    return f"{base} (avg {decision_avg} routes)"
 
 
 def _format_percentage(value: Optional[float], precision: int = 1) -> str:
