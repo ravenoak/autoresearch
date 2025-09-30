@@ -269,6 +269,27 @@ warn_unused_configs = true
 no_implicit_optional = true
 mypy_path = ["typings"]
 
+[[tool.mypy.overrides]]
+module = ["tests.unit.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.unit.test_circuit_breaker_module",
+    "tests.unit.test_distributed_perf_compare",
+    "tests.unit.test_errors",
+    "tests.unit.test_logging_utils",
+    "tests.unit.test_synthesis",
+    "tests.unit.test_system_monitor",
+    "tests.unit.test_test_tools",
+]
+ignore_errors = false
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["scripts.*"]
+ignore_errors = true
+
 [tool.flake8]
 max-line-length = 100
 extend-ignore = ["E501"]
