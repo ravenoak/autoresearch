@@ -28,17 +28,25 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Update response formats so clients can render audit tables.
    - Introduce an answer auditor that reviews claim audits before synthesis,
      triggers targeted re-retrieval for unsupported statements, hedges the
-     final answer, and records structured retry provenance for downstream
-     clients.
+     final answer, waits for operator acknowledgment when policies require it,
+     and records structured retry provenance for downstream clients.
+   - Add audit policy controls (`audit.max_retry_results`,
+     `audit.hedge_mode`, `audit.require_human_ack`,
+     `audit.operator_timeout_s`, and `audit.explain_conflicts`) so operators can
+     balance automation with manual verification before releasing an answer.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof, including CLI
      orchestration to confirm telemetry exposes verification badges end to end.
    - **Status:** Completed. The September 30 verify and coverage sweeps finish
      through the Task CLI with strict mypy, scout gate telemetry, and the 92.4 %
      statement rate restored, so Phase 1 objectives and evidence trails are all
-     green.
+     green. Fresh **14:28 UTC** `task verify` and **14:30 UTC** `task coverage`
+     runs captured after documenting the final-answer audit loop keep the gate
+     current while the `QueryState.model_copy` and `A2AMessage` gaps remain open.
      【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
      【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+     【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+     【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
    - **Acceptance criteria:** Keep the Task CLI verify and coverage stages
      publishing scout-gate telemetry and audit tables, and maintain coverage at
      or above 92.4 % while TestPyPI remains deferred under the release gate.

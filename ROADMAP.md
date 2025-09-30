@@ -87,6 +87,13 @@ release plan while the deep research plan records the completion rationale.
 【F:issues/prepare-first-alpha-release.md†L1-L57】【F:STATUS.md†L21-L69】
 【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L40】
 【F:docs/release_plan.md†L18-L38】【F:docs/deep_research_upgrade_plan.md†L19-L36】
+Fresh documentation of the final-answer audit loop and operator acknowledgement
+controls accompanies the **September 30, 2025 at 14:28 UTC** `task verify` and
+**14:30 UTC** `task coverage` runs. The new logs halt in the existing strict
+typing and Pydantic schema gaps, respectively, keeping the alpha gate current
+while TestPyPI remains deferred and the audit loop documentation propagates.
+【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 The spec template lint cleanup is archived as
 [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
 Fresh September 24 planning added
