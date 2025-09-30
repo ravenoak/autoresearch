@@ -6,7 +6,7 @@ from threading import Lock
 import requests
 
 from ..config.loader import get_config
-from ..typing.http import RequestsAdapterProtocol, RequestsSessionProtocol
+from ..typing.http import HTTPAdapter, RequestsAdapterProtocol, RequestsSessionProtocol
 
 _session: Optional[RequestsSessionProtocol] = None
 _lock = Lock()
@@ -27,6 +27,12 @@ _adapters: Dict[str, "LLMAdapter"] = {}
 _adapter_lock = Lock()
 
 
+def _build_llm_adapter(pool_size: int) -> RequestsAdapterProtocol:
+    """Return a configured HTTP adapter for LLM traffic."""
+
+    return HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size)
+
+
 def get_session() -> RequestsSessionProtocol:
     """Return a pooled HTTP session for LLM adapters."""
     global _session
@@ -35,12 +41,13 @@ def get_session() -> RequestsSessionProtocol:
             cfg = get_config()
             size = getattr(cfg, "llm_pool_size", 2)
             session = requests.Session()
-            adapter: RequestsAdapterProtocol = requests.adapters.HTTPAdapter(
-                pool_connections=size,
-                pool_maxsize=size,
-            )
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
+            try:
+                adapter = _build_llm_adapter(size)
+                session.mount("http://", adapter)
+                session.mount("https://", adapter)
+            except Exception:
+                session.close()
+                raise
             _session = cast(RequestsSessionProtocol, session)
         assert _session is not None
         return _session

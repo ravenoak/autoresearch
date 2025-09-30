@@ -9,13 +9,29 @@ from urllib3.util.retry import Retry
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
-from ..typing.http import RequestsAdapterProtocol, RequestsSessionProtocol
+from ..typing.http import (
+    HTTPAdapter,
+    RequestsAdapterProtocol,
+    RequestsSessionProtocol,
+)
 
 log = get_logger(__name__)
 
 _http_session: Optional[RequestsSessionProtocol] = None
 _http_lock = threading.Lock()
 _atexit_registered = False
+
+
+def _build_search_adapter(
+    pool_size: int, retries: Retry
+) -> RequestsAdapterProtocol:
+    """Return a configured HTTP adapter for search traffic."""
+
+    return HTTPAdapter(
+        pool_connections=pool_size,
+        pool_maxsize=pool_size,
+        max_retries=retries,
+    )
 
 
 def set_http_session(session: RequestsSessionProtocol) -> None:
@@ -42,13 +58,13 @@ def get_http_session() -> RequestsSessionProtocol:
                 status_forcelist=[500, 502, 503, 504],
                 allowed_methods=["GET", "POST"],
             )
-            adapter: RequestsAdapterProtocol = requests.adapters.HTTPAdapter(
-                pool_connections=size,
-                pool_maxsize=size,
-                max_retries=retries,
-            )
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
+            try:
+                adapter = _build_search_adapter(size, retries)
+                session.mount("http://", adapter)
+                session.mount("https://", adapter)
+            except Exception:
+                session.close()
+                raise
             _http_session = cast(RequestsSessionProtocol, session)
             if not _atexit_registered:
                 atexit.register(close_http_session)
