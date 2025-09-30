@@ -5,27 +5,38 @@ from importlib import import_module
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode, ReasoningStrategy
 
 __all__ = [
+    "AgentFactory",
+    "AgentRegistry",
+    "ChainOfThoughtStrategy",
+    "Orchestrator",
     "ReasoningMode",
     "ReasoningStrategy",
-    "ChainOfThoughtStrategy",
+    "StorageManager",
     "TaskCoordinator",
-    "TaskStatus",
+    "TaskEdge",
     "TaskGraph",
     "TaskNode",
-    "TaskEdge",
+    "TaskStatus",
 ]
 
 
 def __getattr__(name: str) -> object:
     """Lazily import coordinator symbols to avoid circular imports."""
 
-    if name in {"TaskCoordinator", "TaskStatus"}:
-        module = import_module(".coordinator", __name__)
-        value = getattr(module, name)
-        globals()[name] = value
-        return value
-    if name in {"TaskGraph", "TaskNode", "TaskEdge"}:
-        module = import_module(".task_graph", __name__)
+    module_map = {
+        "AgentFactory": "..agents.registry",
+        "AgentRegistry": "..agents.registry",
+        "Orchestrator": ".orchestrator",
+        "StorageManager": "..storage",
+        "TaskCoordinator": ".coordinator",
+        "TaskEdge": ".task_graph",
+        "TaskGraph": ".task_graph",
+        "TaskNode": ".task_graph",
+        "TaskStatus": ".coordinator",
+    }
+
+    if name in module_map:
+        module = import_module(module_map[name], __name__)
         value = getattr(module, name)
         globals()[name] = value
         return value
