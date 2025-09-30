@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import threading
 import time
+from collections.abc import Sequence
 from typing import Any, Dict, Optional
 
 import psutil
@@ -12,6 +13,10 @@ from prometheus_client import REGISTRY, CollectorRegistry, Gauge
 def _coerce_float(value: Any) -> float:
     """Return ``value`` converted to ``float`` with NaN/inf protection."""
 
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for item in value:
+            return _coerce_float(item)
+        return 0.0
     try:
         result = float(value)
     except (TypeError, ValueError):
@@ -67,9 +72,13 @@ class SystemMonitor:
 
     def _run(self) -> None:
         while not self._stop.is_set():
-            self.metrics = self.collect()
-            self.cpu_gauge.set(self.metrics.get("cpu_percent", 0.0))
-            self.mem_gauge.set(self.metrics.get("memory_percent", 0.0))
+            cpu_percent, memory_percent = self.collect()
+            self.metrics = {
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory_percent,
+            }
+            self.cpu_gauge.set(cpu_percent)
+            self.mem_gauge.set(memory_percent)
             time.sleep(self.interval)
 
     def stop(self) -> None:
@@ -79,7 +88,9 @@ class SystemMonitor:
             self._thread = None
 
     @staticmethod
-    def collect() -> Dict[str, float]:
+    def collect() -> tuple[float, float]:
+        """Return normalized CPU percent and memory percent readings."""
+
         cpu_value: float = 0.0
         mem_percent: float = 0.0
 
@@ -95,7 +106,4 @@ class SystemMonitor:
         except Exception:
             mem_percent = 0.0
 
-        return {
-            "cpu_percent": cpu_value,
-            "memory_percent": mem_percent,
-        }
+        return cpu_value, mem_percent

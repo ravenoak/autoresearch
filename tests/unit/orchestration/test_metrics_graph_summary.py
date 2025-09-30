@@ -47,6 +47,8 @@ def test_graph_summary_uses_typed_floats():
     assert totals["relation_count"] == 3.0
     assert totals["contradiction_count"] == 2.0
     assert totals["provenance_count"] == 2.0
+    assert totals["ingestion_seconds"] == 0.25
+    assert totals["similarity_score"] == 0.5
 
     latency_totals = summary["totals_storage_latency"]
     assert latency_totals == {"persist": 4.5, "load": 0.0}
@@ -67,3 +69,31 @@ def test_graph_build_skips_empty_payload():
     metrics = OrchestrationMetrics()
     metrics.record_graph_build({"ingestion": {"entity_count": 0, "relation_count": 0}})
     assert metrics.graph_ingestions == []
+
+
+def test_graph_ingestion_saved_payload_is_sanitized():
+    metrics = OrchestrationMetrics()
+    metadata = {
+        "ingestion": {
+            "entity_count": "1",
+            "relation_count": -5,
+            "seconds": "0.75",
+            "storage_latency": {"persist": -1, "load": float("nan")},
+        },
+        "paths": (("a", "b"),),
+        "similarity": {"raw_score": float("inf"), "weighted_score": 3, "weight": None},
+    }
+
+    metrics.record_graph_build(metadata, summary={"provenance": [object()]})
+
+    assert metrics.graph_ingestions
+    record = metrics.graph_ingestions[-1]
+    assert record["entity_count"] == 1.0
+    assert record["relation_count"] == 0.0
+    assert record["ingestion_seconds"] == 0.75
+    assert record["storage_latency"] == {"persist": 0.0, "load": 0.0}
+    assert record["similarity_score"] == 0.0
+    assert record["similarity_weighted"] == 3.0
+    assert record["similarity_weight"] == 0.0
+    assert record["path_count"] == 1.0
+    assert record["provenance_count"] == 1.0

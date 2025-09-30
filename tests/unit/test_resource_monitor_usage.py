@@ -56,3 +56,20 @@ def test_get_usage_handles_runtime_errors(monkeypatch):
     cpu, mem = _get_usage()
     assert cpu == 0.0
     assert mem == 0.0
+
+
+def test_get_usage_normalizes_iterable_values(monkeypatch):
+    class FakeProcess:
+        def memory_info(self):
+            return types.SimpleNamespace(rss=[2097152])
+
+    fake_psutil = types.SimpleNamespace(
+        cpu_percent=lambda interval=None: ["12.5"],
+        Process=lambda: FakeProcess(),
+    )
+
+    monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
+
+    cpu, mem = _get_usage()
+    assert cpu == 12.5
+    assert mem == 2.0

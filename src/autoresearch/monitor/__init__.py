@@ -62,15 +62,20 @@ def _collect_system_metrics() -> Dict[str, Any]:
         if _system_monitor:
             metrics.update(_system_monitor.metrics)
         else:
-            metrics.update(SystemMonitor.collect())
+            cpu_percent, memory_percent = SystemMonitor.collect()
+            metrics.update({
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory_percent,
+            })
 
         import psutil
 
         mem = psutil.virtual_memory()
         proc = psutil.Process()
         metrics.setdefault("cpu_percent", psutil.cpu_percent(interval=None))
-        metrics.setdefault("memory_percent", mem.percent)
-        metrics["memory_used_mb"] = mem.used / (1024 * 1024)
+        metrics.setdefault("memory_percent", getattr(mem, "percent", 0.0))
+        mem_used = getattr(mem, "used", 0)
+        metrics["memory_used_mb"] = float(mem_used) / (1024 * 1024)
         metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
         gpu_percent, gpu_mem = _get_gpu_stats()
         metrics["gpu_percent"] = gpu_percent
@@ -111,7 +116,10 @@ def _collect_graph_data() -> Dict[str, List[str]]:
 
         G = StorageManager.get_graph()
         data: Dict[str, List[str]] = {}
-        for u, v in G.edges():
+        for edge in G.edges():
+            if len(edge) < 2:
+                continue
+            u, v = edge[0], edge[1]
             data.setdefault(str(u), []).append(str(v))
         return data
     except Exception:

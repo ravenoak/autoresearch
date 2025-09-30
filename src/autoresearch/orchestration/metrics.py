@@ -10,7 +10,7 @@ import json
 import logging
 import math
 import time
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import replace
 from contextlib import contextmanager, suppress
 from os import getenv
@@ -162,6 +162,53 @@ def _coerce_float_dict(mapping: Mapping[str, Any] | None) -> dict[str, float]:
     for key, value in mapping.items():
         result[str(key)] = _coerce_float(value)
     return result
+
+
+_GRAPH_TOTAL_FIELDS: tuple[str, ...] = (
+    "entity_count",
+    "relation_count",
+    "ingestion_seconds",
+    "contradiction_count",
+    "contradiction_score",
+    "contradiction_weighted",
+    "contradiction_weight",
+    "neighbor_node_count",
+    "neighbor_edge_count",
+    "path_count",
+    "provenance_count",
+    "similarity_score",
+    "similarity_weighted",
+    "similarity_weight",
+)
+
+
+def _empty_graph_totals() -> dict[str, float]:
+    """Return a zero-initialized telemetry mapping for graph aggregates."""
+
+    return {key: 0.0 for key in _GRAPH_TOTAL_FIELDS}
+
+
+def _accumulate_graph_totals(
+    totals: dict[str, float],
+    record: Mapping[str, Any],
+    *,
+    fields: Iterable[str] = _GRAPH_TOTAL_FIELDS,
+) -> None:
+    """Accumulate ``record`` values into ``totals`` using safe float coercion."""
+
+    for key in fields:
+        if key not in totals:
+            totals[key] = 0.0
+        totals[key] += _coerce_float(record.get(key, 0.0))
+
+
+def _sanitize_latency_mapping(payload: Mapping[str, Any] | None) -> dict[str, float]:
+    """Return latency payload coerced to non-negative floats."""
+
+    return {
+        key: max(0.0, value)
+        for key, value in _coerce_float_dict(payload).items()
+    }
 
 
 def restore_counter(counter: MetricWrapperBase, value: float) -> None:
@@ -588,12 +635,9 @@ class OrchestrationMetrics:
             entity_count = max(0.0, _coerce_float(ingestion_meta.get("entity_count")))
             relation_count = max(0.0, _coerce_float(ingestion_meta.get("relation_count")))
             ingestion_seconds = max(0.0, _coerce_float(ingestion_meta.get("seconds")))
-            storage_latency = {
-                key: max(0.0, value)
-                for key, value in _coerce_float_dict(
-                    ingestion_meta.get("storage_latency")
-                ).items()
-            }
+            storage_latency = _sanitize_latency_mapping(
+                ingestion_meta.get("storage_latency")
+            )
 
         if entity_count <= 0.0 and relation_count <= 0.0 and not metadata.get("paths"):
             # Skip empty ingestions that did not add any graph structure.
@@ -806,33 +850,15 @@ class OrchestrationMetrics:
         graph_summary_payload: dict[str, Any] | None = None
         if self.graph_ingestions:
             runs = len(self.graph_ingestions)
-            totals: dict[str, float] = {
-                "entity_count": 0.0,
-                "relation_count": 0.0,
-                "ingestion_seconds": 0.0,
-                "contradiction_count": 0.0,
-                "contradiction_score": 0.0,
-                "contradiction_weighted": 0.0,
-                "contradiction_weight": 0.0,
-                "neighbor_node_count": 0.0,
-                "neighbor_edge_count": 0.0,
-                "path_count": 0.0,
-                "provenance_count": 0.0,
-                "similarity_score": 0.0,
-                "similarity_weighted": 0.0,
-                "similarity_weight": 0.0,
-            }
+            totals = _empty_graph_totals()
             storage_totals: dict[str, float] = {}
             for record in self.graph_ingestions:
-                for key in totals:
-                    totals[key] += _coerce_float(record.get(key))
+                _accumulate_graph_totals(totals, record)
                 latency_meta = record.get("storage_latency")
                 if isinstance(latency_meta, Mapping):
-                    for key, value in latency_meta.items():
+                    for key, value in _sanitize_latency_mapping(latency_meta).items():
                         name = str(key)
-                        storage_totals[name] = storage_totals.get(name, 0.0) + _coerce_float(
-                            value
-                        )
+                        storage_totals[name] = storage_totals.get(name, 0.0) + value
             averages: dict[str, float | dict[str, float]] = {
                 key: (totals[key] / runs if runs else 0.0) for key in totals
             }
@@ -842,7 +868,7 @@ class OrchestrationMetrics:
             latest_raw = dict(self.graph_ingestions[-1])
             for key in totals:
                 latest_raw[key] = _coerce_float(latest_raw.get(key))
-            storage_latest = _coerce_float_dict(latest_raw.get("storage_latency"))
+            storage_latest = _sanitize_latency_mapping(latest_raw.get("storage_latency"))
             latest_raw["storage_latency"] = storage_latest
             contradiction_sample = latest_raw.get("contradiction_sample")
             if isinstance(contradiction_sample, Sequence):
