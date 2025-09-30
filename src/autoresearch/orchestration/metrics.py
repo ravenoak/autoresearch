@@ -15,7 +15,7 @@ from dataclasses import replace
 from contextlib import contextmanager, suppress
 from os import getenv
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, SupportsFloat
 
 from prometheus_client import Counter, Histogram
 from prometheus_client.metrics import MetricWrapperBase
@@ -141,26 +141,75 @@ def snapshot_counter(counter: MetricWrapperBase) -> float:
         return 0.0
 
 
-def _coerce_float(value: Any) -> float:
-    """Return ``value`` converted to ``float`` with NaN/inf protection."""
+def _safe_float(value: Any) -> float:
+    """Return ``value`` coerced to a finite float when possible."""
 
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for item in value:
+            return _safe_float(item)
+        return 0.0
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return 0.0
+        try:
+            result = float(text)
+        except ValueError:
+            return 0.0
+    elif isinstance(value, SupportsFloat):
+        try:
+            result = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+    else:
         return 0.0
     if not math.isfinite(result):
         return 0.0
     return result
 
 
-def _coerce_float_dict(mapping: Mapping[str, Any] | None) -> dict[str, float]:
-    """Return ``mapping`` with all values coerced to finite floats."""
+def _coerce_float(value: Any) -> float:
+    """Return ``value`` converted to ``float`` with NaN/inf protection."""
 
-    if not isinstance(mapping, Mapping):
-        return {}
+    return _safe_float(value)
+
+
+def _normalize_latency_mapping(
+    payload: Mapping[str, Any] | Sequence[Any] | None,
+    *,
+    prefix: str = "",
+) -> dict[str, float]:
+    """Return ``payload`` flattened into non-negative float latencies."""
+
     result: dict[str, float] = {}
-    for key, value in mapping.items():
-        result[str(key)] = _coerce_float(value)
+    if isinstance(payload, Mapping):
+        for key, value in payload.items():
+            name = f"{prefix}.{key}" if prefix else str(key)
+            if isinstance(value, Mapping):
+                nested = _normalize_latency_mapping(value, prefix=name)
+                if nested:
+                    result.update(nested)
+                else:
+                    result[name] = 0.0
+                continue
+            if isinstance(value, Sequence) and not isinstance(
+                value, (str, bytes, bytearray)
+            ):
+                nested = _normalize_latency_mapping(value, prefix=name)
+                if nested:
+                    result.update(nested)
+                else:
+                    result[name] = 0.0
+                continue
+            result[name] = max(0.0, _safe_float(value))
+        return result
+    if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes, bytearray)):
+        for index, item in enumerate(payload):
+            name = f"{prefix}[{index}]" if prefix else str(index)
+            result.update(_normalize_latency_mapping(item, prefix=name))
+        return result
+    if prefix:
+        result[prefix] = max(0.0, _safe_float(payload))
     return result
 
 
@@ -200,15 +249,6 @@ def _accumulate_graph_totals(
         if key not in totals:
             totals[key] = 0.0
         totals[key] += _coerce_float(record.get(key, 0.0))
-
-
-def _sanitize_latency_mapping(payload: Mapping[str, Any] | None) -> dict[str, float]:
-    """Return latency payload coerced to non-negative floats."""
-
-    return {
-        key: max(0.0, value)
-        for key, value in _coerce_float_dict(payload).items()
-    }
 
 
 def restore_counter(counter: MetricWrapperBase, value: float) -> None:
@@ -632,10 +672,10 @@ class OrchestrationMetrics:
         ingestion_seconds = 0.0
         storage_latency: dict[str, float] = {}
         if isinstance(ingestion_meta, Mapping):
-            entity_count = max(0.0, _coerce_float(ingestion_meta.get("entity_count")))
-            relation_count = max(0.0, _coerce_float(ingestion_meta.get("relation_count")))
-            ingestion_seconds = max(0.0, _coerce_float(ingestion_meta.get("seconds")))
-            storage_latency = _sanitize_latency_mapping(
+            entity_count = max(0.0, _safe_float(ingestion_meta.get("entity_count")))
+            relation_count = max(0.0, _safe_float(ingestion_meta.get("relation_count")))
+            ingestion_seconds = max(0.0, _safe_float(ingestion_meta.get("seconds")))
+            storage_latency = _normalize_latency_mapping(
                 ingestion_meta.get("storage_latency")
             )
 
@@ -856,49 +896,50 @@ class OrchestrationMetrics:
                 _accumulate_graph_totals(totals, record)
                 latency_meta = record.get("storage_latency")
                 if isinstance(latency_meta, Mapping):
-                    for key, value in _sanitize_latency_mapping(latency_meta).items():
+                    for key, value in latency_meta.items():
                         name = str(key)
-                        storage_totals[name] = storage_totals.get(name, 0.0) + value
+                        storage_totals[name] = storage_totals.get(name, 0.0) + _safe_float(
+                            value
+                        )
             averages: dict[str, float | dict[str, float]] = {
                 key: (totals[key] / runs if runs else 0.0) for key in totals
             }
             averages["storage_latency"] = {
                 key: value / runs if runs else 0.0 for key, value in storage_totals.items()
             }
-            latest_raw = dict(self.graph_ingestions[-1])
-            for key in totals:
-                latest_raw[key] = _coerce_float(latest_raw.get(key))
-            storage_latest = _sanitize_latency_mapping(latest_raw.get("storage_latency"))
-            latest_raw["storage_latency"] = storage_latest
-            contradiction_sample = latest_raw.get("contradiction_sample")
-            if isinstance(contradiction_sample, Sequence):
-                latest_raw["contradiction_sample"] = [
-                    dict(item) for item in contradiction_sample if isinstance(item, Mapping)
-                ]
-            else:
-                latest_raw["contradiction_sample"] = []
-            neighbor_sample = latest_raw.get("neighbor_sample")
-            if isinstance(neighbor_sample, Mapping):
-                latest_raw["neighbor_sample"] = {
-                    str(node): [
-                        dict(edge)
-                        for edge in edges
-                        if isinstance(edge, Mapping)
+            latest_source = self.graph_ingestions[-1]
+            latest_raw: dict[str, Any] = {}
+            for key, value in latest_source.items():
+                if key in totals:
+                    latest_raw[key] = _safe_float(value)
+                    continue
+                if key == "storage_latency" and isinstance(value, Mapping):
+                    latest_raw[key] = {str(name): _safe_float(v) for name, v in value.items()}
+                    continue
+                if key == "contradiction_sample" and isinstance(value, Sequence):
+                    latest_raw[key] = [
+                        dict(item) for item in value if isinstance(item, Mapping)
                     ]
-                    for node, edges in neighbor_sample.items()
-                    if isinstance(edges, Sequence)
-                }
-            else:
-                latest_raw["neighbor_sample"] = {}
-            path_sample = latest_raw.get("path_sample")
-            if isinstance(path_sample, Sequence):
-                latest_raw["path_sample"] = [
-                    [str(node) for node in path]
-                    for path in path_sample
-                    if isinstance(path, Sequence)
-                ]
-            else:
-                latest_raw["path_sample"] = []
+                    continue
+                if key == "neighbor_sample" and isinstance(value, Mapping):
+                    latest_raw[key] = {
+                        str(node): [
+                            dict(edge)
+                            for edge in edges
+                            if isinstance(edge, Mapping)
+                        ]
+                        for node, edges in value.items()
+                        if isinstance(edges, Sequence)
+                    }
+                    continue
+                if key == "path_sample" and isinstance(value, Sequence):
+                    latest_raw[key] = [
+                        [str(node) for node in path]
+                        for path in value
+                        if isinstance(path, Sequence)
+                    ]
+                    continue
+                latest_raw[key] = value
 
             graph_summary_payload = {
                 "runs": runs,

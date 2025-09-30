@@ -4,7 +4,7 @@ import math
 import threading
 import time
 from collections.abc import Sequence
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, SupportsFloat
 
 import psutil
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge
@@ -17,9 +17,20 @@ def _coerce_float(value: Any) -> float:
         for item in value:
             return _coerce_float(item)
         return 0.0
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return 0.0
+        try:
+            result = float(text)
+        except ValueError:
+            return 0.0
+    elif isinstance(value, SupportsFloat):
+        try:
+            result = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+    else:
         return 0.0
     if not math.isfinite(result):
         return 0.0

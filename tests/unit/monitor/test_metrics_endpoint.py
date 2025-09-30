@@ -25,6 +25,28 @@ def test_metrics_endpoint_coerces_bytearray(monkeypatch):
     assert response.body.decode() == "another_metric 2\n"
 
 
+def test_metrics_endpoint_handles_memoryview(monkeypatch):
+    payload = memoryview(b"view_metric 3\n")
+
+    monkeypatch.setattr(monitor_metrics, "generate_latest", lambda: payload)
+
+    response = asyncio.run(monitor_metrics.metrics_endpoint())
+
+    assert response.status_code == 200
+    assert response.body.decode() == "view_metric 3\n"
+
+
+def test_metrics_endpoint_replaces_invalid_bytes(monkeypatch):
+    payload = b"bad_metric \xff\n"
+
+    monkeypatch.setattr(monitor_metrics, "generate_latest", lambda: payload)
+
+    response = asyncio.run(monitor_metrics.metrics_endpoint())
+
+    assert response.status_code == 200
+    assert response.body.decode() == "bad_metric \ufffd\n"
+
+
 def test_metrics_endpoint_handles_failure(monkeypatch):
     def _boom() -> bytes:
         raise RuntimeError("nope")

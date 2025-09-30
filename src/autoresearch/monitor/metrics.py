@@ -14,7 +14,7 @@ async def metrics_endpoint(_: None = None) -> PlainTextResponse:
     """
 
     try:
-        payload = generate_latest()
+        raw_payload = generate_latest()
     except Exception:
         # Ensure monitoring surfaces a valid response even if Prometheus internals fail.
         return PlainTextResponse(
@@ -22,10 +22,11 @@ async def metrics_endpoint(_: None = None) -> PlainTextResponse:
             media_type=CONTENT_TYPE_LATEST,
             status_code=503,
         )
-    if isinstance(payload, (bytes, bytearray, memoryview)):
-        body = bytes(payload).decode("utf-8", "replace")
+    if isinstance(raw_payload, (bytes, bytearray, memoryview)):
+        payload = bytes(raw_payload).decode("utf-8", "replace")
     else:  # pragma: no cover - defensive fallback
-        body = str(payload)
+        payload = str(raw_payload)
+    body: str = payload
     return PlainTextResponse(
         body,
         media_type=CONTENT_TYPE_LATEST,
