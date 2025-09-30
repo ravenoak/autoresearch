@@ -4,13 +4,36 @@ from __future__ import annotations
 
 import time
 from collections import OrderedDict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from threading import RLock
-from typing import Optional
+from typing import Any, Optional, Protocol, Self, TypeVar, cast
 from uuid import uuid4
 
 from ..config.models import ConfigModel
 from .state import QueryState
+
+
+class _SupportsModelCopy(Protocol):
+    """Typed protocol for objects exposing ``model_copy``."""
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = ...,
+        deep: bool = ...,
+    ) -> Self:
+        """Return a deep copy of the model."""
+
+
+_M = TypeVar("_M")
+
+
+def _clone_model(model: _M) -> _M:
+    """Return a deep copy of ``model`` using its ``model_copy`` method."""
+
+    supports = cast(_SupportsModelCopy, model)
+    return cast(_M, supports.model_copy(deep=True))
 
 
 @dataclass
@@ -26,8 +49,8 @@ class QueryStateSnapshot:
         """Return a deep copy of this snapshot."""
 
         return QueryStateSnapshot(
-            state=self.state.model_copy(deep=True),
-            config=self.config.model_copy(deep=True),
+            state=_clone_model(self.state),
+            config=_clone_model(self.config),
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
@@ -53,8 +76,8 @@ class QueryStateRegistry:
         """
 
         snapshot = QueryStateSnapshot(
-            state=state.model_copy(deep=True),
-            config=config.model_copy(deep=True),
+            state=_clone_model(state),
+            config=_clone_model(config),
             created_at=time.time(),
             updated_at=time.time(),
         )
@@ -91,18 +114,19 @@ class QueryStateRegistry:
         with cls._lock:
             existing = cls._store.get(state_id)
             if existing is None:
+                effective_config = config or ConfigModel()
                 new_snapshot = QueryStateSnapshot(
-                    state=state.model_copy(deep=True),
-                    config=(config or ConfigModel()).model_copy(deep=True),
+                    state=_clone_model(state),
+                    config=_clone_model(effective_config),
                     created_at=time.time(),
                     updated_at=time.time(),
                 )
                 cls._store[state_id] = new_snapshot
             else:
-                existing.state = state.model_copy(deep=True)
+                existing.state = _clone_model(state)
                 existing.state._ensure_lock()
                 if config is not None:
-                    existing.config = config.model_copy(deep=True)
+                    existing.config = _clone_model(config)
                 existing.updated_at = time.time()
             cls._store.move_to_end(state_id)
             cls._trim_if_needed()

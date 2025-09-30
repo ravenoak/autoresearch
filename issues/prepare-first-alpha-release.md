@@ -22,6 +22,14 @@ evidence trail current without triggering the deferred TestPyPI steps.
 【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+The **14:55 UTC** `task verify` sweep now clears the
+`QueryState.model_copy` strict typing regression: `uv run mypy src` passes and
+the run advances until it meets the known backlog of untyped test fixtures. The
+log lives at `baseline/logs/task-verify-20250930T145541Z.log`, and a focused
+`uv run mypy --strict` invocation over the registry and regression coverage file
+confirms the gate stays green.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L50】【df5aef†L1-L1】
+
 For historical context, retain
 `baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify
 gate—the log shows the final red strict-typing wall in the HTTP layer before we

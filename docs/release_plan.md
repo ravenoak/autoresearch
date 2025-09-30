@@ -29,6 +29,16 @@ current while the documentation changes land.
 【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+The **September 30, 2025 at 14:55 UTC** verify sweep reaches
+`uv run mypy src` without tripping the `QueryState.model_copy` regression,
+confirming the registry fixes clear the strict typing gate before the run
+stops on the longstanding untyped test backlog. The log at
+`baseline/logs/task-verify-20250930T145541Z.log` records the run, and a focused
+`uv run mypy --strict` pass over the registry and regression tests stays clean
+to document the cleared path.
+【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L50】
+【df5aef†L1-L1】
+
 The **September 30, 2025 at 19:04 UTC** sweep completed `task release:alpha`
 end-to-end. `task verify` and `task coverage` captured the recalibrated scout
 gate telemetry, CLI path helper checks, and the 92.4 % coverage rate, while the
