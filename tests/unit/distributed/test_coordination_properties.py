@@ -6,6 +6,7 @@ import random
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Any, Mapping
 
 import pytest
 
@@ -16,6 +17,9 @@ from scripts.distributed_coordination_sim import (  # noqa: E402
     elect_leader,
     process_messages,
 )
+
+from autoresearch.distributed import executors  # noqa: E402
+from autoresearch.distributed.broker import InMemoryBroker  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -104,3 +108,45 @@ def test_module_exports_helpers(tmp_path_env: Path) -> None:
     module = importlib.import_module("scripts.distributed_coordination_sim")
     exported = set(getattr(module, "__all__", ()))
     assert {"elect_leader", "process_messages"}.issubset(exported)
+
+
+def test_storage_queue_adapter_accepts_mapping_payloads() -> None:
+    """Adapters accept queues whose ``put`` signature consumes mappings."""
+
+    class MappingQueue:
+        def __init__(self) -> None:
+            self.items: list[Mapping[str, Any]] = []
+
+        def put(self, item: Mapping[str, Any]) -> None:
+            self.items.append(item)
+
+    queue = MappingQueue()
+    resolved = executors._resolve_storage_queue(queue)
+    assert resolved is not None
+    payload: Mapping[str, Any] = {
+        "action": "persist_claim",
+        "claim": {},
+        "partial_update": False,
+    }
+    resolved.put(payload)
+    assert queue.items == [payload]
+
+
+def test_storage_queue_adapter_rejects_incompatible_payloads() -> None:
+    """Adapters reject queues that expect non-mapping payloads."""
+
+    class TextQueue:
+        def put(self, item: str) -> None:
+            self.item = item
+
+    queue = TextQueue()
+    resolved = executors._resolve_storage_queue(queue)
+    assert resolved is None
+
+
+def test_storage_queue_adapter_accepts_broker_queue() -> None:
+    """Real broker queues remain compatible with storage adapters."""
+
+    broker = InMemoryBroker()
+    resolved = executors._resolve_storage_queue(broker.queue)
+    assert resolved is broker.queue

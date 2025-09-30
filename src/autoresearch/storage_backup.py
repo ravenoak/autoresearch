@@ -539,7 +539,7 @@ class BackupManager:
     def get_scheduler(cls) -> BackupScheduler:
         """Get the backup scheduler instance."""
         if cls._scheduler is None:
-            cls._scheduler = BackupScheduler()
+            cls._scheduler = create_backup_scheduler()
         return cls._scheduler
 
     @staticmethod
@@ -709,6 +709,12 @@ class BackupManager:
             target_dir = f"restore_pit_{target_time.strftime('%Y%m%d_%H%M%S')}"
 
         return restore_backup(backup_path=closest_backup.path, target_dir=target_dir)
+
+
+def create_backup_scheduler() -> BackupScheduler:
+    """Return a new :class:`BackupScheduler` instance."""
+
+    return BackupScheduler()
 
 
 # Convenience wrapper functions

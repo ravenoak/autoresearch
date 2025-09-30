@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Callable
 
 import pytest
@@ -142,3 +143,37 @@ def test_backup_manager_schedule_uses_resolved_scheduler(
         assert timers[1].interval == pytest.approx(10800.0)
     finally:
         BackupManager._scheduler = None
+
+
+def test_rotation_policy_removes_excess_and_stale_backups(tmp_path: Path) -> None:
+    """Rotation deletes old backups while keeping the newest ones."""
+
+    config = BackupConfig(backup_dir=str(tmp_path), max_backups=2, retention_days=1)
+    now = datetime.now()
+    layout = [
+        (now - timedelta(minutes=10), True),
+        (now - timedelta(hours=1), True),
+        (now - timedelta(hours=5), False),
+        (now - timedelta(days=2), True),
+    ]
+
+    for timestamp, compressed in layout:
+        stem = timestamp.strftime("%Y%m%d_%H%M%S")
+        if compressed:
+            path = tmp_path / f"backup_{stem}.tar.gz"
+            path.write_bytes(b"data")
+        else:
+            directory = tmp_path / f"backup_{stem}"
+            directory.mkdir()
+            (directory / "db.duckdb").write_text("data")
+
+    storage_backup._apply_rotation_policy(str(tmp_path), config)
+
+    remaining = {item.name for item in tmp_path.iterdir()}
+    recent_key = (now - timedelta(minutes=10)).strftime("%Y%m%d_%H%M%S")
+    hourly_key = (now - timedelta(hours=1)).strftime("%Y%m%d_%H%M%S")
+    expected = {
+        f"backup_{recent_key}.tar.gz",
+        f"backup_{hourly_key}.tar.gz",
+    }
+    assert remaining == expected

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import inspect
 import multiprocessing
 import os
-from typing import Any, Optional, cast
+import types
+from collections.abc import Mapping
+from typing import Any, Optional, Union, cast, get_args, get_origin, get_type_hints
 
 from .. import search, storage
 from ..agents.registry import AgentFactory
@@ -60,6 +63,51 @@ def _resolve_requests_session(session_handle: Any | None) -> RequestsSessionProt
     return None
 
 
+def _annotation_supports_mapping(annotation: Any) -> bool:
+    """Return ``True`` when ``annotation`` accepts mapping payloads."""
+
+    if annotation in (None, inspect._empty, Any):
+        return False
+
+    origin = get_origin(annotation)
+    if origin is None:
+        try:
+            return issubclass(annotation, Mapping)
+        except TypeError:
+            return getattr(annotation, "__total__", None) is not None and hasattr(
+                annotation, "__annotations__"
+            )
+    if origin in (Mapping, dict):
+        return True
+    if origin in (types.UnionType, Union):
+        return all(_annotation_supports_mapping(arg) for arg in get_args(annotation))
+    return False
+
+
+def _as_storage_queue(candidate: Any) -> StorageQueueProtocol | None:
+    """Cast ``candidate`` to :class:`StorageQueueProtocol` when compatible."""
+
+    if candidate is None or not isinstance(candidate, StorageQueueProtocol):
+        return None
+
+    put = getattr(candidate, "put", None)
+    if not callable(put):
+        return None
+    try:
+        annotations = get_type_hints(type(candidate).put)
+    except Exception as exc:  # pragma: no cover - defensive guard
+        log.warning("Unable to resolve queue annotations", exc_info=exc)
+        return None
+    item_annotation = annotations.get("item")
+    if not _annotation_supports_mapping(item_annotation):
+        log.warning(
+            "Storage queue candidate rejected due to incompatible signature: %s",
+            type(candidate).__name__,
+        )
+        return None
+    return cast(StorageQueueProtocol, candidate)
+
+
 def _resolve_storage_queue(queue_handle: Any | None) -> StorageQueueProtocol | None:
     """Resolve a storage queue from a Ray handle or direct instance."""
 
@@ -74,14 +122,7 @@ def _resolve_storage_queue(queue_handle: Any | None) -> StorageQueueProtocol | N
         log.warning("Failed to retrieve distributed storage queue", exc_info=exc)
         return None
 
-    if isinstance(resolved, StorageQueueProtocol):
-        return resolved
-
-    log.warning(
-        "Received unexpected storage queue payload for distributed worker: %s",
-        type(resolved).__name__,
-    )
-    return None
+    return _as_storage_queue(resolved)
 
 
 @ray.remote
@@ -129,8 +170,9 @@ def _execute_agent_process(
     storage_queue: StorageQueueProtocol | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a spawned process."""
-    if storage_queue is not None:
-        storage.set_message_queue(storage_queue)
+    adapted_queue = _as_storage_queue(storage_queue)
+    if adapted_queue is not None:
+        storage.set_message_queue(adapted_queue)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(cast(QueryState, state), config)
     msg: AgentResultMessage = {
@@ -170,7 +212,9 @@ class RayExecutor:
         should_start = getattr(config, "distributed", False) or config.distributed_config.enabled
         if should_start:
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
-            storage.set_message_queue(self.broker.queue)
+            broker_queue = _as_storage_queue(self.broker.queue)
+            if broker_queue is not None:
+                storage.set_message_queue(broker_queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
     def run_query(self, query: str, callbacks: CallbackMap | None = None) -> QueryResponse:
@@ -251,7 +295,9 @@ class ProcessExecutor:
         should_start = getattr(config, "distributed", False) or config.distributed_config.enabled
         if should_start:
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
-            storage.set_message_queue(self.broker.queue)
+            broker_queue = _as_storage_queue(self.broker.queue)
+            if broker_queue is not None:
+                storage.set_message_queue(broker_queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
     def run_query(self, query: str, callbacks: CallbackMap | None = None) -> QueryResponse:

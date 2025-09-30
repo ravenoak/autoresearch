@@ -32,7 +32,7 @@ def benchmark_scheduler(duration: float = 0.1) -> tuple[float, int]:
             size=0,
         )
 
-    scheduler = storage_backup.BackupScheduler()
+    scheduler = storage_backup.create_backup_scheduler()
     original_backup = storage_backup._create_backup
     storage_backup._create_backup = noop_backup
     start = resource.getrusage(resource.RUSAGE_SELF)
