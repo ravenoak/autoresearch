@@ -24,6 +24,7 @@ from ..error_utils import format_error_for_api, get_error_info
 from ..models import QueryResponse
 from ..monitor.metrics import metrics_endpoint
 from ..orchestration import ReasoningMode
+from ..orchestration.reverify import ReverifyOptions, run_reverification
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
 from . import webhooks
@@ -44,6 +45,7 @@ from .models import (
     BatchQueryResponseV1,
     QueryRequestV1,
     QueryResponseV1,
+    ReverifyRequestV1,
 )
 from .streaming import query_stream_endpoint
 from .utils import (
@@ -68,6 +70,38 @@ async def custom_swagger_ui_html() -> HTMLResponse:
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
     )
+
+
+@router.post(
+    "/query/reverify",
+    response_model=QueryResponseV1,
+    dependencies=[require_permission("query")],
+)
+async def reverify_endpoint(request: ReverifyRequestV1) -> QueryResponseV1:
+    """Refresh claim audits for a previously executed query."""
+
+    validate_version(request.version)
+    options = ReverifyOptions(
+        broaden_sources=request.broaden_sources,
+        max_results=request.max_results,
+        max_variations=request.max_variations,
+        prompt_variant=request.prompt_variant,
+    )
+    try:
+        response = run_reverification(request.state_id, options=options)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="state not found") from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        error_info = get_error_info(exc)
+        error_data = format_error_for_api(error_info)
+        raise HTTPException(
+            status_code=500,
+            detail={"message": error_info.message, "details": error_data},
+        ) from exc
+
+    if not isinstance(response, QueryResponse):
+        response = QueryResponse.model_validate(response)
+    return QueryResponseV1.model_validate(response.model_dump(mode="json"))
 
 
 @router.get("/openapi.json", include_in_schema=False, dependencies=[require_permission("docs")])

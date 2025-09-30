@@ -137,3 +137,9 @@ Feature: Reasoning Mode Selection
     Then the planner react log should capture normalization warnings
     And the coordinator trace metadata should include unlock events
     And the telemetry snapshot should include scheduler context
+
+  Scenario: Reverification broadens claim audits
+    Given a stored query state with claim audits
+    When I request claim re-verification with broadened sources
+    Then the refreshed audits should replace the previous results
+    And the registry snapshot should include the broadened provenance

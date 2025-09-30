@@ -15,6 +15,8 @@ Every format exposes the same core artifacts:
 - **Metrics** – latency, token usage, and gate telemetry captured during the
   run.
 - **Claim audits** – FEVER-style verification records with provenance maps.
+- **State ID** – reusable identifier for refreshing claim audits via CLI, UI, or
+  API.
 
 ## Layered UX and exports
 
@@ -53,6 +55,8 @@ JSON is ideal for programmatic consumers. The payload mirrors the
 
 - `claim_audits`: full FEVER-style audit rows, including `provenance` with the
   `retrieval`, `backoff`, and `evidence` namespaces.
+- `state_id`: handle for the cached query state that powers
+  `POST /query/reverify` and `autoresearch reverify`.
 - `metrics.scout_gate`: the structured gate decision containing heuristics,
   thresholds, rationales, and telemetry for coverage and contradiction totals.
 - `metrics.scout_stage`: persisted scout snippets, heuristics, and coverage

@@ -107,6 +107,10 @@ class QueryResponse(BaseModel):
         default_factory=list,
         description="Sequenced ReAct traces captured during task execution",
     )
+    state_id: Optional[str] = Field(
+        default=None,
+        description="Identifier for retrieving the underlying QueryState snapshot",
+    )
 
 
 class BatchQueryRequest(BaseModel):

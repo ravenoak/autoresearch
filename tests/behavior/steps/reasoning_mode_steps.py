@@ -76,6 +76,14 @@ def test_prdv_telemetry():
 
 @scenario(
     "../features/reasoning_mode.feature",
+    "Reverification broadens claim audits",
+)
+def test_reverify_claim_audits():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
     "Direct mode agent failure triggers fallback",
 )
 def test_direct_failure():

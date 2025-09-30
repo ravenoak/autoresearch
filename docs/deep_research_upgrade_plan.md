@@ -83,8 +83,9 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Ensure CLI and GUI share consistent depth controls and expose the same
      planner depth and routing metrics in CSV/Parquet exports.
    - **Acceptance criteria:** Establish automated benchmark sweeps with
-     published KPIs, synchronize layered UX controls across CLI and GUI, and
-     export regression-ready CSV/Parquet artifacts with audited schemas.
+     published KPIs, synchronize layered UX controls across CLI and GUI,
+     deliver interactive claim re-verification across UI/CLI/API, and export
+     regression-ready CSV/Parquet artifacts with audited schemas.
 5. **Phase 5 – Cost-Aware Model Routing**
    - Assign models per role with budget-aware fallbacks.
    - Monitor token, latency, and accuracy metrics for regressions.

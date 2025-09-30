@@ -57,6 +57,32 @@ class QueryResponseV1(VersionedModel, QueryResponse):
     version: str = Field(default="1", description="API version for the response")
 
 
+class ReverifyRequestV1(VersionedModel):
+    """API request model for re-running claim verification."""
+
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the request")
+    state_id: str = Field(description="Identifier of the cached query state")
+    broaden_sources: bool = Field(
+        default=False,
+        description="Increase retrieval breadth before scoring claims.",
+    )
+    max_results: int | None = Field(
+        default=None,
+        ge=1,
+        description="Optional override for retrieval result limits.",
+    )
+    max_variations: int | None = Field(
+        default=None,
+        ge=1,
+        description="Optional override for retrieval query variation counts.",
+    )
+    prompt_variant: str | None = Field(
+        default=None,
+        description="Suffix for the FactChecker verification prompt template.",
+    )
+
+
 class BatchQueryRequestV1(VersionedModel, BatchQueryRequest):
     """Batch query request model for version 1."""
 
@@ -88,6 +114,7 @@ __all__ = [
     "ReasoningMode",
     "QueryRequestV1",
     "QueryResponseV1",
+    "ReverifyRequestV1",
     "BatchQueryRequestV1",
     "BatchQueryResponseV1",
     "AsyncQueryResponseV1",
