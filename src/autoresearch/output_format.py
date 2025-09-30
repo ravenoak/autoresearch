@@ -371,7 +371,10 @@ def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
             steps.append(step.strip())
             continue
         if isinstance(step, Mapping):
-            for key in ("summary", "content", "text", "message"):
+            visibility = step.get("visibility")
+            if isinstance(visibility, Mapping) and visibility.get("reasoning") is False:
+                continue
+            for key in ("hedged_content", "summary", "content", "text", "message"):
                 value = step.get(key)
                 if isinstance(value, str) and value.strip():
                     steps.append(value.strip())
@@ -386,9 +389,35 @@ def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
 def _generate_key_findings(response: QueryResponse) -> List[str]:
     """Derive key findings from reasoning or the synthesized answer."""
 
-    findings = [step for step in _stringify_reasoning(response.reasoning) if step]
+    findings: List[str] = []
+    for step in response.reasoning:
+        if isinstance(step, Mapping):
+            visibility = step.get("visibility")
+            if isinstance(visibility, Mapping) and visibility.get("key_findings") is False:
+                continue
+            status_value = step.get("audit_status")
+            if not isinstance(status_value, str):
+                status_value = step.get("audit", {}).get("status")
+            status_text = str(status_value or "").lower()
+            if status_text == "unsupported":
+                continue
+            for key in ("hedged_content", "summary", "content", "text", "message"):
+                value = step.get(key)
+                if isinstance(value, str) and value.strip():
+                    findings.append(value.strip())
+                    break
+            continue
+        if isinstance(step, str) and step.strip():
+            findings.append(step.strip())
     if not findings:
-        answer_lines = [line.strip() for line in response.answer.splitlines() if line.strip()]
+        answer_lines = [
+            line.strip()
+            for line in response.answer.splitlines()
+            if line.strip()
+            and not line.lstrip().startswith("⚠️")
+            and "unsupported claims remain" not in line.lower()
+            and "needs review" not in line.lower()
+        ]
         findings.extend(answer_lines[:3])
     return findings
 
@@ -537,6 +566,64 @@ def build_depth_payload(
     else:
         metrics = {}
         notes["metrics"] = _hidden_message("metrics", plan)
+
+    def _truncate_claim(text: str, limit: int = 80) -> str:
+        cleaned = " ".join(text.split())
+        if len(cleaned) <= limit:
+            return cleaned
+        return cleaned[: limit - 1].rstrip() + "…"
+
+    def _claim_labels(ids: Iterable[Any]) -> list[str]:
+        labels: list[str] = []
+        for claim_id in ids:
+            cid = str(claim_id)
+            label = cid
+            for step in response.reasoning:
+                if isinstance(step, Mapping) and str(step.get("id")) == cid:
+                    for key in ("hedged_content", "content", "summary", "text", "message"):
+                        value = step.get(key)
+                        if isinstance(value, str) and value.strip():
+                            label = _truncate_claim(value)
+                            break
+                    break
+            labels.append(label)
+        return labels
+
+    audit_snapshot = metrics.get("answer_audit") if isinstance(metrics, Mapping) else None
+    if isinstance(audit_snapshot, Mapping):
+        unsupported_ids = [
+            str(claim_id)
+            for claim_id in audit_snapshot.get("unsupported_claims", [])
+            if claim_id is not None and str(claim_id)
+        ]
+        needs_review_ids = [
+            str(claim_id)
+            for claim_id in audit_snapshot.get("needs_review_claims", [])
+            if claim_id is not None and str(claim_id)
+        ]
+        if unsupported_ids:
+            labels = _claim_labels(unsupported_ids)
+            caution = "Unsupported claims were removed from the summary: " + ", ".join(labels)
+            key_note = notes.get("key_findings")
+            notes["key_findings"] = f"{key_note} {caution}".strip() if key_note else caution
+            claim_note = notes.get("claim_audits")
+            claim_warning = "Unsupported claims remain after retries: " + ", ".join(labels)
+            notes["claim_audits"] = (
+                f"{claim_note} {claim_warning}".strip() if claim_note else claim_warning
+            )
+            tldr_note = notes.get("tldr")
+            notes["tldr"] = f"{tldr_note} {caution}".strip() if tldr_note else caution
+        elif needs_review_ids:
+            labels = _claim_labels(needs_review_ids)
+            review_note = "Some claims still require review: " + ", ".join(labels)
+            key_note = notes.get("key_findings")
+            notes["key_findings"] = (
+                f"{key_note} {review_note}".strip() if key_note else review_note
+            )
+            claim_note = notes.get("claim_audits")
+            notes["claim_audits"] = (
+                f"{claim_note} {review_note}".strip() if claim_note else review_note
+            )
 
     knowledge_graph_payload: Optional[dict[str, Any]] = None
     graph_exports_payload: dict[str, bool] = {}

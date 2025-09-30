@@ -242,8 +242,9 @@ class VSSExtensionLoader:
         try:
             import duckdb_extension_vss as vss
 
-            if hasattr(vss, "load"):
-                vss.load(conn)  # type: ignore[attr-defined]
+            load_fn = getattr(vss, "load", None)
+            if callable(load_fn):
+                load_fn(conn)
                 return VSSExtensionLoader.verify_extension(conn, verbose=False)
             path = Path(getattr(vss, "__file__", "")).parent / "vss.duckdb_extension"
             if path.exists():

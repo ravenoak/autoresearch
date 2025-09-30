@@ -825,12 +825,12 @@ class SearchContext:
             for record in provenance_records:
                 if not isinstance(record, Mapping):
                     continue
-                subject = record.get("subject")
-                obj = record.get("object")
-                if isinstance(subject, str):
-                    nodes_for_neighbors.append(subject)
-                if isinstance(obj, str):
-                    nodes_for_neighbors.append(obj)
+                subject_value = record.get("subject")
+                object_value = record.get("object")
+                if isinstance(subject_value, str):
+                    nodes_for_neighbors.append(subject_value)
+                if isinstance(object_value, str):
+                    nodes_for_neighbors.append(object_value)
 
         neighbors = self.get_graph_neighbors_for_nodes(nodes_for_neighbors, direction="both")
 

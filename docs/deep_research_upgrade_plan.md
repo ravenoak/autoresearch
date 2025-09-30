@@ -26,6 +26,10 @@ keep truthfulness, verifiability, and cost discipline in balance.
      tailor the decision boundary.
    - Extend the evidence pipeline to record per-claim support status.
    - Update response formats so clients can render audit tables.
+   - Introduce an answer auditor that reviews claim audits before synthesis,
+     triggers targeted re-retrieval for unsupported statements, hedges the
+     final answer, and records structured retry provenance for downstream
+     clients.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof, including CLI
      orchestration to confirm telemetry exposes verification badges end to end.

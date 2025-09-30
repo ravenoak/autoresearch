@@ -1,6 +1,6 @@
 """SynthesizerAgent creates the thesis and final synthesis."""
 
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Sequence
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
@@ -102,6 +102,9 @@ class SynthesizerAgent(Agent):
         """Derive verification hints for a synthesized hypothesis."""
 
         metadata: dict[str, Any] = {}
+        planner_snapshot = self._planner_provenance(state)
+        if planner_snapshot:
+            metadata["planner_provenance"] = dict(planner_snapshot)
         query_variations = expand_retrieval_queries(
             hypothesis, base_query=state.query, max_variations=3
         )
@@ -132,22 +135,25 @@ class SynthesizerAgent(Agent):
             if breakdown.score > best_score:
                 best_source = peer_source
                 best_score = breakdown.score
+            provenance = {
+                "retrieval": {
+                    "mode": "hypothesis_vs_claim",
+                    "hypothesis": hypothesis,
+                    "claim_id": claim_id,
+                },
+                "backoff": {"retry_count": 0},
+                "evidence": {
+                    "source_ids": [synthesis_source["source_id"]],
+                    "peer_claim_id": claim_id,
+                },
+            }
+            if planner_snapshot:
+                provenance["planner"] = dict(planner_snapshot)
             record = ClaimAuditRecord.from_score(
                 claim_id,
                 breakdown.score,
                 sources=[synthesis_source],
-                provenance={
-                    "retrieval": {
-                        "mode": "hypothesis_vs_claim",
-                        "hypothesis": hypothesis,
-                        "claim_id": claim_id,
-                    },
-                    "backoff": {"retry_count": 0},
-                    "evidence": {
-                        "source_ids": [synthesis_source["source_id"]],
-                        "peer_claim_id": claim_id,
-                    },
-                },
+                provenance=provenance,
             )
             support_audits.append(record.to_payload())
 
@@ -190,7 +196,7 @@ class SynthesizerAgent(Agent):
             audit_kwargs["notes"] = "No upstream claims were available for verification."
         if best_source:
             audit_kwargs["verification_sources"] = [best_source]
-        audit_kwargs["provenance"] = {
+        provenance_payload = {
             "retrieval": {
                 "mode": "peer_consensus",
                 "related_claim_ids": [c.get("id") for c in state.claims if c.get("id")],
@@ -201,6 +207,9 @@ class SynthesizerAgent(Agent):
                 "best_source_id": best_source.get("source_id") if best_source else None,
             },
         }
+        if planner_snapshot:
+            provenance_payload["planner"] = dict(planner_snapshot)
+        audit_kwargs["provenance"] = provenance_payload
 
         metadata["audit_provenance_synthesizer"] = {
             "summary": dict(audit_kwargs.get("provenance", {})),
@@ -235,3 +244,27 @@ class SynthesizerAgent(Agent):
         if isinstance(audit_payload, Mapping):
             payloads.append(dict(audit_payload))
         return payloads or None
+
+    @staticmethod
+    def _planner_provenance(state: QueryState) -> dict[str, Any]:
+        """Extract planner telemetry relevant for audit provenance."""
+
+        snapshot: dict[str, Any] = {}
+        planner_meta = state.metadata.get("planner")
+        if isinstance(planner_meta, Mapping):
+            stats = planner_meta.get("task_graph")
+            if isinstance(stats, Mapping):
+                snapshot["task_graph_stats"] = dict(stats)
+            telemetry = planner_meta.get("telemetry")
+            if isinstance(telemetry, Mapping):
+                snapshot["telemetry"] = dict(telemetry)
+        tasks = state.task_graph.get("tasks") if isinstance(state.task_graph, Mapping) else None
+        if isinstance(tasks, Sequence):
+            task_ids = [
+                str(task.get("id"))
+                for task in tasks
+                if isinstance(task, Mapping) and task.get("id")
+            ]
+            if task_ids:
+                snapshot["task_ids"] = task_ids
+        return snapshot

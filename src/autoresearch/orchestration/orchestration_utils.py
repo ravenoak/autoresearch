@@ -129,7 +129,11 @@ class ScoutGatePolicy:
         )
         nli_conflict, conflict_details = self._nli_conflict(state, details=True)
 
-        agreement_score, agreement_details = self._scout_agreement(state, details=True)
+        agreement_result = self._scout_agreement(state, details=True)
+        if isinstance(agreement_result, tuple):
+            agreement_score, agreement_details = agreement_result
+        else:
+            agreement_score, agreement_details = agreement_result, {}
 
         heuristics = {
             "retrieval_overlap": self._retrieval_overlap(state),

@@ -48,7 +48,8 @@ Deep research tickets stay referenced for release sign-off:
 
 - **Phase 1 – Adaptive gate and claim audits:** See
   [adaptive-gate-and-claim-audit-rollout][phase1-ticket] for the gating
-  heuristics, scout pass, and audit tables.
+  heuristics, scout pass, audit tables, and the new answer auditor that hedges
+  unsupported claims after a targeted re-retrieval pass.
 - **Phase 2 – Planner and coordinator upgrades:**
   [planner-coordinator-react-upgrade][phase2-ticket] records the ReAct
   telemetry and scheduling refinements.

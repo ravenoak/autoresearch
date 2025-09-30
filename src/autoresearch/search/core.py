@@ -117,11 +117,11 @@ if not GITPYTHON_AVAILABLE:
 cache_results = _cache_results
 get_cached_results = _get_cached_results
 
-SentenceTransformer: type[SentenceTransformerType] | None = None
+SentenceTransformer: type[Any] | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
-def _resolve_sentence_transformer_cls() -> type[SentenceTransformerType] | None:
+def _resolve_sentence_transformer_cls() -> type[Any] | None:
     """Resolve the fastembed embedding class, preferring the new API."""
     candidates: tuple[tuple[str, str], ...] = (
         ("fastembed", "OnnxTextEmbedding"),
@@ -762,12 +762,13 @@ class Search:
 
         try:
             # Use patched scores when BM25Okapi is mocked in tests
-            if getattr(BM25Okapi, "__module__", "") == "unittest.mock":
-                bm25 = BM25Okapi.return_value
-                scores = bm25.get_scores(query_tokens)
+            mock_instance = getattr(BM25Okapi, "return_value", None)
+            bm25: Any
+            if getattr(BM25Okapi, "__module__", "") == "unittest.mock" and mock_instance is not None:
+                bm25 = mock_instance
             else:
                 bm25 = BM25Okapi(corpus)
-                scores = bm25.get_scores(query_tokens)
+            scores = bm25.get_scores(query_tokens)
 
             # Ensure numpy array for consistent numeric operations
             scores = np.asarray(scores, dtype=float)
@@ -1210,10 +1211,8 @@ class Search:
                 doc.setdefault("backend", name)
                 all_ranked.append(doc)
 
-        return cast(
-            List[Dict[str, Any]],
-            self.rank_results(query, all_ranked, query_embedding),
-        )
+        final_ranked = self.rank_results(query, all_ranked, query_embedding)
+        return list(final_ranked)
 
     @hybridmethod
     def embedding_lookup(
@@ -1275,10 +1274,11 @@ class Search:
             if embedding is None:
                 return None
             if isinstance(embedding, np.ndarray):
-                return embedding.astype(float).tolist()
+                return [float(value) for value in embedding.astype(float).ravel()]
             if hasattr(embedding, "tolist"):
                 try:
-                    return list(embedding.tolist())
+                    coerced = np.asarray(embedding, dtype=float).ravel()
+                    return [float(value) for value in coerced]
                 except Exception:  # pragma: no cover - defensive
                     return None
             if isinstance(embedding, (list, tuple)):
@@ -2215,7 +2215,7 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
 
 
 @Search.register_backend("local_git")
-def _local_git_backend(query: str, max_results: int = 5) -> List[LocalGitResult]:
+def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Search a local Git repository's files and commit messages."""
 
     cfg = _get_runtime_config()
@@ -2238,7 +2238,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[LocalGitResult]
     repo = Repo(repo_path)
     head_hash = repo.head.commit.hexsha
 
-    results: List[LocalGitResult] = []
+    results: List[Dict[str, Any]] = []
 
     # Search working tree files using ripgrep/Python scanning
     rg_path = shutil.which("rg")

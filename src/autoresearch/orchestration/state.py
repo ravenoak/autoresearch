@@ -3,6 +3,7 @@
 import re
 import time
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Optional, Sequence as SeqType, cast
 
@@ -10,11 +11,17 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
+from ..evidence import aggregate_entailment_scores, score_entailment
+from ..logging_utils import get_logger
 from ..models import QueryResponse
+from ..search import Search
 from ..search.context import SearchContext
+from ..storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
 from .task_graph import TaskGraph
 
 LOCK_TYPE = type(RLock())
+
+log = get_logger(__name__)
 
 
 def _default_task_graph() -> dict[str, Any]:
@@ -28,6 +35,413 @@ if TYPE_CHECKING:  # pragma: no cover
     PrivateLockAttr = PrivateAttr[RLock]
 else:  # pragma: no cover - runtime alias
     PrivateLockAttr = PrivateAttr
+
+
+@dataclass(slots=True)
+class AnswerAuditOutcome:
+    """Outcome payload returned by :class:`AnswerAuditor`."""
+
+    answer: str
+    reasoning: list[dict[str, Any]]
+    claim_audits: list[dict[str, Any]]
+    additional_sources: list[dict[str, Any]] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class _RetryResult:
+    """Encapsulate retrieval retries executed during answer auditing."""
+
+    claim_id: str
+    record: ClaimAuditRecord
+    sources: list[dict[str, Any]]
+    result_count: int
+
+
+class AnswerAuditor:
+    """Review claim audits, trigger retries, and hedge unsupported findings."""
+
+    _RETRY_RESULTS = 5
+
+    def __init__(self, state: "QueryState") -> None:
+        self._state = state
+
+    def review(self) -> AnswerAuditOutcome:
+        """Return a hedged answer, updated claims, and enriched audits."""
+
+        claims = [self._copy_claim(claim) for claim in self._state.claims]
+        grouped, audits = self._collect_audits(claims)
+
+        for claim in claims:
+            claim_id = str(claim.get("id") or "")
+            if not claim_id:
+                continue
+            status = self._resolve_status(grouped.get(claim_id))
+            self._annotate_claim(claim, status)
+
+        retry_records: list[_RetryResult] = []
+        retry_failures: list[str] = []
+
+        for claim in claims:
+            claim_id = str(claim.get("id") or "")
+            if not claim_id:
+                continue
+            status_token = claim.get("audit_status", ClaimAuditStatus.NEEDS_REVIEW.value)
+            try:
+                current_status = (
+                    status_token
+                    if isinstance(status_token, ClaimAuditStatus)
+                    else ClaimAuditStatus(str(status_token))
+                )
+            except ValueError:
+                current_status = ClaimAuditStatus.NEEDS_REVIEW
+            if current_status is not ClaimAuditStatus.UNSUPPORTED:
+                continue
+            retry = self._retry_claim(claim, grouped.get(claim_id, []))
+            if retry is None:
+                retry_failures.append(claim_id)
+                continue
+            record_payload = retry.record.to_payload()
+            audits.append(record_payload)
+            grouped.setdefault(claim_id, []).append(record_payload)
+            retry_records.append(retry)
+            status_after = self._resolve_status(grouped.get(claim_id))
+            self._annotate_claim(claim, status_after, record_payload)
+
+        unsupported_after: list[str] = []
+        needs_review_after: list[str] = []
+        for claim in claims:
+            claim_id = str(claim.get("id") or "")
+            if not claim_id:
+                continue
+            status_token = claim.get("audit_status", ClaimAuditStatus.NEEDS_REVIEW.value)
+            try:
+                status = (
+                    status_token
+                    if isinstance(status_token, ClaimAuditStatus)
+                    else ClaimAuditStatus(str(status_token))
+                )
+            except ValueError:
+                status = ClaimAuditStatus.NEEDS_REVIEW
+            if status is ClaimAuditStatus.UNSUPPORTED:
+                unsupported_after.append(claim_id)
+            elif status is ClaimAuditStatus.NEEDS_REVIEW:
+                needs_review_after.append(claim_id)
+
+        answer_text = self._state.results.get("final_answer", "")
+        sanitized_answer = self._hedge_answer(
+            str(answer_text or ""),
+            unsupported_after,
+            needs_review_after,
+            claims,
+        )
+
+        metrics = {
+            "unsupported_claims": list(unsupported_after),
+            "needs_review_claims": list(needs_review_after),
+            "retry_attempts": [
+                {
+                    "claim_id": retry.claim_id,
+                    "status": retry.record.status.value,
+                    "sample_size": retry.record.sample_size,
+                    "result_count": retry.result_count,
+                }
+                for retry in retry_records
+            ],
+            "retry_failures": retry_failures,
+        }
+        if sanitized_answer.strip():
+            metrics["hedged_answer"] = sanitized_answer
+
+        return AnswerAuditOutcome(
+            answer=sanitized_answer or "No answer synthesized",
+            reasoning=claims,
+            claim_audits=audits,
+            additional_sources=self._extract_sources(retry_records),
+            metrics=metrics,
+        )
+
+    def _copy_claim(self, claim: Mapping[str, Any]) -> dict[str, Any]:
+        payload = dict(claim)
+        audit = payload.get("audit")
+        if isinstance(audit, Mapping):
+            payload["audit"] = dict(audit)
+        return payload
+
+    def _collect_audits(
+        self, claims: Sequence[Mapping[str, Any]]
+    ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        collected: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+
+        def _record(payload: Mapping[str, Any]) -> None:
+            claim_id_raw = payload.get("claim_id")
+            if not claim_id_raw:
+                return
+            claim_id = str(claim_id_raw)
+            audit_payload = dict(payload)
+            audit_id = str(audit_payload.get("audit_id") or "")
+            key = (claim_id, audit_id)
+            if audit_id and key in seen:
+                return
+            if audit_id:
+                seen.add(key)
+            collected.append(audit_payload)
+            grouped.setdefault(claim_id, []).append(audit_payload)
+
+        for audit in self._state.claim_audits:
+            if isinstance(audit, Mapping):
+                _record(audit)
+
+        for claim in claims:
+            claim_audit = claim.get("audit")
+            if isinstance(claim_audit, Mapping):
+                _record(claim_audit)
+
+        return grouped, collected
+
+    def _resolve_status(
+        self, audits: Optional[Sequence[Mapping[str, Any]]]
+    ) -> ClaimAuditStatus:
+        if not audits:
+            return ClaimAuditStatus.NEEDS_REVIEW
+        severity_order = {
+            ClaimAuditStatus.SUPPORTED: 0,
+            ClaimAuditStatus.NEEDS_REVIEW: 1,
+            ClaimAuditStatus.UNSUPPORTED: 2,
+        }
+        resolved = ClaimAuditStatus.NEEDS_REVIEW
+        resolved_score = -1
+        for audit in audits:
+            status_raw = audit.get("status")
+            try:
+                status = (
+                    status_raw
+                    if isinstance(status_raw, ClaimAuditStatus)
+                    else ClaimAuditStatus(str(status_raw))
+                )
+            except ValueError:
+                continue
+            score = severity_order.get(status, -1)
+            if score >= resolved_score:
+                resolved = status
+                resolved_score = score
+        return resolved
+
+    def _annotate_claim(
+        self,
+        claim: dict[str, Any],
+        status: ClaimAuditStatus,
+        latest_audit: Mapping[str, Any] | None = None,
+    ) -> None:
+        claim_id = str(claim.get("id") or "")
+        original_content = str(claim.get("content", ""))
+        hedged = self._hedged_claim_text(original_content, status)
+        claim["hedged_content"] = hedged
+        claim["audit_status"] = status.value
+        visibility = claim.get("visibility")
+        if not isinstance(visibility, Mapping):
+            visibility = {}
+        visibility = dict(visibility)
+        visibility.setdefault("key_findings", status is not ClaimAuditStatus.UNSUPPORTED)
+        visibility["reasoning"] = True
+        claim["visibility"] = visibility
+
+        audit_payload: dict[str, Any]
+        if latest_audit is not None:
+            audit_payload = dict(latest_audit)
+        else:
+            existing = claim.get("audit")
+            audit_payload = dict(existing) if isinstance(existing, Mapping) else {}
+        audit_payload["claim_id"] = claim_id
+        audit_payload["status"] = status.value
+        claim["audit"] = audit_payload
+
+    def _hedged_claim_text(
+        self, content: str, status: ClaimAuditStatus
+    ) -> str:
+        cleaned = content.strip()
+        if not cleaned:
+            return cleaned
+        if status is ClaimAuditStatus.UNSUPPORTED:
+            return f"⚠️ Unsupported: {cleaned}"
+        if status is ClaimAuditStatus.NEEDS_REVIEW:
+            return f"⚠️ Needs review: {cleaned}"
+        return cleaned
+
+    def _hedge_answer(
+        self,
+        answer: str,
+        unsupported: Sequence[str],
+        needs_review: Sequence[str],
+        claims: Sequence[Mapping[str, Any]],
+    ) -> str:
+        notices: list[str] = []
+        if unsupported:
+            labels = self._summarise_claims(unsupported, claims)
+            notices.append(
+                "Unsupported claims remain: " + ", ".join(labels)
+            )
+        if needs_review and not unsupported:
+            labels = self._summarise_claims(needs_review, claims)
+            notices.append(
+                "Some claims need review: " + ", ".join(labels)
+            )
+        if not notices:
+            return answer or "No answer synthesized"
+
+        disclaimer = "⚠️ " + " ".join(notices)
+        cleaned_answer = answer.strip()
+        if cleaned_answer:
+            return f"{disclaimer}\n\n{cleaned_answer}"
+        return disclaimer
+
+    def _summarise_claims(
+        self, claim_ids: Sequence[str], claims: Sequence[Mapping[str, Any]]
+    ) -> list[str]:
+        lookup = {str(claim.get("id")): str(claim.get("content", "")) for claim in claims}
+        labels: list[str] = []
+        for claim_id in claim_ids:
+            content = lookup.get(str(claim_id), "")
+            labels.append(self._shorten(content) or str(claim_id))
+        return labels
+
+    def _shorten(self, text: str, max_length: int = 60) -> str:
+        cleaned = " ".join(text.split())
+        if len(cleaned) <= max_length:
+            return cleaned
+        return cleaned[: max_length - 1].rstrip() + "…"
+
+    def _retry_claim(
+        self,
+        claim: Mapping[str, Any],
+        existing_audits: Sequence[Mapping[str, Any]],
+    ) -> _RetryResult | None:
+        claim_id = str(claim.get("id") or "")
+        hypothesis = str(claim.get("content", "")).strip()
+        if not claim_id or not hypothesis:
+            return None
+
+        try:
+            lookup = Search.external_lookup(
+                hypothesis,
+                max_results=self._RETRY_RESULTS,
+                return_handles=True,
+            )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            log.debug("Answer audit retry failed for %s: %s", claim_id, exc)
+            return None
+
+        if isinstance(lookup, list):
+            candidates = list(lookup)
+            handle_payload: dict[str, Any] | None = None
+        else:
+            candidates = list(getattr(lookup, "results", []))
+            cache = getattr(getattr(lookup, "cache", None), "namespace", None)
+            handle_payload = {"cache_namespace": cache} if cache else None
+
+        if not candidates:
+            provenance = {
+                "retrieval": {
+                    "mode": "answer_audit.retry",
+                    "query": hypothesis,
+                    "base_query": self._state.query,
+                    "events": [
+                        {
+                            "variant": "audit_retry",
+                            "result_count": 0,
+                            "claim_id": claim_id,
+                        }
+                    ],
+                    "handle": handle_payload,
+                },
+                "backoff": {"retry_count": len(existing_audits)},
+                "evidence": {"source_ids": []},
+            }
+            record = ClaimAuditRecord.from_score(
+                claim_id,
+                None,
+                status=ClaimAuditStatus.UNSUPPORTED,
+                notes="Targeted re-retrieval returned no evidence.",
+                provenance=provenance,
+            )
+            return _RetryResult(claim_id, record, [], 0)
+
+        scored_sources: list[tuple[float, dict[str, Any]]] = []
+        for candidate in candidates:
+            if not isinstance(candidate, Mapping):
+                continue
+            source = ensure_source_id(candidate)
+            snippet = (
+                str(source.get("snippet") or source.get("content") or "").strip()
+            )
+            if not snippet:
+                continue
+            breakdown = score_entailment(hypothesis, snippet)
+            scored_sources.append((breakdown.score, source))
+
+        breakdowns = [score for score, _ in scored_sources]
+        aggregate = aggregate_entailment_scores(breakdowns)
+        best_sources = [src for _, src in sorted(scored_sources, reverse=True)[:2]]
+
+        provenance = {
+            "retrieval": {
+                "mode": "answer_audit.retry",
+                "query": hypothesis,
+                "base_query": self._state.query,
+                "events": [
+                    {
+                        "variant": "audit_retry",
+                        "result_count": len(candidates),
+                        "claim_id": claim_id,
+                    }
+                ],
+                "handle": handle_payload,
+            },
+            "backoff": {
+                "retry_count": len(existing_audits),
+                "paraphrases": [],
+            },
+            "evidence": {
+                "source_ids": [src.get("source_id") for src in best_sources],
+            },
+        }
+
+        if aggregate.sample_size:
+            note = (
+                f"Retry entailment from {aggregate.sample_size} snippet(s). "
+                f"Variance={aggregate.variance:.3f}."
+            )
+        else:
+            note = "Retry entailment could not score evidence."
+
+        status = ClaimAuditStatus.UNSUPPORTED
+        if aggregate.sample_size:
+            status = ClaimAuditStatus.from_entailment(aggregate.mean)
+            if aggregate.disagreement and status is ClaimAuditStatus.SUPPORTED:
+                status = ClaimAuditStatus.NEEDS_REVIEW
+
+        record = ClaimAuditRecord.from_score(
+            claim_id,
+            aggregate.mean if aggregate.sample_size else None,
+            sources=best_sources,
+            notes=note,
+            status=status,
+            variance=aggregate.variance if aggregate.sample_size else None,
+            instability=aggregate.disagreement if aggregate.sample_size else None,
+            sample_size=aggregate.sample_size or None,
+            provenance=provenance,
+        )
+        return _RetryResult(claim_id, record, best_sources, len(candidates))
+
+    def _extract_sources(self, retries: Sequence[_RetryResult]) -> list[dict[str, Any]]:
+        collected: dict[str, dict[str, Any]] = {}
+        for retry in retries:
+            for source in retry.sources:
+                source_id = str(source.get("source_id") or "")
+                collected[source_id or str(id(source))] = dict(source)
+        return list(collected.values())
 
 
 class QueryState(BaseModel):
@@ -636,8 +1050,34 @@ class QueryState(BaseModel):
 
     def synthesize(self) -> QueryResponse:
         """Create final response from state."""
-        # Default implementation - can be overridden by SynthesizerAgent
+        auditor = AnswerAuditor(self)
+        outcome = auditor.review()
+
+        self.claim_audits = list(outcome.claim_audits)
+        self.claims = list(outcome.reasoning)
+        if isinstance(self.results, Mapping):
+            self.results.setdefault("final_answer", outcome.answer)
+            self.results["final_answer"] = outcome.answer
+
+        existing_sources = {str(src.get("source_id")) for src in self.sources if isinstance(src, Mapping)}
+        for source in outcome.additional_sources:
+            source_id = str(source.get("source_id") or "")
+            if source_id and source_id in existing_sources:
+                continue
+            self.sources.append(dict(source))
+            if source_id:
+                existing_sources.add(source_id)
+
         metrics = dict(self.metadata)
+        audit_metrics_existing = metrics.get("answer_audit")
+        merged_audit_metrics: dict[str, Any]
+        if isinstance(audit_metrics_existing, Mapping):
+            merged_audit_metrics = dict(audit_metrics_existing)
+        else:
+            merged_audit_metrics = {}
+        merged_audit_metrics.update(outcome.metrics)
+        metrics["answer_audit"] = merged_audit_metrics
+
         graph_summary = SearchContext.get_instance().get_graph_summary()
         if graph_summary:
             knowledge_graph_meta: dict[str, Any] = {}
@@ -654,7 +1094,7 @@ class QueryState(BaseModel):
 
         return QueryResponse(
             query=self.query,
-            answer=self.results.get("final_answer", "No answer synthesized"),
+            answer=outcome.answer,
             citations=self.sources,
             reasoning=self.claims,
             metrics=metrics,

@@ -155,6 +155,39 @@ class OutputFormatter:
             print_metrics(result.metrics)
 ```
 
+## 6a. Answer Auditing & Hedging (state.py)
+```
+class AnswerAuditor:
+    function review(state):
+        audits = collect_claim_audits(state.claims)
+        unsupported = filter(audits, status == "unsupported")
+        for claim in unsupported:
+            retry = Search.external_lookup(claim.text,
+                                           max_results=5,
+                                           return_handles=True)
+            record = score_entailment(claim, retry)
+            audits.append(record.to_payload())
+        hedged = hedge_answer(state.results.final_answer, audits)
+        return {
+            answer: hedged,
+            reasoning: annotate_claims(state.claims, audits),
+            claim_audits: audits,
+            metrics: { answer_audit: snapshot(audits) }
+        }
+
+class QueryState:
+    function synthesize():
+        audited = AnswerAuditor.review(self)
+        merge_sources(self.sources, audited.new_sources)
+        return QueryResponse(
+            query=self.query,
+            answer=audited.answer,
+            reasoning=audited.reasoning,
+            claim_audits=audited.claim_audits,
+            metrics=merge(metadata, audited.metrics)
+        )
+```
+
 ## 7. Adaptive Gate (orchestration/gating.py)
 ```
 function run_orchestration(query, config):
