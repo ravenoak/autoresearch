@@ -4,25 +4,25 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from types import ModuleType
-from typing import Iterable, Protocol, cast
+from typing import Any, Iterable, Protocol, cast
 
 from ._registry import install_stub_module
 
 
-def watch(*_args, **_kwargs) -> Generator[tuple[str, str], None, None]:
+def watch(*_args: Any, **_kwargs: Any) -> Generator[tuple[str, str], None, None]:
     if False:
         yield ("", "")
 
 
 class WatchfilesModule(Protocol):
-    def watch(self, *args, **kwargs) -> Iterable[tuple[str, str]]: ...
+    def watch(self, *args: Any, **kwargs: Any) -> Iterable[tuple[str, str]]: ...
 
 
 class _WatchfilesModule(ModuleType):
     def __init__(self) -> None:
         super().__init__("watchfiles")
 
-    def watch(self, *args, **kwargs) -> Iterable[tuple[str, str]]:
+    def watch(self, *args: Any, **kwargs: Any) -> Iterable[tuple[str, str]]:
         return watch(*args, **kwargs)
 
 

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import threading
 from collections import Counter
+from collections.abc import Awaitable
 from types import ModuleType
-from typing import Any, Callable, Protocol, cast
+from typing import Any, Callable, Protocol, TypeAlias, cast
 
 from ._registry import install_stub_module
 
@@ -69,7 +70,9 @@ class Limiter:
         if limit and count > limit:
             raise RateLimitExceeded()
 
-    def limit(self, *_args: Any, **_kwargs: Any) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def limit(
+        self, *_args: Any, **_kwargs: Any
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
                 self.check(request)
@@ -88,15 +91,38 @@ def reset_request_log() -> None:
     REQUEST_LOG.reset()
 
 
+class ReceiveCallable(Protocol):
+    def __call__(self) -> Awaitable[dict[str, Any]]: ...
+
+
+class SendCallable(Protocol):
+    def __call__(self, message: dict[str, Any]) -> Awaitable[None]: ...
+
+
+Scope: TypeAlias = dict[str, Any]
+ASGIApp: TypeAlias = Callable[[Scope, ReceiveCallable, SendCallable], Awaitable[None]]
+
+
 class SlowAPIMiddleware:
-    def __init__(self, app: Callable[..., Any], limiter: Limiter | None = None, *_, **__):
+    def __init__(
+        self,
+        app: ASGIApp,
+        limiter: Limiter | None = None,
+        *_args: Any,
+        **_kwargs: Any,
+    ) -> None:
         from starlette.requests import Request
 
         self.app = app
         self.limiter = limiter
         self.Request = Request
 
-    async def __call__(self, scope: dict[str, Any], receive: Callable[..., Any], send: Callable[..., Any]) -> None:
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: ReceiveCallable,
+        send: SendCallable,
+    ) -> None:
         if scope.get("type") == "http" and self.limiter:
             request = self.Request(scope, receive=receive)
             self.limiter.check(request)

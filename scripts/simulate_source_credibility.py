@@ -9,9 +9,18 @@ from __future__ import annotations
 
 import re
 from statistics import mean
-from typing import List, Tuple
+from typing import Iterable, TypedDict
 
-LABELED_DATASET: List[dict] = [
+
+class Document(TypedDict):
+    url: str
+
+
+class LabeledDocument(Document):
+    label: int
+
+
+LABELED_DATASET: list[LabeledDocument] = [
     {"url": "https://en.wikipedia.org/wiki/Artificial_intelligence", "label": 1},
     {"url": "https://nih.gov/research", "label": 1},
     {"url": "https://dept.university.edu/paper", "label": 1},
@@ -20,7 +29,7 @@ LABELED_DATASET: List[dict] = [
     {"url": "https://example.com/post", "label": 0},
 ]
 
-AUTHORITY = {
+AUTHORITY: dict[str, float] = {
     "wikipedia.org": 0.9,
     "nih.gov": 0.95,
     "edu": 0.8,
@@ -28,9 +37,9 @@ AUTHORITY = {
 }
 
 
-def assess_source_credibility(documents: List[dict]) -> List[float]:
+def assess_source_credibility(documents: Iterable[Document]) -> list[float]:
     """Return heuristic credibility scores for each document."""
-    scores: List[float] = []
+    scores: list[float] = []
     for doc in documents:
         url = doc.get("url", "")
         domain = ""
@@ -49,11 +58,11 @@ def assess_source_credibility(documents: List[dict]) -> List[float]:
     return scores
 
 
-def score_dataset() -> List[Tuple[int, float]]:
+def score_dataset() -> list[tuple[int, float]]:
     """Return (label, score) pairs for the labeled dataset."""
-    docs = [{"url": item["url"]} for item in LABELED_DATASET]
+    docs: list[Document] = [{"url": item["url"]} for item in LABELED_DATASET]
     scores = assess_source_credibility(docs)
-    return [(item["label"], score) for item, score in zip(LABELED_DATASET, scores)]
+    return [(item["label"], score) for item, score in zip(LABELED_DATASET, scores, strict=True)]
 
 
 def main() -> None:
