@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 from autoresearch.config.models import ConfigModel
@@ -13,6 +15,11 @@ from autoresearch.orchestration.orchestration_utils import (
 )
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search.context import SearchContext
+from tests.typing_helpers import (
+    GraphStageMetadata,
+    GraphSummaryMetadata,
+    SearchContextGraphAttributes,
+)
 
 
 def _make_config(**overrides: object) -> ConfigModel:
@@ -241,7 +248,8 @@ def test_scout_gate_applies_graph_thresholds() -> None:
     policy = ScoutGatePolicy(config)
 
     with SearchContext.temporary_instance() as context:
-        context._graph_stage_metadata = {  # type: ignore[attr-defined]
+        typed_context = cast(SearchContextGraphAttributes, context)
+        graph_metadata: GraphStageMetadata = {
             "contradictions": {
                 "raw_score": 0.8,
                 "weighted_score": 0.28,
@@ -272,12 +280,17 @@ def test_scout_gate_applies_graph_thresholds() -> None:
             },
             "paths": [["Policy A", "Policy B", "Policy E"]],
         }
-        context._graph_summary = {  # type: ignore[attr-defined]
-            "sources": ["https://example.com/policy-a", "https://example.com/policy-b"],
+        graph_summary: GraphSummaryMetadata = {
+            "sources": [
+                "https://example.com/policy-a",
+                "https://example.com/policy-b",
+            ],
             "provenance": [{"source": "https://example.com/policy-a"}],
             "relation_count": 4,
             "entity_count": 3,
         }
+        typed_context._graph_stage_metadata = graph_metadata
+        typed_context._graph_summary = graph_summary
         decision = policy.evaluate(
             query=state.query,
             state=state,
@@ -290,9 +303,12 @@ def test_scout_gate_applies_graph_thresholds() -> None:
     assert decision.heuristics["graph_similarity"] == pytest.approx(0.1)
     assert decision.rationales["graph_contradiction"]["triggered"] is True
     assert decision.rationales["graph_similarity"]["triggered"] is True
-    graph_payload = decision.telemetry.get("graph") or {}
-    assert graph_payload.get("contradictions", {}).get("weighted_score") == pytest.approx(0.28)
-    assert graph_payload.get("similarity", {}).get("weighted_score") == pytest.approx(0.1)
-    assert graph_payload.get("sources", [])[0] == "https://example.com/policy-a"
-    scout_stage = state.metadata.get("scout_stage", {})
+    graph_payload = cast(dict[str, object], decision.telemetry.get("graph") or {})
+    contradictions = cast(dict[str, float], graph_payload.get("contradictions", {}))
+    similarity = cast(dict[str, float], graph_payload.get("similarity", {}))
+    sources = cast(list[str], graph_payload.get("sources", []))
+    assert contradictions.get("weighted_score") == pytest.approx(0.28)
+    assert similarity.get("weighted_score") == pytest.approx(0.1)
+    assert sources[0] == "https://example.com/policy-a"
+    scout_stage = cast(dict[str, Any], state.metadata.get("scout_stage", {}))
     assert scout_stage.get("graph_context") == graph_payload

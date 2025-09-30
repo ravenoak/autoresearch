@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any
 
 import networkx as nx
@@ -9,6 +8,7 @@ import pytest
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.knowledge import SessionGraphPipeline
 from autoresearch.storage import StorageManager
+from tests.typing_helpers import make_storage_context
 
 
 class DummyBackend:
@@ -46,17 +46,22 @@ def test_session_graph_pipeline_ingest_records_provenance(monkeypatch: pytest.Mo
 
     backend = DummyBackend()
     rdf_store = DummyRDFStore()
-    graph = nx.MultiDiGraph()
-    context = SimpleNamespace(
+    graph: nx.MultiDiGraph[Any] = nx.MultiDiGraph()
+    context = make_storage_context(
         db_backend=backend,
         rdf_store=rdf_store,
         kg_graph=graph,
     )
-    StorageManager.context = context  # type: ignore[assignment]
+    StorageManager.context = context
 
     update_payload: dict[str, Any] = {}
 
-    def _fake_update(*, entities, relations, triples) -> None:  # noqa: ANN001
+    def _fake_update(
+        *,
+        entities: list[dict[str, Any]],
+        relations: list[dict[str, Any]],
+        triples: list[tuple[Any, Any, Any]],
+    ) -> None:
         update_payload["entities"] = entities
         update_payload["relations"] = relations
         update_payload["triples"] = triples
@@ -75,7 +80,7 @@ def test_session_graph_pipeline_ingest_records_provenance(monkeypatch: pytest.Mo
         for triple in triples:
             rdf_store.add(triple)
 
-    def _fake_get_graph(create: bool = False):  # noqa: ANN001
+    def _fake_get_graph(create: bool = False) -> nx.MultiDiGraph[Any]:
         return graph
 
     monkeypatch.setattr(StorageManager, "update_knowledge_graph", staticmethod(_fake_update))
@@ -108,7 +113,7 @@ def test_session_graph_pipeline_ingest_records_provenance(monkeypatch: pytest.Mo
 def test_session_graph_pipeline_neighbors_uses_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     pipeline = SessionGraphPipeline()
 
-    graph = nx.MultiDiGraph()
+    graph: nx.MultiDiGraph[Any] = nx.MultiDiGraph()
     graph.add_node("kg:marie", label="Marie Curie")
     graph.add_node("kg:pierre", label="Pierre Curie")
     graph.add_edge(
@@ -118,9 +123,9 @@ def test_session_graph_pipeline_neighbors_uses_storage(monkeypatch: pytest.Monke
         predicate="collaborated_with",
     )
 
-    StorageManager.context = SimpleNamespace(kg_graph=graph)
+    StorageManager.context = make_storage_context(kg_graph=graph)
 
-    def _fake_get_graph(create: bool = False):  # noqa: ANN001
+    def _fake_get_graph(create: bool = False) -> nx.MultiDiGraph[Any]:
         return graph
 
     monkeypatch.setattr(StorageManager, "get_knowledge_graph", staticmethod(_fake_get_graph))

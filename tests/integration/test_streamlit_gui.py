@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType
 
 import pytest
 
@@ -15,14 +15,22 @@ AppTest = import_or_skip(
 )
 
 try:  # pragma: no cover - optional dependency in UI extras
-    import pandas  # type: ignore # noqa: F401
+    import pandas  # noqa: F401  # pylint: disable=unused-import
 except Exception:  # pragma: no cover - provide a stub for tests
-    sys.modules.setdefault("pandas", SimpleNamespace(DataFrame=None))
+    class _PandasModule(ModuleType):
+        DataFrame: type[object]
+
+    class _StubDataFrame:
+        """Minimal DataFrame placeholder used for typing in tests."""
+
+    pandas_stub = _PandasModule("pandas")
+    pandas_stub.DataFrame = type("DataFrame", (_StubDataFrame,), {})
+    sys.modules.setdefault("pandas", pandas_stub)
 
 APP_FILE = str(Path(__file__).resolve().with_name("streamlit_app_wrapper.py"))
 
 
-def test_skip_link_has_aria_label():
+def test_skip_link_has_aria_label() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False
     at.run()
@@ -30,7 +38,7 @@ def test_skip_link_has_aria_label():
     assert any("aria-label='Skip to main content'" in b or "aria-label=\"Skip to main content\"" in b for b in bodies)
 
 
-def test_guided_tour_dialog_role():
+def test_guided_tour_dialog_role() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = True
     at.run()
@@ -38,7 +46,7 @@ def test_guided_tour_dialog_role():
     assert any("role=\"dialog\"" in b for b in bodies)
 
 
-def test_guided_tour_modal_fallback(monkeypatch):
+def test_guided_tour_modal_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delattr("streamlit.modal", raising=False)
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = True
@@ -47,7 +55,7 @@ def test_guided_tour_modal_fallback(monkeypatch):
     assert any("Welcome to Autoresearch" in b for b in bodies)
 
 
-def test_main_content_live_region():
+def test_main_content_live_region() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False
     at.run()
@@ -55,7 +63,7 @@ def test_main_content_live_region():
     assert any("aria-live='polite'" in b or "aria-live=\"polite\"" in b for b in bodies)
 
 
-def test_dark_mode_injects_styles():
+def test_dark_mode_injects_styles() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False
     at.session_state["dark_mode"] = True
@@ -64,7 +72,7 @@ def test_dark_mode_injects_styles():
     assert any("background-color:#222" in css for css in styles)
 
 
-def test_high_contrast_injects_styles():
+def test_high_contrast_injects_styles() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False
     at.session_state["high_contrast"] = True
@@ -73,7 +81,7 @@ def test_high_contrast_injects_styles():
     assert any("background-color:#000" in css for css in styles)
 
 
-def test_graph_toggles_initialize(monkeypatch):
+def test_graph_toggles_initialize(monkeypatch: pytest.MonkeyPatch) -> None:
     if AppTest is None:
         return
 
@@ -82,8 +90,14 @@ def test_graph_toggles_initialize(monkeypatch):
     from autoresearch.orchestration.orchestrator import Orchestrator
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.knowledge.graph import SessionGraphPipeline
+    from autoresearch.orchestration.types import CallbackMap
 
-    def fake_run_query(query, config, callbacks=None, **kwargs):
+    def fake_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         return QueryResponse(
             answer="ok",
             citations=["c"],
