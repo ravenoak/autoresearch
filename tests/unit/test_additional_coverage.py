@@ -9,17 +9,30 @@ import pytest
 
 from autoresearch import cli_utils, search
 from autoresearch.cli_utils import format_success, render_evaluation_summary
+from autoresearch.evaluation.harness import EvaluationSummary
 from autoresearch.llm import pool as llm_pool
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.output_format import OutputFormatter
 from autoresearch.storage import StorageManager, get_delegate, set_delegate
-from autoresearch.evaluation.harness import EvaluationSummary
 from autoresearch.streamlit_app import collect_system_metrics, orch_metrics
 from autoresearch.streamlit_app import psutil as streamlit_psutil
 from autoresearch.streamlit_app import st as streamlit_st
 from autoresearch.streamlit_app import track_agent_performance
 from autoresearch.typing.http import HTTPAdapter
+
+
+class _DummyTable:
+    """Minimal table stub used to capture rendered rows."""
+
+    def __init__(self, *_args: object, **_kwargs: object) -> None:
+        self.rows: list[tuple[object, ...]] = []
+
+    def add_column(self, *_args: object, **_kwargs: object) -> None:
+        return None
+
+    def add_row(self, *args: object) -> None:
+        self.rows.append(args)
 
 
 def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
@@ -186,21 +199,15 @@ def test_streamlit_metrics(monkeypatch):
 
 
 @pytest.fixture
-def dummy_table(monkeypatch: pytest.MonkeyPatch):
-    created_tables: list = []
+def dummy_table(monkeypatch: pytest.MonkeyPatch) -> list[_DummyTable]:
+    created_tables: list[_DummyTable] = []
 
-    class DummyTable:
-        def __init__(self, *args, **kwargs):
+    class _RecordingDummyTable(_DummyTable):
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            super().__init__(*args, **kwargs)
             created_tables.append(self)
-            self.rows: list[tuple[object, ...]] = []
 
-        def add_column(self, *args, **kwargs) -> None:  # pragma: no cover - interface stub
-            return None
-
-        def add_row(self, *args) -> None:
-            self.rows.append(args)
-
-    monkeypatch.setattr(cli_utils, "Table", DummyTable)
+    monkeypatch.setattr(cli_utils, "Table", _RecordingDummyTable)
     monkeypatch.setattr(cli_utils.console, "print", lambda *_args, **_kwargs: None)
     return created_tables
 
@@ -231,10 +238,14 @@ def populated_summary() -> EvaluationSummary:
         total_routing_delta=3.5,
         avg_routing_decisions=1.5,
         routing_strategy="balanced",
+        example_csv=Path("artifacts/examples.csv"),
+        summary_csv=Path("artifacts/summary.csv"),
     )
 
 
-def test_render_evaluation_summary_joins_artifacts(dummy_table):
+def test_render_evaluation_summary_joins_artifacts(
+    dummy_table: list[_DummyTable],
+) -> None:
     now = datetime.now(timezone.utc)
     summary = EvaluationSummary(
         dataset="truthfulqa",
@@ -246,6 +257,8 @@ def test_render_evaluation_summary_joins_artifacts(dummy_table):
         duckdb_path=Path("artifacts/run.duckdb"),
         example_parquet=Path("artifacts/examples.parquet"),
         summary_parquet=Path("artifacts/summary.parquet"),
+        example_csv=Path("artifacts/examples.csv"),
+        summary_csv=Path("artifacts/summary.csv"),
     )
 
     render_evaluation_summary([summary])
@@ -258,6 +271,8 @@ def test_render_evaluation_summary_joins_artifacts(dummy_table):
             "duckdb: artifacts/run.duckdb",
             "examples: artifacts/examples.parquet",
             "summary: artifacts/summary.parquet",
+            "examples.csv: artifacts/examples.csv",
+            "summary.csv: artifacts/summary.csv",
         ]
     )
     assert artifacts_cell == expected
@@ -266,8 +281,8 @@ def test_render_evaluation_summary_joins_artifacts(dummy_table):
 
 
 def test_render_evaluation_summary_formats_planner_and_routing(
-    dummy_table, populated_summary
-):
+    dummy_table: list[_DummyTable], populated_summary: EvaluationSummary
+) -> None:
     render_evaluation_summary([populated_summary])
 
     assert dummy_table
