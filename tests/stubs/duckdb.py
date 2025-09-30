@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from types import ModuleType
+from types import ModuleType, TracebackType
 from typing import Any, ClassVar, Protocol, cast
 
 from ._registry import install_stub_module
@@ -20,6 +20,15 @@ class DuckDBPyConnectionProtocol(Protocol):
     def fetchone(self) -> Any | None: ...
 
     def close(self) -> None: ...
+
+    def __enter__(self) -> DuckDBPyConnectionProtocol: ...
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> bool | None: ...
 
 
 class Error(Exception):
@@ -51,6 +60,17 @@ class DuckDBPyConnection(DuckDBPyConnectionProtocol):
         return self._rows[0] if self._rows else None
 
     def close(self) -> None:
+        return None
+
+    def __enter__(self) -> DuckDBPyConnection:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> bool | None:
         return None
 
 
