@@ -1,9 +1,14 @@
-import types
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Generator, Protocol, Sequence, cast
 
 import networkx as nx
 import numpy as np
 import pytest
 import rdflib
+from numpy.typing import NDArray
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
@@ -12,25 +17,98 @@ from autoresearch.search import storage as search_storage
 from autoresearch.storage import StorageManager
 from tests.conftest import VSS_AVAILABLE
 
+if TYPE_CHECKING:  # pragma: no cover - typing helpers
+    from autoresearch.cache import SearchCache
+    from autoresearch.storage_backends import DuckDBStorageBackend
+    from autoresearch.storage_typing import GraphProtocol
+
 pytestmark = [
     pytest.mark.requires_vss,
     pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
 ]
 
 
+Claim = dict[str, object]
+VectorSearchResults = list[dict[str, object]]
+
+
+class StorageBackendProtocol(Protocol):
+    """Minimal protocol covering the backend methods used in these tests."""
+
+    def persist_claim(self, claim: Claim) -> None:
+        ...
+
+    def update_claim(self, claim: Claim, partial_update: bool = False) -> None:
+        ...
+
+    def get_claim(self, claim_id: str) -> Claim:
+        ...
+
+    def has_vss(self) -> bool:
+        ...
+
+    def clear(self) -> None:
+        ...
+
+
+class DummyBackend(StorageBackendProtocol):
+    """In-memory backend satisfying :class:`StorageManager` requirements."""
+
+    def __init__(self) -> None:
+        self._claims: dict[str, Claim] = {}
+
+    def persist_claim(self, claim: Claim) -> None:
+        claim_id = cast(str, claim.get("id", ""))
+        self._claims[claim_id] = dict(claim)
+
+    def update_claim(self, claim: Claim, partial_update: bool = False) -> None:
+        claim_id = cast(str, claim.get("id", ""))
+        existing = self._claims.setdefault(claim_id, {})
+        if partial_update:
+            existing.update(claim)
+        else:
+            self._claims[claim_id] = dict(claim)
+
+    def get_claim(self, claim_id: str) -> Claim:
+        return dict(self._claims.get(claim_id, {"id": claim_id}))
+
+    def has_vss(self) -> bool:
+        return False
+
+    def clear(self) -> None:
+        self._claims.clear()
+
+
+class CacheProtocol(Protocol):
+    """Protocol describing the subset of cache behaviour required for tests."""
+
+    def get_cached_results(self, query: str, backend: str) -> VectorSearchResults | None:
+        ...
+
+    def cache_results(self, query: str, backend: str, results: VectorSearchResults) -> None:
+        ...
+
+
+@dataclass
+class DummyCache(CacheProtocol):
+    """Simple in-memory cache used to satisfy ``Search.cache`` typing."""
+
+    _store: Dict[tuple[str, str], VectorSearchResults] = field(default_factory=dict)
+
+    def get_cached_results(self, query: str, backend: str) -> VectorSearchResults | None:
+        return self._store.get((query, backend))
+
+    def cache_results(self, query: str, backend: str, results: VectorSearchResults) -> None:
+        self._store[(query, backend)] = list(results)
+
+
 @pytest.fixture(autouse=True)
-def clean_storage(monkeypatch):
+def clean_storage(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Provide isolated in-memory storage for each test."""
-    dummy_backend = types.SimpleNamespace(
-        persist_claim=lambda claim: None,
-        update_claim=lambda claim, partial_update=False: None,
-        get_claim=lambda _id: {"id": _id},
-        has_vss=lambda: False,
-        clear=lambda: None,
-    )
+    dummy_backend = DummyBackend()
     StorageManager.context.graph = nx.DiGraph()
-    StorageManager.context.db_backend = dummy_backend
-    StorageManager.context.rdf_store = rdflib.Graph()
+    StorageManager.context.db_backend = cast("DuckDBStorageBackend", dummy_backend)
+    StorageManager.context.rdf_store = cast("GraphProtocol", rdflib.Graph())
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     yield
     if StorageManager.context.graph is not None:
@@ -49,7 +127,7 @@ def _config_without_network() -> ConfigModel:
     return cfg
 
 
-def test_search_returns_persisted_claim(monkeypatch):
+def test_search_returns_persisted_claim(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
@@ -58,10 +136,7 @@ def test_search_returns_persisted_claim(monkeypatch):
     monkeypatch.setattr(Search, "backends", {})
     ns = Search()
     ns.backends = {}
-    ns.cache = types.SimpleNamespace(
-        get_cached_results=lambda *a, **k: None,
-        cache_results=lambda *a, **k: None,
-    )
+    ns.cache = cast("SearchCache", DummyCache())
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
@@ -90,7 +165,10 @@ def test_search_returns_persisted_claim(monkeypatch):
     search_storage.persist_claim(claim)
     assert calls, "run_ontology_reasoner should be invoked"
 
-    def fake_vector_search(query_embedding, k=5):
+    def fake_vector_search(
+        query_embedding: Sequence[float] | NDArray[np.floating[Any]],
+        k: int = 5,
+    ) -> VectorSearchResults:
         return [
             {
                 "node_id": claim["id"],
@@ -103,7 +181,7 @@ def test_search_returns_persisted_claim(monkeypatch):
     monkeypatch.setattr(StorageManager, "vector_search", fake_vector_search)
 
     class DummySession:
-        def get(self, *a, **kw):  # pragma: no cover - network should not be used
+        def get(self, *args: object, **kwargs: object) -> object:  # pragma: no cover
             raise AssertionError("network call not expected")
 
     monkeypatch.setattr(Search, "get_http_session", lambda: DummySession())
@@ -115,7 +193,7 @@ def test_search_returns_persisted_claim(monkeypatch):
     assert results[0]["snippet"] == claim["content"]
 
 
-def test_storage_cleared_between_tests(monkeypatch):
+def test_storage_cleared_between_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
@@ -125,10 +203,17 @@ def test_storage_cleared_between_tests(monkeypatch):
         "cross_backend_rank",
         lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
-    monkeypatch.setattr(StorageManager, "vector_search", lambda e, k=5: [])
+
+    def empty_vector_search(
+        embedding: Sequence[float] | NDArray[np.floating[Any]],
+        k: int = 5,
+    ) -> VectorSearchResults:
+        return []
+
+    monkeypatch.setattr(StorageManager, "vector_search", empty_vector_search)
 
     class DummySession:
-        def get(self, *a, **kw):  # pragma: no cover - network should not be used
+        def get(self, *args: object, **kwargs: object) -> object:  # pragma: no cover
             raise AssertionError("network call not expected")
 
     monkeypatch.setattr(Search, "get_http_session", lambda: DummySession())
@@ -137,7 +222,7 @@ def test_storage_cleared_between_tests(monkeypatch):
     assert all(r["url"] != "c1" for r in results)
 
 
-def test_external_lookup_persists_results(monkeypatch):
+def test_external_lookup_persists_results(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _config_without_network()
     cfg.search.backends = ["b"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -146,16 +231,13 @@ def test_external_lookup_persists_results(monkeypatch):
     stored: list[str] = []
     monkeypatch.setattr(search_storage, "persist_claim", lambda claim: stored.append(claim["id"]))
 
-    def backend(query: str, max_results: int = 5):
+    def backend(query: str, max_results: int = 5) -> list[dict[str, object]]:
         return [{"title": "doc", "url": "u1"}]
 
     monkeypatch.setattr(Search, "backends", {"b": backend})
     ns = Search()
     ns.backends = {"b": backend}
-    ns.cache = types.SimpleNamespace(
-        get_cached_results=lambda *a, **k: None,
-        cache_results=lambda *a, **k: None,
-    )
+    ns.cache = cast("SearchCache", DummyCache())
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
@@ -167,12 +249,12 @@ def test_external_lookup_persists_results(monkeypatch):
     assert stored == ["u1"], "search results should be persisted"
 
 
-def test_search_reflects_updated_claim(monkeypatch):
+def test_search_reflects_updated_claim(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    store: dict[str, dict] = {
+    store: dict[str, Claim] = {
         "c1": {
             "id": "c1",
             "type": "fact",
@@ -193,10 +275,7 @@ def test_search_reflects_updated_claim(monkeypatch):
     monkeypatch.setattr(Search, "backends", {})
     ns = Search()
     ns.backends = {}
-    ns.cache = types.SimpleNamespace(
-        get_cached_results=lambda *a, **k: None,
-        cache_results=lambda *a, **k: None,
-    )
+    ns.cache = cast("SearchCache", DummyCache())
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
@@ -204,7 +283,10 @@ def test_search_reflects_updated_claim(monkeypatch):
         lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
 
-    def vector_search(embedding, k=5):
+    def vector_search(
+        embedding: Sequence[float] | NDArray[np.floating[Any]],
+        k: int = 5,
+    ) -> VectorSearchResults:
         claim = store["c1"]
         return [
             {
@@ -229,7 +311,9 @@ def test_search_reflects_updated_claim(monkeypatch):
     assert results[0]["snippet"] == "new", "search should reflect updated storage"
 
 
-def test_search_persists_multiple_backend_results(monkeypatch):
+def test_search_persists_multiple_backend_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     cfg = _config_without_network()
     cfg.search.backends = ["b1", "b2"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -237,19 +321,16 @@ def test_search_persists_multiple_backend_results(monkeypatch):
     stored: list[str] = []
     monkeypatch.setattr(search_storage, "persist_claim", lambda claim: stored.append(claim["id"]))
 
-    def b1(query: str, max_results: int = 5):
+    def b1(query: str, max_results: int = 5) -> list[dict[str, object]]:
         return [{"title": "Paris", "url": "u1"}]
 
-    def b2(query: str, max_results: int = 5):
+    def b2(query: str, max_results: int = 5) -> list[dict[str, object]]:
         return [{"title": "France", "url": "u2"}]
 
     monkeypatch.setattr(Search, "backends", {"b1": b1, "b2": b2})
     ns = Search()
     ns.backends = {"b1": b1, "b2": b2}
-    ns.cache = types.SimpleNamespace(
-        get_cached_results=lambda *a, **k: None,
-        cache_results=lambda *a, **k: None,
-    )
+    ns.cache = cast("SearchCache", DummyCache())
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
@@ -261,7 +342,9 @@ def test_search_persists_multiple_backend_results(monkeypatch):
     assert set(stored) == {"u1", "u2"}
 
 
-def test_duckdb_persistence_roundtrip(tmp_path, monkeypatch):
+def test_duckdb_persistence_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Claims persist across DuckDB sessions."""
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
