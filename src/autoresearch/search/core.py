@@ -73,7 +73,7 @@ from ..config.loader import get_config
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
-from ..typing.http import RequestsSessionProtocol
+from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
@@ -2064,8 +2064,10 @@ def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     api_key = os.getenv("SERPER_API_KEY", "")
     url = "https://google.serper.dev/search"
     headers = {"X-API-KEY": api_key}
-    session = get_http_session()
-    response = session.post(url, json={"q": query}, headers=headers, timeout=5)
+    session: RequestsSessionProtocol = get_http_session()
+    response: RequestsResponseProtocol = session.post(
+        url, json={"q": query}, headers=headers, timeout=5
+    )
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
     data = response.json()

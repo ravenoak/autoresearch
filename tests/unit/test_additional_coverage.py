@@ -9,6 +9,7 @@ import pytest
 
 from autoresearch import cli_utils, search
 from autoresearch.cli_utils import format_success, render_evaluation_summary
+from autoresearch.llm import pool as llm_pool
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.output_format import OutputFormatter
@@ -18,6 +19,7 @@ from autoresearch.streamlit_app import collect_system_metrics, orch_metrics
 from autoresearch.streamlit_app import psutil as streamlit_psutil
 from autoresearch.streamlit_app import st as streamlit_st
 from autoresearch.streamlit_app import track_agent_performance
+from autoresearch.typing.http import HTTPAdapter
 
 
 def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
@@ -89,6 +91,33 @@ def test_http_session_reuse_and_close(monkeypatch):
     assert s1 is s2
     search.close_http_session()
     assert search._http_session is None
+
+
+def test_llm_pool_session_reuse(monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = types.SimpleNamespace(llm_pool_size=2)
+    monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
+    llm_pool.close_session()
+    session = llm_pool.get_session()
+    adapter = session.get_adapter("https://example.org")
+    assert isinstance(adapter, HTTPAdapter)
+    assert llm_pool.get_session() is session
+    llm_pool.close_session()
+
+
+def test_llm_pool_adapter_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = types.SimpleNamespace(llm_pool_size=1)
+    monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
+    llm_pool.close_session()
+
+    def boom(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("llm adapter failure")
+
+    monkeypatch.setattr(llm_pool, "_build_llm_adapter", boom)
+
+    with pytest.raises(RuntimeError, match="llm adapter failure"):
+        llm_pool.get_session()
+
+    assert llm_pool._session is None
 
 
 def test_set_get_delegate():

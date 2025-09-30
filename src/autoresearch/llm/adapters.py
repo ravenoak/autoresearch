@@ -206,12 +206,12 @@ class OpenAIAdapter(LLMAdapter):
                 "messages": [{"role": "user", "content": prompt}],
             }
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            session = get_session()
-            resp = session.post(
+            session: RequestsSessionProtocol = get_session()
+            response: RequestsResponseProtocol = session.post(
                 self.endpoint, json=payload, headers=headers, timeout=30
             )
-            resp.raise_for_status()
-            data: Dict[str, Any] = resp.json()
+            response.raise_for_status()
+            data: Dict[str, Any] = response.json()
             return str(
                 data.get("choices", [{}])[0].get("message", {}).get("content", "")
             )
@@ -288,12 +288,12 @@ class OpenRouterAdapter(LLMAdapter):
                 "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
                 "X-Title": "Autoresearch",
             }
-            session = get_session()
-            resp = session.post(
+            session: RequestsSessionProtocol = get_session()
+            response: RequestsResponseProtocol = session.post(
                 self.endpoint, json=payload, headers=headers, timeout=60
             )
-            resp.raise_for_status()
-            data: Dict[str, Any] = resp.json()
+            response.raise_for_status()
+            data: Dict[str, Any] = response.json()
             return str(
                 data.get("choices", [{}])[0].get("message", {}).get("content", "")
             )

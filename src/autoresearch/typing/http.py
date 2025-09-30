@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, MutableMapping, Protocol, runtime_checkable
+from typing import Any, Mapping, MutableMapping, Protocol, runtime_checkable
+
+from requests.adapters import HTTPAdapter
 
 
-if TYPE_CHECKING:  # pragma: no cover - imported for typing only
-    from requests.adapters import BaseAdapter as RequestsAdapterProtocol
-else:
+@runtime_checkable
+class RequestsAdapterProtocol(Protocol):
+    """Structural type for ``requests.adapters.BaseAdapter`` implementations."""
 
-    @runtime_checkable
-    class RequestsAdapterProtocol(Protocol):
-        """Structural type for ``requests.adapters.BaseAdapter`` implementations."""
-
-        def close(self) -> None:
-            """Release any open network resources."""
+    def close(self) -> None:
+        """Release any open network resources."""
 
 
 @runtime_checkable
@@ -45,6 +43,9 @@ class RequestsSessionProtocol(Protocol):
     def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         """Register an adapter that handles the given URL prefix."""
 
+    def get_adapter(self, url: str) -> RequestsAdapterProtocol:
+        """Return the adapter responsible for the provided URL."""
+
     def close(self) -> None:
         """Release any pooled network resources."""
 
@@ -61,6 +62,7 @@ class RequestsSessionProtocol(Protocol):
 
 
 __all__ = [
+    "HTTPAdapter",
     "RequestsAdapterProtocol",
     "RequestsResponseProtocol",
     "RequestsSessionProtocol",
