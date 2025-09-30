@@ -43,9 +43,16 @@ def stubbed_summary(tmp_path: Path) -> EvaluationSummary:
         gate_exit_rate=0.75,
         gated_example_ratio=1.0,
         config_signature="stub-config",
+        avg_planner_depth=2.0,
+        avg_routing_delta=0.25,
+        total_routing_delta=0.5,
+        avg_routing_decisions=1.0,
+        routing_strategy="balanced",
         duckdb_path=artifact_dir / "truthfulqa.duckdb",
         example_parquet=artifact_dir / "truthfulqa_examples.parquet",
         summary_parquet=artifact_dir / "truthfulqa_summary.parquet",
+        example_csv=artifact_dir / "truthfulqa_examples.csv",
+        summary_csv=artifact_dir / "truthfulqa_summary.csv",
     )
 
 
@@ -83,6 +90,9 @@ def assert_summary_output(bdd_context: dict) -> None:
     assert "100.0/25." in stdout  # tokens formatting (table truncation)
     assert "1.0" in stdout  # avg loops formatting
     assert "75.0%" in stdout  # gate exit rate percentage
+    assert "2.0" in stdout  # planner depth formatting
+    assert "0.25/0.50 (avg 1.0 routes)" in stdout
+    assert summary.config_signature in stdout
 
 
 @then("the evaluation summary table should include the metric columns")
@@ -94,15 +104,16 @@ def assert_summary_columns(bdd_context: dict) -> None:
     tokens = [
         "Dataset",
         "Accuracy",
-        "Citation",
-        "coverage",
-        "Contradic",
-        "latency",
-        "Avg tokens",
-        "in/out",
+        "Citation coverage",
+        "Contradiction rate",
+        "Planner depth",
+        "Routing Δ (avg/total)",
+        "Avg latency (s)",
+        "Avg tokens in/out/total",
         "Avg loops",
-        "exits",
+        "% gated exits",
         "Run ID",
+        "Config",
         "Artifacts",
     ]
     for token in tokens:
@@ -121,6 +132,8 @@ def assert_artifact_listing(bdd_context: dict) -> None:
     assert str(summary.duckdb_path) in stdout
     assert str(summary.example_parquet) in stdout
     assert str(summary.summary_parquet) in stdout
+    assert str(summary.example_csv) in stdout
+    assert str(summary.summary_csv) in stdout
     assert "Dry run completed without invoking the orchestrator." in stdout
 
 
