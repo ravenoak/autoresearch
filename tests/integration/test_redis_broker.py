@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import sys
 import types
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from prometheus_client import CollectorRegistry
 
-from autoresearch.distributed.broker import RedisBroker
+from autoresearch.distributed.broker import AgentResultMessage, RedisBroker
 
 package = types.ModuleType("autoresearch.monitor")
 package.__path__ = [str(Path(__file__).resolve().parents[2] / "src" / "autoresearch" / "monitor")]
@@ -19,6 +22,22 @@ pytestmark = [
 ]
 
 
+def _make_agent_result_message(
+    *,
+    agent: str = "agent", 
+    result: dict[str, Any] | None = None,
+    pid: int = 1234,
+) -> AgentResultMessage:
+    """Construct a minimal :class:`AgentResultMessage` for broker tests."""
+
+    return {
+        "action": "agent_result",
+        "agent": agent,
+        "result": result or {"status": "ok"},
+        "pid": pid,
+    }
+
+
 class DummyRedis:
     """Minimal Redis stub supporting list operations."""
 
@@ -28,7 +47,7 @@ class DummyRedis:
     def rpush(self, name: str, value: str) -> None:  # pragma: no cover - trivial
         self._data.append(value)
 
-    def blpop(self, names: list[str]):  # pragma: no cover - trivial
+    def blpop(self, names: list[str]) -> tuple[str, bytes]:  # pragma: no cover - trivial
         return names[0], self._data.pop(0).encode()
 
     def ping(self) -> bool:  # pragma: no cover - trivial
@@ -42,11 +61,15 @@ def test_redis_broker_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     import redis
 
     dummy = DummyRedis()
-    monkeypatch.setattr(redis.Redis, "from_url", lambda url: dummy)
+    def _from_url(url: str) -> DummyRedis:
+        return dummy
+
+    monkeypatch.setattr(redis.Redis, "from_url", _from_url)
     broker = RedisBroker("redis://localhost:6379/0", queue_name="test")
-    broker.publish({"a": 1})
-    msg = broker.queue.get()
-    assert msg == {"a": 1}
+    expected = _make_agent_result_message(result={"value": 1})
+    broker.publish(expected)
+    message = cast(AgentResultMessage, broker.queue.get())
+    assert message == expected
     registry = CollectorRegistry()
     monitor = NodeHealthMonitor(
         redis_url="redis://localhost:6379/0",
