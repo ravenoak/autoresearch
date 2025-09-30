@@ -37,8 +37,10 @@ def test_nlp_extra_imports() -> None:
 def test_ui_extra_imports() -> None:
     """Smoke test imports from the ui extra."""
     st = import_or_skip("streamlit")
+    pil_image = import_or_skip("PIL.Image")
 
     assert hasattr(st, "__version__")
+    assert callable(getattr(pil_image, "open", None))
 
 
 @pytest.mark.requires_vss

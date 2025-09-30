@@ -31,6 +31,12 @@ auditors can trace the alpha evidence without leaving the repo.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:CHANGELOG.md†L9-L20】
 
+September 30, 2025 01:39 UTC: strict `mypy` over `src` and `tests` still
+reports 3,911 historical errors, yet the missing-stub diagnostics for
+`fastmcp`, `dspy`, and `PIL.Image` are gone now that the local shims mirror the
+extras behaviour. The alpha gate can focus on annotation debt instead of stub
+coverage during follow-up sweeps.【d423ea†L2995-L2997】
+
 October 6, 2025: strict typing for the configuration loader, validators, and
 Git stub now passes a targeted mypy sweep, unblocking the config milestone for
 the alpha gate.【aa0591†L1-L2】

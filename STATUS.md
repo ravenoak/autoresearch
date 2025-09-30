@@ -51,6 +51,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   verify` continues to surface 151 legacy mypy errors in unrelated modules.
 
 ## September 30, 2025
+- Re-ran `uv run mypy --strict src tests` at 01:39 UTC after adding the dspy,
+  fastmcp, and PIL shims; the sweep still reports 3,911 legacy errors, but the
+  missing-stub diagnostics for those modules are gone, confirming the new
+  packages cover strict import resolution.【d423ea†L2995-L2997】
 - `task release:alpha` completed at 19:04 UTC with the scout gate, CLI path
   helper, and VSS loader all green. The verify and coverage stages recorded the
   recalibrated gate telemetry and 92.4 % statement rate, and the packaging step
