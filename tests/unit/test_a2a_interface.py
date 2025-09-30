@@ -11,6 +11,8 @@ from a2a.utils.message import get_message_text
 from autoresearch.a2a_interface import (
     A2AInterface,
     A2AClient,
+    A2AMessage,
+    A2AMessageType,
     get_a2a_client,
     requires_a2a,
     A2A_AVAILABLE,
@@ -75,6 +77,17 @@ def mock_config():
                 yield cfg
             finally:
                 ConfigLoader.reset_instance()
+
+
+def test_a2a_message_accepts_sdk_message(make_a2a_message):
+    """``A2AMessage`` should accept concrete SDK messages without casting."""
+
+    sdk_message = make_a2a_message(query="ping")
+
+    envelope = A2AMessage(type=A2AMessageType.QUERY, message=sdk_message)
+
+    assert envelope.type is A2AMessageType.QUERY
+    assert envelope.message is sdk_message
 
 
 class TestA2AInterface:

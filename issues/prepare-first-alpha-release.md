@@ -16,11 +16,21 @@ can follow the CLI and VSS remediation across the repository.
 
 After documenting the final-answer audit loop and operator acknowledgement
 controls we captured the **14:28 UTC** `task verify` and **14:30 UTC**
-`task coverage` reruns limited to the base extras. They expose the standing
+`task coverage` reruns limited to the base extras. They exposed the standing
 `QueryState.model_copy` and `A2AMessage` blockers while keeping the release
 evidence trail current without triggering the deferred TestPyPI steps.
-【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:docs/release_plan.md†L7-L20】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+On **September 30, 2025 at 15:15 UTC** we updated the `A2AMessage` schema to
+accept the SDK's concrete payloads and introduced
+`test_a2a_message_accepts_sdk_message` to guard the regression.
+【F:src/autoresearch/a2a_interface.py†L66-L77】【F:src/autoresearch/a2a_interface.py†L269-L275】
+【F:tests/unit/test_a2a_interface.py†L82-L90】
+The focused unit run now passes with a real SDK message, the behavior suite
+fails later on known orchestration and storage prerequisites instead of the
+Pydantic validator, and the full coverage sweep still stalls while syncing GPU
+extras in this environment.
+【cfb7bf†L1-L2】【ab7ebf†L1-L13】【583440†L1-L29】
 
 The **14:55 UTC** `task verify` sweep now clears the
 `QueryState.model_copy` strict typing regression: `uv run mypy src` passes and
