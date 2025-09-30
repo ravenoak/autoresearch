@@ -21,6 +21,9 @@ runtime behaviour.
 - `spacy`, `sentence_transformers`, `bertopic`, `pdfminer.layout`,
   `fastembed.text`, and `owlrl` were guarded behind ``type: ignore`` comments
   despite local fallbacks, leaving context-aware search paths unchecked.
+- `fastmcp`, `dspy`, and `PIL.Image` previously triggered
+  ``import-not-found`` errors under ``mypy --strict`` because the repo relied
+  on optional extras for runtime behaviour without local shims.
 
 ## Shim design and validation prompts
 
@@ -46,6 +49,22 @@ runtime behaviour.
 - Optional NLP extras (`spacy`, `sentence_transformers`, `bertopic`) were
   stubbed with the minimal constructors and methods used when available, while
   still allowing the runtime guards to fall back when the packages are absent.
+- For `fastmcp` we asked whether the orchestration server and handshake tests
+  need more than the decorator, async context manager, and ``call_tool`` hook.
+  Inspecting ``mcp_interface.create_server`` and the handshake fixture shows
+  those members cover runtime usage, so the stub models them directly and keeps
+  ``__getattr__`` available for the orchestrator handle.
+  【F:src/autoresearch/mcp_interface.py†L8-L53】【F:tests/unit/test_a2a_mcp_handshake.py†L1-L36】【F:typings/fastmcp/__init__.pyi†L1-L38】
+- `dspy` availability checks only assert the module imports and exposes a
+  ``__version__`` attribute. The shim provides that constant and funnels other
+  lookups through ``__getattr__`` so strict mode stays happy while real installs
+  continue to expose the richer API.
+  【F:src/autoresearch/search/context.py†L130-L163】【F:tests/targeted/test_extras_install.py†L70-L84】【F:typings/dspy/__init__.pyi†L1-L9】
+- Streamlit knowledge-graph exports call ``PIL.Image.open`` on in-memory
+  buffers, and the UI extras smoke test now exercises the loader. The stub keeps
+  the module layout and exposes ``Image``, ``open``, and ``new`` so strict mode
+  understands the minimal surface we rely on.
+  【F:src/autoresearch/streamlit_app.py†L25-L37】【F:src/autoresearch/streamlit_app.py†L1736-L1754】【F:tests/targeted/test_extras_install.py†L70-L84】【F:typings/PIL/Image.pyi†L1-L20】
 
 ## Targeted strict checks
 
