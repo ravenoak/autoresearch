@@ -41,7 +41,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -58,6 +57,7 @@ from typing import (
     TypedDict,
     TypeVar,
     cast,
+    TypeAlias,
 )
 from uuid import uuid4
 from weakref import WeakSet
@@ -117,11 +117,11 @@ if not GITPYTHON_AVAILABLE:
 cache_results = _cache_results
 get_cached_results = _get_cached_results
 
-SentenceTransformer: type[Any] | None = None
+SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
-def _resolve_sentence_transformer_cls() -> type[Any] | None:
+def _resolve_sentence_transformer_cls() -> SentenceTransformerType | None:
     """Resolve the fastembed embedding class, preferring the new API."""
     candidates: tuple[tuple[str, str], ...] = (
         ("fastembed", "OnnxTextEmbedding"),
@@ -131,7 +131,7 @@ def _resolve_sentence_transformer_cls() -> type[Any] | None:
     for module_name, attr in candidates:
         try:
             module = importlib.import_module(module_name)
-            return cast(type[SentenceTransformerType], getattr(module, attr))
+            return cast(SentenceTransformerType, getattr(module, attr))
         except (ImportError, ModuleNotFoundError, AttributeError):
             continue
     return None
@@ -151,13 +151,13 @@ def _try_import_sentence_transformers() -> bool:
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
     try:  # pragma: no cover - optional dependency
-        resolved = _resolve_sentence_transformer_cls()
+        resolved: SentenceTransformerType | None = _resolve_sentence_transformer_cls()
         if resolved is None:
             # Fallback to sentence-transformers if available
             try:
                 from sentence_transformers import SentenceTransformer as ST
 
-                resolved = ST
+                resolved = cast(SentenceTransformerType, ST)
             except Exception:
                 resolved = None
         if resolved is None:
@@ -170,18 +170,24 @@ def _try_import_sentence_transformers() -> bool:
     return SENTENCE_TRANSFORMERS_AVAILABLE
 
 
-if TYPE_CHECKING:  # pragma: no cover - for type checking only
-    try:
-        from fastembed import OnnxTextEmbedding as SentenceTransformerType
-    except (ImportError, ModuleNotFoundError, AttributeError):
-        try:
-            from fastembed.text import OnnxTextEmbedding as SentenceTransformerType
-        except (ImportError, ModuleNotFoundError, AttributeError):
-            from fastembed import TextEmbedding as SentenceTransformerType
-else:  # pragma: no cover - runtime fallback
-    SentenceTransformerType = Any
-
 log = get_logger(__name__)
+
+
+class EmbeddingModelProtocol(Protocol):
+    """Protocol shared by supported embedding model implementations."""
+
+    def encode(self, sentences: Sequence[str] | str, **kwargs: Any) -> Any:
+        """Return embeddings for the provided input."""
+
+
+class SupportsEmbedProtocol(EmbeddingModelProtocol, Protocol):
+    """Protocol for embedding backends that expose an ``embed`` method."""
+
+    def embed(self, sentences: Sequence[str] | str, **kwargs: Any) -> Any:
+        """Return embeddings via the fastembed ``embed`` API."""
+
+
+SentenceTransformerType: TypeAlias = type[EmbeddingModelProtocol]
 
 
 class ContextAwareConfigProtocol(Protocol):
@@ -424,7 +430,8 @@ class ExternalLookupResult:
     query: str
     results: List[Dict[str, Any]]
     by_backend: Dict[str, List[Dict[str, Any]]]
-    cache: SearchCache | _SearchCacheView
+    cache_base: SearchCache
+    cache_view: SearchCache | _SearchCacheView | None
     storage: type[StorageManager]
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
@@ -435,6 +442,14 @@ class ExternalLookupResult:
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         return self.results[index]
+
+    @property
+    def cache(self) -> SearchCache | _SearchCacheView:
+        """Return the active cache handle, preserving namespace where available."""
+
+        if self.cache_view is not None:
+            return self.cache_view
+        return self.cache_base
 
 
 class LocalGitResult(TypedDict, total=False):
@@ -528,6 +543,7 @@ class Search:
     )
     _shared_instance: ClassVar[Optional["Search"]] = None
     _instances: ClassVar[WeakSet["Search"]] = WeakSet()
+    _shared_sentence_transformer: ClassVar[Optional[EmbeddingModelProtocol]] = None
 
     def __init__(
         self, cache: SearchCache | _SearchCacheView | None = None
@@ -538,8 +554,9 @@ class Search:
         self.embedding_backends: Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]] = (
             dict(self._default_embedding_backends)
         )
-        self._sentence_transformer: Optional[SentenceTransformerType] = None
+        self._sentence_transformer: Optional[EmbeddingModelProtocol] = None
         namespace: str | None = None
+        provided_namespace: str | None = None
         shared_cache = True
         try:
             runtime_cfg = _get_runtime_config()
@@ -549,7 +566,10 @@ class Search:
             namespace = None
             shared_cache = True
 
-        if cache is not None:
+        if isinstance(cache, _SearchCacheView):
+            base_cache = cache.base
+            provided_namespace = cache.namespace
+        elif isinstance(cache, SearchCache):
             base_cache = cache
         elif shared_cache:
             base_cache = get_cache()
@@ -559,12 +579,15 @@ class Search:
             cache_file = private_dir / f"search_{os.getpid()}_{uuid4().hex}.json"
             base_cache = SearchCache(str(cache_file))
 
-        self.cache = base_cache.namespaced(namespace)
+        final_namespace = provided_namespace if provided_namespace is not None else namespace
+        self._cache_base: SearchCache = base_cache
+        self._cache_namespace: str | None = final_namespace
+        self.cache = base_cache.namespaced(final_namespace)
         log.debug(
             "Initialised search cache",
             extra={
                 "shared_cache": shared_cache,
-                "namespace": namespace or "__default__",
+                "namespace": final_namespace or "__default__",
             },
         )
         type(self)._instances.add(self)
@@ -597,7 +620,7 @@ class Search:
         self.backends = dict(type(self)._default_backends)
         self.embedding_backends = dict(type(self)._default_embedding_backends)
         self._sentence_transformer = None
-        type(self)._sentence_transformer = None
+        type(self)._shared_sentence_transformer = None
         self.close_http_session()
         type(self).backends = self.backends
         type(self).embedding_backends = self.embedding_backends
@@ -615,7 +638,7 @@ class Search:
             temp.close_http_session()
 
     @hybridmethod
-    def get_sentence_transformer(self) -> Optional[SentenceTransformerType]:
+    def get_sentence_transformer(self) -> Optional[EmbeddingModelProtocol]:
         """Get or initialize the fastembed model."""
         if not _try_import_sentence_transformers():
             log.warning(
@@ -624,13 +647,18 @@ class Search:
             return None
 
         if self._sentence_transformer is None:
-            try:
-                assert SentenceTransformer is not None
-                self._sentence_transformer = SentenceTransformer()
-                log.info("Initialized fastembed model")
-            except Exception as e:
-                log.warning(f"Failed to initialize fastembed model: {e}")
-                return None
+            shared_model = type(self)._shared_sentence_transformer
+            if shared_model is not None:
+                self._sentence_transformer = shared_model
+            else:
+                try:
+                    assert SentenceTransformer is not None
+                    self._sentence_transformer = SentenceTransformer()
+                    type(self)._shared_sentence_transformer = self._sentence_transformer
+                    log.info("Initialized fastembed model")
+                except Exception as e:
+                    log.warning(f"Failed to initialize fastembed model: {e}")
+                    return None
 
         return self._sentence_transformer
 
@@ -685,10 +713,11 @@ class Search:
             return None
 
         if hasattr(model, "embed"):
+            embed_model = cast(SupportsEmbedProtocol, model)
             try:
-                raw = model.embed([query])
+                raw = embed_model.embed([query])
             except TypeError:
-                raw = model.embed(query)
+                raw = embed_model.embed(query)
             embedding = self._coerce_embedding(raw)
             if embedding is not None:
                 return embedding
@@ -817,7 +846,15 @@ class Search:
             if query_embedding is None:
                 # Encode the query
                 assert model is not None
-                query_embedding = np.array(list(model.embed([query]))[0], dtype=float)
+                if hasattr(model, "embed"):
+                    embed_model = cast(SupportsEmbedProtocol, model)
+                    query_embedding = np.array(
+                        list(embed_model.embed([query]))[0], dtype=float
+                    )
+                else:
+                    encoded_query = model.encode([query])
+                    first_query = list(encoded_query)[0]
+                    query_embedding = np.array(first_query, dtype=float)
 
             # Encode the documents
             similarities: List[Optional[float]] = []
@@ -847,7 +884,11 @@ class Search:
 
             if to_encode:
                 assert model is not None
-                doc_embeddings = list(model.embed(to_encode))
+                if hasattr(model, "embed"):
+                    embed_model = cast(SupportsEmbedProtocol, model)
+                    doc_embeddings = list(embed_model.embed(to_encode))
+                else:
+                    doc_embeddings = list(model.encode(to_encode))
                 for emb, index in zip(doc_embeddings, encode_map):
                     emb_arr = np.array(emb, dtype=float)
                     sim = np.dot(query_embedding, emb_arr) / (
@@ -886,7 +927,11 @@ class Search:
             return
 
         try:
-            doc_embeddings = list(model.embed(texts))
+            if hasattr(model, "embed"):
+                embed_model = cast(SupportsEmbedProtocol, model)
+                doc_embeddings = list(embed_model.embed(texts))
+            else:
+                doc_embeddings = list(model.encode(texts))
             for emb, index in zip(doc_embeddings, indices):
                 if hasattr(emb, "tolist"):
                     documents[index]["embedding"] = emb.tolist()
@@ -1201,8 +1246,15 @@ class Search:
             and cfg.search.context_aware.enabled
         ):
             model = self.get_sentence_transformer()
-            if model is not None and hasattr(model, "embed"):
-                query_embedding = np.array(list(model.embed([query]))[0], dtype=float)
+            if model is not None:
+                if hasattr(model, "embed"):
+                    embed_model = cast(SupportsEmbedProtocol, model)
+                    query_embedding = np.array(
+                        list(embed_model.embed([query]))[0], dtype=float
+                    )
+                else:
+                    encoded_query = model.encode([query])
+                    query_embedding = np.array(list(encoded_query)[0], dtype=float)
 
         all_ranked: List[Dict[str, Any]] = []
         for name, docs in backend_results.items():
@@ -1949,7 +2001,8 @@ class Search:
                 by_backend={
                     name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
                 },
-                cache=self.cache,
+                cache_base=self._cache_base,
+                cache_view=self.cache,
                 storage=StorageManager,
             )
             return bundle if return_handles else bundle.results
@@ -1964,7 +2017,8 @@ class Search:
             by_backend={
                 name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
             },
-            cache=self.cache,
+            cache_base=self._cache_base,
+            cache_view=self.cache,
             storage=StorageManager,
         )
 

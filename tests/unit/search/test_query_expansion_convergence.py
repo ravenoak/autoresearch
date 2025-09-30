@@ -1,9 +1,11 @@
 import sys
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 import autoresearch.search.context as ctx
+import autoresearch.search.core as search_core
 from autoresearch.search.context import SearchContext
+from autoresearch.search.core import Search
 from tests.helpers import make_config_model
 
 
@@ -113,3 +115,67 @@ def test_try_import_sentence_transformers_success(monkeypatch):
     ctx.SENTENCE_TRANSFORMERS_AVAILABLE = False
     assert ctx._try_import_sentence_transformers()
     assert ctx.SENTENCE_TRANSFORMERS_AVAILABLE
+
+
+def test_search_embedding_protocol_prefers_embed(monkeypatch):
+    """Assume fastembed-style classes are accepted via the embedding protocol."""
+
+    cfg = make_config_model()
+    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_core, "SentenceTransformer", None)
+    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+
+    class FakeFastEmbed:
+        last_input: object | None = None
+
+        def embed(self, sentences):
+            type(self).last_input = sentences
+            return [[1.0, 2.0]]
+
+        def encode(self, sentences):  # pragma: no cover - defensive
+            raise AssertionError("encode should not be used when embed exists")
+
+    monkeypatch.setattr(
+        search_core,
+        "_resolve_sentence_transformer_cls",
+        lambda: FakeFastEmbed,
+    )
+
+    search = Search()
+    model = search.get_sentence_transformer()
+    assert isinstance(model, FakeFastEmbed)
+
+    embedding = search.compute_query_embedding("theta")
+    assert embedding is not None
+    assert embedding.tolist() == [1.0, 2.0]
+    assert FakeFastEmbed.last_input == ["theta"]
+
+
+def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
+    """Assume sentence-transformers fallback loads when fastembed is unavailable."""
+
+    cfg = make_config_model()
+    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_core, "SentenceTransformer", None)
+    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
+
+    class FakeSentenceTransformer:
+        last_input: object | None = None
+
+        def encode(self, sentences):
+            type(self).last_input = sentences
+            return [[3.0, 4.0, 5.0]]
+
+    module = ModuleType("sentence_transformers")
+    module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+
+    search = Search()
+    model = search.get_sentence_transformer()
+    assert isinstance(model, FakeSentenceTransformer)
+
+    embedding = search.compute_query_embedding("omega")
+    assert embedding is not None
+    assert embedding.tolist() == [3.0, 4.0, 5.0]
+    assert FakeSentenceTransformer.last_input == ["omega"]

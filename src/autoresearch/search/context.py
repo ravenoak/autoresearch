@@ -7,6 +7,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,7 +45,12 @@ def _try_import_spacy() -> bool:
         return False
     try:  # pragma: no cover - optional dependency
         import spacy as spacy_mod
-        import spacy.cli
+        try:
+            spacy_cli: ModuleType | None = importlib.import_module("spacy.cli")
+        except Exception:
+            spacy_cli = None
+        if spacy_cli is not None:
+            setattr(spacy_mod, "cli", spacy_cli)
 
         spacy = spacy_mod
         SPACY_AVAILABLE = True
@@ -285,12 +291,15 @@ class SearchContext:
             log.info("Initialized spaCy NLP model")
         except OSError:
             if os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower() == "true":
-                try:
-                    spacy_mod.cli.download("en_core_web_sm")
-                    self.nlp = spacy_mod.load("en_core_web_sm")
-                    log.info("Downloaded spaCy model")
-                except Exception as e:  # pragma: no cover - unexpected
-                    log.warning(f"Failed to download spaCy model: {e}")
+                if hasattr(spacy_mod, "cli"):
+                    try:
+                        spacy_mod.cli.download("en_core_web_sm")
+                        self.nlp = spacy_mod.load("en_core_web_sm")
+                        log.info("Downloaded spaCy model")
+                    except Exception as e:  # pragma: no cover - unexpected
+                        log.warning(f"Failed to download spaCy model: {e}")
+                else:
+                    log.warning("spaCy CLI unavailable; cannot auto-download model")
             else:
                 log.warning(
                     "spaCy model 'en_core_web_sm' not found. Set "

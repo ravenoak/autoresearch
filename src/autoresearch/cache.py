@@ -104,9 +104,8 @@ class SearchCache:
         )
         row = cast(Optional[Dict[str, Any]], db.get(condition))
         if row:
-            results_raw = row.get("results", [])
-            results = cast(List[Dict[str, Any]], deepcopy(results_raw))
-            return results
+            results_raw = cast(List[Dict[str, Any]], row.get("results", []))
+            return deepcopy(results_raw)
         return None
 
     def clear(self, namespace: str | None = None) -> None:
@@ -170,6 +169,18 @@ class _SearchCacheView:
 
     def namespaced(self, namespace: str | None) -> "SearchCache | _SearchCacheView":
         return self._base.namespaced(namespace)
+
+    @property
+    def base(self) -> SearchCache:
+        """Return the underlying :class:`SearchCache` instance."""
+
+        return self._base
+
+    @property
+    def namespace(self) -> str:
+        """Return the namespace applied to this view."""
+
+        return self._namespace
 
 
 _shared_cache = SearchCache()
