@@ -1,5 +1,4 @@
 import sys
-import types
 
 import pytest
 import requests
@@ -8,22 +7,24 @@ from autoresearch import distributed
 from autoresearch.errors import SearchError
 from autoresearch.search import Search
 
+from .typing_helpers import make_runtime_config, make_search_config, make_storage_config
+
 
 def _make_cfg(backends):
-    search_cfg = types.SimpleNamespace(
+    search_cfg = make_search_config(
         backends=backends,
         hybrid_query=False,
         use_semantic_similarity=False,
         embedding_backends=[],
-        context_aware=types.SimpleNamespace(enabled=False),
+        context_aware_enabled=False,
         max_workers=1,
     )
-    return types.SimpleNamespace(
+    return make_runtime_config(
         search=search_cfg,
         loops=1,
         distributed=False,
-        distributed_config=types.SimpleNamespace(enabled=False),
-        storage=types.SimpleNamespace(duckdb_path=":memory:"),
+        distributed_enabled=False,
+        storage=make_storage_config(duckdb_path=":memory:"),
     )
 
 
@@ -77,6 +78,6 @@ def test_redis_broker_init_failure(monkeypatch):
         def from_url(url):
             raise ConnectionError("bad url")
 
-    monkeypatch.setitem(sys.modules, "redis", types.SimpleNamespace(Redis=DummyRedis))
+    monkeypatch.setitem(sys.modules, "redis", type("RedisModule", (), {"Redis": DummyRedis}))
     with pytest.raises(ConnectionError):
         distributed.RedisBroker("redis://bad")

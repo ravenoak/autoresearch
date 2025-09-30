@@ -21,6 +21,14 @@ from autoresearch.streamlit_app import st as streamlit_st
 from autoresearch.streamlit_app import track_agent_performance
 from autoresearch.typing.http import HTTPAdapter
 
+from .typing_helpers import (
+    make_llm_pool_config,
+    make_psutil_stub,
+    make_runtime_config,
+    make_search_config,
+    make_streamlit_stub,
+)
+
 
 class _DummyTable:
     """Minimal table stub used to capture rendered rows."""
@@ -96,7 +104,7 @@ def test_circuit_breaker_success_decrements(monkeypatch):
 
 
 def test_http_session_reuse_and_close(monkeypatch):
-    cfg = types.SimpleNamespace(search=types.SimpleNamespace(http_pool_size=1))
+    cfg = make_runtime_config(search=make_search_config(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.http.get_config", lambda: cfg)
     search.close_http_session()
     s1 = search.get_http_session()
@@ -107,7 +115,7 @@ def test_http_session_reuse_and_close(monkeypatch):
 
 
 def test_llm_pool_session_reuse(monkeypatch: pytest.MonkeyPatch) -> None:
-    cfg = types.SimpleNamespace(llm_pool_size=2)
+    cfg = make_llm_pool_config(2)
     monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
     llm_pool.close_session()
     session = llm_pool.get_session()
@@ -118,7 +126,7 @@ def test_llm_pool_session_reuse(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_llm_pool_adapter_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    cfg = types.SimpleNamespace(llm_pool_size=1)
+    cfg = make_llm_pool_config(1)
     monkeypatch.setattr("autoresearch.llm.pool.get_config", lambda: cfg)
     llm_pool.close_session()
 
@@ -165,20 +173,16 @@ def test_output_formatter_invalid(monkeypatch):
 
 
 def test_streamlit_metrics(monkeypatch):
-    class SS(dict):
-        __getattr__ = dict.get
-        __setattr__ = dict.__setitem__
-
-    fake_st = types.SimpleNamespace(session_state=SS(), markdown=lambda *a, **k: None)
+    fake_st = make_streamlit_stub()
     monkeypatch.setattr(streamlit_st, "session_state", fake_st.session_state, False)
     track_agent_performance("A", 1.0, 5)
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
-    fake_psutil = types.SimpleNamespace(
-        cpu_percent=lambda interval=None: 10.0,
-        virtual_memory=lambda: types.SimpleNamespace(percent=20.0, used=1024**3, total=2 * 1024**3),
-        Process=lambda pid=None: types.SimpleNamespace(
-            memory_info=lambda: types.SimpleNamespace(rss=50 * 1024**2)
-        ),
+    fake_psutil = make_psutil_stub(
+        cpu_percent=10.0,
+        memory_percent=20.0,
+        memory_used=1024**3,
+        memory_total=2 * 1024**3,
+        process_rss=50 * 1024**2,
     )
     monkeypatch.setattr(streamlit_psutil, "cpu_percent", fake_psutil.cpu_percent)
     monkeypatch.setattr(streamlit_psutil, "virtual_memory", fake_psutil.virtual_memory)
