@@ -1,11 +1,14 @@
 import json
 import atexit
-import responses
-from responses import matchers
+import importlib.util
+import subprocess
+from pathlib import Path
+from typing import Any, Callable, Iterable, Mapping, Sequence
+
 import pytest
 import requests
-import subprocess
-import importlib.util
+import responses
+from responses import matchers
 
 try:
     _spec = importlib.util.find_spec("git")
@@ -14,13 +17,18 @@ except Exception:
     GITPYTHON_INSTALLED = False
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import autoresearch.search as search
 from autoresearch.search import ExternalLookupResult, Search
 
+SearchPayload = dict[str, Any]
+StoragePayload = dict[str, Any]
+BackendCallable = Callable[[str, int], list[SearchPayload]]
+EmbeddingCallable = Callable[[Sequence[float], int], list[SearchPayload]]
+
 
 def _cfg() -> ConfigModel:
-    cfg = ConfigModel(loops=1)
+    cfg: ConfigModel = ConfigModel(loops=1)
     cfg.search.use_semantic_similarity = False
     return cfg
 
@@ -31,7 +39,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-def sample_search_results():
+def sample_search_results() -> list[SearchPayload]:
     """Simple search results for ranking tests."""
     return [
         {"title": "Result 1", "url": "https://site1.com", "snippet": "A"},
@@ -41,7 +49,7 @@ def sample_search_results():
 
 
 @pytest.fixture
-def storage_vector_doc():
+def storage_vector_doc() -> StoragePayload:
     """Representative storage payload used to hydrate hybrid lookups."""
 
     return {
@@ -52,7 +60,7 @@ def storage_vector_doc():
 
 
 @responses.activate
-def test_external_lookup(monkeypatch):
+def test_external_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
@@ -60,14 +68,19 @@ def test_external_lookup(monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
-    params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
+    params: Mapping[str, str] = {
+        "q": query,
+        "format": "json",
+        "no_redirect": "1",
+        "no_html": "1",
+    }
     responses.add(
         responses.GET,
         url,
         match=[matchers.query_param_matcher(params)],
         json={"RelatedTopics": [{"Text": "Python", "FirstURL": "https://python.org"}]},
     )
-    results = Search.external_lookup(query, max_results=1)
+    results: list[SearchPayload] = Search.external_lookup(query, max_results=1)
     # Check that the results contain the expected title and URL
     assert len(results) == 1
     assert results[0]["title"] == "Python"
@@ -75,7 +88,7 @@ def test_external_lookup(monkeypatch):
 
 
 @responses.activate
-def test_external_lookup_special_chars(monkeypatch):
+def test_external_lookup_special_chars(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
@@ -83,33 +96,38 @@ def test_external_lookup_special_chars(monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "C++ tutorial & basics"
     url = "https://api.duckduckgo.com/"
-    params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
+    params: Mapping[str, str] = {
+        "q": query,
+        "format": "json",
+        "no_redirect": "1",
+        "no_html": "1",
+    }
     responses.add(
         responses.GET,
         url,
         match=[matchers.query_param_matcher(params)],
         json={"RelatedTopics": [{"Text": "C++", "FirstURL": "https://cplusplus.com"}]},
     )
-    results = Search.external_lookup(query, max_results=1)
+    results: list[SearchPayload] = Search.external_lookup(query, max_results=1)
     # Check that the results contain the expected title and URL
     assert len(results) == 1
     assert results[0]["title"] == "C++"
     assert results[0]["url"] == "https://cplusplus.com"
 
 
-def test_generate_queries():
-    queries = Search.generate_queries("some topic")
+def test_generate_queries() -> None:
+    queries: list[str] = Search.generate_queries("some topic")
     assert "some topic" in queries
     assert any(q.startswith("What is") for q in queries)
     assert len(queries) >= 2
 
-    emb = Search.generate_queries("abc", return_embeddings=True)
+    emb: list[float] = Search.generate_queries("abc", return_embeddings=True)
     assert isinstance(emb, list)
     assert all(isinstance(v, float) for v in emb)
 
 
 @responses.activate
-def test_external_lookup_backend_error(monkeypatch):
+def test_external_lookup_backend_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when a search backend fails."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -139,7 +157,7 @@ def test_external_lookup_backend_error(monkeypatch):
 
 
 @responses.activate
-def test_duckduckgo_timeout_error(monkeypatch):
+def test_duckduckgo_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a TimeoutError is raised when DuckDuckGo search times out."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -166,7 +184,7 @@ def test_duckduckgo_timeout_error(monkeypatch):
 
 
 @responses.activate
-def test_duckduckgo_json_decode_error(monkeypatch):
+def test_duckduckgo_json_decode_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when DuckDuckGo returns invalid JSON."""
     cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
@@ -192,7 +210,7 @@ def test_duckduckgo_json_decode_error(monkeypatch):
 
 
 @responses.activate
-def test_serper_backend_error(monkeypatch):
+def test_serper_backend_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a SearchError is raised when Serper search fails."""
     cfg = _cfg()
     cfg.search.backends = ["serper"]
@@ -222,7 +240,7 @@ def test_serper_backend_error(monkeypatch):
 
 
 @responses.activate
-def test_serper_timeout_error(monkeypatch):
+def test_serper_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a TimeoutError is raised when Serper search times out."""
     cfg = _cfg()
     cfg.search.backends = ["serper"]
@@ -248,7 +266,7 @@ def test_serper_timeout_error(monkeypatch):
     assert excinfo.value.context["backend"] == "serper"
 
 
-def test_local_file_backend(monkeypatch, tmp_path):
+def test_local_file_backend(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     file_path = docs_dir / "note.txt"
@@ -261,14 +279,14 @@ def test_local_file_backend(monkeypatch, tmp_path):
     cfg.search.local_file.file_types = ["txt"]
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    results = Search.external_lookup("hello", max_results=5)
+    results: list[SearchPayload] = Search.external_lookup("hello", max_results=5)
 
     assert any(r["url"] == str(file_path) for r in results)
     assert any("hello" in r["snippet"].lower() for r in results)
 
 
 @pytest.mark.slow
-def test_local_git_backend(monkeypatch, tmp_path):
+def test_local_git_backend(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init"], cwd=repo, check=True)
@@ -287,7 +305,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
     cfg.search.local_git.history_depth = 10
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    results = Search.external_lookup("TODO", max_results=5)
+    results: list[SearchPayload] = Search.external_lookup("TODO", max_results=5)
 
     commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo).decode().strip()
 
@@ -295,7 +313,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
     assert any(r["url"] == str(readme) for r in results)
 
 
-def test_external_lookup_vector_search(monkeypatch):
+def test_external_lookup_vector_search(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = []
     cfg.search.context_aware.enabled = False
@@ -303,7 +321,7 @@ def test_external_lookup_vector_search(monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     class DummyModel:
-        def encode(self, text):
+        def encode(self, text: str) -> list[float]:
             return [0.1, 0.2]
 
     monkeypatch.setattr(
@@ -311,21 +329,25 @@ def test_external_lookup_vector_search(monkeypatch):
         lambda *args, **kwargs: DummyModel(),
     )
 
-    def mock_vector_search(embed, k=5):
+    def mock_vector_search(embed: Sequence[float], k: int = 5) -> list[SearchPayload]:
         return [{"node_id": "n1", "content": "vector snippet"}]
 
+    vector_backend: EmbeddingCallable = mock_vector_search
+
     monkeypatch.setattr(
-        "autoresearch.search.StorageManager.vector_search", mock_vector_search
+        "autoresearch.search.StorageManager.vector_search", vector_backend
     )
 
-    results = Search.external_lookup("query", max_results=1)
+    results: list[SearchPayload] = Search.external_lookup("query", max_results=1)
 
     assert any(r.get("snippet") == "vector snippet" for r in results)
     assert all(r.get("backend") == "storage" for r in results)
     assert any("vector" in (r.get("storage_sources") or []) for r in results)
 
 
-def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
+def test_external_lookup_returns_handles(
+    monkeypatch: pytest.MonkeyPatch, storage_vector_doc: StoragePayload
+) -> None:
     cfg = _cfg()
     cfg.search.backends = []
     cfg.search.embedding_backends = []
@@ -334,13 +356,22 @@ def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     with Search.temporary_state() as search_instance:
-        search_instance.cache.clear()
+        search_state: Search = search_instance
+        search_state.cache.clear()
+        
+        def vector_backend_func(
+            embedding: Sequence[float], k: int = 5
+        ) -> list[SearchPayload]:
+            return [dict(storage_vector_doc)]
+
+        vector_backend: EmbeddingCallable = vector_backend_func
+
         monkeypatch.setattr(
             "autoresearch.search.StorageManager.vector_search",
-            lambda embedding, k=5: [dict(storage_vector_doc)],
+            vector_backend,
         )
 
-        bundle = search_instance.external_lookup(
+        bundle: ExternalLookupResult = search_state.external_lookup(
             {"text": "vector query", "embedding": storage_vector_doc["embedding"]},
             max_results=1,
             return_handles=True,
@@ -348,24 +379,24 @@ def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
 
         assert isinstance(bundle, ExternalLookupResult)
         assert bundle.query == "vector query"
-        assert bundle.cache is search_instance.cache
+        assert bundle.cache is search_state.cache
         assert bundle.storage is search.StorageManager
         assert list(bundle) == bundle.results
         assert bundle[0]["backend"] == "storage"
-        storage_docs = bundle.by_backend.get("storage") or []
+        storage_docs: Iterable[Mapping[str, Any]] = bundle.by_backend.get("storage") or []
         assert storage_docs
         assert storage_docs[0]["snippet"] == "cached snippet"
         assert "vector" in (storage_docs[0].get("storage_sources") or [])
 
 
-def test_http_session_atexit_hook(monkeypatch):
+def test_http_session_atexit_hook(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.http_pool_size = 1
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     search.close_http_session()
-    calls: list = []
+    calls: list[Callable[[], None]] = []
     monkeypatch.setattr(atexit, "register", lambda f: calls.append(f))
-    session = search.get_http_session()
+    session: requests.Session = search.get_http_session()
     assert search.close_http_session in calls
 
     search.close_http_session()
@@ -376,7 +407,11 @@ def test_http_session_atexit_hook(monkeypatch):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_semantic_only(
+    mock_get_config: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_search_results: list[SearchPayload],
+) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 1.0
     cfg.search.bm25_weight = 0.0
@@ -392,14 +427,22 @@ def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_
         "calculate_semantic_similarity",
         lambda *args, **kwargs: [0.1, 0.9, 0.2],
     )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda *args, **kwargs: [0.5, 0.6, 0.7])
+    monkeypatch.setattr(
+        Search,
+        "assess_source_credibility",
+        lambda *args, **kwargs: [0.5, 0.6, 0.7],
+    )
 
-    ranked = Search.rank_results("q", sample_search_results)
+    ranked: list[SearchPayload] = Search.rank_results("q", sample_search_results)
     assert ranked[0]["url"] == "https://site2.com"
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_bm25_only(
+    mock_get_config: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_search_results: list[SearchPayload],
+) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 1.0
@@ -414,14 +457,22 @@ def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_resu
         "calculate_semantic_similarity",
         lambda *args, **kwargs: [0.1, 0.9, 0.2],
     )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda *args, **kwargs: [0.5, 0.6, 0.7])
+    monkeypatch.setattr(
+        Search,
+        "assess_source_credibility",
+        lambda *args, **kwargs: [0.5, 0.6, 0.7],
+    )
 
-    ranked = Search.rank_results("q", sample_search_results)
+    ranked: list[SearchPayload] = Search.rank_results("q", sample_search_results)
     assert ranked[0]["url"] == "https://site1.com"
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_search_results):
+def test_rank_results_credibility_only(
+    mock_get_config: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_search_results: list[SearchPayload],
+) -> None:
     cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 0.0
@@ -436,13 +487,17 @@ def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_sear
         "calculate_semantic_similarity",
         lambda *args, **kwargs: [0.1, 0.9, 0.2],
     )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda *args, **kwargs: [0.5, 0.6, 0.7])
+    monkeypatch.setattr(
+        Search,
+        "assess_source_credibility",
+        lambda *args, **kwargs: [0.5, 0.6, 0.7],
+    )
 
-    ranked = Search.rank_results("q", sample_search_results)
+    ranked: list[SearchPayload] = Search.rank_results("q", sample_search_results)
     assert ranked[0]["url"] == "https://site3.com"
 
 
-def test_external_lookup_hybrid_query(monkeypatch):
+def test_external_lookup_hybrid_query(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg()
     cfg.search.backends = ["kw"]
     cfg.search.embedding_backends = ["emb"]
@@ -451,23 +506,44 @@ def test_external_lookup_hybrid_query(monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     class DummyModel:
-        def encode(self, text):
+        def encode(self, text: str) -> list[float]:
             return [0.1]
 
     monkeypatch.setattr(Search, "get_sentence_transformer", lambda *args, **kwargs: DummyModel())
 
-    with Search.temporary_state() as search:
-        search.backends["kw"] = lambda q, max_results: [
-            {"title": "KW", "url": "kw"}
-        ]
-        search.embedding_backends["emb"] = lambda e, max_results: [
-            {"title": "VEC", "url": "vec"}
-        ]
+    with Search.temporary_state() as search_state:
+        search_instance: Search = search_state
 
-        monkeypatch.setattr(search, "cross_backend_rank", lambda q, b, query_embedding=None: [
-            *b.get("kw", []), *b.get("emb", [])
-        ])
+        def keyword_backend_func(query: str, max_results: int) -> list[SearchPayload]:
+            return [{"title": "KW", "url": "kw"}]
 
-        results = search.external_lookup("hello", max_results=2)
-        urls = {r["url"] for r in results}
+        keyword_backend: BackendCallable = keyword_backend_func
+
+        def embedding_backend_func(
+            embedding: Sequence[float], max_results: int
+        ) -> list[SearchPayload]:
+            return [{"title": "VEC", "url": "vec"}]
+
+        embedding_backend: EmbeddingCallable = embedding_backend_func
+
+        search_instance.backends["kw"] = keyword_backend
+        search_instance.embedding_backends["emb"] = embedding_backend
+
+        def cross_backend_rank(
+            query: str,
+            backend_results: Mapping[str, list[SearchPayload]],
+            *,
+            query_embedding: Sequence[float] | None = None,
+        ) -> list[SearchPayload]:
+            _ = query
+            _ = query_embedding
+            return [
+                *backend_results.get("kw", []),
+                *backend_results.get("emb", []),
+            ]
+
+        monkeypatch.setattr(search_instance, "cross_backend_rank", cross_backend_rank)
+
+        results: list[SearchPayload] = search_instance.external_lookup("hello", max_results=2)
+        urls: set[str] = {r["url"] for r in results}
         assert "kw" in urls and "vec" in urls
