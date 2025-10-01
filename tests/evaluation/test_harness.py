@@ -5,13 +5,15 @@ from __future__ import annotations
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
-from typing import List
+
+from duckdb import DuckDBPyConnection
 
 import duckdb
 import pytest
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
+from autoresearch.evaluation.harness import RoutingStrategyComparison
 from autoresearch.models import QueryResponse
 from tests.unit.typing_helpers import build_summary_fixture
 
@@ -20,14 +22,14 @@ from tests.unit.typing_helpers import build_summary_fixture
 def tmp_harness(tmp_path: Path) -> EvaluationHarness:
     """Return an evaluation harness writing artifacts to ``tmp_path``."""
 
-    duckdb_path = tmp_path / "metrics.duckdb"
+    duckdb_path: Path = tmp_path / "metrics.duckdb"
     return EvaluationHarness(output_dir=tmp_path, duckdb_path=duckdb_path)
 
 
 def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness) -> None:
     """Dry runs honour the limit flag and never call the orchestrator runner."""
 
-    calls: List[str] = []
+    calls: list[str] = []
 
     def _runner(query: str, config: ConfigModel) -> QueryResponse:  # pragma: no cover - should not run
         calls.append(query)
@@ -38,9 +40,9 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
         duckdb_path=tmp_harness.duckdb_path,
         runner=_runner,
     )
-    config = ConfigModel()
+    config: ConfigModel = ConfigModel()
 
-    summaries = harness.run(
+    summaries: list[EvaluationSummary] = harness.run(
         ["truthfulqa"],
         config=config,
         limit=1,
@@ -51,7 +53,7 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
 
     assert not calls
     assert summaries
-    summary = summaries[0]
+    summary: EvaluationSummary = summaries[0]
     assert summary.dataset == "truthfulqa"
     assert summary.total_examples == 1
     assert summary.accuracy is None
@@ -74,7 +76,7 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
 def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) -> None:
     """The harness persists DuckDB and Parquet outputs when enabled."""
 
-    call_counter = {"count": 0}
+    call_counter: dict[str, int] = {"count": 0}
 
     def _runner(query: str, config: ConfigModel) -> QueryResponse:
         idx = call_counter["count"]
@@ -138,9 +140,9 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         duckdb_path=tmp_harness.duckdb_path,
         runner=_runner,
     )
-    config = ConfigModel()
+    config: ConfigModel = ConfigModel()
 
-    summaries = harness.run(
+    summaries: list[EvaluationSummary] = harness.run(
         ["truthfulqa"],
         config=config,
         limit=2,
@@ -149,7 +151,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         store_parquet=True,
     )
 
-    summary = summaries[0]
+    summary: EvaluationSummary = summaries[0]
     assert summary.accuracy is not None and pytest.approx(0.5) == summary.accuracy
     assert summary.citation_coverage == pytest.approx(1.0)
     assert summary.contradiction_rate == pytest.approx(0.5)
@@ -172,22 +174,35 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.example_csv and summary.example_csv.exists()
     assert summary.summary_csv and summary.summary_csv.exists()
 
-    with closing(duckdb.connect(str(summary.duckdb_path))) as conn:
-        count = conn.execute(
+    with closing(duckdb.connect(str(summary.duckdb_path))) as connection:
+        duckdb_connection: DuckDBPyConnection = connection
+        count: int = duckdb_connection.execute(
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],
         ).fetchone()[0]
-        example_rows = conn.execute(
-            """
-            SELECT cycles_completed, gate_should_debate, planner_depth,
-                   routing_delta, routing_decision_count, routing_strategy
-            FROM evaluation_results
-            WHERE run_id = ?
-            ORDER BY example_id
-            """,
-            [summary.run_id],
-        ).fetchall()
-        summary_row = conn.execute(
+        example_rows: list[tuple[int, bool, float, float, int, str]] = (
+            duckdb_connection.execute(
+                """
+                SELECT cycles_completed, gate_should_debate, planner_depth,
+                       routing_delta, routing_decision_count, routing_strategy
+                FROM evaluation_results
+                WHERE run_id = ?
+                ORDER BY example_id
+                """,
+                [summary.run_id],
+            ).fetchall()
+        )
+        summary_row: tuple[
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            str,
+        ] | None = duckdb_connection.execute(
             """
             SELECT gate_exit_rate, gate_debate_rate, avg_cycles_completed,
                    gated_example_ratio, avg_planner_depth, avg_routing_delta,
@@ -239,7 +254,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
 def test_compare_routing_strategies() -> None:
     """Comparisons report deltas between baseline and variant strategies."""
 
-    base = build_summary_fixture(
+    base: EvaluationSummary = build_summary_fixture(
         run_id="baseline",
         config_signature="base",
         accuracy=0.5,
@@ -264,7 +279,7 @@ def test_compare_routing_strategies() -> None:
         example_csv=None,
         summary_csv=None,
     )
-    variant = replace(
+    variant: EvaluationSummary = replace(
         base,
         run_id="variant",
         accuracy=0.6,
@@ -274,10 +289,15 @@ def test_compare_routing_strategies() -> None:
         routing_strategy="aggressive",
     )
 
-    comparisons = EvaluationHarness.compare_routing_strategies([base], [variant])
+    comparisons: list[RoutingStrategyComparison] = (
+        EvaluationHarness.compare_routing_strategies(
+            [base],
+            [variant],
+        )
+    )
 
     assert len(comparisons) == 1
-    comparison = comparisons[0]
+    comparison: RoutingStrategyComparison = comparisons[0]
     assert comparison.dataset == "truthfulqa"
     assert comparison.baseline_strategy == "balanced"
     assert comparison.variant_strategy == "aggressive"
