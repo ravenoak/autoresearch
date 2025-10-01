@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar, overload
+from unittest.mock import MagicMock
 
 from click.testing import Result
 
@@ -24,6 +25,8 @@ __all__ = [
     "set_cli_invocation",
     "set_cli_result",
     "set_value",
+    "StreamlitComponentMocks",
+    "StreamlitTabMocks",
 ]
 
 # ``MutableMapping`` rather than ``dict`` so fixtures can swap in custom
@@ -236,4 +239,55 @@ class APICapture:
 
     headers: Mapping[str, str] | None = None
     """Subset of HTTP headers retained for assertions."""
+
+
+@dataclass(slots=True)
+class StreamlitTabMocks:
+    """Hold tab mocks returned by :func:`streamlit.tabs`."""
+
+    citations: MagicMock
+    """Mock object representing the *Citations* tab."""
+
+    reasoning: MagicMock
+    """Mock object representing the *Reasoning* tab."""
+
+    metrics: MagicMock
+    """Mock object representing the *Metrics* tab."""
+
+    knowledge_graph: MagicMock
+    """Mock object representing the *Knowledge Graph* tab."""
+
+    def as_tuple(self) -> tuple[MagicMock, MagicMock, MagicMock, MagicMock]:
+        """Return the stored mocks as a tuple for configuring return values."""
+
+        return (self.citations, self.reasoning, self.metrics, self.knowledge_graph)
+
+
+@dataclass(slots=True)
+class StreamlitComponentMocks:
+    """Capture frequently patched Streamlit callables for UI scenarios."""
+
+    markdown: MagicMock
+    """Mock for :func:`streamlit.markdown`."""
+
+    tabs: MagicMock
+    """Mock for :func:`streamlit.tabs`."""
+
+    container: MagicMock
+    """Mock for :func:`streamlit.container`."""
+
+    image: MagicMock
+    """Mock for :func:`streamlit.image`."""
+
+    graphviz: MagicMock
+    """Mock for :func:`streamlit.graphviz_chart`."""
+
+    success: MagicMock
+    """Mock for :func:`streamlit.success`."""
+
+    sidebar: MagicMock | None = None
+    """Optional mock for :mod:`streamlit.sidebar` utilities."""
+
+    expander: MagicMock | None = None
+    """Optional mock for :func:`streamlit.expander`."""
 

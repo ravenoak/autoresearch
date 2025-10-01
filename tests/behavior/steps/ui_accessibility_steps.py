@@ -2,137 +2,165 @@ from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import patch
 import pytest
 
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Callable, cast
+
+import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from pytest_bdd import given, parsers, scenario, then, when
+from unittest.mock import MagicMock, patch
+
+from autoresearch.cli_utils import format_error, format_info, format_success
+
+from tests.behavior.context import (
+    BehaviorContext,
+    get_optional,
+    get_required,
+    set_value,
+)
+
 from .common_steps import application_running
-from autoresearch.cli_utils import format_error, format_success, format_info
 
 pytestmark = pytest.mark.requires_ui
 
 
 @given("the Autoresearch system is running")
-def autoresearch_system_running(tmp_path, monkeypatch):
+def autoresearch_system_running(tmp_path: Path, _monkeypatch: MonkeyPatch) -> object:
     """Set up the Autoresearch system for testing."""
-    # This is essentially the same as application_running in common_steps.py
-    return application_running(tmp_path, monkeypatch)
+
+    return application_running(tmp_path)
 
 
 @given("the Streamlit application is running")
-def streamlit_app_running(monkeypatch, bdd_context, tmp_path):
+def streamlit_app_running(
+    monkeypatch: MonkeyPatch,
+    bdd_context: BehaviorContext,
+    tmp_path: Path,
+) -> None:
     """Set up the Streamlit application for testing."""
-    # First ensure the Autoresearch system is running
+
     autoresearch_system_running(tmp_path, monkeypatch)
 
-    # Mock Streamlit session state
     initial_state: dict[str, object] = {}
     with patch("streamlit.session_state", initial_state) as session_state:
-        bdd_context["streamlit_session"] = session_state
+        set_value(bdd_context, "streamlit_session", session_state)
 
-    # Mock other Streamlit components as needed
     with patch("streamlit.markdown") as mock_markdown:
-        bdd_context["mock_markdown"] = mock_markdown
+        set_value(bdd_context, "mock_markdown", mock_markdown)
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "CLI Color Alternatives")
-def test_cli_color_alternatives(bdd_context):
+def test_cli_color_alternatives(bdd_context: BehaviorContext) -> None:
     """Test CLI color alternatives."""
-    assert bdd_context.get("use_symbols") is True
+
+    assert get_optional(bdd_context, "use_symbols", bool) is True
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "CLI Screen Reader Compatibility")
-def test_cli_screen_reader_compatibility(bdd_context):
+def test_cli_screen_reader_compatibility(bdd_context: BehaviorContext) -> None:
     """Test CLI screen reader compatibility."""
-    assert bdd_context.get("screen_reader_mode") is True
+
+    assert get_optional(bdd_context, "screen_reader_mode", bool) is True
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Streamlit GUI Keyboard Navigation")
-def test_streamlit_keyboard_navigation(bdd_context):
+def test_streamlit_keyboard_navigation(bdd_context: BehaviorContext) -> None:
     """Test Streamlit GUI keyboard navigation."""
-    assert "mock_text_input" in bdd_context and "mock_button" in bdd_context
+
+    assert get_optional(bdd_context, "mock_text_input") is not None
+    assert get_optional(bdd_context, "mock_button") is not None
 
 
 @pytest.mark.slow
 @scenario(
     "../features/ui_accessibility.feature", "Streamlit GUI Screen Reader Compatibility"
 )
-def test_streamlit_screen_reader_compatibility(bdd_context):
+def test_streamlit_screen_reader_compatibility(
+    bdd_context: BehaviorContext,
+) -> None:
     """Test Streamlit GUI screen reader compatibility."""
-    assert bdd_context.get("screen_reader_mode") is True
+
+    assert get_optional(bdd_context, "screen_reader_mode", bool) is True
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "High Contrast Mode")
-def test_high_contrast_mode(bdd_context):
+def test_high_contrast_mode(bdd_context: BehaviorContext) -> None:
     """Test high contrast mode."""
-    assert "mock_markdown" in bdd_context
+
+    assert get_optional(bdd_context, "mock_markdown") is not None
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Responsive Layout on Mobile")
-def test_responsive_layout(bdd_context):
+def test_responsive_layout(bdd_context: BehaviorContext) -> None:
     """Test responsive layout on small screens."""
-    assert "css" in bdd_context
+
+    assert get_optional(bdd_context, "css") is not None
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Guided Tour Availability")
-def test_guided_tour_availability(bdd_context):
+def test_guided_tour_availability(bdd_context: BehaviorContext) -> None:
     """Test guided tour availability."""
-    assert bdd_context.get("tour_modal", False) is True
+
+    assert get_optional(bdd_context, "tour_modal", bool) is True
 
 
 @pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Skip to content link")
-def test_skip_link(bdd_context):
+def test_skip_link(bdd_context: BehaviorContext) -> None:
     """Skip link should be present on the page."""
-    assert any("skip-link" in call for call in bdd_context.get("markdown_calls", []))
+
+    markdown_calls = cast(list[str], get_optional(bdd_context, "markdown_calls", list))
+    assert any("skip-link" in call for call in markdown_calls)
 
 
 @when("I use the CLI with color output disabled")
-def use_cli_without_color(bdd_context):
+def use_cli_without_color(bdd_context: BehaviorContext) -> None:
     """Simulate using the CLI with color output disabled."""
-    # We'll use the format functions directly
-    # In a real implementation, we would mock the console to disable color
-    bdd_context["use_symbols"] = True
+
+    set_value(bdd_context, "use_symbols", True)
 
 
 @then("all information should be conveyed through text and symbols")
-def check_text_and_symbols(bdd_context):
+def check_text_and_symbols(bdd_context: BehaviorContext) -> None:
     """Check that information is conveyed through text and symbols."""
-    use_symbols = bdd_context["use_symbols"]
 
-    # Test error message
+    use_symbols = get_required(bdd_context, "use_symbols", bool)
     error_msg = format_error("This is an error", symbol=use_symbols)
     assert "✗" in error_msg
-    # When symbol is True, the message doesn't contain "Error"
     if not use_symbols:
         assert "Error" in error_msg
 
-    # Test success message
     success_msg = format_success("This is a success", symbol=use_symbols)
     assert "✓" in success_msg
 
-    # Test info message
     info_msg = format_info("This is info", symbol=use_symbols)
     assert "ℹ" in info_msg
-    # When symbol is True, the message doesn't contain "Info"
     if not use_symbols:
         assert "Info" in info_msg
 
 
 @then(parsers.parse('error messages should use symbolic indicators like "{symbol}"'))
-def check_error_symbols(bdd_context, symbol):
+def check_error_symbols(bdd_context: BehaviorContext, symbol: str) -> None:
     """Check that error messages use the specified symbol."""
-    use_symbols = bdd_context["use_symbols"]
+
+    use_symbols = get_required(bdd_context, "use_symbols", bool)
     error_msg = format_error("Test error", symbol=use_symbols)
     assert symbol in error_msg
 
 
 @then(parsers.parse('success messages should use symbolic indicators like "{symbol}"'))
-def check_success_symbols(bdd_context, symbol):
+def check_success_symbols(bdd_context: BehaviorContext, symbol: str) -> None:
     """Check that success messages use the specified symbol."""
-    use_symbols = bdd_context["use_symbols"]
+
+    use_symbols = get_required(bdd_context, "use_symbols", bool)
     success_msg = format_success("Test success", symbol=use_symbols)
     assert symbol in success_msg
 
@@ -142,95 +170,76 @@ def check_success_symbols(bdd_context, symbol):
         'informational messages should use symbolic indicators like "{symbol}"'
     )
 )
-def check_info_symbols(bdd_context, symbol):
+def check_info_symbols(bdd_context: BehaviorContext, symbol: str) -> None:
     """Check that informational messages use the specified symbol."""
-    use_symbols = bdd_context["use_symbols"]
+
+    use_symbols = get_required(bdd_context, "use_symbols", bool)
     info_msg = format_info("Test info", symbol=use_symbols)
     assert symbol in info_msg
 
 
 @when("I use the CLI with a screen reader")
-def use_cli_with_screen_reader(bdd_context):
+def use_cli_with_screen_reader(bdd_context: BehaviorContext) -> None:
     """Simulate using the CLI with a screen reader."""
-    # In a real implementation, we would configure the CLI for screen readers
-    # For now, we'll just set a flag to indicate screen reader mode
-    bdd_context["screen_reader_mode"] = True
-    bdd_context["use_symbols"] = True  # Symbols are important for screen readers
+
+    set_value(bdd_context, "screen_reader_mode", True)
+    set_value(bdd_context, "use_symbols", True)
 
 
 @then("all progress indicators should have text alternatives")
-def check_progress_text_alternatives(bdd_context):
+def check_progress_text_alternatives(bdd_context: BehaviorContext) -> None:
     """Check that progress indicators have text alternatives."""
-    # In a real implementation, we would check that progress indicators have text alternatives
-    # For now, we'll just assert that screen reader mode is enabled
-    assert bdd_context.get("screen_reader_mode", False) is True
 
-    # We would typically check that progress indicators use ASCII characters
-    # and provide text updates for screen readers
-    # For example, with tqdm:
-    # with patch('tqdm.tqdm') as mock_tqdm:
-    #     # Call some function that uses tqdm
-    #     # Verify that tqdm was called with ascii=True
-    #     mock_tqdm.assert_called_once()
-    #     kwargs = mock_tqdm.call_args[1]
-    #     assert kwargs.get('ascii', False) is True
+    assert get_optional(bdd_context, "screen_reader_mode", bool) is True
 
 
 @then("all visual elements should have text descriptions")
-def check_visual_element_descriptions(bdd_context):
+def check_visual_element_descriptions(bdd_context: BehaviorContext) -> None:
     """Check that visual elements have text descriptions."""
-    # In a real implementation, we would check that visual elements have text descriptions
-    # For now, we'll just assert that screen reader mode is enabled
-    assert bdd_context.get("screen_reader_mode", False) is True
 
-    # We would typically check that tables and other visual elements
-    # have appropriate text descriptions for screen readers
-    # For example, with tabulate:
-    # with patch('tabulate.tabulate') as mock_tabulate:
-    #     # Call some function that uses tabulate
-    #     # Verify that tabulate was called with appropriate parameters
-    #     mock_tabulate.assert_called_once()
+    assert get_optional(bdd_context, "screen_reader_mode", bool) is True
 
 
 @then("command help text should be properly structured for screen readers")
-def check_help_text_structure(bdd_context):
+def check_help_text_structure(bdd_context: BehaviorContext) -> None:
     """Check that command help text is properly structured for screen readers."""
+
     from autoresearch.main import app as cli_app
     from typer.testing import CliRunner
 
     runner = CliRunner()
     result = runner.invoke(cli_app, ["--help"])
+    set_value(bdd_context, "cli_help_result", result)
 
     output = result.stdout
     assert "Usage:" in output
     assert "Commands:" in output
-    # Ensure there are no colour control sequences which can confuse screen readers
     assert "\x1b[" not in output
 
 
 @when("I navigate the interface using only keyboard")
-def navigate_with_keyboard(bdd_context):
+def navigate_with_keyboard(bdd_context: BehaviorContext) -> None:
     """Simulate navigating the interface using only keyboard."""
-    # Mock Streamlit components to test keyboard navigation
+
     with patch("streamlit.text_input") as mock_text_input:
         mock_text_input.return_value = "Test query"
-        bdd_context["mock_text_input"] = mock_text_input
+        set_value(bdd_context, "mock_text_input", mock_text_input)
 
     with patch("streamlit.button") as mock_button:
         mock_button.return_value = True
-        bdd_context["mock_button"] = mock_button
+        set_value(bdd_context, "mock_button", mock_button)
 
 
 @then("I should be able to access all functionality")
-def check_keyboard_accessibility(bdd_context):
+def check_keyboard_accessibility(bdd_context: BehaviorContext) -> None:
     """Check that all functionality is accessible via keyboard."""
-    # Verify that keyboard navigation works for critical components
-    assert "mock_text_input" in bdd_context
-    assert "mock_button" in bdd_context
+
+    assert get_optional(bdd_context, "mock_text_input") is not None
+    assert get_optional(bdd_context, "mock_button") is not None
 
 
 @then("focus indicators should be clearly visible")
-def check_focus_indicators(bdd_context):
+def check_focus_indicators(bdd_context: BehaviorContext) -> None:
     """Check that focus indicators are clearly visible."""
     from autoresearch.streamlit_ui import apply_accessibility_settings
 
@@ -243,7 +252,7 @@ def check_focus_indicators(bdd_context):
 
 
 @then("tab order should be logical and follow page structure")
-def check_tab_order(bdd_context):
+def check_tab_order(bdd_context: BehaviorContext) -> None:
     """Check that tab order is logical and follows page structure."""
     from autoresearch.streamlit_app import display_query_input
 
@@ -255,14 +264,14 @@ def check_tab_order(bdd_context):
 
 
 @when("I use the GUI with a screen reader")
-def use_gui_with_screen_reader(bdd_context):
+def use_gui_with_screen_reader(bdd_context: BehaviorContext) -> None:
     """Simulate using the GUI with a screen reader."""
-    # Flag screen reader mode so other steps can adjust behaviour
-    bdd_context["screen_reader_mode"] = True
+
+    set_value(bdd_context, "screen_reader_mode", True)
 
 
 @then("all images should have alt text")
-def check_image_alt_text(bdd_context):
+def check_image_alt_text(bdd_context: BehaviorContext) -> None:
     """Check that all images have alt text."""
     # Patch streamlit.image so no Streamlit runtime is required
     with patch("streamlit.image") as mock_image:
@@ -274,7 +283,7 @@ def check_image_alt_text(bdd_context):
 
 
 @then("all form controls should have proper labels")
-def check_form_control_labels(bdd_context):
+def check_form_control_labels(bdd_context: BehaviorContext) -> None:
     """Check that all form controls have proper labels."""
     # Patch streamlit.text_input so no Streamlit runtime is required
     with patch("streamlit.text_input") as mock_text_input:
@@ -288,7 +297,7 @@ def check_form_control_labels(bdd_context):
 
 
 @then("dynamic content updates should be announced to screen readers")
-def check_dynamic_content_announcements(bdd_context):
+def check_dynamic_content_announcements(bdd_context: BehaviorContext) -> None:
     """Check that dynamic content updates are announced to screen readers."""
     from autoresearch.models import QueryResponse
     from autoresearch.streamlit_app import display_results
@@ -302,21 +311,20 @@ def check_dynamic_content_announcements(bdd_context):
 
 
 @when("I enable high contrast mode")
-def enable_high_contrast_mode(bdd_context):
+def enable_high_contrast_mode(bdd_context: BehaviorContext) -> None:
     """Simulate enabling high contrast mode."""
     from autoresearch.streamlit_ui import apply_accessibility_settings
 
     with patch("streamlit.markdown") as mock_markdown:
         with patch("streamlit.session_state", {"high_contrast": True}):
             apply_accessibility_settings()
-        bdd_context["mock_markdown"] = mock_markdown
+        set_value(bdd_context, "mock_markdown", mock_markdown)
 
 
 @then("text should have sufficient contrast against backgrounds")
-def check_text_contrast(bdd_context):
+def check_text_contrast(bdd_context: BehaviorContext) -> None:
     """Check that text has sufficient contrast against backgrounds."""
-    mock_markdown = bdd_context.get("mock_markdown")
-    assert mock_markdown is not None
+    mock_markdown = cast(MagicMock, get_required(bdd_context, "mock_markdown"))
 
     css = "".join(call.args[0] for call in mock_markdown.call_args_list)
     assert "background-color:#000" in css
@@ -324,10 +332,9 @@ def check_text_contrast(bdd_context):
 
 
 @then("interactive elements should be clearly distinguishable")
-def check_interactive_elements(bdd_context):
+def check_interactive_elements(bdd_context: BehaviorContext) -> None:
     """Check that interactive elements are clearly distinguishable."""
-    mock_markdown = bdd_context.get("mock_markdown")
-    assert mock_markdown is not None
+    mock_markdown = cast(MagicMock, get_required(bdd_context, "mock_markdown"))
 
     css = "".join(call.args[0] for call in mock_markdown.call_args_list)
     assert ".stButton" in css
@@ -335,18 +342,20 @@ def check_interactive_elements(bdd_context):
 
 
 @then("information should not be conveyed by color alone")
-def check_color_independence(bdd_context):
+def check_color_independence(bdd_context: BehaviorContext) -> None:
     """Check that information is not conveyed by color alone."""
-    mock_markdown = bdd_context.get("mock_markdown")
-    assert mock_markdown is not None
+    mock_markdown = cast(MagicMock, get_required(bdd_context, "mock_markdown"))
 
     css = "".join(call.args[0] for call in mock_markdown.call_args_list)
     assert "text-decoration: underline" in css or "border" in css
 
 
 @given("the Streamlit application is running on a small screen")
-def streamlit_small_screen(monkeypatch, bdd_context, tmp_path):
+def streamlit_small_screen(
+    monkeypatch: MonkeyPatch, bdd_context: BehaviorContext, tmp_path: Path
+) -> None:
     """Set up the Streamlit app and capture CSS for mobile layout."""
+
     autoresearch_system_running(tmp_path, monkeypatch)
     with (
         patch("streamlit.session_state", {}),
@@ -356,46 +365,62 @@ def streamlit_small_screen(monkeypatch, bdd_context, tmp_path):
         import autoresearch.streamlit_app as app
 
         importlib.reload(app)
-        css_blocks = [call.args[0] for call in mock_markdown.call_args_list if "<style>" in call.args[0]]
-        bdd_context["css"] = "".join(css_blocks)
+        css_blocks = [
+            call.args[0]
+            for call in mock_markdown.call_args_list
+            if call.args and "<style>" in call.args[0]
+        ]
+        set_value(bdd_context, "css", "".join(css_blocks))
 
 
 @when("I view the page")
-def view_page(bdd_context):
+def view_page(bdd_context: BehaviorContext) -> None:
     """Verify CSS was captured for the responsive layout."""
-    assert "css" in bdd_context
+
+    assert get_optional(bdd_context, "css") is not None
 
 
 @then("columns should stack vertically")
-def columns_stack_vertically(bdd_context):
+def columns_stack_vertically(bdd_context: BehaviorContext) -> None:
     """Ensure CSS contains rules for vertical stacking."""
-    assert "flex-direction: column" in bdd_context.get("css", "")
+
+    css = cast(str, get_optional(bdd_context, "css", str) or "")
+    assert "flex-direction: column" in css
 
 
 @then("controls should remain usable without horizontal scrolling")
-def controls_no_horizontal_scroll(bdd_context):
+def controls_no_horizontal_scroll(bdd_context: BehaviorContext) -> None:
     """Check controls adapt to small widths."""
-    assert "width: 100%" in bdd_context.get("css", "")
+
+    css = cast(str, get_optional(bdd_context, "css", str) or "")
+    assert "width: 100%" in css
 
 
 @when("I open the page for the first time")
-def open_page_first_time(monkeypatch, bdd_context):
+def open_page_first_time(bdd_context: BehaviorContext) -> None:
     """Simulate opening the page for the first time."""
-    with patch("streamlit.modal") as mock_modal:
-        import autoresearch.streamlit_app as app
 
-        app.display_guided_tour()
-        bdd_context["tour_modal"] = mock_modal.called
+    with patch("streamlit.modal") as mock_modal:
+        import importlib
+
+        module = importlib.import_module("autoresearch.streamlit_app")
+        display_guided_tour = cast(
+            Callable[[], None], getattr(module, "display_guided_tour")
+        )
+
+        display_guided_tour()
+        set_value(bdd_context, "tour_modal", mock_modal.called)
 
 
 @then("a guided tour modal should describe the main features")
-def check_guided_tour_modal(bdd_context):
+def check_guided_tour_modal(bdd_context: BehaviorContext) -> None:
     """Verify the modal was displayed."""
-    assert bdd_context.get("tour_modal", False) is True
+
+    assert get_optional(bdd_context, "tour_modal", bool) is True
 
 
 @then("I should be able to dismiss the tour")
-def dismiss_tour():
+def dismiss_tour() -> None:
     """Ensure the tour can be dismissed via the button."""
     with (
         patch("streamlit.session_state", {"show_tour": True}),
@@ -411,7 +436,7 @@ def dismiss_tour():
 
 
 @when("I load the Streamlit page")
-def load_streamlit_page(bdd_context):
+def load_streamlit_page(bdd_context: BehaviorContext) -> None:
     with (
         patch("streamlit.markdown") as mock_markdown,
         patch("streamlit.session_state", {}),
@@ -421,9 +446,11 @@ def load_streamlit_page(bdd_context):
 
         importlib.reload(app)
 
-        bdd_context["markdown_calls"] = [c.args[0] for c in mock_markdown.call_args_list]
+        calls = [call.args[0] for call in mock_markdown.call_args_list if call.args]
+        set_value(bdd_context, "markdown_calls", calls)
 
 
 @then("a skip to main content link should be present")
-def check_skip_link(bdd_context):
-    assert any("skip-link" in call for call in bdd_context.get("markdown_calls", []))
+def check_skip_link(bdd_context: BehaviorContext) -> None:
+    markdown_calls = cast(list[str], get_optional(bdd_context, "markdown_calls", list))
+    assert any("skip-link" in call for call in markdown_calls)
