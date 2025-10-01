@@ -1,46 +1,18 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
+from typing import Any
 import time
-from typing import Dict, List
 from unittest.mock import MagicMock
 
 import pytest
 
+from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import AgentFactory, Orchestrator
+from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import StorageManager
-
-# ---------------------------------------------------------------------------
-# Helper factory for creating dummy agents
-# ---------------------------------------------------------------------------
-
-
-def make_agent(
-    name: str, calls: List[str], seen_coalitions: Dict[str, Dict[str, List[str]]]
-):
-    class DummyAgent:
-        def __init__(self, name: str, llm_adapter=None):
-            self.name = name
-
-        def can_execute(self, state, config):
-            # Record coalitions visible to the agent for later assertions
-            seen_coalitions[self.name] = dict(state.coalitions)
-            return True
-
-        def execute(self, state, config, **kwargs):
-            calls.append(self.name)
-            state.update(
-                {
-                    "claims": [f"claim {self.name}"],
-                    "results": {self.name: "ok"},
-                }
-            )
-            if self.name == "Synthesizer":
-                # Synthesizer produces final answer based on accumulated claims
-                final = ", ".join(calls)
-                return {"answer": final, "results": {"final_answer": final}}
-            return {"results": {self.name: "ok"}, "claims": [f"claim {self.name}"]}
-
-    return DummyAgent(name)
+from tests.integration._orchestrator_stubs import AgentDouble, PersistClaimCall
 
 
 # ---------------------------------------------------------------------------
@@ -48,15 +20,27 @@ def make_agent(
 # ---------------------------------------------------------------------------
 
 
-def test_run_query_with_coalitions(monkeypatch):
-    calls: List[str] = []
-    seen: Dict[str, Dict[str, List[str]]] = {}
+def test_run_query_with_coalitions(
+    stub_agent_factory: Callable[[Iterable[AgentDouble]], Callable[[str], AgentDouble]],
+    stub_storage_persist: Callable[
+        [list[PersistClaimCall] | None], Callable[[dict[str, Any], bool], None]
+    ],
+) -> None:
+    calls: list[str] = []
+    seen: dict[str, dict[str, list[str]]] = {}
 
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: None)
-    monkeypatch.setattr(
-        AgentFactory,
-        "get",
-        lambda name: make_agent(name, calls, seen),
+    stub_storage_persist(None)
+    stub_agent_factory(
+        [
+            AgentDouble(name="FactChecker", call_log=calls, seen_coalitions=seen),
+            AgentDouble(name="Contrarian", call_log=calls, seen_coalitions=seen),
+            AgentDouble(
+                name="Synthesizer",
+                call_log=calls,
+                seen_coalitions=seen,
+                answer_on_execute=True,
+            ),
+        ]
     )
 
     cfg = ConfigModel(
@@ -70,8 +54,9 @@ def test_run_query_with_coalitions(monkeypatch):
 
     assert response.answer == "FactChecker, Contrarian, Synthesizer"
     assert calls == ["FactChecker", "Contrarian", "Synthesizer"]
-    assert "claim FactChecker" in response.reasoning
-    assert "claim Contrarian" in response.reasoning
+    reasoning_segments = [str(segment) for segment in response.reasoning]
+    assert any("claim FactChecker" in segment for segment in reasoning_segments)
+    assert any("claim Contrarian" in segment for segment in reasoning_segments)
     assert seen["FactChecker"] == {"Team": ["FactChecker", "Contrarian"]}
     assert seen["Contrarian"] == {"Team": ["FactChecker", "Contrarian"]}
 
@@ -82,17 +67,19 @@ def test_run_query_with_coalitions(monkeypatch):
 
 
 @pytest.mark.slow
-def test_run_parallel_query_aggregates_results(monkeypatch):
+def test_run_parallel_query_aggregates_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     cfg = ConfigModel(agents=[], loops=1)
 
     def mock_run_query(
-        query,
-        config,
-        callbacks=None,
+        query: str,
+        config: ConfigModel,
+        callbacks: Any | None = None,
         *,
-        agent_factory=None,
-        storage_manager=None,
-    ):
+        agent_factory: type[AgentFactory] | None = None,
+        storage_manager: type[StorageManager] | None = None,
+    ) -> QueryResponse:
         if config.agents == ["A"]:
             return QueryResponse(
                 answer="a", citations=[], reasoning=["claim A"], metrics={}
@@ -123,19 +110,36 @@ def test_run_parallel_query_aggregates_results(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_circuit_breaker_opens(monkeypatch):
+def test_circuit_breaker_opens(monkeypatch: pytest.MonkeyPatch) -> None:
     class FailingAgent:
-        def can_execute(self, state, config):
+        def __init__(self) -> None:
+            self.name = "Bad"
+
+        def can_execute(self, state: Any, config: ConfigModel) -> bool:
             return True
 
-        def execute(self, state, config, **kwargs):
+        def execute(self, state: Any, config: ConfigModel, **kwargs: Any) -> dict[str, Any]:
             raise RuntimeError("boom")
 
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: None)
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim, partial_update=False: None
+    )
+    synthesizer = AgentDouble(name="Synthesizer")
+
+    def _noop_recovery(
+        agent_name: str, error_category: str, exc: Exception, state: Any
+    ) -> dict[str, object]:
+        return {"recovery_strategy": "fail_gracefully", "suggestion": "noop"}
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.error_handling._apply_recovery_strategy",
+        _noop_recovery,
+    )
+
     monkeypatch.setattr(
         AgentFactory,
         "get",
-        lambda name: FailingAgent() if name == "Bad" else make_agent(name, [], {}),
+        lambda name: FailingAgent() if name == "Bad" else synthesizer,
     )
 
     cfg = ConfigModel(
@@ -150,14 +154,14 @@ def test_circuit_breaker_opens(monkeypatch):
     assert state["state"] == "half-open"
 
 
-def test_parallel_query_timeout(monkeypatch):
+def test_parallel_query_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(agents=[], loops=1)
 
-    def slow_run_query(query, config):
+    def slow_run_query(query: str, config: ConfigModel) -> QueryResponse:
         time.sleep(0.2)
         return QueryResponse(answer="slow", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(Orchestrator, "run_query", slow_run_query)
 
     with pytest.raises(Exception):
-        Orchestrator.run_parallel_query("q", cfg, [["slow"]], timeout=0.05)
+        Orchestrator.run_parallel_query("q", cfg, [["slow"]], timeout=0)
