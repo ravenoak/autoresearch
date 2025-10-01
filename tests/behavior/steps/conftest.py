@@ -1,15 +1,47 @@
+"""Shared fixtures for behavior step modules."""
+
+from __future__ import annotations
+
 import pytest
 
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from tests.behavior.context import (
+    BehaviorContext,
+    get_config,
+    get_orchestrator,
+    set_value,
+)
+from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture(autouse=True)
-def orchestrator_runner(monkeypatch):
-    """Ensure step definitions use a fresh Orchestrator per invocation."""
-    orig_run_query = Orchestrator.run_query
+def orchestrator_context(
+    bdd_context: BehaviorContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[None]:
+    """Provide a shared orchestrator and baseline config for step implementations."""
 
-    def run_query_wrapper(query, config, callbacks=None, **kwargs):
-        return orig_run_query(Orchestrator(), query, config, callbacks, **kwargs)
+    orchestrator = Orchestrator()
+    config = ConfigModel()
+    set_value(bdd_context, "orchestrator", orchestrator)
+    set_value(bdd_context, "config", config)
+
+    # Assert the context exposes typed instances before any steps execute.
+    assert get_orchestrator(bdd_context) is orchestrator
+    assert get_config(bdd_context) is config
+
+    original_run_query = Orchestrator.run_query
+
+    def run_query_wrapper(
+        query: str,
+        config_model: ConfigModel,
+        callbacks: object | None = None,
+        **kwargs,
+    ) -> object:
+        return original_run_query(orchestrator, query, config_model, callbacks, **kwargs)
 
     monkeypatch.setattr(Orchestrator, "run_query", staticmethod(run_query_wrapper))
-    monkeypatch.setattr(Orchestrator, "_orig_run_query", orig_run_query, raising=False)
+    monkeypatch.setattr(Orchestrator, "_orig_run_query", original_run_query, raising=False)
+    yield None
+    return None
