@@ -7,7 +7,12 @@ cost-aware routing. Execution requires coordinated scheduling across existing
 roadmap milestones, documentation updates, and telemetry tracking. Phase 1 is
 now complete; the release sweep and deep research plan confirm the gate and
 audit telemetry ship in the alpha pipeline while later phases remain in flight.
-【F:docs/deep_research_upgrade_plan.md†L19-L34】【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+The **October 1, 2025** strict and coverage reruns narrow the remaining debt to
+typed evaluation fixtures and the `_thread.RLock` registry clone, keeping the
+planner and GraphRAG dependencies explicit while Phase 2 spins up.
+【F:docs/deep_research_upgrade_plan.md†L27-L58】
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)

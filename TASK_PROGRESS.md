@@ -1,5 +1,22 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-10-01** at 14:39 UTC the repo-wide `uv run mypy --strict src tests`
+sweep surfaces 2,114 errors across 211 files, concentrating the remaining strict
+backlog inside analysis, integration, and behavior fixtures. The log confirms
+strict mode now runs end-to-end with the new stubs, so the next milestone is
+threading the widened `EvaluationSummary` signature through those fixtures.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+
+As of **2025-10-01** at 14:40 UTC `uv run task coverage` (with non-GPU extras)
+reaches the unit suite before `QueryStateRegistry.register` replays the
+`_thread.RLock` cloning error in
+`tests/unit/orchestration/test_orchestrator_auto_mode.py::`
+`test_auto_mode_escalates_to_debate_when_gate_requires_loops`. The coverage gate
+therefore remains at the previously recorded 92.4 % evidence, and the TestPyPI
+dry run stays deferred until the registry clone adopts the typed handoff
+captured in the strict backlog above.
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
 As of **2025-09-30** at 14:55 UTC the strict `task verify` sweep reaches
 `mypy --strict` before stopping on 118 untyped fixtures and the
 `EvaluationSummary` constructor, which now expects planner depth and routing

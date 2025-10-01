@@ -5,6 +5,20 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
+As of **October 1, 2025** the repo-wide strict gate still fails: a **14:39 UTC**
+`uv run mypy --strict src tests` sweep reports 2,114 errors across 211 files,
+with the remaining debt clustered in analysis, integration, and behavior
+fixtures that have yet to adopt the expanded `EvaluationSummary` fields. The
+paired **14:40 UTC** `uv run task coverage` run (all non-GPU extras) reaches the
+unit suite before `QueryStateRegistry.register` hits the `_thread.RLock`
+cloning failure in `test_auto_mode_escalates_to_debate_when_gate_requires_`
+`loops`,
+so coverage evidence still leans on the prior 92.4 % log while we wire the typed
+registry hand-off. TestPyPI remains deferred under the alpha directive until the
+coverage gate turns green again.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
 As of **September 30, 2025**, Autoresearch still targets an **0.1.0a1** preview
 on **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
 The strict gate is red again: the **14:55 UTC** `task verify` sweep reaches

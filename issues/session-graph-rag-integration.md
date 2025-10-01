@@ -35,9 +35,11 @@ artifacts plus contradiction signals to the orchestrator.
   the **14:55 UTC** `task verify` strict-typing failure and coverage backlog.
 - [x] Align PRDV telemetry docs (performance and pseudocode) with the expanded
   `EvaluationSummary` fields needed for GraphRAG exports.
-- [ ] Resume GraphRAG work after
-  `baseline/logs/task-verify-20250930T145541Z.log` no longer reports the strict
-  typing backlog and the 92.4 % coverage sweep is reproducible.
+- [ ] Resume GraphRAG work after the **October 1, 2025** strict and coverage
+  sweeps show the `_thread.RLock` registry clone and typed `EvaluationSummary`
+  fixtures are passing so the 92.4 % coverage run can repeat.
+  【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+  【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 ## Status
 Open

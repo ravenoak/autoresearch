@@ -19,14 +19,13 @@ keep truthfulness, verifiability, and cost discipline in balance.
 
 ## Phase Breakdown
 
-Phase 2 and beyond are paused until the strict typing backlog and evaluation
-coverage regression logged in the **September 30, 2025 at 14:55 UTC** `task
-verify` run are cleared. Planner upgrades and GraphRAG expansion will restart
-only after the tests adopt the widened `EvaluationSummary` signature and the
-coverage sweep re-establishes the 92.4 % baseline.
-【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
-【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
-【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+Phase 1 is complete, and the **October 1, 2025** strict and coverage sweeps
+confirm the remaining blockers sit inside typed evaluation fixtures and the
+`QueryStateRegistry.register` clone. Planner upgrades and GraphRAG expansion now
+proceed once the `_thread.RLock` handling and `EvaluationSummary` signature land,
+with the new logs capturing the narrowed scope of work.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 1. **Phase 1 – Adaptive Gate and Claim Audits**
    - Implement the scout pass and gating heuristics with clear metrics.
@@ -72,13 +71,11 @@ coverage sweep re-establishes the 92.4 % baseline.
    - **Acceptance criteria:** Ship typed planner graphs with audited ReAct
      traces, coordinator scheduling that honors affinity tie-breakers, and
      regression coverage that locks telemetry formats before expanding scope.
-   - **Prerequisite:** Unblocked. The strict typing backlog and evaluation
-     harness regression cited in the **14:55 UTC** log are now guarded by the
-     registry cloning tests and strict typing helpers, so planner work can
-     resume.
-     【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
-     【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
-     【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+   - **Prerequisite:** Target the `_thread.RLock` clone and typed
+     `EvaluationSummary` fixtures highlighted in the **October 1, 2025** strict
+     and coverage sweeps so planner work builds atop a green gate.
+     【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+     【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
      【F:src/autoresearch/orchestration/state_registry.py†L1-L115】
      【F:tests/unit/orchestration/test_state_registry.py†L1-L112】
 3. **Phase 3 – Graph-Augmented Retrieval**

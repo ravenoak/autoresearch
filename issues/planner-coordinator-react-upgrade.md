@@ -29,9 +29,11 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
   **14:55 UTC** `task verify` failures clear.
 - [x] Update `docs/pseudocode.md` with the PRDV verification loop and expanded
   `EvaluationSummary` fields to align planner telemetry with verification docs.
-- [ ] Resume implementation after clearing
-  `baseline/logs/task-verify-20250930T145541Z.log` and restoring the 92.4 %
-  coverage sweep.
+- [ ] Resume implementation after the **October 1, 2025** strict and coverage
+  sweeps confirm the `_thread.RLock` clone and typed `EvaluationSummary`
+  fixtures are green again.
+  【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+  【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 ## Status
 Open
