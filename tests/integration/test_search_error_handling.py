@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import pytest
 import requests
 
-from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import TimeoutError
+from autoresearch.search import Search
 
 
-def test_external_lookup_timeout_integration(monkeypatch):
+def test_external_lookup_timeout_integration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify timeout exceptions propagate through integration layer."""
-    def timeout_backend(query, max_results=5):
+
+    def timeout_backend(query: str, max_results: int = 5) -> list[dict[str, object]]:
         raise requests.exceptions.Timeout("slow")
 
     monkeypatch.setitem(Search.backends, "timeout", timeout_backend)
