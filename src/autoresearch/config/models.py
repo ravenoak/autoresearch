@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, ClassVar, Dict, List, Mapping, Optional, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Self
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic.functional_validators import model_validator
@@ -458,6 +458,15 @@ class ConfigModel(BaseModel):
         default=False,
         description="Allow agents to exchange messages during cycles",
     )
+
+    if TYPE_CHECKING:  # pragma: no cover - typing helper for mypy
+        def model_copy(
+            self,
+            *,
+            update: Mapping[str, Any] | None = ...,  # noqa: D401 - typing stub
+            deep: bool | None = ...,
+        ) -> "ConfigModel":
+            """Return a copy of the configuration model."""
     enable_feedback: bool = Field(
         default=False,
         description="Enable cross-agent feedback messages",

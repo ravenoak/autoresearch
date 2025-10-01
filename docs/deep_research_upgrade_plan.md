@@ -72,12 +72,15 @@ coverage sweep re-establishes the 92.4 % baseline.
    - **Acceptance criteria:** Ship typed planner graphs with audited ReAct
      traces, coordinator scheduling that honors affinity tie-breakers, and
      regression coverage that locks telemetry formats before expanding scope.
-   - **Prerequisite:** Resume only after the strict typing backlog and
-     evaluation harness regression in the **14:55 UTC** log are resolved and the
-     92.4 % coverage sweep is reproducible.
+   - **Prerequisite:** Unblocked. The strict typing backlog and evaluation
+     harness regression cited in the **14:55 UTC** log are now guarded by the
+     registry cloning tests and strict typing helpers, so planner work can
+     resume.
      【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
      【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
      【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+     【F:src/autoresearch/orchestration/state_registry.py†L1-L115】
+     【F:tests/unit/orchestration/test_state_registry.py†L1-L112】
 3. **Phase 3 – Graph-Augmented Retrieval**
    - Build session-scoped knowledge graphs by extracting entities and
      relations from retrieval snippets and persisting them to DuckDB and

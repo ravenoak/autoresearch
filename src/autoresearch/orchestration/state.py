@@ -469,6 +469,15 @@ class QueryState(BaseModel):
 
     _lock: PrivateLockAttr = cast(PrivateLockAttr, PrivateAttr(default_factory=RLock))
 
+    if TYPE_CHECKING:  # pragma: no cover - typing helper for mypy
+        def model_copy(
+            self,
+            *,
+            update: Mapping[str, Any] | None = ...,  # noqa: D401 - typing stub
+            deep: bool | None = ...,
+        ) -> "QueryState":
+            """Return a copy of the state."""
+
     def model_post_init(self, __context: Any) -> None:
         """Ensure synchronization primitives survive model cloning."""
         super().model_post_init(__context)
