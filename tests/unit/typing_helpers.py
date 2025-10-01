@@ -140,7 +140,12 @@ def build_summary_fixture(
     summary_csv: Path | None = None,
     **overrides: Any,
 ) -> EvaluationSummary:
-    """Construct a populated :class:`EvaluationSummary` for tests."""
+    """Construct a populated :class:`EvaluationSummary` for tests.
+
+    The helper sets planner and routing metrics introduced on
+    :class:`autoresearch.evaluation.harness.ExampleResult` so callers only
+    override fields under test.
+    """
 
     started = started_at or datetime.now(tz=timezone.utc)
     completed = completed_at or started
