@@ -6,13 +6,21 @@ import json
 import time
 from multiprocessing import Process, Queue
 from pathlib import Path
+from typing import TypedDict
 
 from prometheus_client import CollectorRegistry
 
 from autoresearch.resource_monitor import ResourceMonitor
 
 
-def _worker(duration: float, queue: Queue) -> None:
+class ResourceMetrics(TypedDict):
+    """CPU and memory metrics captured from the monitor."""
+
+    cpu_percent: float
+    memory_mb: float
+
+
+def _worker(duration: float, queue: Queue[float]) -> None:
     """Busy loop to simulate work for ``duration`` seconds."""
     start = time.time()
     while time.time() - start < duration:
@@ -20,7 +28,7 @@ def _worker(duration: float, queue: Queue) -> None:
     queue.put(time.time() - start)
 
 
-def simulate(node_count: int = 1, duration: float = 0.5) -> dict[str, float]:
+def simulate(node_count: int = 1, duration: float = 0.5) -> ResourceMetrics:
     """Run workers and capture CPU and memory metrics."""
     registry = CollectorRegistry()
     monitor = ResourceMonitor(interval=0.05, registry=registry)
@@ -38,15 +46,15 @@ def simulate(node_count: int = 1, duration: float = 0.5) -> dict[str, float]:
         monitor.stop()
         cpu = float(monitor.cpu_gauge._value.get())
         mem = float(monitor.mem_gauge._value.get())
-        return {"cpu_percent": cpu, "memory_mb": mem}
+        return ResourceMetrics(cpu_percent=cpu, memory_mb=mem)
     finally:
         queue.close()
         queue.join_thread()
 
 
-def run() -> dict[int, dict[str, float]]:
+def run() -> dict[int, ResourceMetrics]:
     """Execute simulations for 1, 2, and 4 nodes."""
-    results: dict[int, dict[str, float]] = {}
+    results: dict[int, ResourceMetrics] = {}
     for count in (1, 2, 4):
         results[count] = simulate(node_count=count)
     out_path = Path(__file__).with_name("distributed_metrics.json")

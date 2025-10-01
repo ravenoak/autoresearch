@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 
 def throughput_model(arrival_rate: float, service_rate: float, workers: int) -> float:
@@ -12,6 +13,32 @@ def throughput_model(arrival_rate: float, service_rate: float, workers: int) -> 
         raise ValueError("parameters must be positive")
     capacity = workers * service_rate
     return arrival_rate if arrival_rate < capacity else capacity
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Protocol
+
+    class Axes(Protocol):
+        """Subset of matplotlib ``Axes`` used for plotting."""
+
+        def plot(self, x: Sequence[float], y: Sequence[float], **kwargs: object) -> object:
+            ...
+
+        def set_xlabel(self, label: str) -> None:
+            ...
+
+        def set_ylabel(self, label: str) -> None:
+            ...
+
+        def set_title(self, label: str) -> None:
+            ...
+
+    class Figure(Protocol):
+        """Subset of matplotlib ``Figure`` used for persistence."""
+
+        def savefig(self, fname: str | Path, **kwargs: object) -> None:
+            ...
 
 
 def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float]:
@@ -24,17 +51,18 @@ def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float
         import matplotlib
 
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-
+        from matplotlib import pyplot as plt
         xs = sorted(results)
         ys = [results[w] for w in xs]
-        plt.figure()
-        plt.plot(xs, ys, marker="o")
-        plt.xlabel("workers")
-        plt.ylabel("tasks/sec")
-        plt.title("Estimated throughput")
-        plt.savefig(out_dir / "agent_throughput.svg", format="svg")
-        plt.close()
+        fig_obj, ax_obj = plt.subplots()
+        fig = cast("Figure", fig_obj)
+        ax = cast("Axes", ax_obj)
+        ax.plot(xs, ys, marker="o")
+        ax.set_xlabel("workers")
+        ax.set_ylabel("tasks/sec")
+        ax.set_title("Estimated throughput")
+        fig.savefig(out_dir / "agent_throughput.svg", format="svg")
+        plt.close(fig)
     except Exception:  # pragma: no cover
         pass
     return results

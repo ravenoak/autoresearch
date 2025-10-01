@@ -1,13 +1,47 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
+import multiprocessing
 import pytest
 
 from autoresearch.distributed import coordinator as dist_coordinator
+from autoresearch.config.models import ConfigModel
+from multiprocessing.managers import ListProxy
+
+from autoresearch.distributed.broker import AgentResultMessage
 
 from tests.analysis.distributed_coordination_analysis import run
+
+
+class StubBroker:
+    """Lightweight broker capturing published messages."""
+
+    def __init__(self, label: str | None) -> None:
+        self.label = label or "memory"
+        self.queue = SimpleNamespace(label=f"{self.label}-queue")
+        self.published: list[dict[str, Any]] = []
+
+    def publish(self, message: dict[str, Any]) -> None:
+        self.published.append(message)
+
+
+class RecordedEvent:
+    """Simple stand-in for :class:`multiprocessing.Event`."""
+
+    def __init__(self) -> None:
+        self.set_calls = 0
+        self.wait_calls = 0
+
+    def set(self) -> None:  # pragma: no cover - behaviour inspected via counters
+        self.set_calls += 1
+
+    def wait(self) -> bool:
+        self.wait_calls += 1
+        return True
+
+
 
 
 @pytest.fixture
@@ -21,19 +55,10 @@ def stub_config() -> SimpleNamespace:
 
 
 @pytest.fixture
-def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
+def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> list[StubBroker]:
     """Provide deterministic broker instances for coordinator orchestration."""
 
     created: list[StubBroker] = []
-
-    class StubBroker:
-        def __init__(self, label: str | None) -> None:
-            self.label = label or "memory"
-            self.queue = SimpleNamespace(label=f"{self.label}-queue")
-            self.published: list[dict[str, Any]] = []
-
-        def publish(self, message: dict[str, Any]) -> None:
-            self.published.append(message)
 
     def fake_get_message_broker(name: str | None, url: str | None = None) -> StubBroker:
         broker = StubBroker(name)
@@ -45,37 +70,30 @@ def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
 
 
 @pytest.fixture
-def fake_events(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
+def fake_events(monkeypatch: pytest.MonkeyPatch) -> list[RecordedEvent]:
     """Replace :func:`multiprocessing.Event` with an in-memory stub."""
 
-    created: list[FakeEvent] = []
+    created: list[RecordedEvent] = []
 
-    class FakeEvent:
-        def __init__(self) -> None:
-            self.set_calls = 0
-            self.wait_calls = 0
-            created.append(self)
+    def factory(*_: Any, **__: Any) -> RecordedEvent:
+        event = RecordedEvent()
+        created.append(event)
+        return event
 
-        def set(self) -> None:  # pragma: no cover - not exercised in orchestration path
-            self.set_calls += 1
-
-        def wait(self) -> None:
-            self.wait_calls += 1
-
-    monkeypatch.setattr(dist_coordinator.multiprocessing, "Event", FakeEvent)
+    module_multiprocessing = cast(Any, dist_coordinator).multiprocessing
+    monkeypatch.setattr(module_multiprocessing, "Event", factory)
     return created
 
 
 @pytest.fixture
 def fake_storage_coordinators(
     monkeypatch: pytest.MonkeyPatch,
-) -> list[Any]:
+) -> list[dist_coordinator.StorageCoordinator]:
     """Patch :class:`StorageCoordinator` with a lightweight spy."""
 
-    created: list[Any] = []
-    original_cls: type[dist_coordinator.StorageCoordinator] = dist_coordinator.StorageCoordinator
+    created: list[dist_coordinator.StorageCoordinator] = []
 
-    class RecordingStorageCoordinator(original_cls):
+    class RecordingStorageCoordinator(dist_coordinator.StorageCoordinator):
         def __init__(self, queue: Any, db_path: str, ready_event: Any) -> None:
             super().__init__(queue, db_path, ready_event)
             self.start_calls = 0
@@ -91,37 +109,18 @@ def fake_storage_coordinators(
 
 
 @pytest.fixture
-def fake_manager(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
-    """Replace :func:`multiprocessing.Manager` with an in-memory stub."""
-
-    instances: list[Any] = []
-
-    class FakeManager:
-        def __init__(self) -> None:
-            self.created_lists: list[list[Any]] = []
-            instances.append(self)
-
-        def list(self) -> list[Any]:
-            result: list[Any] = []
-            self.created_lists.append(result)
-            return result
-
-    monkeypatch.setattr(dist_coordinator.multiprocessing, "Manager", FakeManager)
-    return instances
-
-
-@pytest.fixture
 def fake_result_aggregators(
     monkeypatch: pytest.MonkeyPatch,
-) -> list[Any]:
+) -> list[dist_coordinator.ResultAggregator]:
     """Patch :class:`ResultAggregator` with a lightweight spy."""
 
-    created: list[Any] = []
-    original_cls: type[dist_coordinator.ResultAggregator] = dist_coordinator.ResultAggregator
+    created: list[dist_coordinator.ResultAggregator] = []
 
-    class RecordingResultAggregator(original_cls):
+    class RecordingResultAggregator(dist_coordinator.ResultAggregator):
         def __init__(self, queue: Any) -> None:
-            super().__init__(queue)
+            multiprocessing.Process.__init__(self, daemon=True)
+            self._queue = queue
+            self.results = cast("ListProxy[AgentResultMessage]", [])
             self.start_calls = 0
             created.append(self)
 
@@ -140,15 +139,16 @@ def test_distributed_coordination_metrics() -> None:
 
 def test_distributed_coordinator_orchestration(
     stub_config: SimpleNamespace,
-    stub_brokers: list[Any],
-    fake_events: list[Any],
-    fake_manager: list[Any],
-    fake_storage_coordinators: list[Any],
-    fake_result_aggregators: list[Any],
+    stub_brokers: list[StubBroker],
+    fake_events: list[RecordedEvent],
+    fake_storage_coordinators: list[dist_coordinator.StorageCoordinator],
+    fake_result_aggregators: list[dist_coordinator.ResultAggregator],
 ) -> None:
     """Coordinator helpers publish claims and start background workers."""
 
-    coordinator_proc, broker = dist_coordinator.start_storage_coordinator(stub_config)
+    config = cast(ConfigModel, stub_config)
+    coordinator_proc, broker = dist_coordinator.start_storage_coordinator(config)
+    assert isinstance(broker, StubBroker)
     assert fake_storage_coordinators, "StorageCoordinator should be instantiated"
     coordinator_instance = fake_storage_coordinators[0]
     assert coordinator_proc is coordinator_instance
@@ -165,12 +165,11 @@ def test_distributed_coordinator_orchestration(
         {"action": "persist_claim", "claim": claim, "partial_update": True}
     ]
 
-    aggregator_proc, aggregator_broker = dist_coordinator.start_result_aggregator(
-        stub_config
-    )
+    aggregator_proc, aggregator_broker = dist_coordinator.start_result_aggregator(config)
     assert fake_result_aggregators, "ResultAggregator should be instantiated"
     aggregator_instance = fake_result_aggregators[0]
     assert aggregator_proc is aggregator_instance
+    assert isinstance(aggregator_broker, StubBroker)
     assert aggregator_instance._queue is aggregator_broker.queue
     assert aggregator_instance.start_calls == 1
 

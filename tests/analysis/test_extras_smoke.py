@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from tests.optional_imports import import_or_skip
@@ -34,7 +36,7 @@ def test_duckdb_vss_extension() -> None:
 
 
 @pytest.mark.requires_git
-def test_git_repo_commit(tmp_path) -> None:
+def test_git_repo_commit(tmp_path: Path) -> None:
     """Git extra allows committing to a repository."""
     git = import_or_skip("git")
     repo = git.Repo.init(tmp_path)
@@ -70,7 +72,7 @@ def test_sentence_transformers_available() -> None:
 
 
 @pytest.mark.requires_parsers
-def test_docx_roundtrip(tmp_path) -> None:
+def test_docx_roundtrip(tmp_path: Path) -> None:
     """Parsers extra enables docx support."""
     docx = import_or_skip("docx")
     doc = docx.Document()

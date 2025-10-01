@@ -3,11 +3,12 @@
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from types import ModuleType
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
 
-def _load_module(name: str, path: Path):
+def _load_module(name: str, path: Path) -> ModuleType:
     spec = spec_from_file_location(name, path)
     if spec and spec.loader:
         module = module_from_spec(spec)

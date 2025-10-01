@@ -5,9 +5,18 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
+from typing import NotRequired, TypedDict
 
 
-def rank_results(results: list[dict]) -> list[dict]:
+class ResultEntry(TypedDict):
+    """Typed structure for ranking entries."""
+
+    title: str
+    url: str
+    relevance_score: NotRequired[float]
+
+
+def rank_results(results: list[ResultEntry]) -> list[ResultEntry]:
     """Attach identical scores and sort descending, preserving input order."""
     for r in results:
         r["relevance_score"] = 1.0
@@ -18,7 +27,7 @@ def simulate(trials: int = 100, items: int = 5) -> dict[str, float]:
     """Shuffle results and measure order preservation after ranking."""
     stable = 0
     for _ in range(trials):
-        results = [
+        results: list[ResultEntry] = [
             {"title": str(i), "url": f"https://example.com/{i}"} for i in range(items)
         ]
         random.shuffle(results)

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+from typing import cast
 
 import rdflib
 
@@ -17,7 +18,7 @@ def _gen_graph(n: int) -> rdflib.Graph:
         s = rdflib.URIRef(f"urn:s{i}")
         p = rdflib.URIRef("urn:p")
         o = rdflib.URIRef(f"urn:o{i}")
-        g.add((s, p, o))
+        g.add(cast(tuple[rdflib.term.Node, rdflib.term.Node, rdflib.term.Node], (s, p, o)))
     return g
 
 

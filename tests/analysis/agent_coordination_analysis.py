@@ -8,9 +8,13 @@ from multiprocessing import Process, Value
 from multiprocessing.sharedctypes import Synchronized
 from multiprocessing.synchronize import Lock as SyncLock
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 
-CounterValue = Synchronized[int]
+if TYPE_CHECKING:
+    CounterValue = Synchronized[int]
+else:  # pragma: no cover - runtime fallback
+    CounterValue = Synchronized
 
 
 def _worker(counter: CounterValue, lock: SyncLock, increments: int) -> None:
@@ -22,7 +26,7 @@ def _worker(counter: CounterValue, lock: SyncLock, increments: int) -> None:
 
 def simulate(workers: int = 4, increments: int = 1000) -> dict[str, int | bool]:
     """Run workers and validate the final counter value."""
-    counter: CounterValue = Value("i", 0)
+    counter = cast(CounterValue, Value("i", 0))
     lock: SyncLock = create_lock()
     procs = [Process(target=_worker, args=(counter, lock, increments)) for _ in range(workers)]
     for p in procs:
