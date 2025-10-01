@@ -6,7 +6,7 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
 def test_record_and_regression(tmp_path: Path) -> None:
-    metrics = OrchestrationMetrics()
+    metrics: OrchestrationMetrics = OrchestrationMetrics()
     metrics.record_tokens("A", 2, 3)
     metrics.record_tokens("B", 1, 1)
 
@@ -17,7 +17,7 @@ def test_record_and_regression(tmp_path: Path) -> None:
     baseline_path.write_text(json.dumps({"q": 5}))
 
     metrics.record_query_tokens("q", metrics_path)
-    saved = cast(dict[str, int], json.loads(metrics_path.read_text()))
+    saved: dict[str, int] = cast(dict[str, int], json.loads(metrics_path.read_text()))
     assert saved["q"] == 7
 
     assert metrics.check_query_regression("q", baseline_path) is True
