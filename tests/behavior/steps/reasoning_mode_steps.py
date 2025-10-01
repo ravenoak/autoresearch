@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from unittest.mock import patch
+from __future__ import annotations
 
 import json
+from typing import Any, Mapping, cast
+from unittest.mock import patch
 
+import pytest
 from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
@@ -11,6 +14,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError, NotFoundError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.coordinator import TaskCoordinator
+from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.orchestration_utils import (
     OrchestrationUtils,
@@ -18,36 +22,42 @@ from autoresearch.orchestration.orchestration_utils import (
 )
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.task_graph import TaskGraph, TaskNode
+from tests.behavior.context import (
+    BehaviorContext,
+    get_config,
+    get_orchestrator,
+    set_value,
+)
 
 
 @scenario("../features/reasoning_mode.feature", "Direct mode runs Synthesizer only")
-def test_direct_mode():
-    pass
+def test_direct_mode() -> None:
+    """Scenario placeholder for direct mode execution."""
 
 
 @scenario("../features/reasoning_mode.feature", "Default reasoning mode is dialectical")
-def test_default_mode():
-    pass
+def test_default_mode() -> None:
+    """Scenario placeholder for default dialectical mode."""
 
 
 @scenario("../features/reasoning_mode.feature", "Chain-of-thought mode loops Synthesizer")
-def test_chain_of_thought_mode():
-    pass
+def test_chain_of_thought_mode() -> None:
+    """Scenario placeholder for chain-of-thought mode."""
 
 
 @scenario("../features/reasoning_mode.feature", "Dialectical mode with custom Primus start")
-def test_dialectical_custom_primus():
-    pass
+def test_dialectical_custom_primus() -> None:
+    """Scenario placeholder for custom Primus start."""
 
 
 @scenario("../features/reasoning_mode.feature", "Dialectical reasoning with a realistic query")
-def test_dialectical_real_query():
-    pass
+def test_dialectical_real_query() -> None:
+    """Scenario placeholder for dialectical reasoning on realistic query."""
 
 
 @scenario("../features/reasoning_mode.feature", "Direct reasoning with a realistic query")
-def test_direct_real_query():
-    pass
+def test_direct_real_query() -> None:
+    """Scenario placeholder for direct mode with realistic query."""
 
 
 @scenario(
@@ -55,67 +65,67 @@ def test_direct_real_query():
     "Chain-of-thought reasoning with a realistic query",
 )
 def test_cot_real_query():
-    pass
+    """Scenario placeholder for chain-of-thought realistic query."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Unsupported reasoning mode fails gracefully",
 )
-def test_unsupported_mode():
-    pass
+def test_unsupported_mode() -> None:
+    """Scenario placeholder for unsupported reasoning mode."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Planner research debate validate telemetry",
 )
-def test_prdv_telemetry():
-    pass
+def test_prdv_telemetry() -> None:
+    """Scenario placeholder for PRDV telemetry."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Reverification broadens claim audits",
 )
-def test_reverify_claim_audits():
-    pass
+def test_reverify_claim_audits() -> None:
+    """Scenario placeholder for reverify claim audits."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Direct mode agent failure triggers fallback",
 )
-def test_direct_failure():
-    pass
+def test_direct_failure() -> None:
+    """Scenario placeholder for direct mode failure recovery."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Chain-of-thought mode agent failure triggers fallback",
 )
-def test_cot_failure():
-    pass
+def test_cot_failure() -> None:
+    """Scenario placeholder for chain-of-thought failure recovery."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Dialectical mode agent failure triggers fallback",
 )
-def test_dialectical_failure():
-    pass
+def test_dialectical_failure() -> None:
+    """Scenario placeholder for dialectical failure recovery."""
 
 
 @scenario(
     "../features/reasoning_mode.feature",
     "Loop overflow triggers recovery",
 )
-def test_loop_overflow():
-    pass
+def test_loop_overflow() -> None:
+    """Scenario placeholder for loop overflow handling."""
 
 
 @when("I simulate a PRDV planner flow", target_fixture="prdv_context")
-def simulate_prdv_planner_flow():
+def simulate_prdv_planner_flow() -> dict[str, Any]:
     state = QueryState(query="planner telemetry")
     graph = TaskGraph(
         tasks=[
@@ -147,15 +157,17 @@ def simulate_prdv_planner_flow():
         ],
         metadata={"mode": "prdv"},
     )
-    payload = graph.to_payload()
-    payload["tasks"][1]["affinity"]["search"] = "strong"
+    payload = cast(dict[str, Any], graph.to_payload())
+    tasks = cast(list[dict[str, Any]], payload["tasks"])
+    affinity = cast(dict[str, Any], tasks[1].get("affinity", {}))
+    affinity["search"] = "strong"
     payload["objectives"] = ["Deliver planner-coordinator telemetry"]
     payload["exit_criteria"] = ["All phases recorded"]
     payload["explanation"] = "Ensure telemetry demonstrates readiness ordering"
-    payload["tasks"][0]["tool_affinity"] = payload["tasks"][0].get("affinity", {})
-    payload["tasks"][0]["objectives"] = payload["tasks"][0].get("sub_questions", [])
-    payload["tasks"][1]["tool_affinity"] = payload["tasks"][1].get("affinity", {})
-    payload["tasks"][1]["exit_criteria"] = payload["tasks"][1].get("criteria", [])
+    tasks[0]["tool_affinity"] = cast(dict[str, Any], tasks[0].get("affinity", {}))
+    tasks[0]["objectives"] = list(tasks[0].get("sub_questions", []))
+    tasks[1]["tool_affinity"] = cast(dict[str, Any], tasks[1].get("affinity", {}))
+    tasks[1]["exit_criteria"] = list(tasks[1].get("criteria", []))
     warnings = state.set_task_graph(payload)
     state.record_planner_trace(
         prompt="Plan the PRDV cycle",
@@ -178,8 +190,9 @@ def simulate_prdv_planner_flow():
 
 
 @then("the planner react log should capture normalization warnings")
-def assert_prdv_react_log(prdv_context):
-    state: QueryState = prdv_context["state"]
+def assert_prdv_react_log(prdv_context: Mapping[str, Any]) -> None:
+    state = prdv_context["state"]
+    assert isinstance(state, QueryState)
     normalization_events = [
         entry for entry in state.react_log if entry["event"] == "planner.normalization"
     ]
@@ -191,7 +204,7 @@ def assert_prdv_react_log(prdv_context):
 
 
 @then("the coordinator trace metadata should include unlock events")
-def assert_prdv_trace_metadata(prdv_context):
+def assert_prdv_trace_metadata(prdv_context: Mapping[str, Any]) -> None:
     trace = prdv_context["trace"]
     metadata = trace["metadata"]
     assert metadata["unlock_events"]
@@ -201,8 +214,9 @@ def assert_prdv_trace_metadata(prdv_context):
 
 
 @then("the telemetry snapshot should include scheduler context")
-def assert_prdv_telemetry_snapshot(prdv_context):
-    state: QueryState = prdv_context["state"]
+def assert_prdv_telemetry_snapshot(prdv_context: Mapping[str, Any]) -> None:
+    state = prdv_context["state"]
+    assert isinstance(state, QueryState)
     telemetry = state.metadata["planner"]["telemetry"]
     assert telemetry["objectives"] == ["Deliver planner-coordinator telemetry"]
     assert telemetry["exit_criteria"] == ["All phases recorded"]
@@ -214,31 +228,46 @@ def assert_prdv_telemetry_snapshot(prdv_context):
 
 
 @given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
-def loops_config(count: int, monkeypatch):
+def loops_config(
+    count: int,
+    monkeypatch: pytest.MonkeyPatch,
+    bdd_context: BehaviorContext,
+) -> ConfigModel:
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    set_value(bdd_context, "config", cfg)
     return cfg
 
 
 @given(parsers.parse('reasoning mode is "{mode}"'))
-def set_reasoning_mode(config: ConfigModel, mode: str):
+def set_reasoning_mode(
+    config: ConfigModel,
+    mode: str,
+    bdd_context: BehaviorContext,
+) -> ConfigModel:
     config.reasoning_mode = ReasoningMode(mode)
+    set_value(bdd_context, "config", config)
     return config
 
 
 @given(parsers.parse("primus start is {index:d}"))
-def set_primus_start(config: ConfigModel, index: int):
+def set_primus_start(
+    config: ConfigModel,
+    index: int,
+    bdd_context: BehaviorContext,
+) -> ConfigModel:
     config.primus_start = index
+    set_value(bdd_context, "config", config)
     return config
 
 
 @given("gate policy forces debate")
-def gate_policy_force_debate(bdd_context):
+def gate_policy_force_debate(bdd_context: BehaviorContext) -> None:
     bdd_context["force_gate_debate"] = True
 
 
 @given("gate policy forces exit")
-def gate_policy_force_exit(bdd_context):
+def gate_policy_force_exit(bdd_context: BehaviorContext) -> None:
     bdd_context["force_gate_exit"] = True
 
 
@@ -251,21 +280,21 @@ def run_orchestrator(
     config: ConfigModel,
     isolate_network,
     restore_environment,
-    bdd_context,
-):
+    bdd_context: BehaviorContext,
+) -> dict[str, Any]:
     record: list[str] = []
-    params: dict = {}
+    params: dict[str, Any] = {}
     logs: list[str] = []
-    state = {"active": True}
+    state: dict[str, bool] = {"active": True}
 
     class DummyAgent:
         def __init__(self, name: str) -> None:
             self.name = name
 
-        def can_execute(self, *args, **kwargs) -> bool:
+        def can_execute(self, *_args: object, **_kwargs: object) -> bool:
             return True
 
-        def execute(self, *args, **kwargs) -> dict:
+        def execute(self, *_args: object, **_kwargs: object) -> dict[str, Any]:
             record.append(self.name)
             return {}
 
@@ -274,7 +303,7 @@ def run_orchestrator(
 
     original_parse = Orchestrator._parse_config
 
-    def spy_parse(cfg: ConfigModel):
+    def spy_parse(cfg: ConfigModel) -> dict[str, Any]:
         out = original_parse(cfg)
         params.update(out)
         return out
@@ -283,7 +312,7 @@ def run_orchestrator(
     force_debate = bdd_context.get("force_gate_debate", False)
     original_gate = OrchestrationUtils.evaluate_scout_gate_policy
 
-    def fake_gate(**kwargs):  # noqa: ANN001 - follows orchestrator call pattern
+    def fake_gate(**kwargs: Any) -> ScoutGateDecision:
         if force_debate:
             decision = ScoutGateDecision(
                 should_debate=True,
@@ -321,8 +350,11 @@ def run_orchestrator(
             side_effect=fake_gate,
         ),
     ):
+        orchestrator = get_orchestrator(bdd_context)
+        set_value(bdd_context, "config", config)
+        active_config = get_config(bdd_context)
         try:
-            Orchestrator.run_query(query, config)
+            orchestrator.run_query(query, active_config)
         finally:
             state["active"] = False
             logs.append("run complete")
@@ -340,19 +372,23 @@ def run_orchestrator_invalid(
     query: str,
     mode: str,
     config: ConfigModel,
-    isolate_network,
-    restore_environment,
-):
+    isolate_network: object,
+    restore_environment: object,
+    bdd_context: BehaviorContext,
+) -> dict[str, Any]:
     record: list[str] = []
     logs: list[str] = []
-    state = {"active": True}
+    state: dict[str, bool] = {"active": True}
     try:
         cfg = ConfigModel(agents=config.agents, loops=config.loops, reasoning_mode=mode)
         with patch(
             "autoresearch.orchestration.orchestrator.AgentFactory.get",
             side_effect=lambda name: None,
         ):
-            Orchestrator.run_query(query, cfg)
+            orchestrator = get_orchestrator(bdd_context)
+            set_value(bdd_context, "config", cfg)
+            active_config = get_config(bdd_context)
+            orchestrator.run_query(query, active_config)
     except Exception as exc:
         logs.append(f"unsupported reasoning mode: {mode}")
         return {"error": exc, "record": record, "logs": logs, "state": state}
@@ -365,19 +401,25 @@ def run_orchestrator_invalid(
 def _run_orchestrator_with_failure(
     query: str,
     config: ConfigModel,
-    isolate_network,
-    restore_environment,
+    isolate_network: object,
+    restore_environment: object,
+    bdd_context: BehaviorContext,
     *,
     overflow: bool = False,
 ):
     record: list[str] = []
     logs: list[str] = []
-    state = {"active": True}
-    recovery_info: dict = {}
+    state: dict[str, bool] = {"active": True}
+    recovery_info: dict[str, Any] = {}
 
     original_handle = OrchestrationUtils.handle_agent_error
 
-    def spy_handle(agent_name: str, e: Exception, state_obj, metrics):
+    def spy_handle(
+        agent_name: str,
+        e: Exception,
+        state_obj: QueryState,
+        metrics: OrchestrationMetrics,
+    ) -> dict[str, Any]:
         info = original_handle(agent_name, e, state_obj, metrics)
         info["recovery_applied"] = state_obj.metadata.get("recovery_applied")
         recovery_info.update(info)
@@ -429,8 +471,11 @@ def _run_orchestrator_with_failure(
                 cot_run,
             ),
         ):
+            orchestrator = get_orchestrator(bdd_context)
+            set_value(bdd_context, "config", config)
+            active_config = get_config(bdd_context)
             try:
-                Orchestrator.run_query(query, config)
+                orchestrator.run_query(query, active_config)
                 error = None
             except Exception as exc:  # pragma: no cover - not expected
                 error = exc
@@ -492,8 +537,11 @@ def _run_orchestrator_with_failure(
             side_effect=spy_parse,
         ),
     ):
+        orchestrator = get_orchestrator(bdd_context)
+        set_value(bdd_context, "config", config)
+        active_config = get_config(bdd_context)
         try:
-            Orchestrator.run_query(query, config)
+            orchestrator.run_query(query, active_config)
             error = None
         except Exception as exc:
             error = exc
@@ -517,10 +565,17 @@ def _run_orchestrator_with_failure(
 def run_orchestrator_failure(
     query: str,
     config: ConfigModel,
-    isolate_network,
-    restore_environment,
-):
-    return _run_orchestrator_with_failure(query, config, isolate_network, restore_environment)
+    isolate_network: object,
+    restore_environment: object,
+    bdd_context: BehaviorContext,
+) -> dict[str, Any]:
+    return _run_orchestrator_with_failure(
+        query,
+        config,
+        isolate_network,
+        restore_environment,
+        bdd_context,
+    )
 
 
 @when(
@@ -530,73 +585,84 @@ def run_orchestrator_failure(
 def run_orchestrator_overflow(
     query: str,
     config: ConfigModel,
-    isolate_network,
-    restore_environment,
-):
+    isolate_network: object,
+    restore_environment: object,
+    bdd_context: BehaviorContext,
+) -> dict[str, Any]:
     return _run_orchestrator_with_failure(
-        query, config, isolate_network, restore_environment, overflow=True
+        query,
+        config,
+        isolate_network,
+        restore_environment,
+        bdd_context,
+        overflow=True,
     )
 
 
 @then(parsers.parse("the loops used should be {count:d}"))
-def assert_loops(run_result: dict, count: int) -> None:
+def assert_loops(run_result: Mapping[str, Any], count: int) -> None:
     assert run_result["config_params"].get("loops") == count
 
 
 @then(parsers.parse('the reasoning mode selected should be "{mode}"'))
-def assert_mode(run_result: dict, mode: str) -> None:
+def assert_mode(run_result: Mapping[str, Any], mode: str) -> None:
     assert run_result["config_params"].get("mode") == ReasoningMode(mode)
 
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
-def assert_groups(run_result: dict, groups: str) -> None:
+def assert_groups(run_result: Mapping[str, Any], groups: str) -> None:
     expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
 @then(parsers.parse('the agents executed should be "{order}"'))
-def assert_order(run_result: dict, order: str) -> None:
+def assert_order(run_result: Mapping[str, Any], order: str) -> None:
     expected = [a.strip() for a in order.split(",")]
     assert run_result["record"] == expected
 
 
 @then("a reasoning mode error should be raised")
-def assert_invalid_mode(error_result: dict) -> None:
+def assert_invalid_mode(error_result: Mapping[str, Any]) -> None:
     err = error_result["error"]
     assert isinstance(err, ConfigError)
     assert "reasoning mode" in str(err).lower()
 
 
 @then("no agents should execute")
-def assert_no_agents(error_result: dict) -> None:
+def assert_no_agents(error_result: Mapping[str, Any]) -> None:
     assert error_result["record"] == []
 
 
 @then(parsers.parse('the fallback agent should be "{agent}"'))
-def assert_fallback_agent(run_result: dict, agent: str) -> None:
+def assert_fallback_agent(run_result: Mapping[str, Any], agent: str) -> None:
     info = run_result.get("recovery_info", {})
     assert info.get("agent") == agent
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
-def assert_strategy(run_result: dict, strategy: str) -> None:
+def assert_strategy(run_result: Mapping[str, Any], strategy: str) -> None:
     assert run_result["recovery_info"].get("recovery_strategy") == strategy
 
 
 @then("recovery should be applied")
-def assert_recovery_applied(run_result: dict) -> None:
+def assert_recovery_applied(run_result: Mapping[str, Any]) -> None:
     assert run_result["recovery_info"].get("recovery_applied") is True
 
 
 @then("the system state should be restored")
-def assert_state_restored(run_result: dict | None = None, error_result: dict | None = None) -> None:
+def assert_state_restored(
+    run_result: Mapping[str, Any] | None = None,
+    error_result: Mapping[str, Any] | None = None,
+) -> None:
     result = run_result or error_result
     assert result and result.get("state", {}).get("active") is False
 
 
 @then(parsers.parse('the logs should include "{message}"'))
 def assert_logs(
-    run_result: dict | None = None, error_result: dict | None = None, message: str = ""
+    run_result: Mapping[str, Any] | None = None,
+    error_result: Mapping[str, Any] | None = None,
+    message: str = "",
 ) -> None:
     result = run_result or error_result
     logs = result.get("logs", []) if result else []
