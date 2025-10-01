@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 from duckdb import DuckDBPyConnection
 
@@ -91,7 +92,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         cycles_completed = 3 if gate_should_debate else 1
         routing_total = 5.0 + idx
         routing_decisions = idx + 1
-        execution_metrics = {
+        execution_metrics: dict[str, Any] = {
             "total_duration_seconds": 1.2 + (0.3 * idx),
             "total_tokens": {"input": 10 + idx, "output": 5 + idx, "total": 15 + 2 * idx},
             "cycles_completed": cycles_completed,
@@ -102,7 +103,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             * routing_decisions,
             "model_routing_strategy": "balanced",
         }
-        gate_events = [
+        gate_events: list[dict[str, Any]] = [
             {
                 "should_debate": gate_should_debate,
                 "target_loops": cycles_completed,
@@ -112,7 +113,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
                 "thresholds": {"min_score": 0.5},
             }
         ]
-        task_graph = {
+        task_graph: dict[str, Any] = {
             "tasks": [
                 {"id": "t1", "depends_on": []},
                 {"id": "t2", "depends_on": ["t1"]},
