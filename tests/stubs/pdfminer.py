@@ -3,31 +3,32 @@
 from __future__ import annotations
 
 import importlib.util
+from collections.abc import Container
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Iterable, Literal, Protocol, cast
+from typing import IO, Protocol, cast
 
 from ._registry import install_stub_module
 
 PathLike = str | Path
-TextIO = IO[str]
 BinaryIO = IO[bytes]
+
+
+class LAParams(Protocol):
+    char_margin: float | int
+    line_margin: float | int
 
 
 def extract_text(
     source: PathLike | BinaryIO,
-    *,
-    outfile: PathLike | TextIO | None = None,
-    laparams: object | None = None,
-    output_type: Literal["text", "html", "xml", "tag"] = "text",
-    codec: str = "utf-8",
-    caching: bool = True,
-    maxpages: int = 0,
     password: str = "",
-    pagenos: Iterable[int] | None = None,
+    page_numbers: Container[int] | None = None,
+    maxpages: int = 0,
+    caching: bool = True,
+    codec: str = "utf-8",
+    laparams: LAParams | None = None,
 ) -> str:
-    del source, outfile, laparams, output_type, codec
-    del caching, maxpages, password, pagenos
+    del source, password, page_numbers, maxpages, caching, codec, laparams
     return ""
 
 
@@ -35,15 +36,12 @@ class PdfminerHighLevelModule(Protocol):
     def extract_text(
         self,
         source: PathLike | BinaryIO,
-        *,
-        outfile: PathLike | TextIO | None = None,
-        laparams: object | None = None,
-        output_type: Literal["text", "html", "xml", "tag"] = "text",
-        codec: str = "utf-8",
-        caching: bool = True,
-        maxpages: int = 0,
         password: str = "",
-        pagenos: Iterable[int] | None = None,
+        page_numbers: Container[int] | None = None,
+        maxpages: int = 0,
+        caching: bool = True,
+        codec: str = "utf-8",
+        laparams: LAParams | None = None,
     ) -> str:
         ...
 
@@ -55,26 +53,21 @@ class _PdfminerHighLevelModule(ModuleType):
     def extract_text(
         self,
         source: PathLike | BinaryIO,
-        *,
-        outfile: PathLike | TextIO | None = None,
-        laparams: object | None = None,
-        output_type: Literal["text", "html", "xml", "tag"] = "text",
-        codec: str = "utf-8",
-        caching: bool = True,
-        maxpages: int = 0,
         password: str = "",
-        pagenos: Iterable[int] | None = None,
+        page_numbers: Container[int] | None = None,
+        maxpages: int = 0,
+        caching: bool = True,
+        codec: str = "utf-8",
+        laparams: LAParams | None = None,
     ) -> str:
         return extract_text(
             source,
-            outfile=outfile,
-            laparams=laparams,
-            output_type=output_type,
-            codec=codec,
-            caching=caching,
-            maxpages=maxpages,
             password=password,
-            pagenos=pagenos,
+            page_numbers=page_numbers,
+            maxpages=maxpages,
+            caching=caching,
+            codec=codec,
+            laparams=laparams,
         )
 
 

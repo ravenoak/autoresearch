@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 import threading
 from collections import Counter
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, MutableMapping, Sequence
 from types import ModuleType
 from typing import Concatenate, Generic, ParamSpec, Protocol, TypeAlias, TypeVar, cast
 
@@ -35,9 +36,26 @@ class RateLimitExceeded(Exception):
     """Exception raised when a rate limit is exceeded."""
 
 
-TRequest = TypeVar("TRequest")
+TRequest = TypeVar("TRequest", bound="RequestProtocol")
 P = ParamSpec("P")
-R = TypeVar("R")
+ResultT = TypeVar("ResultT")
+
+
+
+class RequestState(Protocol):
+    view_rate_limit: object | None
+
+
+class RequestProtocol(Protocol):
+    client: object
+    state: RequestState
+
+    def __init__(self, scope: "Scope", receive: "ReceiveCallable") -> None: ...
+
+
+class _LimiterBackend:
+    def hit(self, *_args: object, **_kwargs: object) -> bool:
+        return True
 
 
 class Limiter(Generic[TRequest]):
@@ -58,6 +76,7 @@ class Limiter(Generic[TRequest]):
             self.key_func = cast(Callable[[TRequest], str], lambda _request: "127.0.0.1")
         self.application_limits = list(application_limits or [])
         self.request_log = request_log or REQUEST_LOG
+        self.limiter = _LimiterBackend()
 
     def _parse_limit(self, spec: str | Callable[[], str | int]) -> int:
         value: str | int
@@ -88,16 +107,23 @@ class Limiter(Generic[TRequest]):
 
     def limit(
         self, *limit_specs: str | Callable[[], str | int]
-    ) -> Callable[[Callable[Concatenate[TRequest, P], R]], Callable[Concatenate[TRequest, P], R]]:
+    ) -> Callable[
+        [Callable[Concatenate[TRequest, P], Awaitable[ResultT]]],
+        Callable[Concatenate[TRequest, P], Awaitable[ResultT]],
+    ]:
         def decorator(
-            func: Callable[Concatenate[TRequest, P], R]
-        ) -> Callable[Concatenate[TRequest, P], R]:
-            def wrapper(request: TRequest, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            func: Callable[Concatenate[TRequest, P], Awaitable[ResultT]]
+        ) -> Callable[Concatenate[TRequest, P], Awaitable[ResultT]]:
+            async def wrapper(
+                request: TRequest, /, *args: P.args, **kwargs: P.kwargs
+            ) -> ResultT:
                 limit_override = limit_specs[0] if limit_specs else None
                 self.check(request, limit_override=limit_override)
-                return func(request, *args, **kwargs)
+                return await func(request, *args, **kwargs)
 
-            return wrapper
+            return cast(
+                Callable[Concatenate[TRequest, P], Awaitable[ResultT]], wrapper
+            )
 
         return decorator
 
@@ -110,31 +136,33 @@ def reset_request_log() -> None:
     REQUEST_LOG.reset()
 
 
+Message: TypeAlias = MutableMapping[str, object]
+Scope: TypeAlias = MutableMapping[str, object]
+
+
 class ReceiveCallable(Protocol):
-    def __call__(self) -> Awaitable[dict[str, object]]: ...
+    def __call__(self) -> Awaitable[Message]: ...
 
 
 class SendCallable(Protocol):
-    def __call__(self, message: dict[str, object]) -> Awaitable[None]: ...
-
-
-Scope: TypeAlias = dict[str, object]
-ASGIApp: TypeAlias = Callable[[Scope, ReceiveCallable, SendCallable], Awaitable[None]]
+    def __call__(self, message: Message) -> Awaitable[None]: ...
+class ASGIApp(Protocol):
+    def __call__(
+        self, scope: Scope, receive: ReceiveCallable, send: SendCallable
+    ) -> Awaitable[None]: ...
 
 
 class SlowAPIMiddleware:
     def __init__(
         self,
         app: ASGIApp,
-        limiter: Limiter[object] | None = None,
-        *_args: object,
-        **_kwargs: object,
+        limiter: Limiter[RequestProtocol] | None = None,
     ) -> None:
         from starlette.requests import Request
 
         self.app = app
         self.limiter = limiter
-        self.Request = Request
+        self.Request: type[RequestProtocol] = cast(type[RequestProtocol], Request)
 
     async def __call__(
         self,
@@ -143,7 +171,7 @@ class SlowAPIMiddleware:
         send: SendCallable,
     ) -> None:
         if scope.get("type") == "http" and self.limiter:
-            request = self.Request(scope, receive=receive)
+            request = self.Request(scope, receive)
             self.limiter.check(request)
         await self.app(scope, receive, send)
 
@@ -155,12 +183,14 @@ def get_remote_address(scope: Scope) -> str:
 
 class SlowapiModule(Protocol):
     IS_STUB: bool
-    Limiter: type[Limiter[object]]
+    Limiter: type[Limiter[RequestProtocol]]
     REQUEST_LOG: RequestLog
 
     def reset_request_log(self) -> None: ...
 
-    def _rate_limit_exceeded_handler(self, request: object, exc: Exception) -> str: ...
+    def _rate_limit_exceeded_handler(
+        self, request: RequestProtocol, exc: Exception
+    ) -> str: ...
 
 
 class _SlowapiModule(ModuleType):
@@ -174,7 +204,9 @@ class _SlowapiModule(ModuleType):
     def reset_request_log(self) -> None:
         reset_request_log()
 
-    def _rate_limit_exceeded_handler(self, request: object, exc: Exception) -> str:
+    def _rate_limit_exceeded_handler(
+        self, request: RequestProtocol, exc: Exception
+    ) -> str:
         return _rate_limit_exceeded_handler(request, exc)
 
 
