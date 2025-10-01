@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any, cast
 
-from scripts.storage_concurrency_sim import _run as concurrency_run
+from scripts.storage_concurrency_sim import SimulationResult, _run as concurrency_run
 
+from autoresearch import storage as storage_module
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
-from autoresearch import storage as storage_module
 from autoresearch.storage import StorageContext, StorageManager, StorageState
+from autoresearch.storage_typing import JSONDict
 
 
 def test_concurrency_benchmark() -> None:
-    result = concurrency_run(threads=2, items=3)
+    result: SimulationResult = concurrency_run(threads=2, items=3)
     assert result.remaining_nodes == 0
     assert result.setup_calls == 1
     assert result.setup_failures == 0
@@ -19,7 +21,7 @@ def test_concurrency_benchmark() -> None:
 
 
 def _ram_budget_run(items: int) -> int:
-    cfg = ConfigModel(
+    cfg: ConfigModel = ConfigModel(
         storage=StorageConfig(
             duckdb_path=":memory:", ontology_reasoner_max_triples=1
         ),
@@ -29,34 +31,43 @@ def _ram_budget_run(items: int) -> int:
     loader = ConfigLoader.new_for_tests()
     loader._config = cfg
 
-    st = StorageState()
-    ctx = StorageContext()
+    st: StorageState = StorageState()
+    ctx: StorageContext = StorageContext()
     StorageManager.state = st
     StorageManager.context = ctx
 
     original: Callable[[], float] = StorageManager._current_ram_mb
-    StorageManager._current_ram_mb = staticmethod(lambda: 1000.0)
-    original_reasoner = storage_module.run_ontology_reasoner
-    storage_module.run_ontology_reasoner = lambda *a, **k: None
+
+    def fake_current_ram_mb() -> float:
+        return 1000.0
+
+    cast(Any, StorageManager)._current_ram_mb = staticmethod(fake_current_ram_mb)
+    original_reasoner: Callable[[Any, str | None], None] = getattr(
+        storage_module, "run_ontology_reasoner"
+    )
+
+    def noop_reasoner(store: Any, engine: str | None = None) -> None:
+        return None
+
+    setattr(storage_module, "run_ontology_reasoner", noop_reasoner)
     try:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
         for i in range(items):
-            StorageManager.persist_claim(
-                {"id": f"c{i}", "type": "fact", "content": "c"}
-            )
+            claim: JSONDict = {"id": f"c{i}", "type": "fact", "content": "c"}
+            StorageManager.persist_claim(claim)
             StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
-        remaining = StorageManager.get_graph().number_of_nodes()
+        remaining: int = StorageManager.get_graph().number_of_nodes()
     finally:
         StorageManager.teardown(remove_db=True, context=ctx, state=st)
         StorageManager.state = StorageState()
         StorageManager.context = StorageContext()
-        StorageManager._current_ram_mb = staticmethod(original)
-        storage_module.run_ontology_reasoner = original_reasoner
+        cast(Any, StorageManager)._current_ram_mb = staticmethod(original)
+        setattr(storage_module, "run_ontology_reasoner", original_reasoner)
         ConfigLoader.reset_instance()
 
     return remaining
 
 
 def test_ram_budget_benchmark() -> None:
-    remaining = _ram_budget_run(items=5)
+    remaining: int = _ram_budget_run(items=5)
     assert remaining == 0
