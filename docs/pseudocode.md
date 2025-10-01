@@ -365,6 +365,11 @@ function run_benchmarks(config, suite):
 ```
 
 ## 12. PRDV Verification Loop (planner/research/debate/validate)
+The evaluation harness expects every summary to include dataset metadata, the
+active configuration signature, and planner/routing telemetry. Behavior and
+unit tests assert both populated values and `None` fallbacks so CLI tables stay
+aligned with the schema.
+
 ```
 function run_prdv_cycle(state, harness):
     plan = PlannerAgent.execute(state, config)
@@ -374,6 +379,12 @@ function run_prdv_cycle(state, harness):
 
     telemetry = gather_prdv_metrics(state, plan, debate)
     summary = EvaluationSummary(
+        dataset=telemetry.dataset,
+        run_id=telemetry.run_id,
+        started_at=telemetry.started,
+        completed_at=telemetry.completed,
+        total_examples=telemetry.total_examples,
+        config_signature=telemetry.config_signature,
         avg_planner_depth=telemetry.planner.avg_depth,
         avg_routing_delta=telemetry.routing.avg_delta,
         total_routing_delta=telemetry.routing.total_delta,
