@@ -13,7 +13,12 @@ from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
-from tests.behavior.context import BehaviorContext, get_orchestrator, set_value
+from tests.behavior.context import (
+    BehaviorContext,
+    get_config,
+    get_orchestrator,
+    set_value,
+)
 
 from . import common_steps  # noqa: F401
 
@@ -129,10 +134,10 @@ def setup_agents_no_messaging(
 
 
 @when("I execute a query", target_fixture="response")
-def run_query(config: ConfigModel, bdd_context: BehaviorContext) -> QueryResponse:
+def run_query(bdd_context: BehaviorContext) -> QueryResponse:
     """Execute a simple query and capture the response."""
     orchestrator = get_orchestrator(bdd_context)
-    set_value(bdd_context, "config", config)
+    config = get_config(bdd_context)
     return orchestrator.run_query("ping", config)
 
 
@@ -180,13 +185,10 @@ def setup_coalition(
 
 
 @when("the sender broadcasts to the coalition", target_fixture="response")
-def run_broadcast_query(
-    config: ConfigModel,
-    bdd_context: BehaviorContext,
-) -> QueryResponse:
+def run_broadcast_query(bdd_context: BehaviorContext) -> QueryResponse:
     """Run a query to trigger broadcast messaging."""
     orchestrator = get_orchestrator(bdd_context)
-    set_value(bdd_context, "config", config)
+    config = get_config(bdd_context)
     return orchestrator.run_query("ping", config)
 
 
