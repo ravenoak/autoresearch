@@ -1,6 +1,7 @@
 """Unit tests for specialized agents."""
 
 import json
+from typing import Iterator, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,7 +16,7 @@ from autoresearch.config.models import ConfigModel
 
 
 @pytest.fixture
-def mock_llm_adapter():
+def mock_llm_adapter() -> Iterator[MagicMock]:
     """Create a mock LLM adapter for testing."""
     # Create a proper mock of the LLMAdapter class
     with patch(
@@ -28,7 +29,7 @@ def mock_llm_adapter():
 
 
 @pytest.fixture
-def mock_state():
+def mock_state() -> QueryState:
     """Create a mock query state for testing."""
     state = QueryState(query="Test query")
     state.claims = [
@@ -44,7 +45,7 @@ def mock_state():
 
 
 @pytest.fixture
-def mock_config():
+def mock_config() -> ConfigModel:
     """Create a mock configuration for testing."""
     config = MagicMock(spec=ConfigModel)
     config.max_results_per_query = 3
@@ -55,10 +56,14 @@ def mock_config():
     config.agent_config = MagicMock()
     config.agent_config.get.return_value = None
 
-    return config
+    return cast(ConfigModel, config)
 
 
-def test_researcher_agent_execute(mock_llm_adapter, mock_state, mock_config):
+def test_researcher_agent_execute(
+    mock_llm_adapter: MagicMock,
+    mock_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     """Test that the ResearcherAgent executes correctly."""
     # Arrange
     agent = ResearcherAgent(name="Researcher", llm_adapter=mock_llm_adapter)
@@ -101,7 +106,11 @@ def test_researcher_agent_execute(mock_llm_adapter, mock_state, mock_config):
         assert kwargs["model"] == "test-model"
 
 
-def test_critic_agent_execute(mock_llm_adapter, mock_state, mock_config):
+def test_critic_agent_execute(
+    mock_llm_adapter: MagicMock,
+    mock_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     """Test that the CriticAgent executes correctly."""
     # Arrange
     agent = CriticAgent(name="Critic", llm_adapter=mock_llm_adapter)
@@ -137,7 +146,11 @@ def test_critic_agent_execute(mock_llm_adapter, mock_state, mock_config):
     assert kwargs["model"] == "test-model"
 
 
-def test_summarizer_agent_execute(mock_llm_adapter, mock_state, mock_config):
+def test_summarizer_agent_execute(
+    mock_llm_adapter: MagicMock,
+    mock_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     """Test that the SummarizerAgent executes correctly."""
     # Arrange
     agent = SummarizerAgent(name="Summarizer", llm_adapter=mock_llm_adapter)
@@ -171,7 +184,11 @@ def test_summarizer_agent_execute(mock_llm_adapter, mock_state, mock_config):
     assert kwargs["model"] == "test-model"
 
 
-def test_planner_agent_execute(mock_llm_adapter, mock_state, mock_config):
+def test_planner_agent_execute(
+    mock_llm_adapter: MagicMock,
+    mock_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     """Test that the PlannerAgent executes correctly."""
     # Arrange
     agent = PlannerAgent(name="Planner", llm_adapter=mock_llm_adapter)
@@ -203,7 +220,7 @@ def test_planner_agent_execute(mock_llm_adapter, mock_state, mock_config):
     assert kwargs["model"] == "test-model"
 
 
-def test_planner_agent_parses_json_plan(mock_config):
+def test_planner_agent_parses_json_plan(mock_config: ConfigModel) -> None:
     """Planner normalises JSON plans into the state task graph."""
 
     class StubAdapter:
@@ -237,7 +254,9 @@ def test_planner_agent_parses_json_plan(mock_config):
     assert state.task_graph["edges"], "edges should capture dependencies"
 
 
-def test_researcher_agent_can_execute(mock_state, mock_config):
+def test_researcher_agent_can_execute(
+    mock_state: QueryState, mock_config: ConfigModel
+) -> None:
     """Test that the ResearcherAgent can_execute method works correctly."""
     # Arrange
     agent = ResearcherAgent(name="Researcher")
@@ -250,7 +269,9 @@ def test_researcher_agent_can_execute(mock_state, mock_config):
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_critic_agent_can_execute(mock_state, mock_config):
+def test_critic_agent_can_execute(
+    mock_state: QueryState, mock_config: ConfigModel
+) -> None:
     """Test that the CriticAgent can_execute method works correctly."""
     # Arrange
     agent = CriticAgent(name="Critic")
@@ -267,7 +288,9 @@ def test_critic_agent_can_execute(mock_state, mock_config):
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_summarizer_agent_can_execute(mock_state, mock_config):
+def test_summarizer_agent_can_execute(
+    mock_state: QueryState, mock_config: ConfigModel
+) -> None:
     """Test that the SummarizerAgent can_execute method works correctly."""
     # Arrange
     agent = SummarizerAgent(name="Summarizer")
@@ -284,7 +307,9 @@ def test_summarizer_agent_can_execute(mock_state, mock_config):
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_planner_agent_can_execute(mock_state, mock_config):
+def test_planner_agent_can_execute(
+    mock_state: QueryState, mock_config: ConfigModel
+) -> None:
     """Test that the PlannerAgent can_execute method works correctly."""
     # Arrange
     agent = PlannerAgent(name="Planner")
@@ -306,7 +331,11 @@ def test_planner_agent_can_execute(mock_state, mock_config):
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_researcher_agent_processes_feedback(mock_llm_adapter, mock_state, mock_config):
+def test_researcher_agent_processes_feedback(
+    mock_llm_adapter: MagicMock,
+    mock_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     """Verify feedback influences ResearcherAgent prompts."""
     agent = ResearcherAgent(name="Researcher", llm_adapter=mock_llm_adapter)
     mock_config.enable_feedback = True
