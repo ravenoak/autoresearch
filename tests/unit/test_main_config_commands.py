@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import shutil
+from importlib.abc import Traversable
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import importlib.resources as importlib_resources
@@ -12,20 +16,22 @@ pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
 @pytest.fixture
-def mock_config_loader():
+def mock_config_loader() -> MagicMock:
     """Create a mock ConfigLoader for testing."""
     return MagicMock()
 
 
 @pytest.fixture
-def example_resources(tmp_path, monkeypatch):
+def example_resources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Path:
     """Provide temporary example config files."""
     src_dir = importlib_resources.files("autoresearch.examples")
     temp_dir = tmp_path / "examples"
     with importlib_resources.as_file(src_dir) as resolved:
         shutil.copytree(resolved, temp_dir)
 
-    def _files(package: str):
+    def _files(package: str) -> Traversable:
         if package == "autoresearch.examples":
             return temp_dir
         return importlib_resources.files(package)
@@ -34,7 +40,7 @@ def example_resources(tmp_path, monkeypatch):
     return temp_dir
 
 
-def test_config_init_command(tmp_path, example_resources):
+def test_config_init_command(tmp_path: Path, example_resources: Path) -> None:
     """Test the config init command."""
     runner = CliRunner()
     result = runner.invoke(
@@ -44,7 +50,11 @@ def test_config_init_command(tmp_path, example_resources):
     assert "Configuration initialized successfully." in result.stdout
 
 
-def test_config_init_command_force(example_autoresearch_toml, example_env_file, example_resources):
+def test_config_init_command_force(
+    example_autoresearch_toml: Path,
+    example_env_file: Path,
+    example_resources: Path,
+) -> None:
     """Test the config init command with force flag."""
     runner = CliRunner()
     cfg = example_autoresearch_toml
@@ -66,8 +76,10 @@ def test_config_init_command_force(example_autoresearch_toml, example_env_file, 
 
 
 def test_config_validate_command_valid(
-    mock_config_loader, example_autoresearch_toml, example_env_file
-):
+    mock_config_loader: MagicMock,
+    example_autoresearch_toml: Path,
+    example_env_file: Path,
+) -> None:
     """Test the config validate command with valid configuration."""
     runner = CliRunner()
     cfg_path = example_autoresearch_toml
@@ -89,8 +101,10 @@ def test_config_validate_command_valid(
 
 
 def test_config_validate_command_invalid(
-    mock_config_loader, example_autoresearch_toml, example_env_file
-):
+    mock_config_loader: MagicMock,
+    example_autoresearch_toml: Path,
+    example_env_file: Path,
+) -> None:
     """Test the config validate command with invalid configuration."""
     runner = CliRunner()
     cfg_path = example_autoresearch_toml

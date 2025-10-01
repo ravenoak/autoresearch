@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import importlib.util
+from pathlib import Path
 from threading import Thread  # for thread-safety test
 from typing import Any, Dict, List
 
@@ -20,15 +23,19 @@ def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[f
 
 
 @pytest.fixture(autouse=True)
-def _skip_ontology_reasoner(monkeypatch) -> None:
+def _skip_ontology_reasoner(monkeypatch: pytest.MonkeyPatch) -> None:
     """Bypass heavy ontology reasoning in tests."""
+
+    def _disable_reasoner(*_: Any, **__: Any) -> None:
+        return None
+
     monkeypatch.setattr(
         "autoresearch.storage.run_ontology_reasoner",
-        lambda *_, **__: None,
+        _disable_reasoner,
     )
 
 
-def test_search_uses_cache(monkeypatch):
+def test_search_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 
@@ -38,9 +45,9 @@ def test_search_uses_cache(monkeypatch):
         staticmethod(assert_bm25_signature),
     )
 
-    calls = {"count": 0}
+    calls: Dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5):
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["count"] += 1
         return [{"title": "Python", "url": "https://python.org"}]
 
@@ -51,7 +58,11 @@ def test_search_uses_cache(monkeypatch):
         # Disable context-aware search to avoid issues with SearchContext
         cfg.search.context_aware.enabled = False
         cfg.search.use_semantic_similarity = False
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
 
         # first call uses backend
         results1 = s.external_lookup("python")
@@ -68,7 +79,7 @@ def test_search_uses_cache(monkeypatch):
         assert results2[0]["url"] == results1[0]["url"]
 
 
-def test_cache_lifecycle(tmp_path):
+def test_cache_lifecycle(tmp_path: Path) -> None:
     """Exercise basic cache operations using a temporary database."""
     db_path = tmp_path / "cache.json"
     cache = SearchCache(str(db_path))
@@ -91,10 +102,10 @@ def test_cache_lifecycle(tmp_path):
     assert not db_path.exists()
 
 
-def test_setup_thread_safe(tmp_path):
+def test_setup_thread_safe(tmp_path: Path) -> None:
     """Ensure multiple setup calls from threads share the same database."""
     cache = SearchCache(str(tmp_path / "cache.json"))
-    results = []
+    results: List[Any] = []
 
     def worker() -> None:
         results.append(cache.setup())
@@ -111,7 +122,7 @@ def test_setup_thread_safe(tmp_path):
     cache.teardown(remove_file=True)
 
 
-def test_cache_is_backend_specific(monkeypatch):
+def test_cache_is_backend_specific(monkeypatch: pytest.MonkeyPatch) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 
@@ -121,13 +132,13 @@ def test_cache_is_backend_specific(monkeypatch):
         staticmethod(assert_bm25_signature),
     )
 
-    calls = {"b1": 0, "b2": 0}
+    calls: Dict[str, int] = {"b1": 0, "b2": 0}
 
-    def backend1(query: str, max_results: int = 5):
+    def backend1(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["b1"] += 1
         return [{"title": "B1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5):
+    def backend2(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["b2"] += 1
         return [{"title": "B2", "url": "u2"}]
 
@@ -143,7 +154,13 @@ def test_cache_is_backend_specific(monkeypatch):
         cfg2.search.context_aware.enabled = False
         cfg2.search.use_semantic_similarity = False
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        def _get_cfg1() -> ConfigModel:
+            return cfg1
+
+        def _get_cfg2() -> ConfigModel:
+            return cfg2
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg1)
         results1 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 0}
         assert len(results1) == 1
@@ -156,7 +173,7 @@ def test_cache_is_backend_specific(monkeypatch):
         assert results1_cached[0]["title"] == results1[0]["title"]
         assert results1_cached[0]["url"] == results1[0]["url"]
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg2)
         results2 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results2) == 1
@@ -170,7 +187,7 @@ def test_cache_is_backend_specific(monkeypatch):
         assert results2_cached[0]["url"] == results2[0]["url"]
 
         # switching back to backend1 should still use cached results
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg1)
         results3 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results3) == len(results1)
@@ -178,7 +195,9 @@ def test_cache_is_backend_specific(monkeypatch):
         assert results3[0]["url"] == results1[0]["url"]
 
 
-def test_cache_is_backend_specific_without_embeddings(monkeypatch):
+def test_cache_is_backend_specific_without_embeddings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Ensure cache separation without relying on embeddings."""
     cache = SearchCache()
     search = Search(cache=cache)
@@ -188,19 +207,22 @@ def test_cache_is_backend_specific_without_embeddings(monkeypatch):
         "calculate_bm25_scores",
         staticmethod(assert_bm25_signature),
     )
+    def _no_transformer() -> None:
+        return None
+
     monkeypatch.setattr(
         Search,
         "get_sentence_transformer",
-        staticmethod(lambda: None),
+        staticmethod(_no_transformer),
     )
 
-    calls = {"b1": 0, "b2": 0}
+    calls: Dict[str, int] = {"b1": 0, "b2": 0}
 
-    def backend1(query: str, max_results: int = 5):
+    def backend1(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["b1"] += 1
         return [{"title": "B1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5):
+    def backend2(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["b2"] += 1
         return [{"title": "B2", "url": "u2"}]
 
@@ -210,29 +232,39 @@ def test_cache_is_backend_specific_without_embeddings(monkeypatch):
         cfg1 = ConfigModel.model_construct(loops=1)
         cfg1.search.backends = ["b1"]
         cfg1.search.context_aware.enabled = False
+        cfg1.search.use_semantic_similarity = False
 
         cfg2 = ConfigModel.model_construct(loops=1)
         cfg2.search.backends = ["b2"]
         cfg2.search.context_aware.enabled = False
+        cfg2.search.use_semantic_similarity = False
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        def _get_cfg1() -> ConfigModel:
+            return cfg1
+
+        def _get_cfg2() -> ConfigModel:
+            return cfg2
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg1)
         results1 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 0}
         assert s.external_lookup("python") == results1
         assert calls == {"b1": 1, "b2": 0}
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg2)
         results2 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert s.external_lookup("python") == results2
         assert calls == {"b1": 1, "b2": 1}
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg1)
         assert s.external_lookup("python") == results1
         assert calls == {"b1": 1, "b2": 1}
 
 
-def test_context_aware_query_expansion_uses_cache(monkeypatch):
+def test_context_aware_query_expansion_uses_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     cache = SearchCache()
     search = Search(cache=cache)
 
@@ -242,21 +274,23 @@ def test_context_aware_query_expansion_uses_cache(monkeypatch):
         staticmethod(assert_bm25_signature),
     )
 
-    calls = {"count": 0}
+    calls: Dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5):
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["count"] += 1
         return [{"title": "Python", "url": "https://python.org"}]
 
     class DummyContext:
-        def expand_query(self, q: str) -> str:
-            return q + " expanded"
+        def expand_query(self, query: str) -> str:
+            return query + " expanded"
 
-        def add_to_history(self, q, results) -> None:  # pragma: no cover - no-op
-            pass
+        def add_to_history(
+            self, query: str, results: List[Dict[str, str]]
+        ) -> None:  # pragma: no cover - no-op
+            del query, results
 
         def build_topic_model(self) -> None:  # pragma: no cover - no-op
-            pass
+            return None
 
     with search.temporary_state() as s:
         s.backends = {"dummy": backend}
@@ -265,10 +299,18 @@ def test_context_aware_query_expansion_uses_cache(monkeypatch):
         cfg.search.context_aware.enabled = True
         cfg.search.context_aware.use_topic_modeling = False
         cfg.search.use_semantic_similarity = False
-        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        def _get_context() -> DummyContext:
+            return DummyContext()
+
         monkeypatch.setattr(
             "autoresearch.search.core.SearchContext.get_instance",
-            lambda: DummyContext(),
+            _get_context,
         )
 
         results1 = s.external_lookup("python")
