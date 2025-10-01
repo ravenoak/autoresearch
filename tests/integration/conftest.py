@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app as api_app
+from tests.integration._orchestrator_stubs import (
+    AgentDouble,
+    BrokerQueueStub,
+    PersistClaimCall,
+    patch_agent_factory_get,
+    patch_storage_persist,
+    patch_storage_queue,
+)
 from tests.typing_helpers import TypedFixture
 
 BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "token_baselines.json"
@@ -98,3 +107,44 @@ def search_baseline(
         SEARCH_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
     return _check
+
+
+AgentGetter = Callable[[str], AgentDouble]
+PersistCallable = Callable[[dict[str, Any], bool], None]
+QueuePatcher = Callable[[BrokerQueueStub | None], BrokerQueueStub]
+
+
+@pytest.fixture
+def stub_agent_factory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[Callable[[Iterable[AgentDouble]], AgentGetter]]:
+    """Return a helper that installs doubles for :class:`AgentFactory`."""
+
+    def _apply(agents: Iterable[AgentDouble]) -> AgentGetter:
+        return patch_agent_factory_get(monkeypatch, agents)
+
+    return _apply
+
+
+@pytest.fixture
+def stub_storage_persist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[Callable[[list[PersistClaimCall] | None], PersistCallable]]:
+    """Return a helper that records :func:`StorageManager.persist_claim` calls."""
+
+    def _apply(calls: list[PersistClaimCall] | None = None) -> PersistCallable:
+        return patch_storage_persist(monkeypatch, calls)
+
+    return _apply
+
+
+@pytest.fixture
+def stub_storage_queue(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[QueuePatcher]:
+    """Return a helper that injects a :class:`BrokerQueueStub` instance."""
+
+    def _apply(queue: BrokerQueueStub | None = None) -> BrokerQueueStub:
+        return patch_storage_queue(monkeypatch, queue)
+
+    return _apply
