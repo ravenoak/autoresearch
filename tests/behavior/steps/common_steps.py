@@ -1,6 +1,11 @@
 # flake8: noqa
+from __future__ import annotations
+
 import os
 import shlex
+from collections.abc import Callable
+from pathlib import Path
+from typing import cast
 
 import pytest
 from pytest_bdd import given, parsers, then, when
@@ -14,13 +19,16 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import (
     StorageManager,
     initialize_storage,
-)
+) 
 from autoresearch.storage import set_delegate as set_storage_delegate
 from autoresearch.storage import teardown as storage_teardown
+from click.testing import Result
+from tests.typing_helpers import TypedFixture
+from typer.testing import CliRunner
 
 
 @pytest.fixture(autouse=True)
-def reset_global_registries(tmp_path):
+def reset_global_registries(tmp_path: Path) -> TypedFixture[None]:
     """Reset global Agent and Storage registries before each scenario."""
     AgentRegistry._registry.clear()
     AgentRegistry._coalitions.clear()
@@ -30,18 +38,21 @@ def reset_global_registries(tmp_path):
     set_storage_delegate(StorageManager)
     StorageManager._access_frequency.clear()
     StorageManager._last_adaptive_policy = "lru"
-    yield
+    yield None
     AgentRegistry._registry.clear()
     AgentRegistry._coalitions.clear()
     StorageManager._access_frequency.clear()
     StorageManager._last_adaptive_policy = "lru"
     storage_teardown(remove_db=True)
+    return None
 
 
 @pytest.fixture(autouse=True)
-def reset_tinydb_and_metrics(tmp_path, monkeypatch):
+def reset_tinydb_and_metrics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> TypedFixture[None]:
     """Use temporary cache and metrics files for each scenario."""
-    original_env = {
+    original_env: dict[str, str | None] = {
         "TINYDB_PATH": os.environ.get("TINYDB_PATH"),
         "AUTORESEARCH_RELEASE_METRICS": os.environ.get("AUTORESEARCH_RELEASE_METRICS"),
         "AUTORESEARCH_QUERY_TOKENS": os.environ.get("AUTORESEARCH_QUERY_TOKENS"),
@@ -54,7 +65,7 @@ def reset_tinydb_and_metrics(tmp_path, monkeypatch):
     query = tmp_path / "query_tokens.json"
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(release))
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(query))
-    yield
+    yield None
     cache.teardown(remove_file=True)
     for env_var, value in original_env.items():
         if value is None:
@@ -66,21 +77,23 @@ def reset_tinydb_and_metrics(tmp_path, monkeypatch):
             path.unlink()
         except FileNotFoundError:
             pass
+    return None
 
 
 @pytest.fixture(autouse=True)
-def reset_tracer_provider():
+def reset_tracer_provider() -> TypedFixture[None]:
     """Ensure tracer provider does not leak between scenarios."""
     original_provider = tracing._tracer_provider
     tracing._tracer_provider = None
-    yield
+    yield None
     if tracing._tracer_provider:
         tracing._tracer_provider.shutdown()
     tracing._tracer_provider = original_provider
+    return None
 
 
 @pytest.fixture
-def mock_llm_adapter(monkeypatch):
+def mock_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Use a DummyAdapter to avoid external LLM calls.
 
     This fixture isolates LLM interactions so each scenario runs with a
@@ -89,11 +102,12 @@ def mock_llm_adapter(monkeypatch):
     from autoresearch.llm import DummyAdapter
 
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
-    yield
+    yield None
+    return None
 
 
 @pytest.fixture
-def dummy_query_response(monkeypatch):
+def dummy_query_response(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[QueryResponse]:
     """Provide a deterministic orchestrator result for interface tests."""
     response = QueryResponse(
         query="test query",
@@ -111,10 +125,10 @@ def dummy_query_response(monkeypatch):
 
 
 @pytest.fixture
-def isolate_network(monkeypatch):
+def isolate_network(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Block outbound network requests for the duration of a test."""
 
-    def _deny(*args, **kwargs):  # pragma: no cover - simple guard
+    def _deny(*args: object, **kwargs: object) -> None:  # pragma: no cover - simple guard
         raise RuntimeError("Network access disabled during tests")
 
     try:  # requests might not be installed
@@ -131,48 +145,52 @@ def isolate_network(monkeypatch):
     except Exception:  # pragma: no cover - safety
         pass
 
-    yield
+    yield None
+    return None
 
 
 @pytest.fixture
-def restore_environment():
+def restore_environment() -> TypedFixture[None]:
     """Snapshot ``os.environ`` and restore it after the test."""
 
     original = os.environ.copy()
     try:
-        yield
+        yield None
     finally:
         os.environ.clear()
         os.environ.update(original)
+    return None
 
 
-def assert_cli_success(result):
+def assert_cli_success(result: Result) -> None:
     """Assert that a CLI invocation succeeded without errors."""
     assert result.exit_code == 0, result.stderr
     assert result.stdout != ""
     assert result.stderr == ""
 
 
-def assert_cli_error(result):
+def assert_cli_error(result: Result) -> None:
     """Assert that a CLI invocation failed and produced an error message."""
     assert result.exit_code != 0
     assert result.stderr != "" or result.exception is not None
 
 
 @pytest.fixture
-def orchestrator_failure(monkeypatch):
+def orchestrator_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[Callable[[str | None], None]]:
     """Simulate orchestrator-level failures for targeted scenarios."""
 
-    def _simulate(kind: str | None = None):
+    def _simulate(kind: str | None = None) -> None:
         if kind == "timeout":
 
-            def _timeout(*_a, **_k):
+            def _timeout(*_a: object, **_k: object) -> None:
                 raise TimeoutError("simulated orchestrator timeout")
 
             monkeypatch.setattr(Orchestrator, "run_query", _timeout)
         elif kind == "metrics":
 
-            def _metrics(*_a, **_k):
+            def _metrics(*_a: object, **_k: object) -> QueryResponse:
                 return QueryResponse(
                     answer="",
                     citations=[],
@@ -186,14 +204,20 @@ def orchestrator_failure(monkeypatch):
 
 
 @given(parsers.re("the (?:Autoresearch )?application is running(?: with default configuration)?"))
-def application_running(temp_config):
+def application_running(temp_config: Path) -> None:
     """Ensure the application runs with isolated config and mocked LLM."""
     return
 
 
 # Shared CLI step implementations
 @when(parsers.parse("I run `{command}`"))
-def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_environment):
+def run_cli_command(
+    cli_runner: CliRunner,
+    bdd_context: dict[str, object],
+    command: str,
+    _isolate_network: None,
+    _restore_environment: None,
+) -> None:
     args = shlex.split(command)
     trimmed_args = args
     if args and args[0] == "uv":
@@ -212,13 +236,15 @@ def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_e
 
 
 @then("the CLI should exit successfully")
-def cli_should_exit_successfully(bdd_context):
-    assert_cli_success(bdd_context["result"])
+def cli_should_exit_successfully(bdd_context: dict[str, object]) -> None:
+    result = cast(Result, bdd_context["result"])
+    assert_cli_success(result)
 
 
 @then("the CLI should report an error")
-def cli_should_report_error(bdd_context):
-    assert_cli_error(bdd_context["result"])
+def cli_should_report_error(bdd_context: dict[str, object]) -> None:
+    result = cast(Result, bdd_context["result"])
+    assert_cli_error(result)
 
 
 # Backward-compatible aliases for legacy imports

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Generator
+from typing import TypeVar
 
 import pytest
 
@@ -30,6 +31,29 @@ from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
+from tests.typing_helpers import TypedFixture
+
+T_co = TypeVar("T_co", covariant=True)
+
+
+class StorageErrorHandler:
+    """Helper for capturing storage errors raised within steps."""
+
+    def attempt_operation(
+        self,
+        operation: Callable[[], T_co],
+        bdd_context: dict[str, object],
+        context_key: str = "storage_error",
+    ) -> T_co | None:
+        """Attempt an operation that might raise an exception."""
+
+        from autoresearch.errors import StorageError  # noqa: WPS433
+
+        try:
+            return operation()
+        except StorageError as exc:  # pragma: no cover - defensive
+            bdd_context[context_key] = str(exc)
+            return None
 
 # Load fixtures and step implementations so their fixtures are available
 pytest_plugins = (
@@ -71,32 +95,33 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture
-def test_context() -> dict:
+def test_context() -> TypedFixture[dict[str, object]]:
     """Mutable mapping for sharing state in behavior tests."""
     return {}
 
 
 @pytest.fixture
-def query_state() -> QueryState:
+def query_state() -> TypedFixture[QueryState]:
     """Provide a fresh ``QueryState`` instance for each scenario."""
     return QueryState(query="")
 
 
 @pytest.fixture
-def config_model() -> ConfigModel:
+def config_model() -> TypedFixture[ConfigModel]:
     """Provide a fresh ``ConfigModel`` instance for each scenario."""
     return ConfigModel()
 
 
 @pytest.fixture(autouse=True)
-def enable_real_vss(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def enable_real_vss(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Enable real VSS extension only when available."""
     if VSS_AVAILABLE:
         monkeypatch.setenv("REAL_VSS_TEST", "1")
-        yield
+        yield None
         monkeypatch.delenv("REAL_VSS_TEST", raising=False)
     else:
-        yield
+        yield None
+    return None
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
@@ -106,64 +131,37 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 @pytest.fixture(autouse=True)
-def reset_api_request_log() -> None:
+def reset_api_request_log() -> TypedFixture[None]:
     """Clear API request log before each scenario."""
     reset_request_log()
     reset_limiter_state()
+    return None
 
 
 @pytest.fixture(autouse=True)
 def bdd_storage_manager(
     storage_manager: StorageManager,
-) -> Generator[StorageManager, None, None]:
+) -> TypedFixture[StorageManager]:
     """Use the global temporary storage fixture for behavior tests."""
     yield storage_manager
+    return None
 
 
 @pytest.fixture(autouse=True)
-def reset_global_state() -> Generator[None, None, None]:
+def reset_global_state() -> TypedFixture[None]:
     """Reset ConfigLoader, environment variables, and storage after each scenario."""
     original_env = os.environ.copy()
     ConfigLoader.reset_instance()
-    yield
+    yield None
     ConfigLoader.reset_instance()
     StorageManager.context = StorageContext()
     os.environ.clear()
     os.environ.update(original_env)
+    return None
 
 
 @pytest.fixture
-def storage_error_handler():
-    """Fixture for handling storage errors in BDD tests.
-
-    This fixture provides methods for attempting operations that might raise
-    storage errors and for verifying the error messages.
-
-    Returns:
-        A handler object with methods for working with storage errors.
-    """
-
-    class StorageErrorHandler:
-        def attempt_operation(self, operation, bdd_context, context_key: str = "storage_error"):
-            """Attempt an operation that might raise an exception.
-
-            Args:
-                operation (callable): The operation to attempt.
-                bdd_context (dict): The BDD context dictionary.
-                context_key (str): Key used for storing the error in the context.
-
-            Returns:
-                The result of the operation if successful, ``None`` otherwise.
-            """
-
-            from autoresearch.errors import StorageError  # noqa: WPS433
-
-            try:
-                result = operation()
-            except StorageError as exc:  # pragma: no cover - defensive
-                bdd_context[context_key] = str(exc)
-                return None
-            else:  # pragma: no cover - defensive
-                return result
+def storage_error_handler() -> TypedFixture[StorageErrorHandler]:
+    """Provide a helper object for verifying storage exceptions in steps."""
 
     return StorageErrorHandler()
