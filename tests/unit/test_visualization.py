@@ -11,17 +11,17 @@ from autoresearch.visualization import save_knowledge_graph
 
 
 class DummyGraph:
-    def add_node(self, *args, **kwargs):
+    def add_node(self, *args: object, **kwargs: object) -> None:
         pass
 
-    def add_edge(self, *args, **kwargs):
+    def add_edge(self, *args: object, **kwargs: object) -> None:
         pass
 
 
 @pytest.fixture(autouse=True)
 def fake_deps(monkeypatch: pytest.MonkeyPatch) -> Generator[ModuleType, None, None]:
     """Provide dummy matplotlib and networkx implementations."""
-    fake_plt = ModuleType("pyplot")
+    fake_plt: ModuleType = ModuleType("pyplot")
     setattr(fake_plt, "figure", lambda *a, **k: None)
     setattr(fake_plt, "tight_layout", lambda *a, **k: None)
     setattr(fake_plt, "close", lambda *a, **k: None)
@@ -30,7 +30,7 @@ def fake_deps(monkeypatch: pytest.MonkeyPatch) -> Generator[ModuleType, None, No
     monkeypatch.setitem(sys.modules, "matplotlib.pyplot", fake_plt)
     monkeypatch.setattr("autoresearch.visualization.plt", fake_plt, raising=False)
 
-    fake_mpl = ModuleType("matplotlib")
+    fake_mpl: ModuleType = ModuleType("matplotlib")
     setattr(fake_mpl, "use", lambda *a, **k: None)
     monkeypatch.setitem(sys.modules, "matplotlib", fake_mpl)
 
@@ -49,14 +49,14 @@ def test_save_knowledge_graph(
     tmp_path: Path,
     fake_deps: ModuleType,
 ) -> None:
-    plt = fake_deps
-    response = QueryResponse(
+    plt: ModuleType = fake_deps
+    response: QueryResponse = QueryResponse(
         answer="a",
         citations=["c1", "c2"],
         reasoning=["r1", "r2"],
         metrics={},
     )
-    out_file = tmp_path / "graph.png"
+    out_file: Path = tmp_path / "graph.png"
     save_knowledge_graph(response, str(out_file))
     plt.savefig.assert_called_once_with(str(out_file))
 
@@ -66,9 +66,14 @@ def test_save_knowledge_graph_spring_fallback(
     tmp_path: Path,
     fake_deps: ModuleType,
 ) -> None:
-    plt = fake_deps
-    response = QueryResponse(answer="a", citations=[], reasoning=["r"], metrics={})
-    out_file = tmp_path / "graph.png"
+    plt: ModuleType = fake_deps
+    response: QueryResponse = QueryResponse(
+        answer="a",
+        citations=[],
+        reasoning=["r"],
+        metrics={},
+    )
+    out_file: Path = tmp_path / "graph.png"
     import networkx as real_nx
 
     def boom(*args: object, **kwargs: object) -> None:
