@@ -1,92 +1,97 @@
+from __future__ import annotations
+
 import itertools
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from typing import Any
 
 import pytest
 
-from contextlib import contextmanager
-
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.search import Search
-from autoresearch.storage import StorageManager
-from autoresearch.models import QueryResponse
 from autoresearch.errors import OrchestrationError
-
-
-def make_agent(name, calls, search_calls, store_calls, *, fail=False):
-    class DummyAgent:
-        def __init__(self, name, llm_adapter=None):
-            self.name = name
-
-        def can_execute(self, state, config):
-            return True
-
-        def execute(self, state, config, **kwargs):
-            if fail:
-                raise RuntimeError(f"{self.name} failed")
-            Search.rank_results(
-                "q", [{"title": "t", "url": "https://example.com"}]
-            )
-            StorageManager.persist_claim(
-                {"id": self.name, "type": "fact", "content": self.name}
-            )
-            calls.append(self.name)
-            search_calls.append(self.name)
-            state.update(
-                {
-                    "results": {self.name: "ok"},
-                    "claims": [
-                        {
-                            "id": self.name,
-                            "type": "fact",
-                            "content": self.name,
-                        }
-                    ],
-                }
-            )
-            if self.name == "Synthesizer":
-                state.results["final_answer"] = f"Answer from {self.name}"
-            return {"results": {self.name: "ok"}}
-
-    return DummyAgent(name)
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
+from pytest import MonkeyPatch
+from tests.integration._orchestrator_stubs import (
+    AgentDouble,
+    PersistClaimCall,
+    patch_agent_factory_get,
+    patch_storage_persist,
+)
 
 
 @pytest.mark.parametrize(
     "agents",
     list(itertools.permutations(["AgentA", "AgentB", "Synthesizer"])),
 )
-def test_orchestrator_agent_combinations(monkeypatch, agents):
+def test_orchestrator_agent_combinations(
+    monkeypatch: MonkeyPatch,
+    agents: tuple[str, ...],
+) -> None:
     calls: list[str] = []
     search_calls: list[str] = []
-    store_calls: list[dict] = []
-    monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: store_calls.append(claim)
-    )
-    monkeypatch.setattr(
-        AgentFactory,
-        "get",
-        lambda name, llm_adapter=None: make_agent(
-            name, calls, search_calls, store_calls
-        ),
-    )
+    persist_calls: list[PersistClaimCall] = []
+    patch_storage_persist(monkeypatch, persist_calls)
+
+    agent_doubles: list[AgentDouble] = []
+    for agent_name in ["AgentA", "AgentB", "Synthesizer"]:
+        double = AgentDouble(name=agent_name)
+
+        def result_factory(
+            state: Any,
+            config: ConfigModel,
+            *,
+            name: str = agent_name,
+            stub: AgentDouble = double,
+        ) -> dict[str, Any]:
+            search_calls.append(name)
+            original_factory = stub.result_factory
+            stub.result_factory = None
+            try:
+                payload = stub._build_payload(state, config)
+            finally:
+                stub.result_factory = original_factory
+            results_section = dict(payload.get("results", {}))
+            if name == "Synthesizer":
+                results_section["final_answer"] = "Answer from Synthesizer"
+                payload["answer"] = "Answer from Synthesizer"
+            payload["results"] = results_section
+            sources_section = payload.get("sources")
+            if not isinstance(sources_section, list) or not sources_section:
+                payload["sources"] = [
+                    {
+                        "id": f"{name.lower()}-source",
+                        "type": "url",
+                        "value": f"https://example.com/{name.lower()}",
+                    }
+                ]
+            return payload
+
+        double.result_factory = result_factory
+        double.call_log = calls
+        agent_doubles.append(double)
+
+    patch_agent_factory_get(monkeypatch, agent_doubles)
 
     @contextmanager
-    def no_token_capture(agent_name, metrics, config):
-        yield (lambda *a, **k: None, None)
+    def no_token_capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[Callable[..., None], None]]:
+        del agent_name, metrics, config
+        yield (lambda *args, **kwargs: None, None)
 
-    monkeypatch.setattr(
-        Orchestrator, "_capture_token_usage", no_token_capture
-    )
+    monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
-    cfg = ConfigModel(agents=list(agents), loops=1)
+    agent_list: list[str] = list(agents)
+    cfg: ConfigModel = ConfigModel(agents=agent_list, loops=1)
     response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
-    assert calls == list(agents)
+    assert calls == agent_list
     assert search_calls == calls
-    expected_claims = [
-        {"id": a, "type": "fact", "content": a} for a in agents
-    ]
-    assert store_calls == expected_claims
+    expected_claim_ids = [f"{agent.lower()}-claim" for agent in agents]
+    assert [call.claim["id"] for call in persist_calls] == expected_claim_ids
     assert response.answer == "Answer from Synthesizer"
 
 
@@ -94,46 +99,83 @@ def test_orchestrator_agent_combinations(monkeypatch, agents):
     "agents",
     list(itertools.permutations(["AgentA", "AgentB", "Synthesizer"], 2)),
 )
-def test_orchestrator_agent_pairings(monkeypatch, agents):
+def test_orchestrator_agent_pairings(
+    monkeypatch: MonkeyPatch,
+    agents: tuple[str, ...],
+) -> None:
     calls: list[str] = []
     search_calls: list[str] = []
-    store_calls: list[dict] = []
-    monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: store_calls.append(claim)
-    )
-    monkeypatch.setattr(
-        AgentFactory,
-        "get",
-        lambda name, llm_adapter=None: make_agent(
-            name, calls, search_calls, store_calls
-        ),
-    )
+    persist_calls: list[PersistClaimCall] = []
+    patch_storage_persist(monkeypatch, persist_calls)
+
+    agent_doubles: list[AgentDouble] = []
+    for agent_name in ["AgentA", "AgentB", "Synthesizer"]:
+        double = AgentDouble(name=agent_name)
+
+        def result_factory(
+            state: Any,
+            config: ConfigModel,
+            *,
+            name: str = agent_name,
+            stub: AgentDouble = double,
+        ) -> dict[str, Any]:
+            search_calls.append(name)
+            original_factory = stub.result_factory
+            stub.result_factory = None
+            try:
+                payload = stub._build_payload(state, config)
+            finally:
+                stub.result_factory = original_factory
+            results_section = dict(payload.get("results", {}))
+            if name == "Synthesizer":
+                results_section["final_answer"] = "Answer from Synthesizer"
+                payload["answer"] = "Answer from Synthesizer"
+            payload["results"] = results_section
+            sources_section = payload.get("sources")
+            if not isinstance(sources_section, list) or not sources_section:
+                payload["sources"] = [
+                    {
+                        "id": f"{name.lower()}-source",
+                        "type": "url",
+                        "value": f"https://example.com/{name.lower()}",
+                    }
+                ]
+            return payload
+
+        double.result_factory = result_factory
+        double.call_log = calls
+        agent_doubles.append(double)
+
+    patch_agent_factory_get(monkeypatch, agent_doubles)
 
     @contextmanager
-    def no_token_capture(agent_name, metrics, config):
-        yield (lambda *a, **k: None, None)
+    def no_token_capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[Callable[..., None], None]]:
+        del agent_name, metrics, config
+        yield (lambda *args, **kwargs: None, None)
 
-    monkeypatch.setattr(
-        Orchestrator, "_capture_token_usage", no_token_capture
-    )
+    monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
-    cfg = ConfigModel(agents=list(agents), loops=1)
+    agent_list: list[str] = list(agents)
+    cfg: ConfigModel = ConfigModel(agents=agent_list, loops=1)
     response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
-    assert calls == list(agents)
+    assert calls == agent_list
     assert search_calls == calls
-    expected_claims = [
-        {"id": a, "type": "fact", "content": a} for a in agents
-    ]
-    assert store_calls == expected_claims
+    expected_claim_ids = [f"{agent.lower()}-claim" for agent in agents]
+    assert [call.claim["id"] for call in persist_calls] == expected_claim_ids
     expected_answer = (
         "Answer from Synthesizer" if "Synthesizer" in agents else "No answer synthesized"
     )
     assert response.answer == expected_answer
 
 
-pairings = list(itertools.permutations(["AgentA", "AgentB", "Synthesizer"], 2))
+pairings: list[tuple[str, str]] = list(
+    itertools.permutations(["AgentA", "AgentB", "Synthesizer"], 2)
+)
 
 
 @pytest.mark.slow
@@ -141,35 +183,75 @@ pairings = list(itertools.permutations(["AgentA", "AgentB", "Synthesizer"], 2))
     "agents, fail_index",
     [(p, i) for p in pairings for i in range(len(p))],
 )
-def test_orchestrator_failure_modes(monkeypatch, agents, fail_index):
+def test_orchestrator_failure_modes(
+    monkeypatch: MonkeyPatch,
+    agents: tuple[str, ...],
+    fail_index: int,
+) -> None:
     calls: list[str] = []
     search_calls: list[str] = []
-    store_calls: list[dict] = []
-    monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: store_calls.append(claim)
-    )
-    monkeypatch.setattr(
-        AgentFactory,
-        "get",
-        lambda name, llm_adapter=None: make_agent(
-            name,
-            calls,
-            search_calls,
-            store_calls,
-            fail=(name == agents[fail_index]),
-        ),
-    )
+    persist_calls: list[PersistClaimCall] = []
+    patch_storage_persist(monkeypatch, persist_calls)
+
+    failing_agent = agents[fail_index]
+
+    agent_doubles: list[AgentDouble] = []
+    for agent_name in ["AgentA", "AgentB", "Synthesizer"]:
+        error: RuntimeError | None = None
+        if agent_name == failing_agent:
+            error = RuntimeError(f"{agent_name} failed")
+
+        double = AgentDouble(name=agent_name, error=error)
+
+        def result_factory(
+            state: Any,
+            config: ConfigModel,
+            *,
+            name: str = agent_name,
+            stub: AgentDouble = double,
+        ) -> dict[str, Any]:
+            search_calls.append(name)
+            original_factory = stub.result_factory
+            stub.result_factory = None
+            try:
+                payload = stub._build_payload(state, config)
+            finally:
+                stub.result_factory = original_factory
+            results_section = dict(payload.get("results", {}))
+            if name == "Synthesizer":
+                results_section["final_answer"] = "Answer from Synthesizer"
+                payload["answer"] = "Answer from Synthesizer"
+            payload["results"] = results_section
+            sources_section = payload.get("sources")
+            if not isinstance(sources_section, list) or not sources_section:
+                payload["sources"] = [
+                    {
+                        "id": f"{name.lower()}-source",
+                        "type": "url",
+                        "value": f"https://example.com/{name.lower()}",
+                    }
+                ]
+            return payload
+
+        double.result_factory = result_factory
+        double.call_log = calls
+        agent_doubles.append(double)
+
+    patch_agent_factory_get(monkeypatch, agent_doubles)
 
     @contextmanager
-    def no_token_capture(agent_name, metrics, config):
-        yield (lambda *a, **k: None, None)
+    def no_token_capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[Callable[..., None], None]]:
+        del agent_name, metrics, config
+        yield (lambda *args, **kwargs: None, None)
 
-    monkeypatch.setattr(
-        Orchestrator, "_capture_token_usage", no_token_capture
-    )
+    monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
-    cfg = ConfigModel(agents=list(agents), loops=1, max_errors=1)
+    agent_list: list[str] = list(agents)
+    cfg: ConfigModel = ConfigModel(agents=agent_list, loops=1, max_errors=1)
     with pytest.raises(OrchestrationError):
         Orchestrator().run_query("q", cfg)
 
@@ -189,5 +271,5 @@ def test_orchestrator_failure_modes(monkeypatch, agents, fail_index):
 
     assert calls == expected_calls
     assert search_calls == calls
-    expected_claims = [{"id": a, "type": "fact", "content": a} for a in calls]
-    assert store_calls == expected_claims
+    expected_claim_ids = [f"{agent.lower()}-claim" for agent in calls]
+    assert [call.claim["id"] for call in persist_calls] == expected_claim_ids

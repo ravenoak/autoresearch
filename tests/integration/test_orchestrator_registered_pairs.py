@@ -1,50 +1,85 @@
+from __future__ import annotations
+
 import itertools
+from typing import Any
 
 import pytest
 
 from autoresearch.agents.registry import AgentRegistry
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.models import QueryResponse
-from autoresearch.search import Search
-from autoresearch.storage import StorageManager
 from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
+from pytest import MonkeyPatch
+from tests.integration._orchestrator_stubs import (
+    AgentDouble,
+    PersistClaimCall,
+    patch_agent_factory_get,
+    patch_storage_persist,
+)
 
 
-@pytest.mark.parametrize("pair", list(itertools.combinations(AgentRegistry.list_available(), 2)))
-def test_orchestrator_all_registered_pairs(monkeypatch, pair):
+@pytest.mark.parametrize(
+    "pair",
+    list(itertools.combinations(AgentRegistry.list_available(), 2)),
+)
+def test_orchestrator_all_registered_pairs(
+    monkeypatch: MonkeyPatch,
+    pair: tuple[str, str],
+) -> None:
     """Run the orchestrator with every pair of registered agents."""
 
     # Setup
     calls: list[str] = []
-    pair = list(pair)
+    persist_calls: list[PersistClaimCall] = []
+    patch_storage_persist(monkeypatch, persist_calls)
 
-    def make_agent(name: str):
-        class DummyAgent:
-            def __init__(self, name: str, llm_adapter=None) -> None:
-                self.name = name
+    agent_list: list[str] = list(pair)
 
-            def can_execute(self, state, config) -> bool:
-                return True
+    agent_doubles: list[AgentDouble] = []
+    for agent_name in agent_list:
+        double = AgentDouble(name=agent_name)
 
-            def execute(self, state, config, **_: object) -> dict:
-                calls.append(name)
-                state.results[name] = "ok"
-                if name == pair[-1]:
-                    state.results["final_answer"] = f"answer from {name}"
-                return {"results": {name: "ok"}}
+        def result_factory(
+            state: Any,
+            config: ConfigModel,
+            *,
+            name: str = agent_name,
+            stub: AgentDouble = double,
+        ) -> dict[str, Any]:
+            original_factory = stub.result_factory
+            stub.result_factory = None
+            try:
+                payload = stub._build_payload(state, config)
+            finally:
+                stub.result_factory = original_factory
+            results_section = dict(payload.get("results", {}))
+            if name == agent_list[-1]:
+                results_section["final_answer"] = f"answer from {name}"
+                payload["answer"] = f"answer from {name}"
+            payload["results"] = results_section
+            sources_section = payload.get("sources")
+            if not isinstance(sources_section, list) or not sources_section:
+                payload["sources"] = [
+                    {
+                        "id": f"{name.lower()}-source",
+                        "type": "url",
+                        "value": f"https://example.com/{name.lower()}",
+                    }
+                ]
+            return payload
 
-        return DummyAgent(name)
+        double.result_factory = result_factory
+        double.call_log = calls
+        agent_doubles.append(double)
 
-    monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda c: None)
-    monkeypatch.setattr(AgentFactory, "get", lambda name: make_agent(name))
+    patch_agent_factory_get(monkeypatch, agent_doubles)
 
-    cfg = ConfigModel(agents=pair, loops=1)
+    cfg: ConfigModel = ConfigModel(agents=agent_list, loops=1)
 
     # Execute
     response = Orchestrator().run_query("q", cfg)
 
     # Verify
     assert isinstance(response, QueryResponse)
-    assert calls == pair
-    assert response.answer == f"answer from {pair[-1]}"
+    assert calls == agent_list
+    assert response.answer == f"answer from {agent_list[-1]}"
