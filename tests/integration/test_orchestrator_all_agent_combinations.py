@@ -1,83 +1,106 @@
+from __future__ import annotations
+
 import itertools
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from typing import Any
 
 import pytest
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import orchestrator as orch_mod
+from pytest import MonkeyPatch
+from tests.integration._orchestrator_stubs import (
+    AgentDouble,
+    PersistClaimCall,
+    patch_agent_factory_get,
+    patch_storage_persist,
+)
 
 Orchestrator = orch_mod.Orchestrator
-AgentFactory = orch_mod.AgentFactory
-StorageManager = orch_mod.StorageManager
-
-
-class Search:
-    @staticmethod
-    def rank_results(q, results):  # pragma: no cover - simple stub
-        return results
 
 
 pytestmark = pytest.mark.integration
 
-AGENTS = ["AgentA", "AgentB", "AgentC", "Synthesizer"]
+AGENTS: list[str] = ["AgentA", "AgentB", "AgentC", "Synthesizer"]
 
 
-def make_agent(name, calls, search_calls):
-    class DummyAgent:
-        def __init__(self, name, llm_adapter=None):
-            self.name = name
-
-        def can_execute(self, state, config):  # pragma: no cover - dummy
-            return True
-
-        def execute(self, state, config, **kwargs):  # pragma: no cover - dummy
-            Search.rank_results("q", [{"title": "t", "url": "u"}])
-            StorageManager.persist_claim(
-                {"id": self.name, "type": "fact", "content": self.name}
-            )
-            calls.append(self.name)
-            search_calls.append(self.name)
-            state.results[self.name] = "ok"
-            if self.name == "Synthesizer":
-                state.results["final_answer"] = f"Answer from {self.name}"
-            return {"results": {self.name: "ok"}}
-
-    return DummyAgent(name)
-
-
-def all_permutations():
+def all_permutations() -> Iterator[tuple[str, ...]]:
     for r in range(1, len(AGENTS) + 1):
         yield from itertools.permutations(AGENTS, r)
 
 
 @pytest.mark.parametrize("agents", list(all_permutations()))
-def test_orchestrator_all_agent_combinations(monkeypatch, agents):
+def test_orchestrator_all_agent_combinations(
+    monkeypatch: MonkeyPatch,
+    agents: tuple[str, ...],
+) -> None:
     calls: list[str] = []
     search_calls: list[str] = []
-    store_calls: list[str] = []
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: store_calls.append(claim["id"])
-    )
-    monkeypatch.setattr(
-        AgentFactory,
-        "get",
-        lambda name, llm_adapter=None: make_agent(name, calls, search_calls),
-    )
+    persist_calls: list[PersistClaimCall] = []
+    patch_storage_persist(monkeypatch, persist_calls)
+
+    agent_doubles: list[AgentDouble] = []
+    for agent_name in AGENTS:
+        double = AgentDouble(name=agent_name)
+
+        def build_result(
+            state: Any,
+            config: ConfigModel,
+            *,
+            name: str = agent_name,
+            stub: AgentDouble = double,
+        ) -> dict[str, Any]:
+            search_calls.append(name)
+            original_factory = stub.result_factory
+            stub.result_factory = None
+            try:
+                payload = stub._build_payload(state, config)
+            finally:
+                stub.result_factory = original_factory
+            results_section = dict(payload.get("results", {}))
+            if name == "Synthesizer":
+                results_section["final_answer"] = f"Answer from {name}"
+                payload["answer"] = f"Answer from {name}"
+            payload["results"] = results_section
+            sources_section = payload.get("sources")
+            if not isinstance(sources_section, list) or not sources_section:
+                payload["sources"] = [
+                    {
+                        "id": f"{name.lower()}-source",
+                        "type": "url",
+                        "value": f"https://example.com/{name.lower()}",
+                    }
+                ]
+            return payload
+
+        double.result_factory = build_result
+        double.call_log = calls
+        agent_doubles.append(double)
+
+    patch_agent_factory_get(monkeypatch, agent_doubles)
 
     @contextmanager
-    def no_token_capture(agent_name, metrics, config):
-        yield (lambda *a, **k: None, None)
+    def no_token_capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[Callable[..., None], None]]:
+        del agent_name, metrics, config
+        yield (lambda *args, **kwargs: None, None)
 
     monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
-    cfg = ConfigModel(agents=list(agents), loops=1)
+    agent_list: list[str] = list(agents)
+    cfg: ConfigModel = ConfigModel(agents=agent_list, loops=1)
     response = Orchestrator().run_query("q", cfg)
 
     assert isinstance(response, QueryResponse)
-    assert calls == list(agents)
-    assert search_calls == list(agents)
-    assert store_calls == list(agents)
+    assert calls == agent_list
+    assert search_calls == agent_list
+    expected_claim_ids = [f"{agent.lower()}-claim" for agent in agent_list]
+    assert [call.claim["id"] for call in persist_calls] == expected_claim_ids
     expected = (
         "Answer from Synthesizer"
         if "Synthesizer" in agents
