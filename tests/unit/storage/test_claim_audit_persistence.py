@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
 import networkx as nx
 from autoresearch.storage import (
     ClaimAuditStatus,
@@ -12,13 +15,13 @@ from autoresearch.storage_backends import init_rdf_store
 
 class _StubBackend:
     def __init__(self) -> None:
-        self.persisted: list[dict[str, object]] = []
+        self.persisted: list[dict[str, Any]] = []
 
-    def persist_claim_audit(self, payload: dict[str, object]) -> None:
+    def persist_claim_audit(self, payload: dict[str, Any]) -> None:
         self.persisted.append(payload)
 
 
-def test_persist_claim_audit_payload_updates_backends(tmp_path) -> None:
+def test_persist_claim_audit_payload_updates_backends(tmp_path: Path) -> None:
     graph = nx.DiGraph()
     graph.add_node("claim-1")
 
