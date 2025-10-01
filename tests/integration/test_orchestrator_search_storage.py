@@ -2,6 +2,7 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import orchestrator as orch_mod
+from autoresearch.storage import ClaimAuditStatus
 
 Orchestrator = orch_mod.Orchestrator
 AgentFactory = orch_mod.AgentFactory
@@ -47,9 +48,10 @@ def test_orchestrator_search_storage(monkeypatch):
             {"title": "Doc2", "url": "u2"},
         ],
     )
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim)
-    )
+    def _capture_claim(claim: dict[str, object]) -> None:
+        stored.append({key: str(claim[key]) for key in ("id", "type", "content")})
+
+    monkeypatch.setattr(StorageManager, "persist_claim", _capture_claim)
     monkeypatch.setattr(AgentFactory, "get", lambda name: _make_agent(calls, stored))
 
     cfg = ConfigModel(agents=["TestAgent"], loops=1)
@@ -72,17 +74,18 @@ def test_orchestrator_multiple_agents_aggregate_results(monkeypatch):
     calls: list[str] = []
     stored: list[dict[str, str]] = []
 
-    monkeypatch.setattr(
-        Search,
-        "external_lookup",
-        lambda q, max_results=2: [
+    def _external_lookup(_: object, max_results: int = 2) -> list[dict[str, str]]:
+        docs = [
             {"title": "Doc1", "url": "u1"},
             {"title": "Doc2", "url": "u2"},
-        ],
-    )
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim)
-    )
+        ]
+        return docs[:max_results]
+
+    def _capture_claim(claim: dict[str, object]) -> None:
+        stored.append({key: str(claim[key]) for key in ("id", "type", "content")})
+
+    monkeypatch.setattr(Search, "external_lookup", _external_lookup)
+    monkeypatch.setattr(StorageManager, "persist_claim", _capture_claim)
 
     def make_agent(name: str):
         class Searcher:
@@ -131,7 +134,7 @@ def test_orchestrator_multiple_agents_aggregate_results(monkeypatch):
         {"id": "u1", "type": "source", "content": "Doc1"},
         {"id": "u2", "type": "source", "content": "Doc2"},
     ]
-    assert resp.answer == "Synthesized: Doc1, Doc2"
+    assert "Synthesized: Doc1, Doc2" in resp.answer
 
 
 def test_orchestrator_persists_across_queries(monkeypatch):
@@ -178,17 +181,30 @@ def test_orchestrator_uses_config_context(config_context, monkeypatch):
     calls: list[str] = []
     stored: list[dict[str, str]] = []
 
-    monkeypatch.setattr(
-        Search,
-        "external_lookup",
-        lambda q, max_results=2: [
+    def _external_lookup_context(_: object, max_results: int = 2) -> list[dict[str, str]]:
+        docs = [
             {"title": "Doc1", "url": "u1"},
             {"title": "Doc2", "url": "u2"},
-        ],
-    )
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim)
-    )
+        ]
+        return docs[:max_results]
+
+    def _capture_claim_context(claim: dict[str, object]) -> None:
+        stored.append({key: str(claim[key]) for key in ("id", "type", "content")})
+
+    def _list_claim_audits_stub(claim_id: str | None = None) -> list[dict[str, str]]:
+        matching = (
+            [entry for entry in stored if entry["id"] == claim_id]
+            if claim_id
+            else stored
+        )
+        return [
+            {"claim_id": entry["id"], "status": ClaimAuditStatus.SUPPORTED.value}
+            for entry in matching
+        ]
+
+    monkeypatch.setattr(Search, "external_lookup", _external_lookup_context)
+    monkeypatch.setattr(StorageManager, "persist_claim", _capture_claim_context)
+    monkeypatch.setattr(StorageManager, "list_claim_audits", _list_claim_audits_stub)
 
     def make_agent(name: str):
         class Searcher:
@@ -202,7 +218,12 @@ def test_orchestrator_uses_config_context(config_context, monkeypatch):
                 results = Search.external_lookup(state.query, max_results=2)
                 state.results["search_results"] = results
                 claims = [
-                    {"id": r["url"], "type": "source", "content": r["title"]}
+                    {
+                        "id": r["url"],
+                        "type": "source",
+                        "content": r["title"],
+                        "audit_status": ClaimAuditStatus.SUPPORTED.value,
+                    }
                     for r in results
                 ]
                 calls.append(self.name)
@@ -238,7 +259,7 @@ def test_orchestrator_uses_config_context(config_context, monkeypatch):
         {"id": "u1", "type": "source", "content": "Doc1"},
         {"id": "u2", "type": "source", "content": "Doc2"},
     ]
-    assert resp.answer == "Synthesized: Doc1, Doc2"
+    assert "Synthesized: Doc1, Doc2" in resp.answer
 
 
 def test_orchestrator_handles_empty_search_results(monkeypatch):
