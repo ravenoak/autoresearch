@@ -19,7 +19,10 @@ from scripts.distributed_coordination_sim import (  # noqa: E402
 )
 
 from autoresearch.distributed import executors  # noqa: E402
-from autoresearch.distributed.broker import InMemoryBroker  # noqa: E402
+from autoresearch.distributed.broker import (  # noqa: E402
+    InMemoryBroker,
+    StorageQueueProtocol,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -105,8 +108,8 @@ def test_message_processing_returns_copy(tmp_path_env: Path) -> None:
 def test_module_exports_helpers(tmp_path_env: Path) -> None:
     """The simulation module exposes helper utilities via ``__all__``."""
 
-    module = importlib.import_module("scripts.distributed_coordination_sim")
-    exported = set(getattr(module, "__all__", ()))
+    module: ModuleType = importlib.import_module("scripts.distributed_coordination_sim")
+    exported: set[str] = set(getattr(module, "__all__", ()))
     assert {"elect_leader", "process_messages"}.issubset(exported)
 
 
@@ -121,7 +124,7 @@ def test_storage_queue_adapter_accepts_mapping_payloads() -> None:
             self.items.append(item)
 
     queue = MappingQueue()
-    resolved = executors._resolve_storage_queue(queue)
+    resolved: StorageQueueProtocol | None = executors._resolve_storage_queue(queue)
     assert resolved is not None
     payload: Mapping[str, Any] = {
         "action": "persist_claim",
@@ -136,11 +139,14 @@ def test_storage_queue_adapter_rejects_incompatible_payloads() -> None:
     """Adapters reject queues that expect non-mapping payloads."""
 
     class TextQueue:
+        def __init__(self) -> None:
+            self.item: str | None = None
+
         def put(self, item: str) -> None:
             self.item = item
 
     queue = TextQueue()
-    resolved = executors._resolve_storage_queue(queue)
+    resolved: StorageQueueProtocol | None = executors._resolve_storage_queue(queue)
     assert resolved is None
 
 
@@ -148,5 +154,5 @@ def test_storage_queue_adapter_accepts_broker_queue() -> None:
     """Real broker queues remain compatible with storage adapters."""
 
     broker = InMemoryBroker()
-    resolved = executors._resolve_storage_queue(broker.queue)
+    resolved: StorageQueueProtocol | None = executors._resolve_storage_queue(broker.queue)
     assert resolved is broker.queue
