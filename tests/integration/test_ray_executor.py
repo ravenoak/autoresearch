@@ -1,16 +1,26 @@
+from __future__ import annotations
+
 import os
 import sys
 import types
+from collections.abc import Callable
 from pathlib import Path
+from typing import Final
 
 import pytest
 from prometheus_client import CollectorRegistry
 
 from autoresearch.config.models import ConfigModel, DistributedConfig
+from autoresearch import search
+from autoresearch.agents.registry import AgentFactory
 from autoresearch.distributed import executors
+from autoresearch.distributed.broker import BrokerMessage, MessageQueueProtocol
+from autoresearch.llm import pool as llm_pool
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
+
+from tests.integration._executor_stubs import patch_tracking_agent_factory
+from tests.typing_helpers import TypedFixture
 
 package = types.ModuleType("autoresearch.monitor")
 package.__path__ = [str(Path(__file__).resolve().parents[2] / "src" / "autoresearch" / "monitor")]
@@ -20,31 +30,34 @@ from autoresearch.monitor.node_health import NodeHealthMonitor  # noqa: E402
 pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
 
 
-class DummyAgent:
-    def __init__(self, name: str, pids: list[int]):
-        self.name = name
-        self._pids = pids
+class _SessionSentinel:
+    """Simple sentinel carrying a descriptive label for assertions."""
 
-    def can_execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> bool:  # pragma: no cover - stub
-        return True
+    def __init__(self, label: str) -> None:
+        self.label = label
 
-    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict:
-        self._pids.append(os.getpid())
-        state.update({"results": {self.name: "ok"}})
-        return {"results": {self.name: "ok"}}
+
+_HTTP_SESSION_SENTINEL: Final[_SessionSentinel] = _SessionSentinel("http")
+_LLM_SESSION_SENTINEL: Final[_SessionSentinel] = _SessionSentinel("llm")
+
+
+def _stub_http_session() -> _SessionSentinel:
+    return _HTTP_SESSION_SENTINEL
+
+
+def _stub_llm_session() -> _SessionSentinel:
+    return _LLM_SESSION_SENTINEL
 
 
 def _dummy_execute_agent_remote(
     agent_name: str,
     state: QueryState,
     config: ConfigModel,
-    result_queue=None,
-    storage_queue=None,
-    http_session=None,
-    llm_session=None,
-):
+    result_queue: MessageQueueProtocol | None = None,
+    storage_queue: MessageQueueProtocol | None = None,
+    http_session: object | None = None,
+    llm_session: object | None = None,
+) -> BrokerMessage:
     if http_session is not None and isinstance(
         http_session, executors.ray.ObjectRef
     ):  # pragma: no cover - retrieval
@@ -55,7 +68,7 @@ def _dummy_execute_agent_remote(
         llm_session = executors.ray.get(llm_session)
     agent = AgentFactory.get(agent_name)
     res = agent.execute(state, config)
-    msg = {
+    msg: BrokerMessage = {
         "action": "agent_result",
         "agent": agent_name,
         "result": res,
@@ -67,12 +80,34 @@ def _dummy_execute_agent_remote(
 
 
 class DummyRemote:
-    def remote(self, *args, **kwargs):  # pragma: no cover - wrapper
-        return _dummy_execute_agent_remote(*args, **kwargs)
+    """Wrapper mirroring Ray's ``RemoteFunction`` callable interface."""
+
+    def __init__(self, func: Callable[..., BrokerMessage] | None = None) -> None:
+        self._func = func or _dummy_execute_agent_remote
+
+    def remote(
+        self,
+        agent_name: str,
+        state: QueryState,
+        config: ConfigModel,
+        result_queue: MessageQueueProtocol | None = None,
+        storage_queue: MessageQueueProtocol | None = None,
+        http_session: object | None = None,
+        llm_session: object | None = None,
+    ) -> BrokerMessage:  # pragma: no cover - wrapper
+        return self._func(
+            agent_name,
+            state,
+            config,
+            result_queue=result_queue,
+            storage_queue=storage_queue,
+            http_session=http_session,
+            llm_session=llm_session,
+        )
 
 
 class DummyObjectRef:
-    def __init__(self, obj):  # pragma: no cover - trivial
+    def __init__(self, obj: object) -> None:  # pragma: no cover - trivial
         self.obj = obj
 
 
@@ -92,38 +127,36 @@ class DummyRay(types.ModuleType):
     def shutdown(self) -> None:  # pragma: no cover - trivial
         self._initialized = False
 
-    def get(self, obj):  # pragma: no cover - trivial
+    def get(self, obj: DummyObjectRef | object) -> object:  # pragma: no cover - trivial
+        if isinstance(obj, DummyObjectRef):
+            return obj.obj
         return obj
 
-    def put(self, obj):  # pragma: no cover - trivial
+    def put(self, obj: object) -> DummyObjectRef:  # pragma: no cover - trivial
         return DummyObjectRef(obj)
 
-    def remote(self, func):  # pragma: no cover - trivial
-        class R:
-            def remote(self, *a, **k):
-                return func(*a, **k)
+    def remote(self, func: Callable[..., BrokerMessage]) -> DummyRemote:  # pragma: no cover - trivial
+        return DummyRemote(func)
 
-        return R()
-
-    def cluster_resources(self):  # pragma: no cover - trivial
+    def cluster_resources(self) -> dict[str, int]:  # pragma: no cover - trivial
         return {"CPU": 1}
 
 
 @pytest.fixture
-def dummy_ray(monkeypatch: pytest.MonkeyPatch):
+def dummy_ray(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[DummyRay]:
     ray_mod = DummyRay()
     monkeypatch.setitem(sys.modules, "ray", ray_mod)
     monkeypatch.setattr(executors, "ray", ray_mod)
     return ray_mod
 
 
-def test_ray_executor(monkeypatch: pytest.MonkeyPatch, dummy_ray) -> None:
+def test_ray_executor(monkeypatch: pytest.MonkeyPatch, dummy_ray: DummyRay) -> None:
     pids: list[int] = []
-    monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
+    patch_tracking_agent_factory(monkeypatch, pids)
     monkeypatch.setattr(executors, "_execute_agent_remote", DummyRemote())
-    monkeypatch.setattr(executors.search, "get_http_session", lambda: object())
-    monkeypatch.setattr(executors.llm_pool, "get_session", lambda: object())
-    cfg = ConfigModel(
+    monkeypatch.setattr(search, "get_http_session", _stub_http_session)
+    monkeypatch.setattr(llm_pool, "get_session", _stub_llm_session)
+    cfg: ConfigModel = ConfigModel(
         agents=["A"],
         loops=1,
         distributed=True,

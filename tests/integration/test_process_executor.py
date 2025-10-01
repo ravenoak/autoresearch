@@ -1,32 +1,18 @@
-import os
 import pytest
-from autoresearch.distributed import ProcessExecutor
+
 from autoresearch.config.models import ConfigModel, DistributedConfig
+from autoresearch.distributed import ProcessExecutor
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import AgentFactory
-from autoresearch.orchestration.state import QueryState
+
+from tests.integration._executor_stubs import patch_tracking_agent_factory
 
 pytestmark = pytest.mark.slow
 
 
-class DummyAgent:
-    def __init__(self, name: str, pids: list[int]):
-        self.name = name
-        self._pids = pids
-
-    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:  # pragma: no cover - dummy
-        return True
-
-    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict:
-        self._pids.append(os.getpid())
-        state.update({"results": {self.name: "ok"}})
-        return {"results": {self.name: "ok"}}
-
-
-def test_process_executor_multi_process(monkeypatch):
+def test_process_executor_multi_process(monkeypatch: pytest.MonkeyPatch) -> None:
     pids: list[int] = []
-    monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
-    cfg = ConfigModel(
+    patch_tracking_agent_factory(monkeypatch, pids)
+    cfg: ConfigModel = ConfigModel(
         agents=["A", "B"],
         loops=1,
         distributed=True,
@@ -39,10 +25,10 @@ def test_process_executor_multi_process(monkeypatch):
     executor.shutdown()
 
 
-def test_process_result_aggregation(monkeypatch):
+def test_process_result_aggregation(monkeypatch: pytest.MonkeyPatch) -> None:
     pids: list[int] = []
-    monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
-    cfg = ConfigModel(
+    patch_tracking_agent_factory(monkeypatch, pids)
+    cfg: ConfigModel = ConfigModel(
         agents=["A", "B"],
         loops=1,
         distributed=True,
