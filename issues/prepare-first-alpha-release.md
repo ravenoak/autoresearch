@@ -21,6 +21,18 @@ controls we captured the **14:28 UTC** `task verify` and **14:30 UTC**
 evidence trail current without triggering the deferred TestPyPI steps.
 【F:docs/release_plan.md†L7-L20】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+On **October 1, 2025 at 14:39 UTC** a repo-wide `uv run mypy --strict src tests`
+run reported 2,114 errors across 211 files, showing that the strict backlog now
+resides inside analysis, integration, and behavior fixtures still expecting the
+pre-expansion `EvaluationSummary` shape. The paired **14:40 UTC**
+`uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers"`
+run reached the unit suite before `QueryStateRegistry.register` hit the
+`_thread.RLock` cloning failure in
+`tests/unit/orchestration/test_orchestrator_auto_mode.py::`
+`test_auto_mode_escalates_to_debate_when_gate_requires_loops`, so the coverage
+gate continues to rely on the 92.4 % evidence while TestPyPI stays deferred.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 On **September 30, 2025 at 15:15 UTC** we updated the `A2AMessage` schema to
 accept the SDK's concrete payloads and introduced
 `test_a2a_message_accepts_sdk_message` to guard the regression.

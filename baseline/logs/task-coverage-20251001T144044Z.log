@@ -1,0 +1,241 @@
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: benchmark-5.1.0, hypothesis-6.140.2, langsmith-0.4.31, cov-7.0.0, bdd-8.1.0, anyio-4.11.0, httpx-0.35.0
+collecting ... collected 1077 items / 25 deselected / 1052 selected
+
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  1%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_decodes_prometheus_payload PASSED                     [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_coerces_bytearray PASSED                              [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_memoryview PASSED                             [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_replaces_invalid_bytes PASSED                         [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_failure PASSED                                [  2%]
+tests/unit/orchestration/test_answer_audit.py::test_answer_auditor_hedges_unsupported_claims PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  2%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  2%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                      [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_respects_force_debate_override PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_flags_coverage_gap_and_confidence PASSED                   [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_applies_graph_thresholds PASSED                            [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_summary_uses_typed_floats PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_build_skips_empty_payload PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_ingestion_saved_payload_is_sanitized PASSED           [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  3%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_returns_direct_answer_when_gate_exits PASSED     [  3%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops FAILED [  3%]
+
+=========================================================== FAILURES ===========================================================
+_________________________________ test_auto_mode_escalates_to_debate_when_gate_requires_loops __________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fea41789310>
+
+    def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """AUTO mode should escalate to debate when the gate requests it."""
+    
+        config = ConfigModel(reasoning_mode=ReasoningMode.AUTO, loops=3)
+        orchestrator = Orchestrator()
+        synth = DummySynthesizer()
+    
+        monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: synth)
+    
+        decision = _decision(True, 3)
+    
+        def fake_gate(**kwargs):  # noqa: ANN001 - matches evaluate_scout_gate_policy kwargs
+            kwargs["state"].metadata["scout_gate"] = decision.__dict__
+            return decision
+    
+        monkeypatch.setattr(OrchestrationUtils, "evaluate_scout_gate_policy", fake_gate)
+    
+        loop_calls: List[int] = []
+    
+        def fake_cycle(
+            loop: int,
+            loops: int,
+            agents,
+            primus_index: int,
+            max_errors: int,
+            state,
+            config_obj,
+            metrics,
+            callbacks_map,
+            agent_factory,
+            storage_manager,
+            tracer,
+            cb_manager,
+        ) -> int:
+            loop_calls.append(loop)
+            state.results["final_answer"] = f"debate-{loop}"
+            return primus_index
+    
+        monkeypatch.setattr(OrchestrationUtils, "execute_cycle", fake_cycle)
+    
+>       response = orchestrator.run_query("auto debate", config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/workspace/autoresearch/tests/unit/orchestration/test_orchestrator_auto_mode.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/workspace/autoresearch/src/autoresearch/orchestration/orchestrator.py:405: in run_query
+    state_id = QueryStateRegistry.register(state, config)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/workspace/autoresearch/src/autoresearch/orchestration/state_registry.py:81: in register
+    state=_clone_model(state),
+          ^^^^^^^^^^^^^^^^^^^
+/workspace/autoresearch/src/autoresearch/orchestration/state_registry.py:38: in _clone_model
+    return model.model_copy(deep=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:406: in model_copy
+    copied = self.__deepcopy__() if deep else self.__copy__()
+             ^^^^^^^^^^^^^^^^^^^
+/workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:952: in __deepcopy__
+    deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}, memo=memo),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.pyenv/versions/3.12.10/lib/python3.12/copy.py:136: in deepcopy
+    y = copier(x, memo)
+        ^^^^^^^^^^^^^^^
+/root/.pyenv/versions/3.12.10/lib/python3.12/copy.py:221: in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+                             ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+x = <unlocked _thread.RLock object owner=0 count=0 at 0x7fea4143da80>, memo = {140644094042048: {}}, _nil = []
+
+    def deepcopy(x, memo=None, _nil=[]):
+        """Deep copy operation on arbitrary Python objects.
+    
+        See the module's __doc__ string for more info.
+        """
+    
+        if memo is None:
+            memo = {}
+    
+        d = id(x)
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
+    
+        cls = type(x)
+    
+        copier = _deepcopy_dispatch.get(cls)
+        if copier is not None:
+            y = copier(x, memo)
+        else:
+            if issubclass(cls, type):
+                y = _deepcopy_atomic(x, memo)
+            else:
+                copier = getattr(x, "__deepcopy__", None)
+                if copier is not None:
+                    y = copier(memo)
+                else:
+                    reductor = dispatch_table.get(cls)
+                    if reductor:
+                        rv = reductor(x)
+                    else:
+                        reductor = getattr(x, "__reduce_ex__", None)
+                        if reductor is not None:
+>                           rv = reductor(4)
+                                 ^^^^^^^^^^^
+E                           TypeError: cannot pickle '_thread.RLock' object
+
+/root/.pyenv/versions/3.12.10/lib/python3.12/copy.py:151: TypeError
+----------------------------------------------------- Captured stderr call -----------------------------------------------------
+{"text": "2025-10-01 14:41:32.944 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.944677Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.522814", "seconds": 25.522814}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.944677Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.944809+00:00", "timestamp": 1759329692.944809}}}
+{"text": "2025-10-01 14:41:32.945 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent token usage\n", "record": {"elapsed": {"repr": "0:00:25.523341", "seconds": 25.523341}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent token usage", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.945336+00:00", "timestamp": 1759329692.945336}}}
+{"text": "2025-10-01 14:41:32.945 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent latency sample\n", "record": {"elapsed": {"repr": "0:00:25.523594", "seconds": 25.523594}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent latency sample", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.945589+00:00", "timestamp": 1759329692.945589}}}
+{"text": "2025-10-01 14:41:32.945 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.0004849433898925781, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.945789Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.523867", "seconds": 25.523867}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.0004849433898925781, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.945789Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.945862+00:00", "timestamp": 1759329692.945862}}}
+{"text": "2025-10-01 14:41:32.946 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.946066Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.524137", "seconds": 25.524137}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.946066Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.946132+00:00", "timestamp": 1759329692.946132}}}
+{"text": "2025-10-01 14:41:32.946 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.946291Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.524352", "seconds": 25.524352}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.946291Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.946347+00:00", "timestamp": 1759329692.946347}}}
+{"text": "2025-10-01 14:41:32.947 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.947166Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.525254", "seconds": 25.525254}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.947166Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.947249+00:00", "timestamp": 1759329692.947249}}}
+{"text": "2025-10-01 14:41:32.947 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent token usage\n", "record": {"elapsed": {"repr": "0:00:25.525620", "seconds": 25.52562}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent token usage", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.947615+00:00", "timestamp": 1759329692.947615}}}
+{"text": "2025-10-01 14:41:32.947 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent latency sample\n", "record": {"elapsed": {"repr": "0:00:25.525812", "seconds": 25.525812}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent latency sample", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.947807+00:00", "timestamp": 1759329692.947807}}}
+{"text": "2025-10-01 14:41:32.948 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.0003638267517089844, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.947963Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.526031", "seconds": 25.526031}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.0003638267517089844, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.947963Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.948026+00:00", "timestamp": 1759329692.948026}}}
+{"text": "2025-10-01 14:41:32.948 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.948174Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.526232", "seconds": 25.526232}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.948174Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.948227+00:00", "timestamp": 1759329692.948227}}}
+{"text": "2025-10-01 14:41:32.948 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.948360Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.526416", "seconds": 25.526416}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.948360Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.948411+00:00", "timestamp": 1759329692.948411}}}
+{"text": "2025-10-01 14:41:32.948 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.948610Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.526672", "seconds": 25.526672}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"query\": \"auto debate\"}, \"event\": \"Executing agent: Synthesizer (loop 1, cycle 0)\", \"timestamp\": \"2025-10-01T14:41:32.948610Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.948667+00:00", "timestamp": 1759329692.948667}}}
+{"text": "2025-10-01 14:41:32.949 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent token usage\n", "record": {"elapsed": {"repr": "0:00:25.527031", "seconds": 25.527031}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent token usage", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.949026+00:00", "timestamp": 1759329692.949026}}}
+{"text": "2025-10-01 14:41:32.949 | INFO     | autoresearch.logging_utils:emit:113 - Recorded agent latency sample\n", "record": {"elapsed": {"repr": "0:00:25.527225", "seconds": 25.527225}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "Recorded agent latency sample", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.949220+00:00", "timestamp": 1759329692.94922}}}
+{"text": "2025-10-01 14:41:32.949 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.00039076805114746094, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.949372Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.527439", "seconds": 25.527439}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"loop\": 1, \"cycle\": 0, \"duration\": 0.00039076805114746094, \"has_claims\": true, \"has_sources\": false, \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s\", \"timestamp\": \"2025-10-01T14:41:32.949372Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.949434+00:00", "timestamp": 1759329692.949434}}}
+{"text": "2025-10-01 14:41:32.949 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.949613Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.527678", "seconds": 25.527678}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"result_keys\": [\"results\", \"claims\"]}, \"event\": \"Agent Synthesizer provided no sources\", \"timestamp\": \"2025-10-01T14:41:32.949613Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.949673+00:00", "timestamp": 1759329692.949673}}}
+{"text": "2025-10-01 14:41:32.949 | WARNING  | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.949816Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.527873", "seconds": 25.527873}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"extra\": {\"agent\": \"Synthesizer\", \"claim_index\": 0, \"claim_type\": \"dict\", \"has_id\": false}, \"event\": \"Skipping invalid claim format from agent Synthesizer\", \"timestamp\": \"2025-10-01T14:41:32.949816Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.949868+00:00", "timestamp": 1759329692.949868}}}
+{"text": "2025-10-01 14:41:32.950 | INFO     | autoresearch.logging_utils:emit:113 - {\"extra\": {\"agents\": [[\"Synthesizer\"], [\"Contrarian\"], [\"FactChecker\"]], \"loops\": 3, \"primus_index\": 0, \"max_errors\": 3, \"reasoning_mode\": \"ReasoningMode.DIALECTICAL\"}, \"event\": \"Starting dialectical process with 3 agents in 3 groups and 3 loops\", \"timestamp\": \"2025-10-01T14:41:32.950188Z\"}\n", "record": {"elapsed": {"repr": "0:00:25.528273", "seconds": 25.528273}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"extra\": {\"agents\": [[\"Synthesizer\"], [\"Contrarian\"], [\"FactChecker\"]], \"loops\": 3, \"primus_index\": 0, \"max_errors\": 3, \"reasoning_mode\": \"ReasoningMode.DIALECTICAL\"}, \"event\": \"Starting dialectical process with 3 agents in 3 groups and 3 loops\", \"timestamp\": \"2025-10-01T14:41:32.950188Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:32.950268+00:00", "timestamp": 1759329692.950268}}}
+------------------------------------------------------ Captured log call -------------------------------------------------------
+INFO     autoresearch.orchestration.execution:execution.py:71 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "query": "auto debate"}, "event": "Executing agent: Synthesizer (loop 1, cycle 0)", "timestamp": "2025-10-01T14:41:32.944677Z"}
+INFO     autoresearch.orchestration.metrics:metrics.py:570 Recorded agent token usage
+INFO     autoresearch.orchestration.metrics:metrics.py:542 Recorded agent latency sample
+INFO     autoresearch.orchestration.execution:execution.py:160 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "duration": 0.0004849433898925781, "has_claims": true, "has_sources": false, "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s", "timestamp": "2025-10-01T14:41:32.945789Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:202 {"extra": {"agent": "Synthesizer", "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer provided no sources", "timestamp": "2025-10-01T14:41:32.946066Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:230 {"extra": {"agent": "Synthesizer", "claim_index": 0, "claim_type": "dict", "has_id": false}, "event": "Skipping invalid claim format from agent Synthesizer", "timestamp": "2025-10-01T14:41:32.946291Z"}
+INFO     autoresearch.orchestration.execution:execution.py:71 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "query": "auto debate"}, "event": "Executing agent: Synthesizer (loop 1, cycle 0)", "timestamp": "2025-10-01T14:41:32.947166Z"}
+INFO     autoresearch.orchestration.metrics:metrics.py:570 Recorded agent token usage
+INFO     autoresearch.orchestration.metrics:metrics.py:542 Recorded agent latency sample
+INFO     autoresearch.orchestration.execution:execution.py:160 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "duration": 0.0003638267517089844, "has_claims": true, "has_sources": false, "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s", "timestamp": "2025-10-01T14:41:32.947963Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:202 {"extra": {"agent": "Synthesizer", "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer provided no sources", "timestamp": "2025-10-01T14:41:32.948174Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:230 {"extra": {"agent": "Synthesizer", "claim_index": 0, "claim_type": "dict", "has_id": false}, "event": "Skipping invalid claim format from agent Synthesizer", "timestamp": "2025-10-01T14:41:32.948360Z"}
+INFO     autoresearch.orchestration.execution:execution.py:71 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "query": "auto debate"}, "event": "Executing agent: Synthesizer (loop 1, cycle 0)", "timestamp": "2025-10-01T14:41:32.948610Z"}
+INFO     autoresearch.orchestration.metrics:metrics.py:570 Recorded agent token usage
+INFO     autoresearch.orchestration.metrics:metrics.py:542 Recorded agent latency sample
+INFO     autoresearch.orchestration.execution:execution.py:160 {"extra": {"agent": "Synthesizer", "loop": 1, "cycle": 0, "duration": 0.00039076805114746094, "has_claims": true, "has_sources": false, "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer completed turn (loop 1, cycle 0) in 0.00s", "timestamp": "2025-10-01T14:41:32.949372Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:202 {"extra": {"agent": "Synthesizer", "result_keys": ["results", "claims"]}, "event": "Agent Synthesizer provided no sources", "timestamp": "2025-10-01T14:41:32.949613Z"}
+WARNING  autoresearch.orchestration.execution:execution.py:230 {"extra": {"agent": "Synthesizer", "claim_index": 0, "claim_type": "dict", "has_id": false}, "event": "Skipping invalid claim format from agent Synthesizer", "timestamp": "2025-10-01T14:41:32.949816Z"}
+INFO     autoresearch.orchestration.orchestrator:orchestrator.py:332 {"extra": {"agents": [["Synthesizer"], ["Contrarian"], ["FactChecker"]], "loops": 3, "primus_index": 0, "max_errors": 3, "reasoning_mode": "ReasoningMode.DIALECTICAL"}, "event": "Starting dialectical process with 3 agents in 3 groups and 3 loops", "timestamp": "2025-10-01T14:41:32.950188Z"}
+--------------------------------------------------- Captured stderr teardown ---------------------------------------------------
+{"text": "2025-10-01 14:41:33.306 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:00:25.884863", "seconds": 25.884863}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:33.306858+00:00", "timestamp": 1759329693.306858}}}
+{"text": "2025-10-01 14:41:33.307 | WARNING  | autoresearch.logging_utils:emit:113 - Invalid storage configuration: 1 validation error for StorageConfig\nminimum_deterministic_resident_nodes\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.11/v/int_type\n", "record": {"elapsed": {"repr": "0:00:25.885360", "seconds": 25.88536}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "Invalid storage configuration: 1 validation error for StorageConfig\nminimum_deterministic_resident_nodes\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.11/v/int_type", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4902, "name": "MainProcess"}, "thread": {"id": 140644827233152, "name": "MainThread"}, "time": {"repr": "2025-10-01 14:41:33.307355+00:00", "timestamp": 1759329693.307355}}}
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+WARNING  autoresearch.config.loader:loader.py:363 Invalid storage configuration: 1 validation error for StorageConfig
+minimum_deterministic_resident_nodes
+  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/int_type
+======================================================= warnings summary =======================================================
+tests/unit/test_main_config_commands.py:4
+  /workspace/autoresearch/tests/unit/test_main_config_commands.py:4: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+3.86s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+1.18s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+0.05s call     tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic
+0.03s call     tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+0.02s call     tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes
+0.02s setup    tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing
+0.01s teardown tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing
+0.01s teardown tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes
+0.01s teardown tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+0.01s teardown tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic
+=================================================== short test summary info ====================================================
+FAILED tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops - TypeError: cannot pickle '_thread.RLock' object
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=================================== 1 failed, 41 passed, 25 deselected, 1 warning in 15.07s ====================================

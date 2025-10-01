@@ -18,6 +18,22 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 1, 2025
+- Captured a **14:39 UTC** repo-wide `uv run mypy --strict src tests` sweep;
+  the run now reports 2,114 errors across 211 files, concentrating the strict
+  backlog inside analysis, integration, and behavior fixtures that still need
+  the expanded `EvaluationSummary` signature. The new log confirms the recent
+  stub additions keep strict mode executing while we sequence the fixture
+  updates.
+  【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+- Re-ran `uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm
+  parsers"` at **14:40 UTC**; the sweep reaches the unit suite before
+  `QueryStateRegistry.register` triggers the `_thread.RLock` cloning failure in
+  `test_auto_mode_escalates_to_debate_when_gate_requires_loops`. Coverage holds
+  at the prior 92.4 % evidence until the registry clone adopts a typed hand-off,
+  and the TestPyPI dry run stays deferred under the alpha directive.
+  【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
 ## September 29, 2025
 - Reran `uv run task release:alpha` at 00:08 UTC; extras synced before
   `uv run flake8 src tests` flagged the unused `os` import in

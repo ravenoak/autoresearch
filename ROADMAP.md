@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 29, 2025**.
+[README](README.md). Last updated **October 1, 2025**.
 
 ## Deep Research enhancement program
 
@@ -30,12 +30,28 @@ These tickets align with [docs/deep_research_upgrade_plan.md](docs/deep_research
 and the updated specification so release milestones can absorb the upgrades in
 measured increments.
 
+Phase 1 is now complete and documented across the release plan and deep research
+strategy. The **October 1, 2025** strict and coverage reruns confirm the gate is
+stable enough to resume Phase 2 planning once the typed `EvaluationSummary`
+fixtures and `_thread.RLock` registry clone are addressed, so the roadmap now
+tracks those prerequisites alongside the planner upgrades.
+【F:docs/deep_research_upgrade_plan.md†L27-L58】
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Sourcing the PATH helper emitted by
+across project documentation. The **October 1, 2025 at 14:39 UTC** strict sweep
+ still reports 2,114 errors, and the paired **14:40 UTC** coverage run stops in
+`test_auto_mode_escalates_to_debate_when_gate_requires_`
+`loops`, so TestPyPI stays deferred while the planner registry clone adopts
+typed state hand-offs.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+Sourcing the PATH helper emitted by
 `./scripts/setup.sh --print-path` keeps `task --version` at 3.45.4, and the fast
 pipeline now runs cleanly through the `uv` commands documented in `STATUS.md`.
 `uv run --extra dev-minimal --extra test flake8 src tests`, `uv run --extra

@@ -18,6 +18,21 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **October 1, 2025 at 14:39 UTC** repo-wide `mypy --strict` sweep records
+2,114 errors across 211 files, underscoring that the remaining strict backlog
+now lives almost entirely inside legacy analysis, integration, and behavior
+fixtures. The run confirms that the new import shims keep the gate executing,
+but the typed evaluation harness and planner fixtures must still absorb the
+`EvaluationSummary` expansion before the count can fall. The paired
+**14:40 UTC** `task coverage` attempt reaches the unit suite before the
+`QueryStateRegistry.register` call hits the `_thread.RLock` cloning failure
+captured in the earlier verify logs. Coverage therefore halts in
+`test_auto_mode_escalates_to_debate_when_gate_requires_loops`, leaving the
+statement rate unchanged while we continue to defer the TestPyPI dry run per
+the alpha directive.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
 The **September 30, 2025 at 14:55 UTC** `task verify` sweep now reaches
 `mypy --strict` before failing on 118 untyped test fixtures and the
 `EvaluationSummary` constructor, which expects planner depth and routing
