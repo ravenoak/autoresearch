@@ -1,4 +1,5 @@
 import types
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,18 +9,24 @@ from autoresearch import streamlit_ui
 pytestmark = pytest.mark.requires_ui
 
 
-class Session(dict):
-    def __getattr__(self, item):
+class Session(dict[str, Any]):
+    def __getattr__(self, item: str) -> Any:
         return self[item]
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any) -> None:
         self[key] = value
 
 
-def test_apply_accessibility_settings_no_high_contrast(monkeypatch):
-    calls = []
+def test_apply_accessibility_settings_no_high_contrast(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[Any, ...]] = []
+
+    def record_markdown(*args: Any, **_kwargs: Any) -> None:
+        calls.append(args)
+
     fake_st = types.SimpleNamespace(
-        markdown=lambda *a, **k: calls.append(a),
+        markdown=record_markdown,
         session_state=Session(),
     )
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
@@ -27,7 +34,7 @@ def test_apply_accessibility_settings_no_high_contrast(monkeypatch):
     assert len(calls) == 1
 
 
-def test_apply_theme_settings_light(monkeypatch):
+def test_apply_theme_settings_light(monkeypatch: pytest.MonkeyPatch) -> None:
     m = MagicMock()
     fake_st = types.SimpleNamespace(markdown=m, session_state={"dark_mode": False})
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
@@ -36,29 +43,40 @@ def test_apply_theme_settings_light(monkeypatch):
 
 
 class _DummyContext:
-    def __init__(self):
+    def __init__(self) -> None:
         self.entered = False
 
-    def __enter__(self):
+    def __enter__(self) -> "_DummyContext":
         self.entered = True
         return self
 
-    def __exit__(self, exc_type, exc, tb):
-        pass
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: Any,
+    ) -> None:
+        return None
 
 
-def test_display_guided_tour_dismiss(monkeypatch):
+def test_display_guided_tour_dismiss(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _DummyContext()
-    calls = {"modal": 0}
+    calls: dict[str, int] = {"modal": 0}
 
-    def track_modal(*_args, **_kwargs):
+    def track_modal(*_args: Any, **_kwargs: Any) -> _DummyContext:
         calls["modal"] += 1
         return ctx
 
+    def noop_markdown(*_args: Any, **_kwargs: Any) -> None:
+        return None
+
+    def always_true_button(*_args: Any, **_kwargs: Any) -> bool:
+        return True
+
     fake_st = types.SimpleNamespace(
-        markdown=lambda *a, **k: None,
+        markdown=noop_markdown,
         modal=track_modal,
-        button=lambda *a, **k: True,
+        button=always_true_button,
         session_state=Session(),
     )
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
@@ -67,13 +85,24 @@ def test_display_guided_tour_dismiss(monkeypatch):
     assert calls["modal"] == 1 and ctx.entered
 
 
-def test_display_help_sidebar_dismiss(monkeypatch):
+def test_display_help_sidebar_dismiss(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = _DummyContext()
-    sidebar = types.SimpleNamespace(expander=lambda *a, **k: ctx)
+
+    def expand_sidebar(*_args: Any, **_kwargs: Any) -> _DummyContext:
+        return ctx
+
+    sidebar = types.SimpleNamespace(expander=expand_sidebar)
+
+    def noop_markdown(*_args: Any, **_kwargs: Any) -> None:
+        return None
+
+    def always_true_button(*_args: Any, **_kwargs: Any) -> bool:
+        return True
+
     fake_st = types.SimpleNamespace(
-        markdown=lambda *a, **k: None,
+        markdown=noop_markdown,
         sidebar=sidebar,
-        button=lambda *a, **k: True,
+        button=always_true_button,
         session_state=Session(),
     )
     monkeypatch.setattr(streamlit_ui, "st", fake_st)

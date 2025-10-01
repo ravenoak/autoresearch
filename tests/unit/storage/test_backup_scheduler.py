@@ -18,8 +18,8 @@ from autoresearch.storage_backup import (
 @pytest.fixture()
 def scheduler_environment(
     monkeypatch: pytest.MonkeyPatch,
-) -> tuple[BackupScheduler, list[Any], list[tuple[str, str, str, bool, BackupConfig]]]:
-    timers: list[Any] = []
+) -> tuple[BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]]:
+    timers: list[DummyTimer] = []
     backups: list[tuple[str, str, str, bool, BackupConfig]] = []
 
     def fake_create_backup(
@@ -75,7 +75,7 @@ def scheduler_environment(
 
 def test_scheduler_runs_backup_and_reschedules(
     scheduler_environment: tuple[
-        BackupScheduler, list[Any], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -99,7 +99,7 @@ def test_scheduler_runs_backup_and_reschedules(
 
 def test_scheduler_restarts_existing_timer(
     scheduler_environment: tuple[
-        BackupScheduler, list[Any], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -116,7 +116,7 @@ def test_scheduler_restarts_existing_timer(
 
 def test_backup_manager_schedule_uses_resolved_scheduler(
     scheduler_environment: tuple[
-        BackupScheduler, list[Any], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
     ],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
