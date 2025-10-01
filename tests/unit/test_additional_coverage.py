@@ -2,6 +2,7 @@ import json
 import types
 from collections import OrderedDict
 from pathlib import Path
+from typing import Protocol, TypeAlias, TypeVar
 from unittest.mock import MagicMock
 
 import pytest
@@ -30,20 +31,27 @@ from .typing_helpers import (
 )
 
 
-class _DummyTable:
-    """Minimal table stub used to capture rendered rows."""
+RowT = TypeVar("RowT", bound=tuple[object, ...])
+TableRow: TypeAlias = tuple[object, ...]
 
-    def __init__(self, *_args: object, **_kwargs: object) -> None:
-        self.rows: list[tuple[object, ...]] = []
+
+class DummyTable(Protocol[RowT]):
+    """Minimal protocol capturing the rendering surface exercised in tests."""
+
+    rows: list[RowT]
 
     def add_column(self, *_args: object, **_kwargs: object) -> None:
-        return None
+        """Add a column definition to the underlying table."""
+        ...
 
-    def add_row(self, *args: object) -> None:
-        self.rows.append(args)
+    def add_row(self, *row: object) -> None:
+        """Append a row of objects to the table."""
+        ...
 
 
-def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
+def test_log_release_tokens_invalid_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "rel.json"
     path.write_text("not json")
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(path))
@@ -56,7 +64,7 @@ def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
     assert data["test"]["A"]["out"] == 2
 
 
-def test_circuit_breaker_transitions(monkeypatch):
+def test_circuit_breaker_transitions(monkeypatch: pytest.MonkeyPatch) -> None:
     manager = CircuitBreakerManager()
     t = {"v": 0}
     monkeypatch.setattr(
@@ -75,7 +83,7 @@ def test_circuit_breaker_transitions(monkeypatch):
     assert state["state"] == "half-open"
 
 
-def test_circuit_breaker_recovery(monkeypatch):
+def test_circuit_breaker_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
     manager = CircuitBreakerManager()
     t = {"v": 0}
     monkeypatch.setattr(
@@ -94,7 +102,9 @@ def test_circuit_breaker_recovery(monkeypatch):
     assert state["failure_count"] == 0
 
 
-def test_circuit_breaker_success_decrements(monkeypatch):
+def test_circuit_breaker_success_decrements(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     manager = CircuitBreakerManager()
     for _ in range(2):
         manager.update_circuit_breaker("Y", "recoverable")
@@ -103,7 +113,7 @@ def test_circuit_breaker_success_decrements(monkeypatch):
     assert state["failure_count"] == 1
 
 
-def test_http_session_reuse_and_close(monkeypatch):
+def test_http_session_reuse_and_close(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = make_runtime_config(search=make_search_config(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.http.get_config", lambda: cfg)
     search.close_http_session()
@@ -141,7 +151,7 @@ def test_llm_pool_adapter_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm_pool._session is None
 
 
-def test_set_get_delegate():
+def test_set_get_delegate() -> None:
     class Dummy(StorageManager):
         called = False
 
@@ -156,7 +166,7 @@ def test_set_get_delegate():
     set_delegate(None)
 
 
-def test_pop_low_score_missing_confidence(monkeypatch):
+def test_pop_low_score_missing_confidence(monkeypatch: pytest.MonkeyPatch) -> None:
     graph = MagicMock()
     graph.nodes = {"a": {}, "b": {"confidence": 0.1}}
     lru = OrderedDict([("a", 0), ("b", 0)])
@@ -167,12 +177,12 @@ def test_pop_low_score_missing_confidence(monkeypatch):
     assert "a" not in lru
 
 
-def test_output_formatter_invalid(monkeypatch):
+def test_output_formatter_invalid(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(Exception):
         OutputFormatter.format({"foo": "bar"}, "json")
 
 
-def test_streamlit_metrics(monkeypatch):
+def test_streamlit_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_st = make_streamlit_stub()
     monkeypatch.setattr(streamlit_st, "session_state", fake_st.session_state, False)
     track_agent_performance("A", 1.0, 5)
@@ -203,13 +213,19 @@ def test_streamlit_metrics(monkeypatch):
 
 
 @pytest.fixture
-def dummy_table(monkeypatch: pytest.MonkeyPatch) -> list[_DummyTable]:
-    created_tables: list[_DummyTable] = []
+def dummy_table(monkeypatch: pytest.MonkeyPatch) -> list[DummyTable[TableRow]]:
+    created_tables: list[DummyTable[TableRow]] = []
 
-    class _RecordingDummyTable(_DummyTable):
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            super().__init__(*args, **kwargs)
+    class _RecordingDummyTable(DummyTable[TableRow]):
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.rows: list[TableRow] = []
             created_tables.append(self)
+
+        def add_column(self, *_args: object, **_kwargs: object) -> None:
+            return None
+
+        def add_row(self, *row: object) -> None:
+            self.rows.append(tuple(row))
 
     monkeypatch.setattr(cli_utils, "Table", _RecordingDummyTable)
     monkeypatch.setattr(cli_utils.console, "print", lambda *_args, **_kwargs: None)
@@ -231,7 +247,7 @@ def populated_summary() -> EvaluationSummary:
 
 
 def test_render_evaluation_summary_joins_artifacts(
-    dummy_table: list[_DummyTable],
+    dummy_table: list[DummyTable[TableRow]],
 ) -> None:
     summary = build_summary_fixture(
         total_examples=1,
@@ -267,7 +283,8 @@ def test_render_evaluation_summary_joins_artifacts(
 
 
 def test_render_evaluation_summary_formats_planner_and_routing(
-    dummy_table: list[_DummyTable], populated_summary: EvaluationSummary
+    dummy_table: list[DummyTable[TableRow]],
+    populated_summary: EvaluationSummary,
 ) -> None:
     render_evaluation_summary([populated_summary])
 
@@ -277,13 +294,13 @@ def test_render_evaluation_summary_formats_planner_and_routing(
     assert row[5] == "1.75/3.50 (avg 1.5 routes)"
 
 
-def test_format_percentage_variants():
+def test_format_percentage_variants() -> None:
     assert cli_utils._format_percentage(None) == "—"
     assert cli_utils._format_percentage(0.1234, precision=1) == "12.3%"
     assert cli_utils._format_percentage(-0.0, precision=1) == "0.0%"
 
 
-def test_cli_utils_format_helpers_importable():
+def test_cli_utils_format_helpers_importable() -> None:
     assert format_success("Completed") == "[bold green]✓[/bold green] Completed"
     assert format_success("Completed", symbol=False) == "[bold green]Completed[/bold green]"
 
