@@ -1,0 +1,166 @@
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+   --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers \
+  
+
+Resolved 328 packages in 5ms
+Audited 246 packages in 0.39ms
+task: [coverage] echo "[coverage] erasing previous data"
+[coverage] erasing previous data
+task: [coverage] uv run coverage erase
+task: [coverage] echo "[coverage] running unit tests"
+[coverage] running unit tests
+task: [coverage] uv run pytest -vv --maxfail=1 --durations=10 -x tests/unit -m 'not slow' \
+  --cov=src --cov-report=term-missing --cov-append
+
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: benchmark-5.1.0, bdd-8.1.0, httpx-0.35.0, langsmith-0.4.31, hypothesis-6.140.2, anyio-4.11.0, cov-7.0.0
+collecting ... collected 1078 items / 25 deselected / 1053 selected
+
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  1%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_decodes_prometheus_payload PASSED                     [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_coerces_bytearray PASSED                              [  1%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_memoryview PASSED                             [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_replaces_invalid_bytes PASSED                         [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_failure PASSED                                [  2%]
+tests/unit/orchestration/test_answer_audit.py::test_answer_auditor_hedges_unsupported_claims PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  2%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  2%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                      [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_respects_force_debate_override PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_flags_coverage_gap_and_confidence PASSED                   [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_applies_graph_thresholds PASSED                            [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_summary_uses_typed_floats PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_build_skips_empty_payload PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_ingestion_saved_payload_is_sanitized PASSED           [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  3%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_returns_direct_answer_when_gate_exits PASSED     [  3%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops PASSED [  3%]
+tests/unit/orchestration/test_package_exports.py::test_agent_factory_export PASSED                                       [  4%]
+tests/unit/orchestration/test_package_exports.py::test_agent_registry_export PASSED                                      [  4%]
+tests/unit/orchestration/test_package_exports.py::test_orchestrator_export PASSED                                        [  4%]
+tests/unit/orchestration/test_package_exports.py::test_storage_manager_export PASSED                                     [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout PASSED                  [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail PASSED                           [  4%]
+tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant PASSED                          [  4%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_cloudpickle_serialization_preserves_fields PASSED [  4%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_clone_produces_independent_copies PASSED [  4%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_update_refreshes_snapshots PASSED       [  4%]
+tests/unit/orchestration/test_state_registry.py::test_register_and_clone_preserve_lock_and_metadata_types PASSED         [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_replaces_snapshot_and_preserves_lock_integrity PASSED       [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_creates_snapshot_when_missing_identifier PASSED             [  5%]
+tests/unit/orchestration/test_state_registry.py::test_registry_round_trip_rehydrates_state_with_fresh_lock PASSED        [  5%]
+tests/unit/orchestration/test_task_coordinator.py::test_task_coordinator_schedules_dependencies PASSED                   [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_adapter_kwarg PASSED                                     [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_mutation_hooks_restores_original PASSED                  [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_without_adapter_hooks PASSED                                  [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_raises_for_non_mapping_result PASSED                          [  5%]
+tests/unit/orchestration/test_token_utils.py::test_type_guards_detect_adapter_features PASSED                            [  5%]
+tests/unit/orchestration/test_token_utils.py::test_is_agent_execution_result_guard PASSED                                [  5%]
+tests/unit/orchestration/test_utils_confidence.py::test_metrics_snapshot_parses_token_usage PASSED                       [  6%]
+tests/unit/orchestration/test_utils_confidence.py::test_confidence_adjusts_with_metrics_payload PASSED                   [  6%]
+tests/unit/orchestration/test_utils_confidence.py::test_graph_metrics_payload_is_sanitized PASSED                        [  6%]
+tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking PASSED                                   [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_query_expansion_converges PASSED                             [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_reset_instance_creates_new_singleton PASSED                  [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_extract_entities_with_spacy PASSED                           [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_build_topic_model_with_insufficient_docs PASSED              [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_imports_disabled PASSED                                  [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_import_sentence_transformers_success PASSED              [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_prefers_embed PASSED               [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_falls_back_to_encode FAILED        [  7%]
+
+=========================================================== FAILURES ===========================================================
+_____________________________________ test_search_embedding_protocol_falls_back_to_encode ______________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1a88ed2ab0>
+
+    def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
+        """Assume sentence-transformers fallback loads when fastembed is unavailable."""
+    
+        cfg = make_config_model()
+        monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
+        monkeypatch.setattr(search_core, "SentenceTransformer", None)
+        monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+        monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
+    
+        class FakeSentenceTransformer:
+            last_input: object | None = None
+    
+            def encode(self, sentences):
+                type(self).last_input = sentences
+                return [[3.0, 4.0, 5.0]]
+    
+        module = ModuleType("sentence_transformers")
+        module.SentenceTransformer = FakeSentenceTransformer
+        monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+    
+        search = Search()
+        model = search.get_sentence_transformer()
+>       assert isinstance(model, FakeSentenceTransformer)
+E       AssertionError: assert False
+E        +  where False = isinstance(<tests.unit.search.test_query_expansion_convergence.test_search_embedding_protocol_prefers_embed.<locals>.FakeFastEmbed object at 0x7f1a88ed3830>, <class 'tests.unit.search.test_query_expansion_convergence.test_search_embedding_protocol_falls_back_to_encode.<locals>.FakeSentenceTransformer'>)
+
+/workspace/autoresearch/tests/unit/search/test_query_expansion_convergence.py:176: AssertionError
+--------------------------------------------------- Captured stderr teardown ---------------------------------------------------
+{"text": "2025-10-01 15:27:27.973 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:00:16.449127", "seconds": 16.449127}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5045, "name": "MainProcess"}, "thread": {"id": 139752664972160, "name": "MainThread"}, "time": {"repr": "2025-10-01 15:27:27.973332+00:00", "timestamp": 1759332447.973332}}}
+{"text": "2025-10-01 15:27:27.973 | WARNING  | autoresearch.logging_utils:emit:113 - Invalid storage configuration: 1 validation error for StorageConfig\nminimum_deterministic_resident_nodes\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.11/v/int_type\n", "record": {"elapsed": {"repr": "0:00:16.449476", "seconds": 16.449476}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "Invalid storage configuration: 1 validation error for StorageConfig\nminimum_deterministic_resident_nodes\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.11/v/int_type", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5045, "name": "MainProcess"}, "thread": {"id": 139752664972160, "name": "MainThread"}, "time": {"repr": "2025-10-01 15:27:27.973681+00:00", "timestamp": 1759332447.973681}}}
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+WARNING  autoresearch.config.loader:loader.py:363 Invalid storage configuration: 1 validation error for StorageConfig
+minimum_deterministic_resident_nodes
+  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/int_type
+======================================================= warnings summary =======================================================
+tests/unit/test_main_config_commands.py:4
+  /workspace/autoresearch/tests/unit/test_main_config_commands.py:4: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+0.51s call     tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout
+0.41s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+0.17s call     tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking
+0.10s call     tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant
+0.05s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+0.05s call     tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic
+0.03s call     tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+0.02s call     tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes
+0.01s setup    tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing
+0.01s setup    tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_summary_uses_typed_floats
+=================================================== short test summary info ====================================================
+FAILED tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_falls_back_to_encode - AssertionError: assert False
+ +  where False = isinstance(<tests.unit.search.test_query_expansion_convergence.test_search_embedding_protocol_prefers_embed.<locals>.FakeFastEmbed object at 0x7f1a88ed3830>, <class 'tests.unit.search.test_query_expansion_convergence.test_search_embedding_protocol_falls_back_to_encode.<locals>.FakeSentenceTransformer'>)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+==================================== 1 failed, 74 passed, 25 deselected, 1 warning in 6.25s ====================================
+task: Failed to run task "coverage": exit status 1

@@ -17,6 +17,14 @@ dry run stays deferred until the registry clone adopts the typed handoff
 captured in the strict backlog above.
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
+As of **2025-10-01** at 15:27 UTC the coverage rerun with the same extras clears
+the registry cloning path and now fails when FastEmbed stays importable,
+causing `test_search_embedding_protocol_falls_back_to_encode` to assert that the
+sentence-transformers fallback never activated. The log documents the new
+failure mode while coverage remains below the gate and the TestPyPI dry run
+continues to wait on a green sweep.
+【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
+
 As of **2025-09-30** at 14:55 UTC the strict `task verify` sweep reaches
 `mypy --strict` before stopping on 118 untyped fixtures and the
 `EvaluationSummary` constructor, which now expects planner depth and routing

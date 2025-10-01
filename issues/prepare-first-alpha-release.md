@@ -33,6 +33,14 @@ run reached the unit suite before `QueryStateRegistry.register` hit the
 gate continues to rely on the 92.4 % evidence while TestPyPI stays deferred.
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+
+A **15:27 UTC** rerun of the coverage sweep now clears the registry cloning path
+and fails when FastEmbed remains importable, leaving
+`test_search_embedding_protocol_falls_back_to_encode` to assert that the
+sentence-transformers fallback never loaded. The log captures the revised
+failure mode while the TestPyPI hold and alpha gate remain in place until the
+coverage fix lands.
+【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
 On **September 30, 2025 at 15:15 UTC** we updated the `A2AMessage` schema to
 accept the SDK's concrete payloads and introduced
 `test_a2a_message_accepts_sdk_message` to guard the regression.
