@@ -30,6 +30,7 @@ from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
+from tests.behavior.context import BehaviorContext  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 from tests.typing_helpers import TypedFixture
 
@@ -42,7 +43,7 @@ class StorageErrorHandler:
     def attempt_operation(
         self,
         operation: Callable[[], T_co],
-        bdd_context: dict[str, object],
+        bdd_context: BehaviorContext,
         context_key: str = "storage_error",
     ) -> T_co | None:
         """Attempt an operation that might raise an exception."""
@@ -95,7 +96,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture
-def test_context() -> TypedFixture[dict[str, object]]:
+def test_context() -> TypedFixture[BehaviorContext]:
     """Mutable mapping for sharing state in behavior tests."""
     return {}
 

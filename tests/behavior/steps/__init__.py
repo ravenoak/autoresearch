@@ -8,6 +8,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from tests.behavior.context import (
+        APICapture,
+        BehaviorContext,
+        CLIInvocation,
+        get_optional,
+        get_required,
+        set_value,
+    )
+
     app_running: Callable[..., None]
     app_running_with_default: Callable[..., None]
     application_running: Callable[..., None]
@@ -20,6 +29,14 @@ else:
     app_running_with_default = _common_steps.app_running_with_default
     application_running = _common_steps.application_running
     cli_app = _common_steps.cli_app
+
+    _context = importlib.import_module("tests.behavior.context")
+    BehaviorContext = _context.BehaviorContext
+    CLIInvocation = _context.CLIInvocation
+    APICapture = _context.APICapture
+    get_required = _context.get_required
+    get_optional = _context.get_optional
+    set_value = _context.set_value
 
 if not TYPE_CHECKING:
     # Import step modules so pytest-bdd discovers them when running the package.
@@ -44,4 +61,10 @@ __all__ = [
     "app_running_with_default",
     "application_running",
     "cli_app",
+    "BehaviorContext",
+    "CLIInvocation",
+    "APICapture",
+    "get_required",
+    "get_optional",
+    "set_value",
 ]

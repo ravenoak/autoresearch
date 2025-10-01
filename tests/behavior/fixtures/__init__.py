@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 from typer.testing import CliRunner
 
+from tests.behavior.context import BehaviorContext
 from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture
-def bdd_context() -> TypedFixture[dict[str, Any]]:
+def bdd_context() -> TypedFixture[BehaviorContext]:
     """Mutable mapping for sharing data between BDD steps."""
-    ctx: dict[str, Any] = {}
+    ctx: BehaviorContext = {}
     yield ctx
     broker = ctx.get("broker")
     if broker and hasattr(broker, "shutdown"):
