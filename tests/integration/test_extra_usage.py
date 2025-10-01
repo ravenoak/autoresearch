@@ -69,16 +69,36 @@ def test_gitpython_commit(tmp_path) -> None:
 
 
 @pytest.mark.requires_distributed
-def test_fakeredis_roundtrip(monkeypatch) -> None:
+def test_fakeredis_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     redis = import_or_skip("redis")
     fakeredis = import_or_skip("fakeredis")
-    monkeypatch.setattr(redis.Redis, "from_url", lambda *a, **k: fakeredis.FakeRedis())
+    fake_client: fakeredis.FakeRedis = fakeredis.FakeRedis()
 
-    from autoresearch.distributed.broker import RedisBroker
+    def _redis_from_url(*_: object, **__: object) -> fakeredis.FakeRedis:
+        return fake_client
+
+    monkeypatch.setattr(redis.Redis, "from_url", _redis_from_url)
+
+    from autoresearch.distributed.broker import (
+        AgentResultMessage,
+        BrokerMessage,
+        MessageQueueProtocol,
+        RedisBroker,
+        StorageBrokerQueueProtocol,
+    )
 
     broker = RedisBroker()
-    broker.publish({"k": "v"})
-    assert broker.queue.get()["k"] == "v"
+    message: AgentResultMessage = {
+        "action": "agent_result",
+        "agent": "worker",
+        "result": {"value": 1},
+        "pid": 4321,
+    }
+    broker.publish(message)
+    queue: StorageBrokerQueueProtocol = broker.queue
+    queue_protocol: MessageQueueProtocol = queue
+    queued_message: BrokerMessage = queue_protocol.get()
+    assert queued_message == message
     broker.shutdown()
 
 

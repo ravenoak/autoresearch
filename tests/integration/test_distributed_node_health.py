@@ -42,9 +42,13 @@ class DummyRay:
 def test_node_health_monitor(monkeypatch: pytest.MonkeyPatch, free_tcp_port: int) -> None:
     import redis
 
-    monkeypatch.setattr(redis.Redis, "from_url", lambda url: DummyRedis())
+    def _redis_from_url(url: str, *args: object, **kwargs: object) -> DummyRedis:
+        del url, args, kwargs
+        return DummyRedis()
+
+    monkeypatch.setattr(redis.Redis, "from_url", _redis_from_url)
     monkeypatch.setitem(sys.modules, "ray", DummyRay)
-    registry = CollectorRegistry()
+    registry: CollectorRegistry = CollectorRegistry()
     monitor = NodeHealthMonitor(
         redis_url="redis://localhost:6379/0",
         ray_address="auto",
@@ -65,9 +69,13 @@ def test_node_health_monitor_redis_down(monkeypatch: pytest.MonkeyPatch, free_tc
         def ping(self) -> bool:
             raise redis.ConnectionError()
 
-    monkeypatch.setattr(redis.Redis, "from_url", lambda url: FailingRedis())
+    def _redis_from_url(url: str, *args: object, **kwargs: object) -> DummyRedis:
+        del url, args, kwargs
+        return FailingRedis()
+
+    monkeypatch.setattr(redis.Redis, "from_url", _redis_from_url)
     monkeypatch.setitem(sys.modules, "ray", DummyRay)
-    registry = CollectorRegistry()
+    registry: CollectorRegistry = CollectorRegistry()
     monitor = NodeHealthMonitor(
         redis_url="redis://localhost:6379/0",
         ray_address="auto",

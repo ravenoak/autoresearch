@@ -17,7 +17,11 @@ from pytest import MonkeyPatch
 import autoresearch.storage as storage_module
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
-from autoresearch.distributed.broker import BrokerMessage
+from autoresearch.distributed.broker import (
+    BrokerMessage,
+    MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
+)
 from autoresearch.orchestration.state import QueryState
 from autoresearch.storage import StorageManager
 
@@ -169,12 +173,17 @@ def patch_storage_persist(
 
 def patch_storage_queue(
     monkeypatch: MonkeyPatch,
-    queue: BrokerQueueStub | None = None,
-) -> BrokerQueueStub:
+    queue: StorageBrokerQueueProtocol | None = None,
+) -> StorageBrokerQueueProtocol:
     """Attach a stubbed broker queue to :mod:`autoresearch.storage`."""
 
-    stub = queue if queue is not None else BrokerQueueStub()
-    monkeypatch.setattr(storage_module, "_message_queue", stub, raising=False)
+    stub: StorageBrokerQueueProtocol
+    if queue is not None:
+        stub = queue
+    else:
+        stub = BrokerQueueStub()
+    stub_message: MessageQueueProtocol = stub
+    monkeypatch.setattr(storage_module, "_message_queue", stub_message, raising=False)
     return stub
 
 
