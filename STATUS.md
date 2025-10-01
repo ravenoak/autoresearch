@@ -33,6 +33,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   at the prior 92.4 % evidence until the registry clone adopts a typed hand-off,
   and the TestPyPI dry run stays deferred under the alpha directive.
   【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+- Captured a **15:27 UTC** rerun of the same coverage sweep. With the registry
+  lock fix applied, the unit suite now clears the auto-mode cases and fails when
+  FastEmbed remains available, leaving
+  `test_search_embedding_protocol_falls_back_to_encode` asserting against the
+  sentence-transformers fallback. The log records the new failure mode while the
+  TestPyPI dry run stays deferred under the alpha directive.
+  【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
 
 ## September 29, 2025
 - Reran `uv run task release:alpha` at 00:08 UTC; extras synced before

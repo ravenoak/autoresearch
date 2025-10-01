@@ -99,3 +99,40 @@ def test_update_creates_snapshot_when_missing_identifier() -> None:
     assert isinstance(inserted_state.metadata["flags"]["high_priority"], bool)
     assert isinstance(inserted_state.metadata["attempts"], int)
     assert inserted_config.loops == ConfigModel().loops
+
+
+def test_registry_round_trip_rehydrates_state_with_fresh_lock() -> None:
+    """Round-tripping through the registry recreates locks for rehydrated state."""
+
+    base_state = QueryState(
+        query="round-trip",
+        metadata={"score": 0.9, "flags": {"high_priority": False}},
+    )
+    base_state.metadata["attempts"] = 1
+    state_id = QueryStateRegistry.register(base_state, ConfigModel(loops=4))
+
+    cloned = QueryStateRegistry.clone(state_id)
+    assert cloned is not None
+    cloned_state, cloned_config = cloned
+    cloned_state.metadata["score"] = 1.2
+    cloned_state.metadata.setdefault("flags", {})["high_priority"] = True
+    cloned_state.metadata["attempts"] = 2
+
+    QueryStateRegistry.update(state_id, cloned_state, config=cloned_config)
+
+    snapshot = QueryStateRegistry.get_snapshot(state_id)
+    assert snapshot is not None
+    assert isinstance(snapshot.state._lock, LOCK_TYPE)
+    assert snapshot.state._lock is not cloned_state._lock
+
+    rehydrated = QueryState.model_validate(snapshot.state.model_dump())
+    rehydrated._ensure_lock()
+    assert isinstance(rehydrated._lock, LOCK_TYPE)
+    assert rehydrated._lock is not snapshot.state._lock
+    assert rehydrated.metadata["attempts"] == 2
+    assert rehydrated.metadata["flags"]["high_priority"] is True
+
+    deep_clone = snapshot.state.model_copy(deep=True)
+    assert isinstance(deep_clone._lock, LOCK_TYPE)
+    assert deep_clone._lock is not snapshot.state._lock
+    assert deep_clone.metadata == snapshot.state.metadata

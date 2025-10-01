@@ -23,9 +23,11 @@ Phase 1 is complete, and the **October 1, 2025** strict and coverage sweeps
 confirm the remaining blockers sit inside typed evaluation fixtures and the
 `QueryStateRegistry.register` clone. Planner upgrades and GraphRAG expansion now
 proceed once the `_thread.RLock` handling and `EvaluationSummary` signature land,
-with the new logs capturing the narrowed scope of work.
+with the new logs capturing the narrowed scope of work and the **15:27 UTC**
+coverage rerun showing the FastEmbed fallback failure after the registry fix.
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
 
 1. **Phase 1 – Adaptive Gate and Claim Audits**
    - Implement the scout pass and gating heuristics with clear metrics.

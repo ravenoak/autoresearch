@@ -3,6 +3,7 @@
 import re
 import time
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Optional, Sequence as SeqType, cast
@@ -469,14 +470,30 @@ class QueryState(BaseModel):
 
     _lock: PrivateLockAttr = cast(PrivateLockAttr, PrivateAttr(default_factory=RLock))
 
-    if TYPE_CHECKING:  # pragma: no cover - typing helper for mypy
-        def model_copy(
-            self,
-            *,
-            update: Mapping[str, Any] | None = ...,  # noqa: D401 - typing stub
-            deep: bool | None = ...,
-        ) -> "QueryState":
-            """Return a copy of the state."""
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool | None = None,
+    ) -> "QueryState":
+        """Return a copy of the state without cloning synchronization primitives."""
+
+        sanitized_update: dict[str, Any] | None = None
+        if update:
+            sanitized_update = {
+                key: value for key, value in update.items() if key != "_lock"
+            }
+
+        data = self.model_dump(mode="python")
+        if sanitized_update:
+            data = {**data, **sanitized_update}
+
+        if deep:
+            data = deepcopy(data)
+
+        copied = self.__class__.model_validate(data)
+        copied._ensure_lock()
+        return copied
 
     def model_post_init(self, __context: Any) -> None:
         """Ensure synchronization primitives survive model cloning."""

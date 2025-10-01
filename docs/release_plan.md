@@ -33,6 +33,14 @@ the alpha directive.
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
+A **15:27 UTC** rerun of the same coverage sweep now clears the registry clone
+and fails when FastEmbed remains importable, leaving
+`test_search_embedding_protocol_falls_back_to_encode` to assert that the
+sentence-transformers fallback never activated. The log captures the new
+failure mode while the coverage gate stays red and the TestPyPI dry run
+remains deferred.
+【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
+
 The **September 30, 2025 at 14:55 UTC** `task verify` sweep now reaches
 `mypy --strict` before failing on 118 untyped test fixtures and the
 `EvaluationSummary` constructor, which expects planner depth and routing
