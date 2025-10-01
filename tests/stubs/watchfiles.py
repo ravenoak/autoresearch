@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from enum import Enum, auto
 from pathlib import Path
-from threading import Event
 from types import ModuleType
-from typing import Iterable, Protocol, cast
+from typing import Protocol, cast
 
 from ._registry import install_stub_module
 
 PathLike = str | Path
+
+
+class SupportsIsSet(Protocol):
+    def is_set(self) -> bool: ...
 
 
 class Change(Enum):
@@ -27,24 +30,41 @@ class WatchFilter(Protocol):
 
 
 WatchEvent = tuple[Change, str]
+WatchEventBatch = set[WatchEvent]
 
 
 def watch(
     *paths: PathLike,
     watch_filter: WatchFilter | None = None,
-    debug: bool = False,
-    stop_event: Event | None = None,
+    debounce: int = 1_600,
+    step: int = 50,
+    stop_event: SupportsIsSet | None = None,
+    rust_timeout: int = 5_000,
     yield_on_timeout: bool = False,
-    raise_interrupt: bool = False,
-    debounce: float | None = None,
-    min_sleep: float = 0.0,
-    step: float = 1.0,
-    timeout: float | None = None,
-) -> Generator[WatchEvent, None, None]:
-    del paths, watch_filter, debug, stop_event, yield_on_timeout
-    del raise_interrupt, debounce, min_sleep, step, timeout
+    debug: bool | None = None,
+    raise_interrupt: bool = True,
+    force_polling: bool | None = None,
+    poll_delay_ms: int = 300,
+    recursive: bool = True,
+    ignore_permission_denied: bool | None = None,
+) -> Generator[WatchEventBatch, None, None]:
+    del (
+        paths,
+        watch_filter,
+        debounce,
+        step,
+        stop_event,
+        rust_timeout,
+        yield_on_timeout,
+        debug,
+        raise_interrupt,
+        force_polling,
+        poll_delay_ms,
+        recursive,
+        ignore_permission_denied,
+    )
     if False:
-        yield (Change.modified, "")
+        yield {(Change.modified, "")}
 
 
 class WatchfilesModule(Protocol):
@@ -54,15 +74,18 @@ class WatchfilesModule(Protocol):
         self,
         *paths: PathLike,
         watch_filter: WatchFilter | None = None,
-        debug: bool = False,
-        stop_event: Event | None = None,
+        debounce: int = 1_600,
+        step: int = 50,
+        stop_event: SupportsIsSet | None = None,
+        rust_timeout: int = 5_000,
         yield_on_timeout: bool = False,
-        raise_interrupt: bool = False,
-        debounce: float | None = None,
-        min_sleep: float = 0.0,
-        step: float = 1.0,
-        timeout: float | None = None,
-    ) -> Iterable[WatchEvent]:
+        debug: bool | None = None,
+        raise_interrupt: bool = True,
+        force_polling: bool | None = None,
+        poll_delay_ms: int = 300,
+        recursive: bool = True,
+        ignore_permission_denied: bool | None = None,
+    ) -> Iterable[WatchEventBatch]:
         ...
 
 
@@ -76,26 +99,32 @@ class _WatchfilesModule(ModuleType):
         self,
         *paths: PathLike,
         watch_filter: WatchFilter | None = None,
-        debug: bool = False,
-        stop_event: Event | None = None,
+        debounce: int = 1_600,
+        step: int = 50,
+        stop_event: SupportsIsSet | None = None,
+        rust_timeout: int = 5_000,
         yield_on_timeout: bool = False,
-        raise_interrupt: bool = False,
-        debounce: float | None = None,
-        min_sleep: float = 0.0,
-        step: float = 1.0,
-        timeout: float | None = None,
-    ) -> Iterable[WatchEvent]:
+        debug: bool | None = None,
+        raise_interrupt: bool = True,
+        force_polling: bool | None = None,
+        poll_delay_ms: int = 300,
+        recursive: bool = True,
+        ignore_permission_denied: bool | None = None,
+    ) -> Iterable[WatchEventBatch]:
         return watch(
             *paths,
             watch_filter=watch_filter,
-            debug=debug,
+            debounce=debounce,
+            step=step,
             stop_event=stop_event,
             yield_on_timeout=yield_on_timeout,
             raise_interrupt=raise_interrupt,
-            debounce=debounce,
-            min_sleep=min_sleep,
-            step=step,
-            timeout=timeout,
+            debug=debug,
+            rust_timeout=rust_timeout,
+            force_polling=force_polling,
+            poll_delay_ms=poll_delay_ms,
+            recursive=recursive,
+            ignore_permission_denied=ignore_permission_denied,
         )
 
 

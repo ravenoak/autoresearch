@@ -136,7 +136,7 @@ class StreamlitModule(Protocol):
         spec: int | Sequence[float],
         *,
         gap: Literal["small", "medium", "large"] = "small",
-    ) -> Sequence[ColumnContext]: ...
+    ) -> tuple[ColumnContext, ...]: ...
 
     def container(self) -> AbstractContextManager[ContainerContext]: ...
 
@@ -222,7 +222,7 @@ class _StreamlitModule(ModuleType):
         spec: int | Sequence[float],
         *,
         gap: Literal["small", "medium", "large"] = "small",
-    ) -> Sequence[ColumnContext]:
+    ) -> tuple[ColumnContext, ...]:
         del spec, gap
         return (_ColumnContext(), _ColumnContext())
 

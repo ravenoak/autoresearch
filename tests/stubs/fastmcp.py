@@ -5,25 +5,32 @@ from __future__ import annotations
 import inspect
 from collections.abc import Awaitable, Mapping
 from types import ModuleType, TracebackType
-from typing import Protocol, TypeVar, cast
+from typing import ParamSpec, Protocol, TypeVar, cast
 
 from ._registry import install_stub_module
 
+P = ParamSpec("P")
 ResultT = TypeVar("ResultT", covariant=True)
 
 
-class ToolCallable(Protocol[ResultT]):
+class ToolCallable(Protocol[P, ResultT]):
     __name__: str
 
-    def __call__(self, **params: object) -> Awaitable[ResultT] | ResultT: ...
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[ResultT] | ResultT: ...
+
+
+class RegisteredTool(Protocol):
+    __name__: str
+
+    def __call__(self, *args: object, **kwargs: object) -> Awaitable[object] | object: ...
 
 
 class FastMCP:
     def __init__(self) -> None:
-        self.tools: dict[str, ToolCallable[object]] = {}
+        self.tools: dict[str, RegisteredTool] = {}
 
-    def tool(self, func: ToolCallable[ResultT]) -> ToolCallable[ResultT]:
-        self.tools[func.__name__] = cast(ToolCallable[object], func)
+    def tool(self, func: ToolCallable[P, ResultT]) -> ToolCallable[P, ResultT]:
+        self.tools[func.__name__] = cast(RegisteredTool, func)
         return func
 
     async def call_tool(self, name: str, params: Mapping[str, object]) -> object:
