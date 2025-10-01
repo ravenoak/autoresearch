@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 
-def test_orchestrator_perf_metrics():
+def test_orchestrator_perf_metrics() -> None:
     script = Path(__file__).resolve().parents[2] / "scripts" / "orchestrator_perf_sim.py"
     cmd = [
         "uv",

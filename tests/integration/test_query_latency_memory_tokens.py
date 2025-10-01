@@ -1,5 +1,6 @@
 import time
 from contextlib import contextmanager
+from typing import Any, Callable, Iterator
 
 import pytest
 
@@ -24,12 +25,20 @@ class BenchAgent:
         return {"results": {self.name: "ok"}}
 
 
+def _build_bench_agent(name: str, llm_adapter: Any | None = None) -> BenchAgent:
+    return BenchAgent(name)
+
+
 def test_query_latency_memory_tokens(monkeypatch, token_baseline):
-    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: BenchAgent(name))
+    monkeypatch.setattr(AgentFactory, "get", _build_bench_agent)
 
     @contextmanager
-    def capture(agent_name, metrics, config):
-        def generate(prompt):
+    def capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[dict[str, Any], Callable[[str], str]]]:
+        def generate(prompt: str) -> str:
             metrics.record_tokens(agent_name, len(prompt.split()), 1)
             return "ok"
 

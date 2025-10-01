@@ -1,32 +1,49 @@
 import concurrent.futures
-from typing import List, Tuple
+from dataclasses import dataclass, field
+from typing import Tuple
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
+from autoresearch.orchestration.state import QueryState
+import pytest
+
+from tests.integration._orchestrator_stubs import AgentDouble, patch_agent_factory_get
 
 Orchestrator = orch_mod.Orchestrator
-AgentFactory = orch_mod.AgentFactory
 
 
-def _make_echo_agent(name: str, calls: List[Tuple[str, str, int]]):
-    class EchoAgent:
-        def __init__(self, name: str, llm_adapter=None):
-            self.name = name
+@dataclass(slots=True)
+class EchoAgentDouble(AgentDouble):
+    calls: list[Tuple[str, str, int]] = field(default_factory=list)
 
-        def can_execute(self, state, config):
-            return True
+    def execute(
+        self,
+        state: QueryState,
+        config: ConfigModel,
+        **_: object,
+    ) -> dict[str, object]:
+        record = (self.name, state.query, id(state))
+        self.calls.append(record)
+        payload = {
+            "results": {self.name: state.query},
+            "answer": f"Echo: {state.query}",
+        }
+        state.update(payload)
+        state.results["final_answer"] = f"Echo: {state.query}"
+        return payload
 
-        def execute(self, state, config, **kwargs):
-            calls.append((self.name, state.query, id(state)))
-            state.results["final_answer"] = f"Echo: {state.query}"
-            return {"results": {self.name: state.query}}
 
-    return EchoAgent(name)
+def _install_echo_agents(
+    monkeypatch: pytest.MonkeyPatch,
+    calls: list[Tuple[str, str, int]],
+) -> None:
+    agent = EchoAgentDouble(name="Echo", calls=calls)
+    patch_agent_factory_get(monkeypatch, (agent,))
 
 
-def test_parallel_queries_isolate_state(monkeypatch):
-    calls: List[Tuple[str, str, int]] = []
-    monkeypatch.setattr(AgentFactory, "get", lambda name: _make_echo_agent(name, calls))
+def test_parallel_queries_isolate_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[Tuple[str, str, int]] = []
+    _install_echo_agents(monkeypatch, calls)
 
     def run_query(q: str):
         cfg = ConfigModel(agents=["Echo"], loops=1)

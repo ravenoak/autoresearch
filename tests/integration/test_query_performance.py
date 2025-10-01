@@ -1,5 +1,6 @@
 import time
 from contextlib import contextmanager
+from typing import Any, Iterator
 
 import pytest
 
@@ -26,13 +27,21 @@ class PerfAgent:
         return {"results": {self.name: "ok"}}
 
 
+def _build_perf_agent(name: str, llm_adapter: Any | None = None) -> PerfAgent:
+    return PerfAgent(name)
+
+
 def test_query_performance(monkeypatch) -> None:
     """Ensure query performance stays within configured limits."""
 
-    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: PerfAgent(name))
+    monkeypatch.setattr(AgentFactory, "get", _build_perf_agent)
 
     @contextmanager
-    def capture(agent_name, metrics, config):
+    def capture(
+        agent_name: str,
+        metrics: Any,
+        config: ConfigModel,
+    ) -> Iterator[tuple[dict[str, int], Any]]:
         token_counts = {"in": 0, "out": 0}
 
         class Adapter:

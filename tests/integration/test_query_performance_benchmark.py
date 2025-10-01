@@ -75,14 +75,22 @@ def test_query_performance_memory_tokens(benchmark, token_baseline):
     assert memory_after - memory_before < 10
 
 
+def _build_dummy_agent(name: str, llm_adapter: object | None = None) -> DummyAgent:
+    return DummyAgent(name)
+
+
 def test_token_budget_limit(monkeypatch, token_baseline):
     """Token usage should respect the configured budget."""
 
     # Setup
-    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name))
+    monkeypatch.setattr(AgentFactory, "get", _build_dummy_agent)
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy", token_budget=4)
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    
+    def _load_config_stub(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", _load_config_stub)
     ConfigLoader()._config = None
 
     # Execute
@@ -92,9 +100,13 @@ def test_token_budget_limit(monkeypatch, token_baseline):
     token_baseline(tokens)
 
 
+def _simulate_multi_node() -> dict[str, float]:
+    return simulate(node_count=4, duration=0.1)
+
+
 def test_distributed_coordination_overhead(benchmark):
     """Benchmark coordination overhead across processes."""
     single = simulate(node_count=1, duration=0.1)
-    multi = benchmark(lambda: simulate(node_count=4, duration=0.1))
+    multi = benchmark(_simulate_multi_node)
 
     assert multi["cpu_percent"] >= single["cpu_percent"]
