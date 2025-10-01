@@ -1,23 +1,33 @@
+from __future__ import annotations
+
+import importlib
+import importlib.util
 import os
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
+from typing import cast
 
 import pytest
 
+import_or_skip: Callable[[str], ModuleType]
 try:
-    from tests.optional_imports import import_or_skip
+    from tests.optional_imports import import_or_skip as _import_or_skip
 except Exception:  # pragma: no cover - path fallback for --noconftest runs
-    import importlib.util
-    from pathlib import Path as _Path
-
-    _mod_path = _Path(__file__).resolve().parents[1] / "optional_imports.py"
+    _mod_path = Path(__file__).resolve().parents[1] / "optional_imports.py"
     spec = importlib.util.spec_from_file_location("tests.optional_imports", str(_mod_path))
     if spec and spec.loader:
-        _mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(_mod)
-        import_or_skip = getattr(_mod, "import_or_skip")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        attr = getattr(module, "import_or_skip")
+        if not callable(attr):  # pragma: no cover - defensive guard
+            raise TypeError("import_or_skip attribute is not callable")
+        import_or_skip = cast(Callable[[str], ModuleType], attr)
     else:
         raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
+else:
+    import_or_skip = cast(Callable[[str], ModuleType], _import_or_skip)
 
 
 @pytest.mark.requires_nlp
@@ -25,7 +35,7 @@ def test_nlp_extra_imports() -> None:
     """Smoke test imports from the nlp extra."""
     spacy = import_or_skip("spacy")
     try:
-        bertopic = __import__("bertopic")
+        bertopic = importlib.import_module("bertopic")
     except Exception as exc:  # pragma: no cover - optional dependency issues
         pytest.skip(str(exc))
     nlp = spacy.blank("en")
@@ -51,7 +61,7 @@ def test_vss_extra_imports() -> None:
 
 
 @pytest.mark.requires_git
-def test_git_extra_imports(tmp_path) -> None:
+def test_git_extra_imports(tmp_path: Path) -> None:
     """Smoke test imports from the git extra."""
     git = import_or_skip("git")
 
@@ -82,8 +92,8 @@ def test_analysis_extra_imports() -> None:
 def test_llm_extra_imports() -> None:
     """Smoke test imports from the llm extra."""
     try:
-        fastembed = __import__("fastembed")
-        dspy = __import__("dspy")
+        fastembed = importlib.import_module("fastembed")
+        dspy = importlib.import_module("dspy")
     except Exception as exc:  # pragma: no cover - environment-specific
         pytest.skip(str(exc))
 
@@ -94,7 +104,7 @@ def test_llm_extra_imports() -> None:
 
 
 @pytest.mark.requires_parsers
-def test_parsers_extra_imports(tmp_path) -> None:
+def test_parsers_extra_imports(tmp_path: Path) -> None:
     """Smoke test imports from the parsers extra."""
     docx = import_or_skip("docx")
 
@@ -117,4 +127,10 @@ def test_task_check_runs_after_setup() -> None:
     project_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
     env["PATH"] = f"{project_root / '.venv' / 'bin'}:{env['PATH']}"
-    subprocess.run(["task", "check", "EXTRAS=dev"], cwd=project_root, env=env, check=True)
+    result: subprocess.CompletedProcess[bytes] = subprocess.run(
+        ["task", "check", "EXTRAS=dev"],
+        cwd=project_root,
+        env=env,
+        check=True,
+    )
+    assert result.returncode == 0

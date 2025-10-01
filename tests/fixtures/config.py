@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+
 import pytest
 
 from tests.typing_helpers import TypedFixture
@@ -29,6 +30,7 @@ def config_loader(tmp_path: Path) -> TypedFixture[ConfigLoader]:
         yield loader
     finally:
         ConfigLoader.reset_instance()
+    return None
 
 
 @pytest.fixture()
@@ -106,3 +108,4 @@ def config_context(
         yield ConfigContext(loader=loader, config=config, data_dir=data_dir)
     finally:
         ConfigLoader.reset_instance()
+    return None
