@@ -1,22 +1,37 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
 import duckdb
+from pytest import MonkeyPatch
+
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class DummyConn:
-    def execute(self, *args, **kwargs):
+    def execute(self, *args: Any, **kwargs: Any) -> DummyConn:
         return self
 
 
-def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
+def test_metrics_collection_and_endpoint(
+    monkeypatch: MonkeyPatch, orchestrator: Orchestrator
+) -> None:
     metrics.reset_metrics()
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
-    cfg = ConfigModel.model_construct(api=APIConfig(api_keys={"secret": "admin"}))
-    orch = orchestrator
+    cfg: ConfigModel = ConfigModel.model_construct(api=APIConfig(api_keys={"secret": "admin"}))
+    orch: Orchestrator = orchestrator
 
-    def fake_run_query(query, config, callbacks=None, **kwargs):
+    def fake_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: Callable[..., None] | None = None,
+        **kwargs: Any,
+    ) -> QueryResponse:
         metrics.record_query()
         m = metrics.OrchestrationMetrics()
         m.record_tokens("agent", 5, 7)
@@ -31,7 +46,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     from autoresearch.api import deps
 
     monkeypatch.setattr(deps, "require_permission", lambda _perm: lambda: None)
-    prom = types.SimpleNamespace(
+    prom: types.SimpleNamespace = types.SimpleNamespace(
         CONTENT_TYPE_LATEST="text/plain",
         generate_latest=lambda: (
             f"autoresearch_queries_total {metrics.QUERY_COUNTER._value.get()}\n"
@@ -53,7 +68,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     assert "autoresearch_tokens_in_total" in body
 
 
-def test_reset_metrics_clears_counters():
+def test_reset_metrics_clears_counters() -> None:
     metrics.QUERY_COUNTER.inc()
     metrics.ERROR_COUNTER.inc()
     metrics.reset_metrics()
