@@ -24,9 +24,10 @@ def _log_resource_tracker_cache() -> TypedFixture[None]:
         before = cache.copy()
         if before:
             logger.debug("resource tracker pre-test: %s", before)
-    yield
+    yield None
     with contextlib.suppress(Exception):
         cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
         if cache:
             logger.debug("resource tracker post-test: %s", cache.copy())
             cache.clear()
+    return None

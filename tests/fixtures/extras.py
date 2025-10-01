@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import importlib.util
+from importlib.machinery import ModuleSpec
+from types import ModuleType
+from typing import Final
 
 import pytest
 
 
 def _module_available(name: str) -> bool:
+    """Return ``True`` when :mod:`name` can be imported."""
+
     try:
-        return importlib.util.find_spec(name) is not None
-    except Exception:
+        spec: ModuleSpec | None = importlib.util.find_spec(name)
+    except Exception:  # pragma: no cover - defensive guard for exotic importers
         return False
+    return spec is not None
 
 
 @pytest.fixture
@@ -28,11 +34,13 @@ def has_vss() -> bool:
 def has_git() -> bool:
     """Return True if GitPython is installed."""
     try:
-        import git  # type: ignore[import-not-found]
-
-        return hasattr(git, "Repo") and hasattr(git, "__version__")
+        import git as git_module  # type: ignore[import-untyped]
     except Exception:
         return False
+    git_module_typed: ModuleType = git_module
+    repo_attr: Final[object | None] = getattr(git_module_typed, "Repo", None)
+    version_attr: Final[object | None] = getattr(git_module_typed, "__version__", None)
+    return repo_attr is not None and version_attr is not None
 
 
 @pytest.fixture
