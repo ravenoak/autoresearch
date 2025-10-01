@@ -23,6 +23,7 @@ from autoresearch.storage import set_delegate as set_storage_delegate
 from autoresearch.storage import teardown as storage_teardown
 from click.testing import Result
 from tests.behavior.context import (
+    BehaviorContext,
     get_cli_result,
     set_cli_invocation,
     set_cli_result,
@@ -217,13 +218,13 @@ def application_running(temp_config: Path) -> None:
 @when(parsers.parse("I run `{command}`"))
 def run_cli_command(
     cli_runner: CliRunner,
-    bdd_context: dict[str, object],
+    bdd_context: BehaviorContext,
     command: str,
     _isolate_network: None,
     _restore_environment: None,
 ) -> None:
     args = shlex.split(command)
-    trimmed_args = args
+    trimmed_args: list[str] = args
     if args and args[0] == "uv":
         remainder = args[1:]
         if remainder and remainder[0] == "run":
@@ -242,13 +243,13 @@ def run_cli_command(
 
 
 @then("the CLI should exit successfully")
-def cli_should_exit_successfully(bdd_context: dict[str, object]) -> None:
+def cli_should_exit_successfully(bdd_context: BehaviorContext) -> None:
     result = get_cli_result(bdd_context, key="result")
     assert_cli_success(result)
 
 
 @then("the CLI should report an error")
-def cli_should_report_error(bdd_context: dict[str, object]) -> None:
+def cli_should_report_error(bdd_context: BehaviorContext) -> None:
     result = get_cli_result(bdd_context, key="result")
     assert_cli_error(result)
 
