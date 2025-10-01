@@ -7,33 +7,35 @@ from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import dataclass
 from threading import RLock
-from typing import Any, Optional, Protocol, Self, TypeVar, cast
+from typing import Any, Optional, Protocol, TypeVar
 from uuid import uuid4
 
 from ..config.models import ConfigModel
 from .state import QueryState
 
 
+_SupportsModelCopySelf = TypeVar("_SupportsModelCopySelf", bound="_SupportsModelCopy")
+
+
 class _SupportsModelCopy(Protocol):
     """Typed protocol for objects exposing ``model_copy``."""
 
     def model_copy(
-        self,
+        self: _SupportsModelCopySelf,
         *,
-        update: Mapping[str, Any] | None = ...,
-        deep: bool = ...,
-    ) -> Self:
+        update: Mapping[str, Any] | None = None,
+        deep: bool | None = None,
+    ) -> _SupportsModelCopySelf:
         """Return a deep copy of the model."""
 
 
-_M = TypeVar("_M")
+_ModelT = TypeVar("_ModelT", bound=_SupportsModelCopy)
 
 
-def _clone_model(model: _M) -> _M:
+def _clone_model(model: _ModelT) -> _ModelT:
     """Return a deep copy of ``model`` using its ``model_copy`` method."""
 
-    supports = cast(_SupportsModelCopy, model)
-    return cast(_M, supports.model_copy(deep=True))
+    return model.model_copy(deep=True)
 
 
 @dataclass
