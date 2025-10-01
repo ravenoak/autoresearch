@@ -1,6 +1,9 @@
 import threading
 from collections import Counter
+from typing import Any
 
+import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from autoresearch.api import create_app, dynamic_limit
@@ -10,7 +13,7 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch: pytest.MonkeyPatch) -> tuple[ConfigModel, FastAPI]:
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -25,7 +28,7 @@ def _setup(monkeypatch):
     return cfg, app
 
 
-def test_dynamic_limit(monkeypatch):
+def test_dynamic_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, _ = _setup(monkeypatch)
     cfg.api.rate_limit = 5
     assert dynamic_limit() == "5/minute"
@@ -33,7 +36,7 @@ def test_dynamic_limit(monkeypatch):
     assert dynamic_limit() == "1000000/minute"
 
 
-def test_api_key_roles(monkeypatch):
+def test_api_key_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.api_keys = {"secret": "user"}
     client = TestClient(app)
@@ -45,7 +48,7 @@ def test_api_key_roles(monkeypatch):
     assert resp.status_code == 401
 
 
-def test_batch_query_invalid_page(monkeypatch):
+def test_batch_query_invalid_page(monkeypatch: pytest.MonkeyPatch) -> None:
     _, app = _setup(monkeypatch)
     client = TestClient(app)
     payload = {"queries": [{"query": "q1"}]}
@@ -53,7 +56,7 @@ def test_batch_query_invalid_page(monkeypatch):
     assert resp.status_code == 400
 
 
-def test_fallback_no_limit(monkeypatch):
+def test_fallback_no_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 
@@ -71,7 +74,7 @@ def test_fallback_no_limit(monkeypatch):
     assert api_mod.get_request_logger(app).snapshot() == Counter()
 
 
-def test_fallback_multiple_ips(monkeypatch):
+def test_fallback_multiple_ips(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 1
 
@@ -79,7 +82,7 @@ def test_fallback_multiple_ips(monkeypatch):
 
     api_mod.get_request_logger(app).reset()
 
-    def addr(req):
+    def addr(req: Any) -> str:
         return req.headers.get("x-ip", "1")
 
     monkeypatch.setattr("autoresearch.api.middleware.get_remote_address", addr)
@@ -114,7 +117,7 @@ def test_fallback_multiple_ips(monkeypatch):
         assert app.state.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
 
-def test_request_log_thread_safety(monkeypatch):
+def test_request_log_thread_safety(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 

@@ -1,4 +1,5 @@
 import pytest
+from typing import Iterator, cast
 from unittest.mock import MagicMock, patch
 
 from autoresearch.agents.specialized.domain_specialist import DomainSpecialistAgent
@@ -11,7 +12,7 @@ from autoresearch.config.models import ConfigModel
 
 
 @pytest.fixture
-def mock_llm_adapter():
+def mock_llm_adapter() -> Iterator[MagicMock]:
     with patch("autoresearch.agents.base.LLMAdapter", autospec=True) as m:
         adapter = m.return_value
         adapter.generate.return_value = "LLM response"
@@ -19,17 +20,17 @@ def mock_llm_adapter():
 
 
 @pytest.fixture
-def mock_config():
+def mock_config() -> ConfigModel:
     cfg = MagicMock(spec=ConfigModel)
     cfg.default_model = "test-model"
     cfg.max_results_per_query = 3
     cfg.agent_config = MagicMock()
     cfg.agent_config.get.return_value = None
-    return cfg
+    return cast(ConfigModel, cfg)
 
 
 @pytest.fixture
-def medical_state():
+def medical_state() -> QueryState:
     state = QueryState(query="How does a doctor treat flu?")
     state.claims = [
         {"id": "1", "type": "thesis", "content": "Doctors prescribe medicine"},
@@ -39,7 +40,7 @@ def medical_state():
 
 
 @pytest.fixture
-def dialogue_state():
+def dialogue_state() -> QueryState:
     state = QueryState(query="Discuss climate change")
     state.claims = [
         {"id": "1", "agent": "A", "type": "thesis", "content": "It is warming"},
@@ -49,7 +50,11 @@ def dialogue_state():
     return state
 
 
-def test_domain_specialist_execute(mock_llm_adapter, medical_state, mock_config):
+def test_domain_specialist_execute(
+    mock_llm_adapter: MagicMock,
+    medical_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     agent = DomainSpecialistAgent(name="Spec", llm_adapter=mock_llm_adapter)
     with patch("autoresearch.search.Search.external_lookup") as mock_search:
         mock_search.return_value = [{"title": "t", "content": "c", "url": "u"}]
@@ -62,7 +67,7 @@ def test_domain_specialist_execute(mock_llm_adapter, medical_state, mock_config)
     assert mock_llm_adapter.generate.call_count == 2
 
 
-def test_domain_specialist_can_execute(mock_config):
+def test_domain_specialist_can_execute(mock_config: ConfigModel) -> None:
     agent = DomainSpecialistAgent(name="Spec")
     state = QueryState(query="medical health treatment for patient disease")
     agent.domain = "medicine"
@@ -73,7 +78,11 @@ def test_domain_specialist_can_execute(mock_config):
     assert agent.can_execute(state, mock_config)
 
 
-def test_moderator_execute(mock_llm_adapter, dialogue_state, mock_config):
+def test_moderator_execute(
+    mock_llm_adapter: MagicMock,
+    dialogue_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     agent = ModeratorAgent(name="Mod", llm_adapter=mock_llm_adapter)
     result = agent.execute(dialogue_state, mock_config)
     assert result["claims"][0]["type"] == "moderation"
@@ -83,7 +92,9 @@ def test_moderator_execute(mock_llm_adapter, dialogue_state, mock_config):
     assert mock_llm_adapter.generate.call_count == 2
 
 
-def test_moderator_can_execute(dialogue_state, mock_config):
+def test_moderator_can_execute(
+    dialogue_state: QueryState, mock_config: ConfigModel
+) -> None:
     agent = ModeratorAgent(name="Mod")
     assert agent.can_execute(dialogue_state, mock_config)
     small = QueryState(query="q", claims=dialogue_state.claims[:2])
@@ -96,7 +107,11 @@ def test_moderator_can_execute(dialogue_state, mock_config):
     assert not agent.can_execute(single_agent, mock_config)
 
 
-def test_user_agent_execute(mock_llm_adapter, medical_state, mock_config):
+def test_user_agent_execute(
+    mock_llm_adapter: MagicMock,
+    medical_state: QueryState,
+    mock_config: ConfigModel,
+) -> None:
     state = medical_state
     state.cycle = 1
     state.results = {"summary": "s"}
@@ -109,7 +124,9 @@ def test_user_agent_execute(mock_llm_adapter, medical_state, mock_config):
     assert mock_llm_adapter.generate.call_count == 2
 
 
-def test_user_agent_can_execute(medical_state, mock_config):
+def test_user_agent_can_execute(
+    medical_state: QueryState, mock_config: ConfigModel
+) -> None:
     agent = UserAgent(name="User")
     medical_state.cycle = 1
     assert agent.can_execute(medical_state, mock_config)
@@ -120,7 +137,9 @@ def test_user_agent_can_execute(medical_state, mock_config):
     assert not agent.can_execute(medical_state, mock_config)
 
 
-def test_planner_metadata(mock_llm_adapter, mock_config):
+def test_planner_metadata(
+    mock_llm_adapter: MagicMock, mock_config: ConfigModel
+) -> None:
     state = QueryState(query="q")
     agent = PlannerAgent(name="Planner", llm_adapter=mock_llm_adapter)
     result = agent.execute(state, mock_config)
