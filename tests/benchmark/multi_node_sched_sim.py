@@ -6,7 +6,17 @@ import argparse
 import heapq
 import json
 import random
-from typing import Dict
+from dataclasses import asdict, dataclass
+
+
+@dataclass(frozen=True)
+class ScheduleMetrics:
+    """Structured metrics captured from the simulation."""
+
+    throughput: float
+    overhead: float
+    duration_s: float
+    executions: float
 
 
 def run_simulation(
@@ -16,7 +26,7 @@ def run_simulation(
     network_latency: float = 0.01,
     task_time: float = 0.01,
     fail_rate: float = 0.1,
-) -> Dict[str, float]:
+) -> ScheduleMetrics:
     """Run a scheduling simulation and return throughput and overhead metrics.
 
     Args:
@@ -53,12 +63,12 @@ def run_simulation(
     total_time = max(available)
     throughput = tasks / total_time if total_time > 0 else float("inf")
     overhead = total_attempts / tasks
-    return {
-        "throughput": throughput,
-        "overhead": overhead,
-        "duration_s": total_time,
-        "executions": float(total_attempts),
-    }
+    return ScheduleMetrics(
+        throughput=throughput,
+        overhead=overhead,
+        duration_s=total_time,
+        executions=float(total_attempts),
+    )
 
 
 def main() -> None:
@@ -87,7 +97,7 @@ def main() -> None:
         task_time=args.task_time,
         fail_rate=args.fail_rate,
     )
-    print(json.dumps(metrics))
+    print(json.dumps(asdict(metrics)))
 
 
 if __name__ == "__main__":

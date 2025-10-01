@@ -5,9 +5,17 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
+from typing import TypedDict
 
 
-def rank_results(results: list[dict]) -> list[dict]:
+class ScoredResult(TypedDict):
+    """Result entry with a pre-computed relevance score."""
+
+    title: str
+    relevance_score: float
+
+
+def rank_results(results: list[ScoredResult]) -> list[ScoredResult]:
     """Sort results by ``relevance_score`` descending."""
     return sorted(results, key=lambda r: r["relevance_score"], reverse=True)
 
@@ -16,7 +24,7 @@ def simulate(trials: int = 100, items: int = 5) -> dict[str, float]:
     """Generate random scores and verify the sorted order."""
     correct = 0
     for _ in range(trials):
-        results = [
+        results: list[ScoredResult] = [
             {"title": str(i), "relevance_score": random.random()} for i in range(items)
         ]
         ranked = rank_results(results)

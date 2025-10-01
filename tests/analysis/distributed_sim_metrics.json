@@ -1,17 +1,17 @@
 {
   "1": {
-    "throughput": 155.81923179308106,
-    "cpu_percent": 22.2,
-    "memory_mb": 126.703125
+    "throughput": 642.7231296715453,
+    "cpu_percent": 22.8,
+    "memory_mb": 155.828125
   },
   "2": {
-    "throughput": 197.1418029703611,
-    "cpu_percent": 23.0,
-    "memory_mb": 127.078125
+    "throughput": 638.9586758011261,
+    "cpu_percent": 39.233333333333334,
+    "memory_mb": 156.078125
   },
   "4": {
-    "throughput": 1361.5581060975444,
-    "cpu_percent": 19.8,
-    "memory_mb": 127.078125
+    "throughput": 567.6355728289021,
+    "cpu_percent": 73.76666666666667,
+    "memory_mb": 156.078125
   }
 }

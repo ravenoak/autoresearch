@@ -1,17 +1,17 @@
 {
   "1": {
-    "avg_latency_s": 0.01690406965999955,
-    "throughput": 59.15735205270248,
-    "memory_mb": 45.4453125
+    "avg_latency_s": 0.0125,
+    "throughput": 50.0,
+    "memory_mb": 49.5
   },
   "2": {
-    "avg_latency_s": 0.012488221639999892,
-    "throughput": 80.07545260063215,
-    "memory_mb": 49.6953125
+    "avg_latency_s": 0.01125,
+    "throughput": 133.33333333333334,
+    "memory_mb": 51.0
   },
   "4": {
-    "avg_latency_s": 0.007829986080000708,
-    "throughput": 127.71414786473153,
-    "memory_mb": 49.9453125
+    "avg_latency_s": 0.010624999999999999,
+    "throughput": 320.0,
+    "memory_mb": 54.0
   }
 }

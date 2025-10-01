@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 
 
-def _stream(data: list[str], heartbeat_interval: int = 2):
+def _stream(data: list[str], heartbeat_interval: int = 2) -> Iterator[str]:
     for i, item in enumerate(data):
         yield item
         if (i + 1) % heartbeat_interval == 0:

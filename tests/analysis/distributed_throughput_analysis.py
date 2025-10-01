@@ -12,11 +12,14 @@ def run() -> dict[int, dict[str, float]]:
     """Run simulations for multiple worker counts and persist metrics."""
     results: dict[int, dict[str, float]] = {}
     for workers in (1, 2, 4):
-        metrics = sim_dc.run_simulation(workers=workers, tasks=50, loops=5)
+        samples = [
+            sim_dc.run_simulation(workers=workers, tasks=50, loops=5)
+            for _ in range(3)
+        ]
         results[workers] = {
-            "throughput": metrics["throughput"],
-            "cpu_percent": metrics["cpu_percent"],
-            "memory_mb": metrics["memory_mb"],
+            "throughput": sum(sample["throughput"] for sample in samples) / len(samples),
+            "cpu_percent": sum(sample["cpu_percent"] for sample in samples) / len(samples),
+            "memory_mb": sum(sample["memory_mb"] for sample in samples) / len(samples),
         }
     out_path = Path(__file__).with_name("distributed_throughput_metrics.json")
     out_path.write_text(json.dumps(results, indent=2))

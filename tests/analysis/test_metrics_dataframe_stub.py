@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.requires_analysis
-def test_metrics_dataframe_with_stub(monkeypatch):
+def test_metrics_dataframe_with_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     """metrics_dataframe should build rows when Polars is available."""
     stub_pl = types.SimpleNamespace(DataFrame=lambda rows: rows)
     monkeypatch.setitem(sys.modules, "polars", stub_pl)

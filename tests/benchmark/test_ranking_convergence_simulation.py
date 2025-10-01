@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+from tests.benchmark.conftest import MetricsBaselineFn
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "ranking_convergence.py"
 _spec = importlib.util.spec_from_file_location("ranking_convergence", SCRIPT)
@@ -17,7 +20,9 @@ _spec.loader.exec_module(module)
 pytestmark = [pytest.mark.slow]
 
 
-def test_ranking_convergence_simulation(benchmark, metrics_baseline) -> None:
+def test_ranking_convergence_simulation(
+    benchmark: Any, metrics_baseline: MetricsBaselineFn
+) -> None:
     """Mean convergence step remains one across random runs."""
 
     def run() -> None:
