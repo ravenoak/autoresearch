@@ -1,5 +1,7 @@
 import sys
+from pathlib import Path
 from types import ModuleType
+from typing import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,7 +19,7 @@ class DummyGraph:
 
 
 @pytest.fixture(autouse=True)
-def fake_deps(monkeypatch):
+def fake_deps(monkeypatch: pytest.MonkeyPatch) -> Generator[ModuleType, None, None]:
     """Provide dummy matplotlib and networkx implementations."""
     fake_plt = ModuleType("pyplot")
     setattr(fake_plt, "figure", lambda *a, **k: None)
@@ -43,7 +45,10 @@ def fake_deps(monkeypatch):
     yield fake_plt
 
 
-def test_save_knowledge_graph(monkeypatch, tmp_path, fake_deps):
+def test_save_knowledge_graph(
+    tmp_path: Path,
+    fake_deps: ModuleType,
+) -> None:
     plt = fake_deps
     response = QueryResponse(
         answer="a",
@@ -56,17 +61,21 @@ def test_save_knowledge_graph(monkeypatch, tmp_path, fake_deps):
     plt.savefig.assert_called_once_with(str(out_file))
 
 
-def test_save_knowledge_graph_spring_fallback(monkeypatch, tmp_path, fake_deps):
+def test_save_knowledge_graph_spring_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_deps: ModuleType,
+) -> None:
     plt = fake_deps
     response = QueryResponse(answer="a", citations=[], reasoning=["r"], metrics={})
     out_file = tmp_path / "graph.png"
     import networkx as real_nx
 
-    def boom(*args, **kwargs):
+    def boom(*args: object, **kwargs: object) -> None:
         raise ValueError("fail")
 
     monkeypatch.setattr(real_nx, "spring_layout", boom)
-    fallback = MagicMock(return_value={})
+    fallback: MagicMock = MagicMock(return_value={})
     monkeypatch.setattr(real_nx, "circular_layout", fallback)
     monkeypatch.setattr("autoresearch.visualization.nx", real_nx, raising=False)
 

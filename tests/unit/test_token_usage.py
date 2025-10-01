@@ -8,6 +8,8 @@ recorded when using LLM adapters.
 from unittest.mock import MagicMock
 from typing import Any
 
+import pytest
+
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.config.models import ConfigModel
@@ -15,7 +17,9 @@ from autoresearch.llm.token_counting import compress_prompt
 import autoresearch.llm as llm
 
 
-def test_capture_token_usage_counts_correctly(monkeypatch, flexible_llm_adapter):
+def test_capture_token_usage_counts_correctly(
+    monkeypatch: pytest.MonkeyPatch, flexible_llm_adapter: Any
+) -> None:
     """Test that the token counting context manager correctly counts tokens.
 
     This test verifies that:
@@ -40,12 +44,14 @@ def test_capture_token_usage_counts_correctly(monkeypatch, flexible_llm_adapter)
         wrapped_adapter.generate("hello world")
 
     # Verify
-    counts = metrics.token_counts["agent"]
+    counts: dict[str, int] = metrics.token_counts["agent"]
     assert counts["in"] == 2  # "hello world" has 2 tokens
     assert counts["out"] > 0  # The output should have at least 1 token
 
 
-def test_token_budget_truncates_prompt(monkeypatch, flexible_llm_adapter):
+def test_token_budget_truncates_prompt(
+    monkeypatch: pytest.MonkeyPatch, flexible_llm_adapter: Any
+) -> None:
     """Ensure prompts are truncated to the configured token budget."""
 
     metrics = OrchestrationMetrics()
@@ -61,11 +67,13 @@ def test_token_budget_truncates_prompt(monkeypatch, flexible_llm_adapter):
     ):
         wrapped_adapter.generate("one two three four five")
 
-    counts = metrics.token_counts["agent"]
+    counts: dict[str, int] = metrics.token_counts["agent"]
     assert counts["in"] <= mock_config.token_budget
 
 
-def test_prompt_passed_to_adapter_is_compressed(monkeypatch, flexible_llm_adapter):
+def test_prompt_passed_to_adapter_is_compressed(
+    monkeypatch: pytest.MonkeyPatch, flexible_llm_adapter: Any
+) -> None:
     """Prompts exceeding the budget are compressed before LLM generation."""
 
     metrics = OrchestrationMetrics()
@@ -91,7 +99,7 @@ def test_prompt_passed_to_adapter_is_compressed(monkeypatch, flexible_llm_adapte
     assert len(captured["prompt"].split()) <= mock_config.token_budget
 
 
-def test_compress_prompt_with_summarizer():
+def test_compress_prompt_with_summarizer() -> None:
     """Summarizer is used when prompt exceeds the budget."""
 
     called = {}
@@ -105,7 +113,7 @@ def test_compress_prompt_with_summarizer():
     assert "p" in called
 
 
-def test_summarizer_skipped_when_within_budget():
+def test_summarizer_skipped_when_within_budget() -> None:
     """Summarizer is ignored when the prompt already fits the budget."""
 
     called = {}
@@ -119,7 +127,7 @@ def test_summarizer_skipped_when_within_budget():
     assert called == {}
 
 
-def test_summarizer_fallback_to_truncation():
+def test_summarizer_fallback_to_truncation() -> None:
     """If the summary is too long an ellipsis-based truncation is used."""
 
     def long_summary(prompt: str, budget: int) -> str:
@@ -130,7 +138,7 @@ def test_summarizer_fallback_to_truncation():
     assert len(result.split()) == 3
 
 
-def test_budget_considers_agent_history():
+def test_budget_considers_agent_history() -> None:
     """Token budget suggestion accounts for per-agent history."""
 
     m = OrchestrationMetrics()

@@ -1,5 +1,7 @@
-from unittest.mock import MagicMock
 from typing import Any
+from unittest.mock import MagicMock
+
+import pytest
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import OrchestrationMetrics
@@ -8,7 +10,9 @@ from autoresearch.orchestration import token_utils
 import autoresearch.llm as llm
 
 
-def test_capture_token_usage_counts(monkeypatch, flexible_llm_adapter):
+def test_capture_token_usage_counts(
+    monkeypatch: pytest.MonkeyPatch, flexible_llm_adapter: Any
+) -> None:
     metrics = OrchestrationMetrics()
     mock_config = MagicMock(spec=ConfigModel)
     mock_config.llm_backend = "flexible"
@@ -20,12 +24,12 @@ def test_capture_token_usage_counts(monkeypatch, flexible_llm_adapter):
     ):
         adapter.generate("hello world")
 
-    counts = metrics.token_counts["agent"]
+    counts: dict[str, int] = metrics.token_counts["agent"]
     assert counts["in"] == 2
     assert counts["out"] > 0
 
 
-def test_execute_with_adapter_injection_methods():
+def test_execute_with_adapter_injection_methods() -> None:
     class AgentWithParam:
         def __init__(self) -> None:
             self.used: Any | None = None
