@@ -238,11 +238,6 @@ def populated_summary() -> EvaluationSummary:
         total_examples=2,
         example_csv=Path("artifacts/examples.csv"),
         summary_csv=Path("artifacts/summary.csv"),
-        avg_planner_depth=2.5,
-        avg_routing_delta=1.75,
-        total_routing_delta=3.5,
-        avg_routing_decisions=1.5,
-        routing_strategy="balanced",
     )
 
 

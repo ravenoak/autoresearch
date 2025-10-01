@@ -27,6 +27,37 @@ def tmp_harness(tmp_path: Path) -> EvaluationHarness:
     return EvaluationHarness(output_dir=tmp_path, duckdb_path=duckdb_path)
 
 
+@pytest.fixture
+def base() -> EvaluationSummary:
+    """Provide a populated baseline summary for routing strategy comparisons."""
+
+    return build_summary_fixture(
+        run_id="baseline",
+        config_signature="base",
+        accuracy=0.5,
+        citation_coverage=0.5,
+        contradiction_rate=0.1,
+        avg_latency_seconds=1.0,
+        avg_tokens_input=10.0,
+        avg_tokens_output=5.0,
+        avg_tokens_total=15.0,
+        avg_cycles_completed=2.0,
+        gate_debate_rate=0.5,
+        gate_exit_rate=0.5,
+        gated_example_ratio=1.0,
+        avg_planner_depth=3.0,
+        avg_routing_delta=5.0,
+        total_routing_delta=10.0,
+        avg_routing_decisions=2.0,
+        routing_strategy="balanced",
+        duckdb_path=None,
+        example_parquet=None,
+        summary_parquet=None,
+        example_csv=None,
+        summary_csv=None,
+    )
+
+
 def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness) -> None:
     """Dry runs honour the limit flag and never call the orchestrator runner."""
 
@@ -252,34 +283,9 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary_strategy == "balanced"
 
 
-def test_compare_routing_strategies() -> None:
+def test_compare_routing_strategies(base: EvaluationSummary) -> None:
     """Comparisons report deltas between baseline and variant strategies."""
 
-    base: EvaluationSummary = build_summary_fixture(
-        run_id="baseline",
-        config_signature="base",
-        accuracy=0.5,
-        citation_coverage=0.5,
-        contradiction_rate=0.1,
-        avg_latency_seconds=1.0,
-        avg_tokens_input=10.0,
-        avg_tokens_output=5.0,
-        avg_tokens_total=15.0,
-        avg_cycles_completed=2.0,
-        gate_debate_rate=0.5,
-        gate_exit_rate=0.5,
-        gated_example_ratio=1.0,
-        avg_planner_depth=3.0,
-        avg_routing_delta=5.0,
-        total_routing_delta=10.0,
-        avg_routing_decisions=2.0,
-        routing_strategy="balanced",
-        duckdb_path=None,
-        example_parquet=None,
-        summary_parquet=None,
-        example_csv=None,
-        summary_csv=None,
-    )
     variant: EvaluationSummary = replace(
         base,
         run_id="variant",
