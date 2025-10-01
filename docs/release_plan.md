@@ -75,6 +75,10 @@ at roughly 10 % progress. The CLI summary table now defaults planner depth and
 routing telemetry to em-dash placeholders when the harness omits those metrics,
 and a regression fixture exercises the populated columns so coverage stays
 aligned with the printed output.[cli-summary-formatting][coverage-fixture]
+The refreshed behavior scenario renders both a populated row and a
+telemetry-empty row, ensuring the CLI output stays synchronized with the
+expanded schema while the unit fixture validates the same fallbacks for the
+render helper.[bdd-evaluation-steps][coverage-fixture]
 The TestPyPI dry run stays deferred under the release directive while we clear
 the strict typing wall and unblock the coverage sweep.
 【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
@@ -113,6 +117,7 @@ These references align with the acceptance criteria in
 [scout-gate-test]: ../tests/unit/orchestration/test_gate_policy.py
 [cli-summary-formatting]: ../src/autoresearch/cli_utils.py#L300-L347
 [coverage-fixture]: ../tests/unit/test_additional_coverage.py#L160-L236
+[bdd-evaluation-steps]: ../tests/behavior/steps/evaluation_steps.py#L1-L200
 
 The **September 30, 2025 at 18:19 UTC** sweeps confirm the Task CLI exposes
 `verify` and `coverage` again. The 17:45 UTC verification run covers linting,
