@@ -5,7 +5,6 @@ import os
 import shlex
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
 
 import pytest
 from pytest_bdd import given, parsers, then, when
@@ -19,10 +18,15 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import (
     StorageManager,
     initialize_storage,
-) 
+)
 from autoresearch.storage import set_delegate as set_storage_delegate
 from autoresearch.storage import teardown as storage_teardown
 from click.testing import Result
+from tests.behavior.context import (
+    get_cli_result,
+    set_cli_invocation,
+    set_cli_result,
+)
 from tests.typing_helpers import TypedFixture
 from typer.testing import CliRunner
 
@@ -232,18 +236,20 @@ def run_cli_command(
         trimmed_args = args[1:]
     args = trimmed_args
     result = cli_runner.invoke(cli_app, args, catch_exceptions=False)
-    bdd_context["result"] = result
+    set_cli_result(bdd_context, result)
+    set_cli_result(bdd_context, result, key="result")
+    set_cli_invocation(bdd_context, args, result)
 
 
 @then("the CLI should exit successfully")
 def cli_should_exit_successfully(bdd_context: dict[str, object]) -> None:
-    result = cast(Result, bdd_context["result"])
+    result = get_cli_result(bdd_context, key="result")
     assert_cli_success(result)
 
 
 @then("the CLI should report an error")
 def cli_should_report_error(bdd_context: dict[str, object]) -> None:
-    result = cast(Result, bdd_context["result"])
+    result = get_cli_result(bdd_context, key="result")
     assert_cli_error(result)
 
 

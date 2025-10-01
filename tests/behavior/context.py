@@ -6,12 +6,23 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar, overload
 
+from click.testing import Result
+
+from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration.orchestrator import Orchestrator
+
 __all__ = [
     "APICapture",
     "BehaviorContext",
     "CLIInvocation",
     "get_optional",
+    "get_cli_invocation",
+    "get_cli_result",
+    "get_config",
+    "get_orchestrator",
     "get_required",
+    "set_cli_invocation",
+    "set_cli_result",
     "set_value",
 ]
 
@@ -107,6 +118,66 @@ def get_optional(
         msg = _type_mismatch_message(key, expected_type, value)
         raise TypeError(msg)
     return value
+
+
+def get_orchestrator(context: BehaviorContext, key: str = "orchestrator") -> Orchestrator:
+    """Retrieve a stored :class:`Orchestrator` instance from ``context``."""
+
+    return get_required(context, key, Orchestrator)
+
+
+def get_config(context: BehaviorContext, key: str = "config") -> ConfigModel:
+    """Retrieve a stored :class:`ConfigModel` instance from ``context``."""
+
+    return get_required(context, key, ConfigModel)
+
+
+def set_cli_result(
+    context: BehaviorContext,
+    result: Result,
+    *,
+    key: str = "cli_result",
+) -> Result:
+    """Persist a :class:`Result` from a CLI invocation in ``context``."""
+
+    return set_value(context, key, result)
+
+
+def get_cli_result(
+    context: BehaviorContext,
+    key: str = "cli_result",
+) -> Result:
+    """Return a previously stored CLI :class:`Result` from ``context``."""
+
+    return get_required(context, key, Result)
+
+
+def set_cli_invocation(
+    context: BehaviorContext,
+    command: Sequence[str],
+    result: Result,
+    *,
+    key: str = "cli_invocation",
+) -> CLIInvocation:
+    """Capture the command/result pair for later CLI assertions."""
+
+    invocation = CLIInvocation(
+        command=tuple(command),
+        result=result,
+        exit_code=result.exit_code,
+        stdout=result.stdout,
+        stderr=result.stderr,
+    )
+    return set_value(context, key, invocation)
+
+
+def get_cli_invocation(
+    context: BehaviorContext,
+    key: str = "cli_invocation",
+) -> CLIInvocation:
+    """Retrieve a :class:`CLIInvocation` stored via :func:`set_cli_invocation`."""
+
+    return get_required(context, key, CLIInvocation)
 
 
 def _type_mismatch_message(
