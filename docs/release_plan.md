@@ -18,6 +18,31 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 30, 2025 at 18:19 UTC** coverage rerun restored the 92.4 %
+gate after replacing the registry clone with typed deep copies that rehydrate
+locks. New regression tests cover register, update, and round-trip paths so
+`QueryStateRegistry` no longer shares `_thread.RLock` instances, and the
+coverage log shows the suite finishing cleanly while the TestPyPI hold remains
+in place.
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+
+Semantic fallback detection now honours the runtime configuration before
+loading `sentence_transformers`, and the unit regression asserts the encode
+fallback activates once fastembed is unavailable. The same configuration guard
+ensures strict typing sweeps can execute without tripping import-time errors
+while we work through the remaining fixture annotations recorded below.
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+
+The alpha checklist still tracks the open storage documentation note, deferred
+TestPyPI dry run, and verification reruns required for sign-off. Reviewers can
+follow the outstanding items in the release checklist while we sequence the
+publish directive update.
+【F:docs/release_plan.md†L291-L372】
+
 The **October 1, 2025 at 14:39 UTC** repo-wide `mypy --strict` sweep records
 2,114 errors across 211 files, underscoring that the remaining strict backlog
 now lives almost entirely inside legacy analysis, integration, and behavior

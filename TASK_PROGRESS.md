@@ -1,3 +1,24 @@
+As of **2025-09-30** at 18:19 UTC `uv run task coverage` finishes with the
+92.4 % statement rate after the QueryState registry clone switched to typed
+deep copies that rehydrate locks. The regression suite now covers register,
+update, and round-trip flows, preventing `_thread.RLock` sharing across
+snapshots while the TestPyPI directive remains on hold.
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+
+The repo-wide strict sweep still reports 2,114 errors across 211 files, but the
+new configuration guard for semantic fallback keeps the runtime stable while we
+work through fixture annotations.
+【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+
+The remaining alpha checklist items cover the storage documentation note, the
+deferred TestPyPI dry run, and the verification reruns captured in the release
+plan.
+【F:docs/release_plan.md†L291-L372】
+
 # Autoresearch Project - Task Progress
 
 As of **2025-10-01** at 14:39 UTC the repo-wide `uv run mypy --strict src tests`

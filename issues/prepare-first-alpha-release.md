@@ -41,6 +41,23 @@ sentence-transformers fallback never loaded. The log captures the revised
 failure mode while the TestPyPI hold and alpha gate remain in place until the
 coverage fix lands.
 【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
+
+The registry fix now deep-copies QueryState snapshots with typed memo support,
+rehydrating `_thread.RLock` instances and preventing coverage regressions. The
+new unit suite guards register, update, and round-trip flows while the 18:19 UTC
+coverage log documents the restored 92.4 % gate we cite across the status
+docs.
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+
+Search embedding fallback now honours the runtime configuration before
+loading `sentence_transformers`, and the regression test confirms the encode
+fallback activates when fastembed stays unavailable. The guard prevents fresh
+coverage runs from tripping optional dependency imports while planner and
+GraphRAG work resume.
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
 On **September 30, 2025 at 15:15 UTC** we updated the `A2AMessage` schema to
 accept the SDK's concrete payloads and introduced
 `test_a2a_message_accepts_sdk_message` to guard the regression.

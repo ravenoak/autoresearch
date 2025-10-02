@@ -6,6 +6,20 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Restored QueryState registry cloning by deep-copying typed snapshots that
+  rehydrate locks, added regression coverage for register/update/round-trip
+  flows, and kept the **18:19 UTC** coverage run green while the TestPyPI hold
+  remains in place. The semantic fallback guard now respects runtime
+  configuration before loading `sentence_transformers`, and the paired unit
+  regression confirms the encode fallback activates when fastembed is absent.
+  The repo-wide strict sweep still reports 2,114 errors across 211 files, but
+  the guard lets the gate execute cleanly while we burn down the backlog.
+  【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+  【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+  【F:src/autoresearch/search/core.py†L147-L199】
+  【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+  【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 - Documented the final-answer audit loop, operator acknowledgement controls, and
   audit policy toggles across the deep research plan, release plan, roadmap,
   specification, pseudocode, and issue tracker, then captured fresh
