@@ -24,6 +24,7 @@ Execute the commands below before opening a pull request:
 ```bash
 uv run flake8 src tests
 uv run mypy src
+uv run mypy --strict tests/behavior
 uv run pytest -q
 uv run pytest tests/behavior
 ```

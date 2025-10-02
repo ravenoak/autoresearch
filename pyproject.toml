@@ -300,12 +300,16 @@ module = ["scripts.*"]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = ["tests.behavior.*"]
+module = [
+    "tests.behavior.archive.*",
+    "tests.behavior.steps.*",
+]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
     "tests.behavior.context",
+    "tests.behavior.utils",
     "tests.behavior.steps.conftest",
     "tests.behavior.steps.error_recovery_basic_steps",
     "tests.behavior.steps.error_recovery_redis_steps",
@@ -316,6 +320,9 @@ module = [
     "tests.behavior.steps.orchestrator_agents_integration_extended_steps",
     "tests.behavior.steps.orchestrator_agents_integration_steps",
     "tests.behavior.steps.parallel_group_merging_steps",
+    "tests.behavior.steps.mcp_interface_steps",
+    "tests.behavior.steps.reasoning_mode_api_steps",
+    "tests.behavior.steps.reasoning_mode_cli_steps",
 ]
 ignore_errors = false
 strict = true

@@ -133,6 +133,7 @@ uv run flake8 src tests
 
 # Run mypy for type checking
 uv run mypy src
+uv run mypy --strict tests/behavior
 # Expect roughly 20 seconds runtime on a standard setup.
 # Use '--cache-dir=.mypy_cache' to enable incremental caching or
 # run mypy on subpackages (e.g. 'uv run mypy src/autoresearch')
