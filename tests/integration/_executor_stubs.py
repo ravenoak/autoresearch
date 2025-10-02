@@ -17,6 +17,7 @@ from pytest import MonkeyPatch
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.state import QueryState
+from autoresearch.distributed.broker import StorageBrokerQueueProtocol
 
 
 @dataclass(slots=True)
@@ -39,9 +40,17 @@ class TrackingAgent:
         return {"results": {self.name: "ok"}}
 
 
+TrackingAgentGetter = Callable[[str], TrackingAgent]
+AgentFactoryInstaller = Callable[[MonkeyPatch, MutableSequence[int]], TrackingAgentGetter]
+BrokerQueueInstaller = Callable[
+    [MonkeyPatch, StorageBrokerQueueProtocol | None],
+    StorageBrokerQueueProtocol,
+]
+
+
 def patch_tracking_agent_factory(
     monkeypatch: MonkeyPatch, pids: MutableSequence[int]
-) -> Callable[[str], TrackingAgent]:
+) -> TrackingAgentGetter:
     """Monkeypatch :class:`AgentFactory` to return :class:`TrackingAgent` instances."""
 
     def _get_agent(name: str, llm_adapter: object | None = None) -> TrackingAgent:  # noqa: ARG001
@@ -51,4 +60,10 @@ def patch_tracking_agent_factory(
     return _get_agent
 
 
-__all__ = ["TrackingAgent", "patch_tracking_agent_factory"]
+__all__ = [
+    "AgentFactoryInstaller",
+    "BrokerQueueInstaller",
+    "TrackingAgent",
+    "TrackingAgentGetter",
+    "patch_tracking_agent_factory",
+]
