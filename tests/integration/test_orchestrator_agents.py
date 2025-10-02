@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Any
 import time
 from unittest.mock import MagicMock
 
@@ -11,8 +10,12 @@ from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.types import CallbackMap
 from autoresearch.storage import StorageManager
 from tests.integration._orchestrator_stubs import AgentDouble, PersistClaimCall
+from tests.integration.conftest import AgentGetter, PersistCallable
+from tests.typing_helpers import TypedFixture
 
 
 # ---------------------------------------------------------------------------
@@ -21,9 +24,9 @@ from tests.integration._orchestrator_stubs import AgentDouble, PersistClaimCall
 
 
 def test_run_query_with_coalitions(
-    stub_agent_factory: Callable[[Iterable[AgentDouble]], Callable[[str], AgentDouble]],
-    stub_storage_persist: Callable[
-        [list[PersistClaimCall] | None], Callable[[dict[str, Any], bool], None]
+    stub_agent_factory: TypedFixture[Callable[[Iterable[AgentDouble]], AgentGetter]],
+    stub_storage_persist: TypedFixture[
+        Callable[[list[PersistClaimCall] | None], PersistCallable]
     ],
 ) -> None:
     calls: list[str] = []
@@ -75,7 +78,7 @@ def test_run_parallel_query_aggregates_results(
     def mock_run_query(
         query: str,
         config: ConfigModel,
-        callbacks: Any | None = None,
+        callbacks: CallbackMap | None = None,
         *,
         agent_factory: type[AgentFactory] | None = None,
         storage_manager: type[StorageManager] | None = None,
@@ -115,10 +118,12 @@ def test_circuit_breaker_opens(monkeypatch: pytest.MonkeyPatch) -> None:
         def __init__(self) -> None:
             self.name = "Bad"
 
-        def can_execute(self, state: Any, config: ConfigModel) -> bool:
+        def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
             return True
 
-        def execute(self, state: Any, config: ConfigModel, **kwargs: Any) -> dict[str, Any]:
+        def execute(
+            self, state: QueryState, config: ConfigModel, **kwargs: object
+        ) -> dict[str, object]:
             raise RuntimeError("boom")
 
     monkeypatch.setattr(
@@ -127,7 +132,7 @@ def test_circuit_breaker_opens(monkeypatch: pytest.MonkeyPatch) -> None:
     synthesizer = AgentDouble(name="Synthesizer")
 
     def _noop_recovery(
-        agent_name: str, error_category: str, exc: Exception, state: Any
+        agent_name: str, error_category: str, exc: Exception, state: QueryState
     ) -> dict[str, object]:
         return {"recovery_strategy": "fail_gracefully", "suggestion": "noop"}
 

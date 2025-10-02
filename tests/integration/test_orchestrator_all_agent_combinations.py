@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
 
 import pytest
+
+from typing import cast
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import orchestrator as orch_mod
+from autoresearch.orchestration.metrics import OrchestrationMetrics
+from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.token_utils import AdapterProtocol
 from pytest import MonkeyPatch
 from tests.integration._orchestrator_stubs import (
     AgentDouble,
@@ -46,12 +50,12 @@ def test_orchestrator_all_agent_combinations(
         double = AgentDouble(name=agent_name)
 
         def build_result(
-            state: Any,
+            state: QueryState,
             config: ConfigModel,
             *,
             name: str = agent_name,
             stub: AgentDouble = double,
-        ) -> dict[str, Any]:
+        ) -> dict[str, object]:
             search_calls.append(name)
             original_factory = stub.result_factory
             stub.result_factory = None
@@ -84,11 +88,19 @@ def test_orchestrator_all_agent_combinations(
     @contextmanager
     def no_token_capture(
         agent_name: str,
-        metrics: Any,
+        metrics: OrchestrationMetrics,
         config: ConfigModel,
-    ) -> Iterator[tuple[Callable[..., None], None]]:
+    ) -> Iterator[tuple[dict[str, int], AdapterProtocol]]:
         del agent_name, metrics, config
-        yield (lambda *args, **kwargs: None, None)
+
+        class _Adapter:
+            def generate(
+                self, prompt: str, model: str | None = None, **kwargs: object
+            ) -> str:
+                del prompt, model, kwargs
+                return ""
+
+        yield ({}, cast(AdapterProtocol, _Adapter()))
 
     monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 

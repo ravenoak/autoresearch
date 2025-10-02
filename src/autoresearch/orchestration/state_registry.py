@@ -4,46 +4,32 @@ from __future__ import annotations
 
 import time
 from collections import OrderedDict
-from collections.abc import Mapping
 from dataclasses import dataclass
 from threading import RLock
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, Optional, cast
 from uuid import uuid4
+
+from pydantic import BaseModel
 
 from ..config.models import ConfigModel
 from .state import QueryState
 
 
-_SupportsModelCopySelf = TypeVar("_SupportsModelCopySelf", bound="_SupportsModelCopy")
-
-
-class _SupportsModelCopy(Protocol):
-    """Typed protocol for objects exposing ``model_copy``."""
-
-    def model_copy(
-        self: _SupportsModelCopySelf,
-        *,
-        update: Mapping[str, Any] | None = None,
-        deep: bool | None = None,
-        **kwargs: Any,
-    ) -> _SupportsModelCopySelf:
-        """Return a deep copy of the model."""
-
-
-_ModelT = TypeVar("_ModelT", bound=_SupportsModelCopy)
-
-
 def _clone_model(
-    model: _ModelT, *, memo: dict[int, Any] | None = None
-) -> _ModelT:
+    model: BaseModel, *, memo: dict[int, Any] | None = None
+) -> BaseModel:
     """Return a deep copy of ``model`` using its ``model_copy`` method."""
 
+    model_any: Any = model
     if memo is None:
-        return model.model_copy(deep=True)
+        return cast(BaseModel, model_any.model_copy(deep=True))
     try:
-        return model.model_copy(deep=True, memo=memo)
+        return cast(
+            BaseModel,
+            model_any.model_copy(deep=True, memo=memo),
+        )
     except TypeError:
-        return model.model_copy(deep=True)
+        return cast(BaseModel, model_any.model_copy(deep=True))
 
 
 @dataclass
@@ -60,8 +46,8 @@ class QueryStateSnapshot:
 
         memo: dict[int, Any] = {}
         return QueryStateSnapshot(
-            state=_clone_model(self.state, memo=memo),
-            config=_clone_model(self.config),
+            state=cast(QueryState, _clone_model(self.state, memo=memo)),
+            config=cast(ConfigModel, _clone_model(self.config)),
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
@@ -88,8 +74,8 @@ class QueryStateRegistry:
 
         memo: dict[int, Any] = {}
         snapshot = QueryStateSnapshot(
-            state=_clone_model(state, memo=memo),
-            config=_clone_model(config),
+            state=cast(QueryState, _clone_model(state, memo=memo)),
+            config=cast(ConfigModel, _clone_model(config)),
             created_at=time.time(),
             updated_at=time.time(),
         )
@@ -127,20 +113,22 @@ class QueryStateRegistry:
             existing = cls._store.get(state_id)
             if existing is None:
                 effective_config = config or ConfigModel()
-                memo: dict[int, Any] = {}
+                memo_new: dict[int, Any] = {}
                 new_snapshot = QueryStateSnapshot(
-                    state=_clone_model(state, memo=memo),
-                    config=_clone_model(effective_config),
+                    state=cast(QueryState, _clone_model(state, memo=memo_new)),
+                    config=cast(ConfigModel, _clone_model(effective_config)),
                     created_at=time.time(),
                     updated_at=time.time(),
                 )
                 cls._store[state_id] = new_snapshot
             else:
-                memo: dict[int, Any] = {}
-                existing.state = _clone_model(state, memo=memo)
+                memo_existing: dict[int, Any] = {}
+                existing.state = cast(
+                    QueryState, _clone_model(state, memo=memo_existing)
+                )
                 existing.state._ensure_lock()
                 if config is not None:
-                    existing.config = _clone_model(config)
+                    existing.config = cast(ConfigModel, _clone_model(config))
                 existing.updated_at = time.time()
             cls._store.move_to_end(state_id)
             cls._trim_if_needed()
