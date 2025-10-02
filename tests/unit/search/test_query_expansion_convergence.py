@@ -124,6 +124,8 @@ def test_search_embedding_protocol_prefers_embed(monkeypatch):
     monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
     monkeypatch.setattr(search_core, "SentenceTransformer", None)
     monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeFastEmbed:
         last_input: object | None = None
@@ -159,6 +161,8 @@ def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
     monkeypatch.setattr(search_core, "SentenceTransformer", None)
     monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
     monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeSentenceTransformer:
         last_input: object | None = None
@@ -181,6 +185,44 @@ def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
     assert FakeSentenceTransformer.last_input == ["omega"]
 
 
+def test_search_sentence_transformer_fallback_cached(monkeypatch):
+    """Assume the sentence-transformers fallback caches the imported class once."""
+
+    cfg = make_config_model()
+    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_core, "SentenceTransformer", None)
+    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
+
+    fastembed_mod = ModuleType("fastembed")
+    fastembed_text_mod = ModuleType("fastembed.text")
+    monkeypatch.setitem(sys.modules, "fastembed", fastembed_mod)
+    monkeypatch.setitem(sys.modules, "fastembed.text", fastembed_text_mod)
+    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", search_core._resolve_sentence_transformer_cls)
+
+    class DummySentenceTransformer:
+        last_input: object | None = None
+
+        def encode(self, sentences):
+            type(self).last_input = sentences
+            return [[9.0, 8.0]]
+
+    module = ModuleType("sentence_transformers")
+    module.SentenceTransformer = DummySentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+
+    search = Search()
+    embedding = search.compute_query_embedding("fallback query")
+
+    assert embedding is not None
+    assert embedding.tolist() == [9.0, 8.0]
+    assert DummySentenceTransformer.last_input == ["fallback query"]
+    assert search_core.SENTENCE_TRANSFORMERS_AVAILABLE
+    assert search_core._SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED
+    assert search_core._SENTENCE_TRANSFORMER_FALLBACK_ERROR is None
+
+
 def test_search_embedding_backend_switches_without_reset(monkeypatch):
     """Assume swapping embedding providers flushes cached instances automatically."""
 
@@ -188,6 +230,8 @@ def test_search_embedding_backend_switches_without_reset(monkeypatch):
     monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
     monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
     monkeypatch.setattr(search_core, "SentenceTransformer", None)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeFastEmbed:
         def embed(self, sentences):

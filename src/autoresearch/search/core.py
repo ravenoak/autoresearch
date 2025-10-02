@@ -121,8 +121,12 @@ if not GITPYTHON_AVAILABLE:
 cache_results = _cache_results
 get_cached_results = _get_cached_results
 
+log = get_logger(__name__)
+
 SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
+_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED = False
+_SENTENCE_TRANSFORMER_FALLBACK_ERROR: Exception | None = None
 
 
 def _clear_shared_sentence_transformer() -> None:
@@ -160,6 +164,29 @@ def _resolve_sentence_transformer_cls() -> SentenceTransformerType | None:
     return None
 
 
+def _import_sentence_transformers_fallback() -> SentenceTransformerType | None:
+    """Import ``SentenceTransformer`` from the ``sentence_transformers`` package."""
+
+    global _SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED, _SENTENCE_TRANSFORMER_FALLBACK_ERROR
+
+    if _SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED and SentenceTransformer is not None:
+        return SentenceTransformer
+
+    _SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED = True
+    try:  # pragma: no cover - optional dependency
+        from sentence_transformers import SentenceTransformer as ST
+
+        _SENTENCE_TRANSFORMER_FALLBACK_ERROR = None
+        return cast(SentenceTransformerType, ST)
+    except Exception as exc:  # pragma: no cover - optional dependency
+        _SENTENCE_TRANSFORMER_FALLBACK_ERROR = exc
+        log.debug(
+            "Failed to import sentence_transformers fallback",  # noqa: TRY401 - debug record
+            exc_info=exc,
+        )
+        return None
+
+
 def _try_import_sentence_transformers() -> bool:
     """Import an embedding model from fastembed or sentence-transformers.
 
@@ -178,13 +205,7 @@ def _try_import_sentence_transformers() -> bool:
     try:  # pragma: no cover - optional dependency
         resolved: SentenceTransformerType | None = _resolve_sentence_transformer_cls()
         if resolved is None:
-            # Fallback to sentence-transformers if available
-            try:
-                from sentence_transformers import SentenceTransformer as ST
-
-                resolved = cast(SentenceTransformerType, ST)
-            except Exception:
-                resolved = None
+            resolved = _import_sentence_transformers_fallback()
         if resolved is None:
             raise ImportError("No embedding backend available (fastembed or sentence-transformers)")
         SentenceTransformer = resolved
@@ -197,9 +218,6 @@ def _try_import_sentence_transformers() -> bool:
         if previous_available:
             _clear_shared_sentence_transformer()
     return SENTENCE_TRANSFORMERS_AVAILABLE
-
-
-log = get_logger(__name__)
 
 
 class EmbeddingModelProtocol(Protocol):
@@ -670,10 +688,24 @@ class Search:
     @hybridmethod
     def get_sentence_transformer(self) -> Optional[EmbeddingModelProtocol]:
         """Get or initialize the fastembed model."""
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            self._sentence_transformer = None
+
         if not _try_import_sentence_transformers():
-            log.warning(
-                "fastembed package is not installed. Semantic similarity scoring will be disabled.",
+            _clear_shared_sentence_transformer()
+            self._sentence_transformer = None
+            base_message = (
+                "fastembed package is not installed. Semantic similarity scoring will be disabled."
             )
+            fallback_error = _SENTENCE_TRANSFORMER_FALLBACK_ERROR
+            if fallback_error is not None:
+                log.warning(
+                    "%s sentence-transformers fallback failed: %s",
+                    base_message,
+                    fallback_error,
+                )
+            else:
+                log.warning(base_message)
             return None
 
         if self._sentence_transformer is None:

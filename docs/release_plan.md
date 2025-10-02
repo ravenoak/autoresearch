@@ -29,12 +29,18 @@ in place.
 【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 
 Semantic fallback detection now honours the runtime configuration before
-loading `sentence_transformers`, and the unit regression asserts the encode
-fallback activates once fastembed is unavailable. The same configuration guard
-ensures strict typing sweeps can execute without tripping import-time errors
-while we work through the remaining fixture annotations recorded below.
-【F:src/autoresearch/search/core.py†L147-L199】
-【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+loading `sentence_transformers`, caches the fallback class when fastembed is
+missing, and logs the import error so AUTO mode keeps the search pipeline
+efficient. The regression suite stubs both libraries to confirm the cached
+fallback returns the expected vector and prevents fastembed stubs from
+resurfacing once the runtime falls back to `sentence_transformers`. Storage
+defaults now coerce `minimum_deterministic_resident_nodes` back to the model
+baseline when files or environment overrides pass `null`, so AUTO mode keeps
+its deterministic graph budget without emitting warnings.
+【F:src/autoresearch/search/core.py†L100-L215】
+【F:tests/unit/search/test_query_expansion_convergence.py†L120-L230】
+【F:src/autoresearch/config/loader.py†L300-L320】
+【F:tests/unit/config/test_loader_types.py†L1-L120】
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 
 The alpha checklist still tracks the open storage documentation note, deferred

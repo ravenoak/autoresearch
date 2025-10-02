@@ -48,6 +48,16 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   sentence-transformers fallback. The log records the new failure mode while the
   TestPyPI dry run stays deferred under the alpha directive.
   【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
+- Hardened the search embedding fallback so fastembed stubs are cleared, the
+  sentence-transformers import runs once, and AUTO mode logs why the fallback
+  failed when applicable. The paired regression stubs both libraries to assert
+  the cached fallback returns the expected vector, while storage loading now
+  coerces `minimum_deterministic_resident_nodes` back to its baseline so AUTO
+  mode keeps deterministic graph budgets without warnings.
+  【F:src/autoresearch/search/core.py†L100-L215】
+  【F:tests/unit/search/test_query_expansion_convergence.py†L120-L230】
+  【F:src/autoresearch/config/loader.py†L300-L320】
+  【F:tests/unit/config/test_loader_types.py†L1-L120】
 
 ## September 29, 2025
 - Reran `uv run task release:alpha` at 00:08 UTC; extras synced before
