@@ -1,8 +1,13 @@
 """Coverage for HTTP session utilities."""
 
-from types import SimpleNamespace
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
 
 from tests.helpers.modules import ensure_stub_module
+from tests.typing_helpers import make_config_model
 
 ensure_stub_module(
     "pydantic_settings",
@@ -48,17 +53,26 @@ class DummyAdapter:
 
 class DummySession:
     def __init__(self) -> None:
-        self.mounted: list[tuple[str, object]] = []
+        self.mounted: list[tuple[str, RequestsAdapterProtocol]] = []
         self.closed = False
         self.requests: list[tuple[str, str]] = []
         self._headers: dict[str, str] = {}
+        self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
+        self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
-    def request(self, method, url, **kwargs):
+    def request(self, method: str, url: str, **kwargs: Any) -> DummyResponse:
         self.requests.append((method, url))
         return DummyResponse()
 
-    def mount(self, prefix, adapter: RequestsAdapterProtocol) -> None:
+    def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         self.mounted.append((prefix, adapter))
+        self._adapters.append((prefix, adapter))
+
+    def get_adapter(self, url: str) -> RequestsAdapterProtocol:
+        for prefix, adapter in reversed(self._adapters):
+            if url.startswith(prefix):
+                return adapter
+        return self._adapters[-1][1] if self._adapters else self._default_adapter
 
     def close(self) -> None:
         self.closed = True
@@ -67,20 +81,24 @@ class DummySession:
     def headers(self) -> dict[str, str]:
         return self._headers
 
-    def get(self, url, **kwargs):
+    def get(self, url: str, **kwargs: Any) -> DummyResponse:
         return self.request("GET", url, **kwargs)
 
-    def post(self, url, **kwargs):
+    def post(self, url: str, **kwargs: Any) -> DummyResponse:
         return self.request("POST", url, **kwargs)
 
 
-def test_get_http_session_creates_and_reuses(monkeypatch):
+def test_get_http_session_creates_and_reuses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """New session is created once and reused."""
-    cfg = SimpleNamespace(search=SimpleNamespace(http_pool_size=3))
+    cfg = make_config_model(search_overrides={"http_pool_size": 3})
     monkeypatch.setattr(http, "get_config", lambda: cfg)
-    monkeypatch.setattr(http.requests.adapters, "HTTPAdapter", lambda **k: object())
+    monkeypatch.setattr(
+        http.requests.adapters, "HTTPAdapter", lambda **k: DummyAdapter()
+    )
     monkeypatch.setattr(http.requests, "Session", DummySession)
-    calls = []
+    calls: list[object] = []
     monkeypatch.setattr(http.atexit, "register", lambda f: calls.append(f))
     http.close_http_session()
 
@@ -95,10 +113,10 @@ def test_get_http_session_creates_and_reuses(monkeypatch):
     http.close_http_session()
 
 
-def test_set_and_close_http_session(monkeypatch):
+def test_set_and_close_http_session(monkeypatch: pytest.MonkeyPatch) -> None:
     """Injected session registers atexit and closes cleanly."""
     dummy = DummySession()
-    calls = []
+    calls: list[object] = []
     monkeypatch.setattr(http.atexit, "register", lambda f: calls.append(f))
     http.set_http_session(dummy)
 
@@ -107,7 +125,7 @@ def test_set_and_close_http_session(monkeypatch):
     assert calls == [http.close_http_session]
 
     http.close_http_session()
-    assert dummy.closed
+    assert dummy.closed is True
     assert http._http_session is None
 
 

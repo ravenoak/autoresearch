@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Mapping
 
 from typing import (
     TYPE_CHECKING,
@@ -22,7 +22,7 @@ from pytest_bdd import scenario as _scenario
 from pytest_bdd import then as _then
 from pytest_bdd import when as _when
 
-from autoresearch.config.models import ConfigModel
+from autoresearch.config.models import ConfigModel, SearchConfig, StorageConfig
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.types import AgentExecutionResult, CallbackMap
 from autoresearch.storage import StorageContext
@@ -147,6 +147,28 @@ def make_storage_context(
     return context
 
 
+def make_storage_config(**overrides: object) -> StorageConfig:
+    """Construct a :class:`StorageConfig` with explicit overrides."""
+
+    return StorageConfig(**overrides)
+
+
+def make_config_model(
+    *,
+    search_overrides: Mapping[str, object] | None = None,
+    storage_overrides: Mapping[str, object] | None = None,
+    **config_overrides: object,
+) -> ConfigModel:
+    """Create a :class:`ConfigModel` with optional nested overrides."""
+
+    data = dict(config_overrides)
+    if search_overrides is not None:
+        data["search"] = SearchConfig(**dict(search_overrides))
+    if storage_overrides is not None:
+        data["storage"] = StorageConfig(**dict(storage_overrides))
+    return ConfigModel(**data)
+
+
 given = cast("StepFactory[Any]", _given)
 when = cast("StepFactory[Any]", _when)
 then = cast("StepFactory[Any]", _then)
@@ -164,6 +186,8 @@ __all__ = [
     "GraphSummaryMetadata",
     "SearchContextGraphAttributes",
     "make_storage_context",
+    "make_storage_config",
+    "make_config_model",
     "given",
     "when",
     "then",
