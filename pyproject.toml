@@ -290,6 +290,27 @@ strict = true
 module = ["scripts.*"]
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = ["tests.behavior.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.behavior.context",
+    "tests.behavior.steps.conftest",
+    "tests.behavior.steps.error_recovery_basic_steps",
+    "tests.behavior.steps.error_recovery_redis_steps",
+    "tests.behavior.steps.error_recovery_workflow_steps",
+    "tests.behavior.steps.hybrid_search_steps",
+    "tests.behavior.steps.optional_extras_steps",
+    "tests.behavior.steps.orchestration_system_steps",
+    "tests.behavior.steps.orchestrator_agents_integration_extended_steps",
+    "tests.behavior.steps.orchestrator_agents_integration_steps",
+    "tests.behavior.steps.parallel_group_merging_steps",
+]
+ignore_errors = false
+strict = true
+
 [tool.flake8]
 max-line-length = 100
 extend-ignore = ["E501"]

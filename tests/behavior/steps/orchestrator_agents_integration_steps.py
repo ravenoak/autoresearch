@@ -8,7 +8,7 @@ and execution conditions.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -36,9 +36,9 @@ class OrchestratorScenarioContext:
     result: Any | None = None
     errors: list[tuple[str, Exception]] = field(default_factory=list)
     exception: Exception | None = None
-    original_execute_agent: Callable[..., Any] | None = None
-    original_handle_error: Callable[..., Any] | None = None
-    original_get: Callable[..., Any] | None = None
+    original_execute_agent: Callable[..., None] | None = None
+    original_handle_error: Callable[..., dict[str, object]] | None = None
+    original_get: Callable[[str], MagicMock] | None = None
 
 
 # Fixtures
@@ -149,7 +149,7 @@ def run_query_with_dialectical_reasoning(
     original_get = mock_agent_factory.get
 
     def get_and_track(name: str) -> MagicMock:
-        agent = original_get(name)
+        agent = cast(MagicMock, original_get(name))
         test_context.executed_agents.append(name)
         return agent
 
@@ -164,11 +164,11 @@ def run_query_with_dialectical_reasoning(
         agent_factory: Any,
         storage_manager: Any,
         loop: int,
-    ) -> Any:
+    ) -> None:
         test_context.agent_states[agent_name] = state.copy()
         if test_context.original_execute_agent is None:
             raise AssertionError("Original execute_agent reference missing")
-        return test_context.original_execute_agent(
+        test_context.original_execute_agent(
             agent_name,
             state,
             config,
@@ -178,6 +178,7 @@ def run_query_with_dialectical_reasoning(
             storage_manager,
             loop,
         )
+        return None
 
     monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
@@ -296,7 +297,7 @@ def run_query_with_error_agent(
         agent_name: str,
         state: Any,
         config: ConfigModel,
-    ) -> None:
+    ) -> dict[str, object]:
         test_context.errors.append((agent_name, error))
         if test_context.original_handle_error is None:
             raise AssertionError("Original handle_agent_error reference missing")

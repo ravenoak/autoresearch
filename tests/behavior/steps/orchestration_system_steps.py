@@ -1,38 +1,47 @@
 from pytest_bdd import scenario, given, when, then
 import pytest
-from unittest.mock import patch, MagicMock
+from __future__ import annotations
 
-from autoresearch.orchestration.orchestrator import Orchestrator
+from typing import Any, Callable, MutableMapping, cast
+
+import pytest
+from pytest_bdd import given, scenario, then, when
+from unittest.mock import MagicMock, patch
+
 from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
 from autoresearch.llm import get_llm_adapter
+from autoresearch.orchestration.orchestrator import Orchestrator
+
+ScenarioContext = MutableMapping[str, Any]
 
 
 # Scenarios
 @scenario(
     "../features/orchestration_system.feature", "Token counting without monkey patching"
 )
-def test_token_counting():
+def test_token_counting() -> None:
     pass
 
 
 @scenario("../features/orchestration_system.feature", "Extracting complex methods")
-def test_extracting_complex_methods():
+def test_extracting_complex_methods() -> None:
     pass
 
 
 @scenario("../features/orchestration_system.feature", "Improved error handling")
-def test_improved_error_handling():
+def test_improved_error_handling() -> None:
     pass
 
 
 @scenario("../features/orchestration_system.feature", "Better logging for debugging")
-def test_better_logging():
+def test_better_logging() -> None:
     pass
 
 
 # Shared fixtures
 @pytest.fixture
-def config():
+def config() -> ConfigModel:
     return ConfigModel(
         llm_backend="dummy",
         agents=["Synthesizer", "Contrarian", "FactChecker"],
@@ -43,30 +52,32 @@ def config():
 
 
 @pytest.fixture
-def context():
+def context() -> ScenarioContext:
     """Shared context for steps."""
     return {}
 
 
 # Background steps
 @given("the system is configured with default settings")
-def system_with_default_settings(config, context):
+def system_with_default_settings(config: ConfigModel, context: ScenarioContext) -> None:
     context["config"] = config
 
 
 # Token counting scenario steps
 @when("I run a query with token counting enabled")
-def run_query_with_token_counting(config, context):
+def run_query_with_token_counting(
+    config: ConfigModel, context: ScenarioContext
+) -> None:
     # Store original function to check it's not modified after test
     context["original_get_llm_adapter"] = get_llm_adapter
 
     # Create a mock adapter with a mock generate method
-    mock_adapter = MagicMock()
+    mock_adapter: MagicMock = MagicMock()
     mock_adapter.generate.return_value = "Test response"
 
     # Create mock factory and agent
-    mock_factory = MagicMock()
-    mock_agent = MagicMock()
+    mock_factory: MagicMock = MagicMock()
+    mock_agent: MagicMock = MagicMock()
     mock_agent.execute.return_value = {
         "claims": ["Test claim"],
         "results": {"answer": "Test answer"},
@@ -87,11 +98,12 @@ def run_query_with_token_counting(config, context):
 
     # Make the mock metrics record_tokens method actually call the real one
     # This ensures that token usage is properly recorded
-    def mock_record_tokens(agent_name, in_tokens, out_tokens):
+    def mock_record_tokens(agent_name: str, in_tokens: int, out_tokens: int) -> None:
         real_metrics.record_tokens(agent_name, in_tokens, out_tokens)
         # Also manually set some token counts to ensure they're non-zero
-        real_metrics.agent_tokens[agent_name]["in"] = 10
-        real_metrics.agent_tokens[agent_name]["out"] = 20
+        token_counts = real_metrics.token_counts.setdefault(agent_name, {"in": 0, "out": 0})
+        token_counts["in"] = max(token_counts["in"], 10)
+        token_counts["out"] = max(token_counts["out"], 20)
 
     mock_metrics.record_tokens.side_effect = mock_record_tokens
 
@@ -108,7 +120,8 @@ def run_query_with_token_counting(config, context):
             "autoresearch.orchestration.metrics.OrchestrationMetrics",
             return_value=mock_metrics,
         ):
-            result = Orchestrator.run_query(
+            orchestrator = Orchestrator()
+            result = orchestrator.run_query(
                 "Test query",
                 config,
                 agent_factory=mock_factory,
@@ -122,20 +135,22 @@ def run_query_with_token_counting(config, context):
 
 
 @then("token usage should be recorded correctly")
-def check_token_usage(context):
+def check_token_usage(context: ScenarioContext) -> None:
     # Check that metrics in the result contain token usage
-    metrics = context["result"].metrics
+    result = cast(QueryResponse, context["result"])
+    metrics = result.metrics
 
     # Token usage is stored in execution_metrics.agent_tokens
-    assert "execution_metrics" in metrics
-    assert "agent_tokens" in metrics["execution_metrics"]
+    execution_metrics = cast(dict[str, Any], metrics.get("execution_metrics"))
+    assert execution_metrics is not None
+    assert "token_counts" in execution_metrics
 
     # Check that at least one agent has token usage recorded
-    agent_tokens = metrics["execution_metrics"]["agent_tokens"]
-    assert len(agent_tokens) > 0
+    token_counts = cast(dict[str, dict[str, int]], execution_metrics["token_counts"])
+    assert len(token_counts) > 0
 
     # Check that agents have the expected token structure
-    for agent_name, tokens in agent_tokens.items():
+    for agent_name, tokens in token_counts.items():
         assert "in" in tokens
         assert "out" in tokens
 
@@ -144,20 +159,22 @@ def check_token_usage(context):
 
 
 @then("no global state should be modified")
-def check_no_global_state_modified(context):
+def check_no_global_state_modified(context: ScenarioContext) -> None:
     # Verify that the original function was restored
     assert context["original_get_llm_adapter"] is context["current_function"]
 
 
 # Extracting complex methods scenario steps
 @when("I run a query with multiple agents")
-def run_query_with_multiple_agents(config, context):
+def run_query_with_multiple_agents(
+    config: ConfigModel, context: ScenarioContext
+) -> None:
     # Create mock agents
-    mock_factory = MagicMock()
-    mock_agents = {}
+    mock_factory: MagicMock = MagicMock()
+    mock_agents: dict[str, MagicMock] = {}
 
     for agent_name in config.agents:
-        mock_agent = MagicMock()
+        mock_agent: MagicMock = MagicMock()
         mock_agent.execute.return_value = {
             "claims": [f"{agent_name} claim"],
             "results": {"answer": f"{agent_name} answer"},
@@ -165,13 +182,14 @@ def run_query_with_multiple_agents(config, context):
         mock_agent.can_execute.return_value = True
         mock_agents[agent_name] = mock_agent
 
-    def get_mock_agent(name):
+    def get_mock_agent(name: str) -> MagicMock:
         return mock_agents[name]
 
     mock_factory.get.side_effect = get_mock_agent
 
     # Run query
-    result = Orchestrator.run_query(
+    orchestrator = Orchestrator()
+    result = orchestrator.run_query(
         "Test query", config, agent_factory=mock_factory, storage_manager=MagicMock()
     )
 
@@ -181,14 +199,14 @@ def run_query_with_multiple_agents(config, context):
 
 
 @then("the orchestration should handle agent execution in smaller focused methods")
-def check_smaller_methods(context):
+def check_smaller_methods(context: ScenarioContext) -> None:
     # This is more of a code review check, but we can verify the orchestration worked
     for agent_name in context["mock_agents"]:
         assert context["mock_agents"][agent_name].execute.called
 
 
 @then("the code should be more maintainable")
-def check_maintainability():
+def check_maintainability() -> None:
     # This is subjective and would be verified through code review
     # For testing purposes, we'll just pass this step
     pass
@@ -196,14 +214,16 @@ def check_maintainability():
 
 # Improved error handling scenario steps
 @when("an agent fails during execution")
-def agent_fails_during_execution(config, context):
+def agent_fails_during_execution(
+    config: ConfigModel, context: ScenarioContext
+) -> None:
     # Create mock agents where one fails
-    mock_factory = MagicMock()
-    mock_agents = {}
+    mock_factory: MagicMock = MagicMock()
+    mock_agents: dict[str, MagicMock] = {}
 
-    for i, agent_name in enumerate(config.agents):
-        mock_agent = MagicMock()
-        if i == 1:  # Make the second agent fail
+    for index, agent_name in enumerate(config.agents):
+        mock_agent: MagicMock = MagicMock()
+        if index == 1:  # Make the second agent fail
             mock_agent.execute.side_effect = Exception("Test failure")
         else:
             mock_agent.execute.return_value = {
@@ -213,7 +233,7 @@ def agent_fails_during_execution(config, context):
         mock_agent.can_execute.return_value = True
         mock_agents[agent_name] = mock_agent
 
-    def get_mock_agent(name):
+    def get_mock_agent(name: str) -> MagicMock:
         return mock_agents[name]
 
     mock_factory.get.side_effect = get_mock_agent
@@ -221,7 +241,8 @@ def agent_fails_during_execution(config, context):
     # Run query and capture logs
     with patch("autoresearch.orchestration.orchestrator.log") as mock_log:
         try:
-            result = Orchestrator.run_query(
+            orchestrator = Orchestrator()
+            result = orchestrator.run_query(
                 "Test query",
                 config,
                 agent_factory=mock_factory,
@@ -239,7 +260,7 @@ def agent_fails_during_execution(config, context):
 
 
 @then("the error should be properly captured and categorized")
-def check_error_captured(context):
+def check_error_captured(context: ScenarioContext) -> None:
     # Check that error was logged
     assert context["mock_log"].error.called
 
@@ -254,15 +275,16 @@ def check_error_captured(context):
 
 
 @then("the system should recover gracefully")
-def check_system_recovers(context):
+def check_system_recovers(context: ScenarioContext) -> None:
     # If the system recovers, we should have a result even with an agent failure
     # This might not be true in the current implementation, but should be after refactoring
     if context["result"] is not None:
-        assert "answer" in context["result"].answer
+        result = cast(QueryResponse, context["result"])
+        assert "answer" in result.answer
 
 
 @then("detailed error information should be logged")
-def check_detailed_error_logging(context):
+def check_detailed_error_logging(context: ScenarioContext) -> None:
     # Check that error was logged with details
     for call in context["mock_log"].error.call_args_list:
         # Check that the error message contains useful information
@@ -274,10 +296,12 @@ def check_detailed_error_logging(context):
 
 # Better logging scenario steps
 @when("I run a query with debug logging enabled")
-def run_query_with_debug_logging(config, context):
+def run_query_with_debug_logging(
+    config: ConfigModel, context: ScenarioContext
+) -> None:
     # Create mock agents
-    mock_factory = MagicMock()
-    mock_agent = MagicMock()
+    mock_factory: MagicMock = MagicMock()
+    mock_agent: MagicMock = MagicMock()
     mock_agent.execute.return_value = {
         "claims": ["Test claim"],
         "results": {"answer": "Test answer"},
@@ -287,7 +311,8 @@ def run_query_with_debug_logging(config, context):
 
     # Run query and capture logs
     with patch("autoresearch.orchestration.orchestrator.log") as mock_log:
-        result = Orchestrator.run_query(
+        orchestrator = Orchestrator()
+        result = orchestrator.run_query(
             "Test query",
             config,
             agent_factory=mock_factory,
@@ -299,7 +324,7 @@ def run_query_with_debug_logging(config, context):
 
 
 @then("each step of the orchestration process should be logged")
-def check_step_logging(context):
+def check_step_logging(context: ScenarioContext) -> None:
     # Check that info logs were called for key steps
     assert context["mock_log"].info.called
 
@@ -310,7 +335,7 @@ def check_step_logging(context):
 
 
 @then("log messages should include relevant context")
-def check_log_context(context):
+def check_log_context(context: ScenarioContext) -> None:
     # Check that log messages include context
     info_calls = [call[0][0] for call in context["mock_log"].info.call_args_list]
 
@@ -320,7 +345,7 @@ def check_log_context(context):
 
 
 @then("log levels should be appropriate for the message content")
-def check_log_levels(context):
+def check_log_levels(context: ScenarioContext) -> None:
     mock_log = context["mock_log"]
 
     # Info logs should reflect normal operation
