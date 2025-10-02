@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from autoresearch.config.loader import ConfigLoader, LoadedConfigFile, load_config_file
-from autoresearch.config.models import SearchConfig
+from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.errors import ConfigError
 
 
@@ -80,3 +80,23 @@ def test_normalize_ranking_weights_balances_missing_values() -> None:
     assert pytest.approx(config.bm25_weight + config.source_credibility_weight) == remaining
     assert config.bm25_weight > 0.0
     assert config.source_credibility_weight > 0.0
+
+
+def test_config_model_deep_copy_preserves_storage_settings() -> None:
+    """Deep copies should keep storage settings equal but independent."""
+
+    config = ConfigModel()
+    config.storage.rdf_backend = "duckdb"
+    config.storage.rdf_path = "custom"
+    original_storage = config.model_dump(mode="python")["storage"]
+
+    cloned = config.model_copy(deep=True)
+    cloned_storage = cloned.model_dump(mode="python")["storage"]
+
+    assert cloned.storage is not config.storage
+    assert cloned_storage == original_storage
+    assert cloned_storage is not original_storage
+
+    cloned.storage.rdf_backend = "memory"
+
+    assert config.storage.rdf_backend == "duckdb"
