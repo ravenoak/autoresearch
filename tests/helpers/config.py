@@ -11,8 +11,11 @@ structure produced by :meth:`ConfigModelStub.model_dump`.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import copy, deepcopy
 from dataclasses import dataclass, field
 from typing import Optional, TypedDict
+
+from autoresearch.orchestration import ReasoningMode
 
 
 class ContextAwareSearchConfigDump(TypedDict):
@@ -43,6 +46,9 @@ class ConfigModelDump(TypedDict):
     search: SearchConfigDump
     gate_graph_contradiction_threshold: float
     gate_graph_similarity_threshold: float
+    agents: list[str]
+    reasoning_mode: Optional[str]
+    llm_backend: str
 
 
 ContextOverrideValue = bool | float | int
@@ -81,6 +87,9 @@ class ConfigModelStub:
     search: SearchConfigStub = field(default_factory=SearchConfigStub)
     gate_graph_contradiction_threshold: float = 0.25
     gate_graph_similarity_threshold: float = 0.0
+    agents: list[str] = field(default_factory=list)
+    reasoning_mode: ReasoningMode | None = None
+    llm_backend: str = "lmstudio"
 
     def model_dump(self) -> ConfigModelDump:
         """Return a dictionary representation mirroring ``BaseModel``."""
@@ -115,7 +124,19 @@ class ConfigModelStub:
                 self.gate_graph_contradiction_threshold
             ),
             "gate_graph_similarity_threshold": self.gate_graph_similarity_threshold,
+            "agents": list(self.agents),
+            "reasoning_mode": (
+                self.reasoning_mode.value
+                if isinstance(self.reasoning_mode, ReasoningMode)
+                else self.reasoning_mode
+            ),
+            "llm_backend": self.llm_backend,
         }
+
+    def model_copy(self, *, deep: bool = False) -> ConfigModelStub:
+        """Mimic ``BaseModel.model_copy`` for orchestration helpers."""
+
+        return deepcopy(self) if deep else copy(self)
 
 
 def make_context_aware_config(

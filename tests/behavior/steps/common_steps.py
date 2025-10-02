@@ -154,6 +154,15 @@ def isolate_network(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     return None
 
 
+@pytest.fixture(name="_isolate_network")
+def alias_isolate_network(
+    isolate_network: TypedFixture[None],
+) -> TypedFixture[None]:
+    """Provide a backwards-compatible alias for the network isolation fixture."""
+
+    return isolate_network
+
+
 @pytest.fixture
 def restore_environment() -> TypedFixture[None]:
     """Snapshot ``os.environ`` and restore it after the test."""
@@ -165,6 +174,15 @@ def restore_environment() -> TypedFixture[None]:
         os.environ.clear()
         os.environ.update(original)
     return None
+
+
+@pytest.fixture(name="_restore_environment")
+def alias_restore_environment(
+    restore_environment: TypedFixture[None],
+) -> TypedFixture[None]:
+    """Expose ``restore_environment`` under a private fixture name."""
+
+    return restore_environment
 
 
 def assert_cli_success(result: Result) -> None:

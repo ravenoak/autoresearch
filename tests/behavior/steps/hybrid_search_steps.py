@@ -1,4 +1,3 @@
-from pytest_bdd import parsers, scenario, then, when
 from __future__ import annotations
 
 from pathlib import Path
