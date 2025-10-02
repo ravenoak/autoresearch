@@ -1,5 +1,12 @@
 from __future__ import annotations
-from tests.behavior.utils import as_payload
+from tests.behavior.utils import (
+    as_payload,
+    build_scout_audit,
+    build_scout_claim,
+    build_scout_metadata,
+    build_scout_payload,
+    build_scout_source,
+)
 
 import json
 from typing import Any, Callable
@@ -94,78 +101,78 @@ def run_auto_planner_cycle(
 
         def execute(self, state: QueryState, cfg: ConfigLike) -> dict[str, Any]:
             self._invocations += 1
-            metadata = {
-                "scout_retrieval_sets": [
+            metadata = build_scout_metadata(
+                retrieval_sets=[
                     ["src-plan", "src-verify"],
                     ["src-verify", "src-analysis"],
                 ],
-                "scout_complexity_features": {
+                complexity_features={
                     "hops": 2,
                     "entities": ["planner", "verifier"],
                     "clauses": 4,
                 },
-                "scout_entailment_scores": [
+                entailment_scores=[
                     {"support": 0.32, "conflict": 0.68},
                     {"support": 0.30, "conflict": 0.70},
                 ],
-            }
+            )
             scout_claims = [
-                {
-                    "id": "c1",
-                    "type": "thesis",
-                    "content": "Planner identifies conflicting statements to verify.",
-                    "audit": {
-                        "claim_id": "c1",
-                        "status": "supported",
-                        "entailment": 0.82,
-                        "sources": ["src-plan"],
-                    },
-                },
-                {
-                    "id": "c2",
-                    "type": "antithesis",
-                    "content": "Follow-up evidence remains unresolved.",
-                },
+                build_scout_claim(
+                    claim_id="c1",
+                    claim_type="thesis",
+                    content="Planner identifies conflicting statements to verify.",
+                    audit=build_scout_audit(
+                        claim_id="c1",
+                        status="supported",
+                        entailment=0.82,
+                        sources=["src-plan"],
+                    ),
+                ),
+                build_scout_claim(
+                    claim_id="c2",
+                    claim_type="antithesis",
+                    content="Follow-up evidence remains unresolved.",
+                ),
             ]
             scout_sources = [
-                {
-                    "source_id": "src-plan",
-                    "title": "Planning memo",
-                    "snippet": "Plan verification tasks",
-                    "backend": "duckduckgo",
-                    "url": "https://example.com/plan",
-                },
-                {
-                    "source_id": "src-verify",
-                    "title": "Verification checklist",
-                    "snippet": "Needs follow-up",
-                    "backend": "serper",
-                    "url": "https://example.com/verify",
-                },
+                build_scout_source(
+                    source_id="src-plan",
+                    title="Planning memo",
+                    snippet="Plan verification tasks",
+                    backend="duckduckgo",
+                    url="https://example.com/plan",
+                ),
+                build_scout_source(
+                    source_id="src-verify",
+                    title="Verification checklist",
+                    snippet="Needs follow-up",
+                    backend="serper",
+                    url="https://example.com/verify",
+                ),
             ]
             if cfg.reasoning_mode == ReasoningMode.DIRECT:
-                return as_payload({
-                    "claims": scout_claims,
-                    "sources": scout_sources,
-                    "metadata": metadata,
-                    "results": {
+                return build_scout_payload(
+                    claims=scout_claims,
+                    sources=scout_sources,
+                    metadata=metadata,
+                    results={
                         "final_answer": "Initial scout summary",
                         "task_graph": task_graph,
                     },
-                })
-            return as_payload({
-                "claims": [
-                    {
-                        "id": "c3",
-                        "type": "synthesis",
-                        "content": "Synthesis integrates planner and verifier evidence.",
-                    }
+                )
+            return build_scout_payload(
+                claims=[
+                    build_scout_claim(
+                        claim_id="c3",
+                        claim_type="synthesis",
+                        content="Synthesis integrates planner and verifier evidence.",
+                    )
                 ],
-                "results": {
+                results={
                     "final_answer": "Verified synthesis with planner context.",
                     "task_graph": task_graph,
                 },
-            })
+            )
 
     class DebateContrarian:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -176,22 +183,22 @@ def run_auto_planner_cycle(
             return True
 
         def execute(self, _state: QueryState, _cfg: ConfigLike) -> dict[str, Any]:
-            return as_payload({
-                "claims": [
-                    {
-                        "id": "c2",
-                        "type": "antithesis",
-                        "content": "Contrarian flags remaining verification gaps.",
-                        "audit": {
-                            "claim_id": "c2",
-                            "status": "needs_review",
-                            "entailment": 0.44,
-                            "sources": ["src-verify"],
-                        },
-                    }
+            return build_scout_payload(
+                claims=[
+                    build_scout_claim(
+                        claim_id="c2",
+                        claim_type="antithesis",
+                        content="Contrarian flags remaining verification gaps.",
+                        audit=build_scout_audit(
+                            claim_id="c2",
+                            status="needs_review",
+                            entailment=0.44,
+                            sources=["src-verify"],
+                        ),
+                    )
                 ],
-                "results": {"contrarian_note": "Verification gaps recorded"},
-            })
+                results={"contrarian_note": "Verification gaps recorded"},
+            )
 
     class VerifierFactChecker:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -203,26 +210,29 @@ def run_auto_planner_cycle(
 
         def execute(self, _state: QueryState, _cfg: ConfigLike) -> dict[str, Any]:
             audits = [
-                {
-                    "claim_id": "c1",
-                    "status": "supported",
-                    "entailment": 0.82,
-                    "stability": 0.91,
-                    "sources": ["src-plan"],
-                },
-                {
-                    "claim_id": "c2",
-                    "status": "needs_review",
-                    "entailment": 0.44,
-                    "stability": 0.50,
-                    "sources": ["src-verify"],
-                },
+                build_scout_audit(
+                    claim_id="c1",
+                    status="supported",
+                    entailment=0.82,
+                    stability=0.91,
+                    sources=["src-plan"],
+                ),
+                build_scout_audit(
+                    claim_id="c2",
+                    status="needs_review",
+                    entailment=0.44,
+                    stability=0.50,
+                    sources=["src-verify"],
+                ),
             ]
-            return as_payload({
-                "claim_audits": audits,
-                "metadata": {"audit_badges": {"supported": 1, "needs_review": 1}},
-                "results": {"verification_summary": "Audit badges recorded"},
-            })
+            metadata = build_scout_metadata(
+                audit_badges={"supported": 1, "needs_review": 1}
+            )
+            return build_scout_payload(
+                claim_audits=audits,
+                metadata=metadata,
+                results={"verification_summary": "Audit badges recorded"},
+            )
 
     agent_builders: dict[str, Callable[[str, object | None], object]] = {
         "Synthesizer": lambda name, adapter: PlannerSynthesizer(name, adapter),

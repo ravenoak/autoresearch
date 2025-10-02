@@ -1,7 +1,7 @@
 """Step definitions for asynchronous query API behavior tests."""
 
 from __future__ import annotations
-from tests.behavior.utils import as_payload
+from tests.behavior.utils import build_async_submission_payload
 
 import asyncio
 import time
@@ -268,12 +268,12 @@ def failing_async_query(failure: str, api_client, monkeypatch):
         )
     if not logs:
         logs.append(strategy_map[failure])
-    return as_payload({
-        "response": status,
-        "recovery_info": recovery_info,
-        "logs": logs,
-        "state": state,
-    })
+    return build_async_submission_payload(
+        response=status,
+        recovery_info=recovery_info,
+        logs=logs,
+        state=state,
+    )
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))

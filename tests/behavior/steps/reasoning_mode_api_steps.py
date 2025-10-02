@@ -1,5 +1,9 @@
 from __future__ import annotations
-from tests.behavior.utils import as_payload
+from tests.behavior.utils import (
+    as_payload,
+    build_scout_claim,
+    build_scout_payload,
+)
 from typing import Any
 
 import asyncio
@@ -97,16 +101,16 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return as_payload({
-                "claims": [
-                    {
-                        "id": str(step),
-                        "type": "thought",
-                        "content": content,
-                    }
+            return build_scout_payload(
+                claims=[
+                    build_scout_claim(
+                        claim_id=str(step),
+                        claim_type="thought",
+                        content=content,
+                    )
                 ],
-                "results": {"final_answer": content},
-            })
+                results={"final_answer": content},
+            )
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -172,16 +176,16 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return as_payload({
-                "claims": [
-                    {
-                        "id": str(step),
-                        "type": "thought",
-                        "content": content,
-                    }
+            return build_scout_payload(
+                claims=[
+                    build_scout_claim(
+                        claim_id=str(step),
+                        claim_type="thought",
+                        content=content,
+                    )
                 ],
-                "results": {"final_answer": content},
-            })
+                results={"final_answer": content},
+            )
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
