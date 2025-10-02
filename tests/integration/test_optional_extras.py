@@ -16,7 +16,10 @@ to modules is:
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import sys
+from pathlib import Path
 
 import duckdb
 import pytest
@@ -25,7 +28,13 @@ from tests.optional_imports import import_or_skip
 
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
-from autoresearch.distributed.broker import get_message_broker
+from autoresearch.distributed.broker import (
+    AgentResultMessage,
+    BrokerMessage,
+    MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
+    get_message_broker,
+)
 from autoresearch.extensions import VSSExtensionLoader
 from autoresearch.search.context import (
     _try_import_sentence_transformers,
@@ -33,6 +42,18 @@ from autoresearch.search.context import (
 )
 from autoresearch.search.core import _local_file_backend, _local_git_backend
 from autoresearch.streamlit_ui import apply_theme_settings
+
+
+def _build_agent_result_message(
+    *, agent: str = "worker", payload: dict[str, Any] | None = None
+) -> AgentResultMessage:
+    message: AgentResultMessage = {
+        "action": "agent_result",
+        "agent": agent,
+        "result": payload or {"value": 1},
+        "pid": 4321,
+    }
+    return message
 
 
 @pytest.mark.requires_nlp
@@ -52,7 +73,7 @@ def test_streamlit_ui_helpers() -> None:
 
 
 @pytest.mark.requires_vss
-def test_vss_extension_loader(monkeypatch) -> None:
+def test_vss_extension_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     """The VSS extra enables DuckDB vector extension management."""
 
     monkeypatch.setenv("ENABLE_ONLINE_EXTENSION_INSTALL", "false")
@@ -89,8 +110,14 @@ def test_inmemory_broker_roundtrip() -> None:
     """The distributed extra adds message brokers."""
 
     broker = get_message_broker("memory")
-    broker.publish({"k": "v"})
-    assert broker.queue.get()["k"] == "v"
+    message = _build_agent_result_message(payload={"status": "ok"})
+    broker.publish(message)
+    queue: StorageBrokerQueueProtocol = cast(
+        StorageBrokerQueueProtocol, broker.queue
+    )
+    queue_protocol: MessageQueueProtocol = queue
+    queued: BrokerMessage = queue_protocol.get()
+    assert cast(AgentResultMessage, queued) == message
     broker.shutdown()
 
 
@@ -130,7 +157,9 @@ def test_local_file_backend_docx(tmp_path) -> None:
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_pdf(tmp_path, monkeypatch) -> None:
+def test_local_file_backend_pdf(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The parsers extra allows reading ``.pdf`` files."""
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")

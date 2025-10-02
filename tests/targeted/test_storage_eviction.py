@@ -1,5 +1,6 @@
 """Targeted tests for storage eviction and schema initialization."""
 
+from pathlib import Path
 from threading import Thread
 
 import pytest  # noqa: E402
@@ -28,7 +29,9 @@ def test_initialize_storage_idempotent() -> None:
     StorageManager.context = StorageContext()
 
 
-def test_ram_budget_eviction(tmp_path, monkeypatch) -> None:
+def test_ram_budget_eviction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Concurrent writers respect the configured RAM budget."""
     cfg = ConfigModel(
         storage=StorageConfig(
@@ -63,7 +66,9 @@ def test_ram_budget_eviction(tmp_path, monkeypatch) -> None:
     ConfigLoader()._config = None
 
 
-def test_deterministic_eviction_across_runs(tmp_path, monkeypatch) -> None:
+def test_deterministic_eviction_across_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Eviction leaves a deterministic graph across runs."""
     cfg = ConfigModel(
         storage=StorageConfig(
