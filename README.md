@@ -89,6 +89,15 @@ task verify EXTRAS="dev-minimal test"
 promoted to errors. Run it after `task install` (or any sync that includes the
 `dev-minimal` and `test` extras) so plugins like `pytest-bdd` stay available.
 
+For focused typing checks on the behavior orchestrator suite run:
+
+```bash
+task mypy:behavior
+```
+
+This enforces `mypy --strict` on the curated subset of behavior step modules
+without re-running the entire project type suite.
+
 Use the same `EXTRAS` flag with `task install` to sync them for local
 development. Include `EXTRAS="llm"` when verifying or installing LLM
 libraries; the environment check skips them otherwise. Run `task check

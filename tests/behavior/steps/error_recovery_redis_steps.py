@@ -1,6 +1,10 @@
 import pytest
 from pytest_bdd import given, scenario, then, when
 
+import pytest
+
+from tests.behavior.context import BehaviorContext
+
 
 class FailingRedis:
     """Simple Redis client that always fails."""
@@ -15,7 +19,9 @@ def redis_client() -> FailingRedis:
 
 
 @when("I attempt a Redis operation")
-def attempt_redis_operation(redis_client, bdd_context) -> None:
+def attempt_redis_operation(
+    redis_client: FailingRedis, bdd_context: BehaviorContext
+) -> None:
     try:
         redis_client.ping()
     except Exception as err:  # pragma: no cover - error path
@@ -23,7 +29,7 @@ def attempt_redis_operation(redis_client, bdd_context) -> None:
 
 
 @then("the system should handle the Redis error")
-def handle_redis_error(bdd_context) -> None:
+def handle_redis_error(bdd_context: BehaviorContext) -> None:
     assert bdd_context.get("redis_error") is not None
 
 

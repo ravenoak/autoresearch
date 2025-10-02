@@ -63,6 +63,11 @@ tasks:
     cmds:
       - uv run mypy --strict src tests
     desc: "Run mypy in strict mode across src and tests"
+
+  mypy:behavior:
+    cmds:
+      - uv run mypy --strict tests/behavior
+    desc: "Run strict mypy checks for behavior orchestrator modules"
   check:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"

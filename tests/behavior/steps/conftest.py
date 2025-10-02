@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import pytest
 
+from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.types import CallbackMap
+from autoresearch.storage import StorageManager
 from tests.behavior.context import (
     BehaviorContext,
     get_config,
@@ -36,10 +39,21 @@ def orchestrator_context(
     def run_query_wrapper(
         query: str,
         config_model: ConfigModel,
-        callbacks: object | None = None,
-        **kwargs,
+        callbacks: CallbackMap | None = None,
+        *,
+        agent_factory: type[AgentFactory] = AgentFactory,
+        storage_manager: type[StorageManager] = StorageManager,
+        visualize: bool = False,
     ) -> object:
-        return original_run_query(orchestrator, query, config_model, callbacks, **kwargs)
+        return original_run_query(
+            orchestrator,
+            query,
+            config_model,
+            callbacks,
+            agent_factory=agent_factory,
+            storage_manager=storage_manager,
+            visualize=visualize,
+        )
 
     monkeypatch.setattr(Orchestrator, "run_query", staticmethod(run_query_wrapper))
     monkeypatch.setattr(Orchestrator, "_orig_run_query", original_run_query, raising=False)

@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pytest_bdd import parsers, scenarios, then, when
 
+from autoresearch.distributed.broker import BrokerMessage, RedisBroker, STOP_MESSAGE
 from tests.optional_imports import import_or_skip
 
 scenarios("../features/optional_extras.feature")
 
 
 @when(parsers.parse("I check {extra} extra"))
-def check_extra(extra: str, tmp_path, monkeypatch) -> None:
+def check_extra(
+    extra: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Validate that a given optional extra functions correctly."""
     if extra == "nlp":
         spacy = import_or_skip("spacy")
@@ -42,11 +47,10 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
         monkeypatch.setattr(
             redis.Redis, "from_url", lambda *a, **k: fakeredis.FakeRedis()
         )
-        from autoresearch.distributed.broker import RedisBroker
-
         broker = RedisBroker()
-        broker.publish({"k": "v"})
-        assert broker.queue.get()["k"] == "v"
+        broker.publish(STOP_MESSAGE)
+        message: BrokerMessage = broker.queue.get()
+        assert message["action"] == "stop"
         broker.shutdown()
     elif extra == "analysis":
         pl = import_or_skip("polars")
@@ -69,7 +73,7 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
         with ConfigLoader.temporary_instance(search_paths=[]) as loader:
             loader.config.search.local_file.path = str(tmp_path)
             loader.config.search.local_file.file_types = ["docx"]
-            _local_file_backend("hello", max_results=1)
+            _local_file_backend("hello", 1)
     elif extra == "gpu":
         import_or_skip("bertopic")
         from autoresearch.search.context import _try_import_bertopic
