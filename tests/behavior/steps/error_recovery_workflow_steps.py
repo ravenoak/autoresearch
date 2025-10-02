@@ -1,4 +1,3 @@
-from pytest_bdd import given, when, then, scenarios, parsers
 from __future__ import annotations
 
 from typing import Any, TypedDict

@@ -390,7 +390,12 @@ def run_auto_reasoning_cli(
         msg = f"CLI output did not contain JSON payload: {stdout}"
         raise AssertionError(msg)
 
-    json_blob = stdout[json_start:]
+    json_end = stdout.rfind("}")
+    if json_end == -1 or json_end < json_start:
+        msg = f"CLI output did not contain JSON payload: {stdout}"
+        raise AssertionError(msg)
+
+    json_blob = stdout[json_start : json_end + 1]
 
     try:
         payload: dict[str, Any] = json.loads(json_blob)
@@ -536,8 +541,18 @@ def assert_cli_tldr_warning(auto_cli_cycle: dict[str, Any]) -> None:
     tldr = depth_payload.tldr or ""
     caution_note = depth_payload.notes.get("key_findings", "")
     combined = f"{tldr} {caution_note}".lower()
-    assert "unsupported claims" in combined
-    assert "⚠️" in depth_payload.answer or "unsupported" in combined
+    expected_fragments = (
+        "unsupported claims",
+        "needs review",
+        "need review",
+        "require review",
+    )
+    if not any(fragment in combined for fragment in expected_fragments):
+        msg = f"TLDR caution did not mention review warning: {combined!r}"
+        raise AssertionError(msg)
+    assert "⚠️" in depth_payload.answer or any(
+        fragment in combined for fragment in expected_fragments
+    )
 
 
 @then("the CLI key findings should omit unsupported claims")

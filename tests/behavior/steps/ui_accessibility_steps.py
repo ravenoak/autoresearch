@@ -1,16 +1,12 @@
-from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import patch
-import pytest
-
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Callable, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_bdd import given, parsers, scenario, then, when
-from unittest.mock import MagicMock, patch
 
 from autoresearch.cli_utils import format_error, format_info, format_success
 

@@ -20,11 +20,32 @@ from autoresearch.orchestration.orchestration_utils import (
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search.context import SearchContext
 
-from tests.helpers import make_config_model
+from tests.helpers import ConfigModelStub, make_config_model
+
+ConfigLike = ConfigModel | ConfigModelStub
 
 
 scenarios("../features/reasoning_modes/auto_planner_cycle.feature")
 scenarios("../features/reasoning_modes/planner_graph_conditioning.feature")
+
+
+@given(
+    parsers.parse("loops is set to {count:d} in configuration"),
+    target_fixture="config",
+)
+def configure_loops(count: int) -> ConfigLike:
+    """Provide a configurable AUTO-mode stub with deterministic agents."""
+
+    config = make_config_model(loops=count)
+    config.agents = ["Synthesizer", "Contrarian", "FactChecker"]
+    config.reasoning_mode = ReasoningMode.AUTO
+    return config
+
+
+@given(parsers.parse('reasoning mode is "{mode}"'))
+def configure_reasoning_mode(config: ConfigLike, mode: str) -> ConfigLike:
+    config.reasoning_mode = ReasoningMode(mode)
+    return config
 
 
 @given("the planner proposes verification tasks")
@@ -56,7 +77,7 @@ def planner_verification_tasks(bdd_context: dict[str, Any]) -> None:
 )
 def run_auto_planner_cycle(
     query: str,
-    config: ConfigModel,
+    config: ConfigLike,
     bdd_context: dict[str, Any],
 ) -> dict[str, Any]:
     task_graph: dict[str, Any] = bdd_context["task_graph"]
@@ -67,10 +88,10 @@ def run_auto_planner_cycle(
             self._adapter = llm_adapter
             self._invocations = 0
 
-        def can_execute(self, _state: QueryState, _config: ConfigModel) -> bool:
+        def can_execute(self, _state: QueryState, _config: ConfigLike) -> bool:
             return True
 
-        def execute(self, state: QueryState, cfg: ConfigModel) -> dict[str, Any]:
+        def execute(self, state: QueryState, cfg: ConfigLike) -> dict[str, Any]:
             self._invocations += 1
             metadata = {
                 "scout_retrieval_sets": [
@@ -150,10 +171,10 @@ def run_auto_planner_cycle(
             self.name = name
             self._adapter = llm_adapter
 
-        def can_execute(self, _state: QueryState, _config: ConfigModel) -> bool:
+        def can_execute(self, _state: QueryState, _config: ConfigLike) -> bool:
             return True
 
-        def execute(self, _state: QueryState, _cfg: ConfigModel) -> dict[str, Any]:
+        def execute(self, _state: QueryState, _cfg: ConfigLike) -> dict[str, Any]:
             return {
                 "claims": [
                     {
@@ -176,10 +197,10 @@ def run_auto_planner_cycle(
             self.name = name
             self._adapter = llm_adapter
 
-        def can_execute(self, _state: QueryState, _config: ConfigModel) -> bool:
+        def can_execute(self, _state: QueryState, _config: ConfigLike) -> bool:
             return True
 
-        def execute(self, _state: QueryState, _cfg: ConfigModel) -> dict[str, Any]:
+        def execute(self, _state: QueryState, _cfg: ConfigLike) -> dict[str, Any]:
             audits = [
                 {
                     "claim_id": "c1",
@@ -223,7 +244,7 @@ def run_auto_planner_cycle(
     def capture_gate(
         *,
         query: str,
-        config: ConfigModel,
+        config: ConfigLike,
         state: QueryState,
         loops: int,
         metrics: OrchestrationMetrics,
@@ -410,7 +431,7 @@ def configure_graph_metadata(bdd_context: dict[str, Any]) -> None:
 )
 def execute_planner_with_graph_context(
     query: str,
-    config: ConfigModel,
+    config: ConfigLike,
     bdd_context: dict[str, Any],
     monkeypatch,
 ) -> dict[str, Any]:

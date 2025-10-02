@@ -1,12 +1,10 @@
-from pytest_bdd import scenario, given, when, then
-import pytest
 from __future__ import annotations
 
 from typing import Any, Callable, MutableMapping, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pytest_bdd import given, scenario, then, when
-from unittest.mock import MagicMock, patch
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse

@@ -1,18 +1,13 @@
-from pathlib import Path
-from pytest_bdd import scenario, when, then
-
-from autoresearch.main import app as cli_app
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Protocol, cast
 
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_bdd import scenario, then, when
-from typing import Protocol, cast
 from typer.testing import CliRunner
 
 from autoresearch.main import app as cli_app
-
 from tests.behavior.context import BehaviorContext, get_cli_result, set_cli_result
 
 
