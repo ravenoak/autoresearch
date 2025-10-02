@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 
 def throughput_model(arrival_rate: float, service_rate: float, workers: int) -> float:
@@ -17,7 +17,6 @@ def throughput_model(arrival_rate: float, service_rate: float, workers: int) -> 
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Protocol
 
     class Axes(Protocol):
         """Subset of matplotlib ``Axes`` used for plotting."""
@@ -40,6 +39,30 @@ if TYPE_CHECKING:
         def savefig(self, fname: str | Path, **kwargs: object) -> None:
             ...
 
+    class _PyplotModule(Protocol):
+        def subplots(self) -> tuple[Figure, Axes]:
+            ...
+
+        def close(self, figure: Figure) -> None:
+            ...
+
+
+def _load_pyplot() -> "_PyplotModule | None":
+    """Return a typed matplotlib module when available."""
+
+    if TYPE_CHECKING:
+        return cast("_PyplotModule | None", object())
+    try:  # pragma: no cover - optional dependency
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from matplotlib import pyplot as plt
+    except Exception:  # pragma: no cover - optional dependency
+        return None
+    if not hasattr(plt, "subplots") or not hasattr(plt, "close"):
+        return None
+    return cast("_PyplotModule", plt)
+
 
 def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float]:
     """Compute throughput for varying worker counts and optionally plot results."""
@@ -47,24 +70,17 @@ def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float
     for workers in (1, 2, 4, 8):
         results[workers] = throughput_model(arrival_rate, service_rate, workers)
     out_dir = Path(__file__).resolve().parent
-    try:
-        import matplotlib
-
-        matplotlib.use("Agg")
-        from matplotlib import pyplot as plt
+    pyplot = _load_pyplot()
+    if pyplot is not None:
         xs = sorted(results)
         ys = [results[w] for w in xs]
-        fig_obj, ax_obj = plt.subplots()
-        fig = cast("Figure", fig_obj)
-        ax = cast("Axes", ax_obj)
+        fig, ax = pyplot.subplots()
         ax.plot(xs, ys, marker="o")
         ax.set_xlabel("workers")
         ax.set_ylabel("tasks/sec")
         ax.set_title("Estimated throughput")
         fig.savefig(out_dir / "agent_throughput.svg", format="svg")
-        plt.close(fig)
-    except Exception:  # pragma: no cover
-        pass
+        pyplot.close(fig)
     return results
 
 

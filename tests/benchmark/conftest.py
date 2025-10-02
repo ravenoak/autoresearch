@@ -5,10 +5,9 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import TypedDict
 
 import pytest
-
-from typing import TypedDict, cast
 
 METRIC_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "backend_metrics.json"
 
@@ -22,6 +21,35 @@ class BackendMetricsRecord(TypedDict):
 
 
 BackendMetricsStore = dict[str, BackendMetricsRecord]
+
+
+def _load_backend_metrics(path: Path) -> BackendMetricsStore:
+    """Load backend metrics from ``path`` enforcing the expected schema."""
+
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text())
+    if not isinstance(raw, dict):  # pragma: no cover - defensive programming
+        raise TypeError("backend metrics file must contain a mapping")
+    metrics: BackendMetricsStore = {}
+    for key, value in raw.items():
+        if not isinstance(value, dict):
+            raise TypeError("backend metrics values must be objects")
+        precision = float(value["precision"])
+        recall = float(value["recall"])
+        latency = float(value["latency"])
+        metrics[str(key)] = BackendMetricsRecord(
+            precision=precision,
+            recall=recall,
+            latency=latency,
+        )
+    return metrics
+
+
+def _persist_backend_metrics(path: Path, data: BackendMetricsStore) -> None:
+    """Persist ``data`` to ``path`` using canonical formatting."""
+
+    path.write_text(json.dumps(data, indent=2, sort_keys=True))
 
 
 MetricsBaselineFn = Callable[[str, float, float, float], None]
@@ -41,12 +69,7 @@ def metrics_baseline(
         *,
         tolerance: float = 0.05,
     ) -> None:
-        data: BackendMetricsStore
-        if METRIC_BASELINE_FILE.exists():
-            raw = json.loads(METRIC_BASELINE_FILE.read_text())
-            data = cast(BackendMetricsStore, raw)
-        else:
-            data = {}
+        data = _load_backend_metrics(METRIC_BASELINE_FILE)
         key = f"{request.node.nodeid}::{backend}"
         baseline = data.get(key)
         if baseline is not None:
@@ -59,7 +82,7 @@ def metrics_baseline(
             "latency": latency,
         }
         data[key] = record
-        METRIC_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
+        _persist_backend_metrics(METRIC_BASELINE_FILE, data)
 
     yield _check
 
@@ -81,6 +104,39 @@ class TokenMemoryRecord(TypedDict):
 TokenMemoryStore = dict[str, TokenMemoryRecord]
 
 
+def _load_token_memory(path: Path) -> TokenMemoryStore:
+    """Load token memory metrics enforcing the expected schema."""
+
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text())
+    if not isinstance(raw, dict):  # pragma: no cover - defensive programming
+        raise TypeError("token memory file must contain a mapping")
+    metrics: TokenMemoryStore = {}
+    for key, value in raw.items():
+        if not isinstance(value, dict):
+            raise TypeError("token memory values must be objects")
+        tokens_value = value["tokens"]
+        if not isinstance(tokens_value, dict):
+            raise TypeError("token counts must be objects")
+        tokens: TokenCounts = {
+            "in": int(tokens_value["in"]),
+            "out": int(tokens_value["out"]),
+        }
+        metrics[str(key)] = TokenMemoryRecord(
+            duration_seconds=float(value["duration_seconds"]),
+            memory_delta_mb=float(value["memory_delta_mb"]),
+            tokens=tokens,
+        )
+    return metrics
+
+
+def _persist_token_memory(path: Path, data: TokenMemoryStore) -> None:
+    """Persist token memory data using canonical formatting."""
+
+    path.write_text(json.dumps(data, indent=2, sort_keys=True))
+
+
 TokenMemoryBaselineFn = Callable[[int, int, float, float], None]
 
 
@@ -98,12 +154,7 @@ def token_memory_baseline(
         *,
         tolerance: float = 0.10,
     ) -> None:
-        data: TokenMemoryStore
-        if TOKEN_MEMORY_FILE.exists():
-            raw = json.loads(TOKEN_MEMORY_FILE.read_text())
-            data = cast(TokenMemoryStore, raw)
-        else:
-            data = {}
+        data = _load_token_memory(TOKEN_MEMORY_FILE)
         key = request.node.nodeid
         baseline = data.get(key)
         if baseline is not None:
@@ -117,6 +168,6 @@ def token_memory_baseline(
             "tokens": {"in": in_tokens, "out": out_tokens},
         }
         data[key] = record
-        TOKEN_MEMORY_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
+        _persist_token_memory(TOKEN_MEMORY_FILE, data)
 
     yield _check

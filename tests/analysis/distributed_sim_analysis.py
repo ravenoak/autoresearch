@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, Protocol, TypedDict, cast
 
 from scripts import distributed_sim
 
@@ -19,7 +19,6 @@ class SimulationMetrics(TypedDict):
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Protocol
 
     class Axes(Protocol):
         """Subset of matplotlib ``Axes`` used for plotting."""
@@ -42,6 +41,36 @@ if TYPE_CHECKING:
         def savefig(self, fname: str | Path, **kwargs: object) -> None:
             ...
 
+    class _PyplotModule(Protocol):
+        def subplots(self) -> tuple[Figure, Axes]:
+            ...
+
+        def close(self, figure: Figure) -> None:
+            ...
+
+
+def _load_pyplot() -> "_PyplotModule | None":
+    """Return a typed matplotlib module when available."""
+
+    if TYPE_CHECKING:
+        return cast("_PyplotModule | None", object())
+    try:  # pragma: no cover - optional dependency
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from matplotlib import pyplot as plt
+    except Exception:  # pragma: no cover - optional dependency
+        return None
+    if not hasattr(plt, "subplots") or not hasattr(plt, "close"):
+        return None
+    return cast("_PyplotModule", plt)
+
+
+def _write_metrics(path: Path, metrics: dict[int, SimulationMetrics]) -> None:
+    """Persist ``metrics`` to ``path`` with canonical formatting."""
+
+    path.write_text(json.dumps(metrics, indent=2) + "\n")
+
 
 def run() -> dict[int, SimulationMetrics]:
     """Run simulations for multiple worker counts and store metrics."""
@@ -58,24 +87,19 @@ def run() -> dict[int, SimulationMetrics]:
             "memory_mb": sum(sample["memory_mb"] for sample in samples) / len(samples),
         }
     out_dir = Path(__file__).resolve().parent
-    out_dir.joinpath("distributed_sim_metrics.json").write_text(json.dumps(results, indent=2))
+    _write_metrics(out_dir.joinpath("distributed_sim_metrics.json"), results)
 
-    try:  # optional visualization
-        from matplotlib import pyplot as plt
-
+    pyplot = _load_pyplot()
+    if pyplot is not None:
         xs = sorted(results)
         ys = [results[w]["throughput"] for w in xs]
-        fig_obj, ax_obj = plt.subplots()
-        fig = cast("Figure", fig_obj)
-        ax = cast("Axes", ax_obj)
+        fig, ax = pyplot.subplots()
         ax.plot(xs, ys, marker="o")
         ax.set_xlabel("workers")
         ax.set_ylabel("messages/sec")
         ax.set_title("Message throughput scaling")
         fig.savefig(out_dir / "distributed_sim_plot.png")
-        plt.close(fig)
-    except Exception:  # pragma: no cover
-        pass
+        pyplot.close(fig)
     return results
 
 
