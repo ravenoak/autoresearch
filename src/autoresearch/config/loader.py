@@ -316,6 +316,15 @@ class ConfigLoader:
             ] = minimum_resident_nodes
         _merge_dict(storage_settings, storage_env)
 
+        default_minimum_nodes = cast(
+            int,
+            StorageConfig.model_fields[
+                "minimum_deterministic_resident_nodes"
+            ].default,
+        )
+        if storage_settings.get("minimum_deterministic_resident_nodes") is None:
+            storage_settings["minimum_deterministic_resident_nodes"] = default_minimum_nodes
+
         api_section = raw.get("api", {})
         api_settings: ConfigInitDict = dict(api_section) if isinstance(api_section, Mapping) else {}
         distributed_section = raw.get("distributed", {})

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import warnings
+import logging
 from pathlib import Path
+from typing import Sequence
 from unittest.mock import patch
 
 import pytest
@@ -70,6 +72,32 @@ def test_storage_defaults(tmp_path: Path) -> None:
     assert config.storage.minimum_deterministic_resident_nodes == 2
 
 
+def test_minimum_resident_nodes_default_without_warning(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Config and env overrides that set ``None`` should fall back to the baseline."""
+
+    def fake_load_config(_: Sequence[Path]) -> LoadedConfigFile:
+        return LoadedConfigFile(
+            path=None,
+            data={"storage": {"minimum_deterministic_resident_nodes": None}},
+            modified_time=None,
+        )
+
+    monkeypatch.setattr("autoresearch.config.loader.load_config_file", fake_load_config)
+    missing = tmp_path / "missing.toml"
+
+    with caplog.at_level(logging.WARNING, logger="autoresearch.config.loader"):
+        loader = ConfigLoader.new_for_tests(search_paths=[missing])
+        try:
+            config = loader.load_config()
+        finally:
+            ConfigLoader.reset_instance()
+
+    assert not caplog.records
+    assert config.storage.minimum_deterministic_resident_nodes == 2
+
+
 def test_normalize_ranking_weights_balances_missing_values() -> None:
     """The ranking weights validator should balance unspecified weights."""
 
@@ -86,7 +114,7 @@ def test_config_model_deep_copy_preserves_storage_settings() -> None:
     """Deep copies should keep storage settings equal but independent."""
 
     config = ConfigModel()
-    config.storage.rdf_backend = "duckdb"
+    config.storage.rdf_backend = "oxigraph"
     config.storage.rdf_path = "custom"
     original_storage = config.model_dump(mode="python")["storage"]
 
@@ -99,4 +127,4 @@ def test_config_model_deep_copy_preserves_storage_settings() -> None:
 
     cloned.storage.rdf_backend = "memory"
 
-    assert config.storage.rdf_backend == "duckdb"
+    assert config.storage.rdf_backend == "oxigraph"
