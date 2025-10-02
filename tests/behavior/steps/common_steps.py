@@ -22,12 +22,12 @@ from autoresearch.storage import (
 from autoresearch.storage import set_delegate as set_storage_delegate
 from autoresearch.storage import teardown as storage_teardown
 from click.testing import Result
-from tests.behavior.context import (
-    BehaviorContext,
-    get_cli_result,
-    set_cli_invocation,
-    set_cli_result,
-)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_invocation, set_cli_result
+else:  # pragma: no cover - runtime fallback to avoid circular imports
+    from tests.behavior.context import BehaviorContext, get_cli_result, set_cli_invocation, set_cli_result
 from tests.typing_helpers import TypedFixture
 from typer.testing import CliRunner
 

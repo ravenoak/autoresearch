@@ -3,12 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol, cast
 
-from _pytest.monkeypatch import MonkeyPatch
+import pytest
 from pytest_bdd import scenario, then, when
 from typer.testing import CliRunner
 
 from autoresearch.main import app as cli_app
-from tests.behavior.context import BehaviorContext, get_cli_result, set_cli_result
+from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 
 
 class VisualizationHooks(Protocol):
@@ -30,9 +30,9 @@ CLI_APP_WITH_HOOKS = cast(VisualizationApp, cli_app)
 def run_visualize_query(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
-    monkeypatch: MonkeyPatch,
-    temp_config: object,
-    isolate_network: object,
+    monkeypatch: pytest.MonkeyPatch,
+    temp_config: Path,
+    isolate_network: None,
     query: str,
 ) -> None:
     output_path = Path.cwd() / "graph.png"
@@ -53,9 +53,9 @@ def run_visualize_query(
 def run_visualize_rdf(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
-    monkeypatch: MonkeyPatch,
-    temp_config: object,
-    isolate_network: object,
+    monkeypatch: pytest.MonkeyPatch,
+    temp_config: Path,
+    isolate_network: None,
 ) -> None:
     monkeypatch.setattr(
         CLI_APP_WITH_HOOKS.visualization_hooks, "visualize", lambda *a, **k: None
@@ -70,9 +70,9 @@ def run_visualize_rdf(
 def run_visualize_missing(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
-    monkeypatch: MonkeyPatch,
-    temp_config: object,
-    isolate_network: object,
+    monkeypatch: pytest.MonkeyPatch,
+    temp_config: Path,
+    isolate_network: None,
 ) -> None:
     def _raise(*_: object, **__: object) -> None:
         raise RuntimeError("missing output")
