@@ -475,6 +475,7 @@ class QueryState(BaseModel):
         *,
         update: Mapping[str, Any] | None = None,
         deep: bool | None = None,
+        memo: dict[int, Any] | None = None,
     ) -> "QueryState":
         """Return a copy of the state without cloning synchronization primitives."""
 
@@ -488,11 +489,23 @@ class QueryState(BaseModel):
         if sanitized_update:
             data = {**data, **sanitized_update}
 
+        original_lock = getattr(self, "_lock", None)
+        effective_memo: dict[int, Any] | None = None
         if deep:
-            data = deepcopy(data)
+            effective_memo = dict(memo or {})
+            for value in self.__dict__.values():
+                if isinstance(value, LOCK_TYPE):
+                    effective_memo.setdefault(id(value), value)
+            data = deepcopy(data, effective_memo)
 
         copied = self.__class__.model_validate(data)
         copied._ensure_lock()
+
+        if deep and isinstance(original_lock, LOCK_TYPE):
+            copied_lock = getattr(copied, "_lock", None)
+            if copied_lock is original_lock:
+                object.__setattr__(copied, "_lock", RLock())
+
         return copied
 
     def model_post_init(self, __context: Any) -> None:
