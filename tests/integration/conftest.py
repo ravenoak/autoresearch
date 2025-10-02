@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any
+from typing import Any, cast
 from pathlib import Path
 
 import pytest
@@ -55,7 +55,10 @@ def token_baseline(
         data[test_id] = tokens
         BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
-    return _check
+    return cast(
+        TypedFixture[Callable[[dict[str, dict[str, int]], int], None]],
+        _check,
+    )
 
 
 @pytest.fixture
@@ -87,7 +90,12 @@ def metrics_baseline(
         }
         METRIC_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
-    return _check
+    return cast(
+        TypedFixture[
+            Callable[[str, float, float, float, float], None]
+        ],
+        _check,
+    )
 
 
 @pytest.fixture
@@ -106,7 +114,10 @@ def search_baseline(
         data[key] = current
         SEARCH_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
-    return _check
+    return cast(
+        TypedFixture[Callable[[Sequence[Mapping[str, object]]], None]],
+        _check,
+    )
 
 
 AgentGetter = Callable[[str], AgentDouble]
@@ -123,7 +134,10 @@ def stub_agent_factory(
     def _apply(agents: Iterable[AgentDouble]) -> AgentGetter:
         return patch_agent_factory_get(monkeypatch, agents)
 
-    return _apply
+    return cast(
+        TypedFixture[Callable[[Iterable[AgentDouble]], AgentGetter]],
+        _apply,
+    )
 
 
 @pytest.fixture
@@ -135,7 +149,10 @@ def stub_storage_persist(
     def _apply(calls: list[PersistClaimCall] | None = None) -> PersistCallable:
         return patch_storage_persist(monkeypatch, calls)
 
-    return _apply
+    return cast(
+        TypedFixture[Callable[[list[PersistClaimCall] | None], PersistCallable]],
+        _apply,
+    )
 
 
 @pytest.fixture
@@ -147,4 +164,4 @@ def stub_storage_queue(
     def _apply(queue: BrokerQueueStub | None = None) -> BrokerQueueStub:
         return patch_storage_queue(monkeypatch, queue)
 
-    return _apply
+    return cast(TypedFixture[QueuePatcher], _apply)

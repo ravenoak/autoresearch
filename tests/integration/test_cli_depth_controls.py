@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 
+import pytest
 from typer.testing import CliRunner
 
 from autoresearch.config.models import ConfigModel
@@ -25,7 +26,9 @@ def test_search_depth_help_lists_features() -> None:
     assert "claim table" in output
 
 
-def test_search_depth_flag_forwards_to_formatter(monkeypatch) -> None:
+def test_search_depth_flag_forwards_to_formatter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """`--depth` forwards the parsed value to the output formatter."""
 
     monkeypatch.setattr(
@@ -50,15 +53,24 @@ def test_search_depth_flag_forwards_to_formatter(monkeypatch) -> None:
 
     captured_depths: list[OutputDepth | None] = []
 
-    def fake_render(cls, result, format_type="markdown", depth=None):
+    def fake_render(
+        cls: type[OutputFormatter],
+        result: QueryResponse,
+        format_type: str = "markdown",
+        depth: OutputDepth | None = None,
+    ) -> str:
         captured_depths.append(depth)
         return "ok"
 
     monkeypatch.setattr(OutputFormatter, "render", classmethod(fake_render))
     cli_module = importlib.import_module("autoresearch.main.app")
-    monkeypatch.setattr(cli_module, "print_success", lambda *_, **__: None)
+    monkeypatch.setattr(
+        cli_module, "print_success", lambda *args, **kwargs: None
+    )
     storage_module = importlib.import_module("autoresearch.storage")
-    monkeypatch.setattr(storage_module.StorageManager, "setup", staticmethod(lambda: None))
+    monkeypatch.setattr(
+        storage_module.StorageManager, "setup", staticmethod(lambda: None)
+    )
     cli_module.search(
         "depth probe",
         output=None,

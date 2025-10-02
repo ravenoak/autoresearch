@@ -4,6 +4,8 @@ import time
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
+from pytest_httpx import HTTPXMock
 
 import autoresearch.api as api
 from autoresearch.config.loader import ConfigLoader
@@ -11,19 +13,27 @@ from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryRequest, QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.types import CallbackMap
 
 
-def _setup(monkeypatch, cfg: ConfigModel) -> ConfigModel:
+def _setup(monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel) -> ConfigModel:
     ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     return cfg
 
 
 @pytest.mark.slow
-def test_query_stream_param(monkeypatch, api_client):
+def test_query_stream_param(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/query should stream when stream=true is passed."""
 
-    def dummy_run_query(query, config, callbacks=None, **kwargs):
+    def dummy_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         state = QueryState(query=query)
         for i in range(2):
             if callbacks and "on_cycle_end" in callbacks:
@@ -42,10 +52,17 @@ def test_query_stream_param(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_long_running_stream(monkeypatch, api_client):
+def test_long_running_stream(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Streaming should handle long running operations without timing out."""
 
-    def long_run_query(query, config, callbacks=None, **kwargs):
+    def long_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         state = QueryState(query=query)
         for i in range(3):
             time.sleep(0.05)
@@ -68,7 +85,11 @@ def test_long_running_stream(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_config_webhooks(monkeypatch, api_client, httpx_mock):
+def test_config_webhooks(
+    monkeypatch: pytest.MonkeyPatch,
+    api_client: TestClient,
+    httpx_mock: HTTPXMock,
+) -> None:
     """Configured webhooks should receive final results."""
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
@@ -95,7 +116,11 @@ def test_config_webhooks(monkeypatch, api_client, httpx_mock):
 
 
 @pytest.mark.slow
-def test_webhook_retry(monkeypatch, api_client, httpx_mock):
+def test_webhook_retry(
+    monkeypatch: pytest.MonkeyPatch,
+    api_client: TestClient,
+    httpx_mock: HTTPXMock,
+) -> None:
     """Webhook failures should be retried once."""
 
     attempts = {"count": 0}
@@ -141,7 +166,9 @@ def test_webhook_retry(monkeypatch, api_client, httpx_mock):
 
 
 @pytest.mark.slow
-def test_batch_query_pagination(monkeypatch, api_client):
+def test_batch_query_pagination(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/query/batch should honor page and page_size parameters."""
 
     cfg = ConfigModel(api=APIConfig())
@@ -166,7 +193,9 @@ def test_batch_query_pagination(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_batch_query_defaults(monkeypatch, api_client):
+def test_batch_query_defaults(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/query/batch should use default pagination when params are omitted."""
 
     cfg = ConfigModel(api=APIConfig())
@@ -189,7 +218,9 @@ def test_batch_query_defaults(monkeypatch, api_client):
     assert [r["answer"] for r in data["results"]] == ["a", "b", "c"]
 
 
-def test_api_key_roles_integration(monkeypatch, api_client):
+def test_api_key_roles_integration(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Requests should succeed only with valid API keys."""
 
     cfg = ConfigModel(api=APIConfig(api_keys={"secret": "admin"}))
@@ -213,10 +244,17 @@ def test_api_key_roles_integration(monkeypatch, api_client):
     assert bad.json()["detail"] == "Invalid API key"
 
 
-def test_stream_requires_api_key(monkeypatch, api_client):
+def test_stream_requires_api_key(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/query/stream rejects requests lacking a valid API key."""
 
-    def dummy_run_query(query, config, callbacks=None, **k):
+    def dummy_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **k: object,
+    ) -> QueryResponse:
         state = QueryState(query=query)
         if callbacks and "on_cycle_end" in callbacks:
             callbacks["on_cycle_end"](0, state)
@@ -242,7 +280,9 @@ def test_stream_requires_api_key(monkeypatch, api_client):
     assert bad.headers["WWW-Authenticate"] == "API-Key"
 
 
-def test_batch_query_async_order(monkeypatch, api_client):
+def test_batch_query_async_order(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/query/batch should process queries concurrently while preserving order."""
 
     cfg = ConfigModel(api=APIConfig())

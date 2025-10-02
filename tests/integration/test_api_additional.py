@@ -2,6 +2,7 @@ import asyncio
 import time
 
 import pytest
+from fastapi.testclient import TestClient
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
@@ -9,7 +10,7 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     cfg = ConfigModel(_env_file=None, _cli_parse_args=[])
     # allow all permissions for anonymous for simplicity
     cfg.api.role_permissions["anonymous"] = [
@@ -23,7 +24,9 @@ def _setup(monkeypatch):
     return cfg
 
 
-def test_config_endpoints(monkeypatch, api_client):
+def test_config_endpoints(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
 
     resp = api_client.get("/config")
@@ -43,10 +46,18 @@ def test_config_endpoints(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_async_query_status(monkeypatch, api_client):
+def test_async_query_status(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
 
-    async def dummy_async(self, query, config, callbacks=None, **k):
+    async def dummy_async(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: object | None = None,
+        **k: object,
+    ) -> QueryResponse:
         await asyncio.sleep(0.01)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -72,10 +83,18 @@ def test_async_query_status(monkeypatch, api_client):
     assert missing.status_code == 404
 
 
-def test_async_query_cancel(monkeypatch, api_client):
+def test_async_query_cancel(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
 
-    async def long_async(self, query, config, callbacks=None, **k):
+    async def long_async(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: object | None = None,
+        **k: object,
+    ) -> QueryResponse:
         await asyncio.sleep(0.1)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -95,7 +114,9 @@ def test_async_query_cancel(monkeypatch, api_client):
     assert missing.status_code == 404
 
 
-def test_metrics_and_capabilities(monkeypatch, api_client):
+def test_metrics_and_capabilities(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
 
     assert api_client.get("/metrics").status_code == 200
@@ -104,7 +125,9 @@ def test_metrics_and_capabilities(monkeypatch, api_client):
     assert "llm_backends" in cap.json()
 
 
-def test_openapi_lists_new_routes(monkeypatch, api_client):
+def test_openapi_lists_new_routes(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     schema = api_client.get("/openapi.json").json()
     assert "/config" in schema["paths"]
@@ -112,7 +135,9 @@ def test_openapi_lists_new_routes(monkeypatch, api_client):
     assert "/query/{query_id}" in schema["paths"]
 
 
-def test_health_endpoint(monkeypatch, api_client):
+def test_health_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """/health should return service status."""
 
     _setup(monkeypatch)

@@ -1,4 +1,5 @@
 import pytest
+from fastapi.testclient import TestClient
 
 from autoresearch.api import utils as api_utils
 from autoresearch.api.models import QueryResponseV1
@@ -7,9 +8,10 @@ from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.types import CallbackMap
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     cfg = ConfigModel(api=APIConfig())
     ConfigLoader.reset_instance()
     cfg.api.role_permissions["anonymous"] = [
@@ -23,7 +25,9 @@ def _setup(monkeypatch):
     return cfg
 
 
-def test_docs_endpoints_require_auth(monkeypatch, api_client):
+def test_docs_endpoints_require_auth(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = ConfigModel(api=APIConfig(api_key="secret"))
     ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -40,7 +44,9 @@ def test_docs_endpoints_require_auth(monkeypatch, api_client):
     assert openapi.status_code == 200
 
 
-def test_docs_permission_denied(monkeypatch, api_client):
+def test_docs_permission_denied(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = ConfigModel(api=APIConfig(api_keys={"u": "user"}))
     cfg.api.role_permissions = {"user": []}
     ConfigLoader.reset_instance()
@@ -52,7 +58,9 @@ def test_docs_permission_denied(monkeypatch, api_client):
     assert resp.json()["detail"] == "Insufficient permissions"
 
 
-def test_query_endpoint(monkeypatch, api_client):
+def test_query_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     monkeypatch.setattr(
         Orchestrator,
@@ -79,10 +87,17 @@ def test_query_endpoint(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_stream_endpoint(monkeypatch, api_client):
+def test_stream_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
 
-    def dummy_run_query(query, config, callbacks=None, **k):
+    def dummy_run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **k: object,
+    ) -> QueryResponse:
         state = QueryState(query=query)
         if callbacks and "on_cycle_end" in callbacks:
             callbacks["on_cycle_end"](0, state)
@@ -101,7 +116,9 @@ def test_stream_endpoint(monkeypatch, api_client):
     assert len(chunks) == 3
 
 
-def test_batch_endpoint(monkeypatch, api_client):
+def test_batch_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     monkeypatch.setattr(
         Orchestrator,
@@ -118,10 +135,14 @@ def test_batch_endpoint(monkeypatch, api_client):
     assert len(data["results"]) == 2
 
 
-def test_async_query_status_schema(monkeypatch, api_client):
+def test_async_query_status_schema(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
 
-    async def dummy_run_query_async(*a, **k):
+    async def dummy_run_query_async(
+        *a: object, **k: object
+    ) -> QueryResponse:
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(Orchestrator, "run_query_async", dummy_run_query_async)
@@ -138,14 +159,18 @@ def test_async_query_status_schema(monkeypatch, api_client):
     assert parsed.answer == "ok"
 
 
-def test_unknown_version_rejected(monkeypatch, api_client):
+def test_unknown_version_rejected(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     resp = api_client.post("/query", json={"query": "hi", "version": "99"})
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Unsupported API version 99"
 
 
-def test_deprecated_version_rejected(monkeypatch, api_client):
+def test_deprecated_version_rejected(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     monkeypatch.setattr(api_utils, "DEPRECATED_VERSIONS", {"0"})
     resp = api_client.post("/query", json={"query": "hi", "version": "0"})
@@ -153,14 +178,18 @@ def test_deprecated_version_rejected(monkeypatch, api_client):
     assert resp.json()["detail"] == "API version 0 is deprecated"
 
 
-def test_metrics_endpoint(monkeypatch, api_client):
+def test_metrics_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     resp = api_client.get("/metrics")
     assert resp.status_code == 200
     assert "autoresearch_queries_total" in resp.text
 
 
-def test_capabilities_endpoint(monkeypatch, api_client):
+def test_capabilities_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     resp = api_client.get("/capabilities")
     assert resp.status_code == 200
@@ -169,7 +198,9 @@ def test_capabilities_endpoint(monkeypatch, api_client):
     assert "version" in body
 
 
-def test_health_endpoint(monkeypatch, api_client):
+def test_health_endpoint(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     _setup(monkeypatch)
     resp = api_client.get("/health")
     assert resp.status_code == 200
