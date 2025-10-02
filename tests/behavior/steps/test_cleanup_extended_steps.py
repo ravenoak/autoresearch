@@ -4,25 +4,36 @@ This module contains step definitions for verifying that tests clean up
 their side effects properly, including temporary files, environment variables,
 and handling cleanup errors.
 """
-from tests.behavior.utils import as_payload
+
+from __future__ import annotations
+
+from typing import Any, cast
 
 import os
 import tempfile
-import pytest
-from pytest_bdd import scenario, given, when, then
 from unittest.mock import MagicMock
+
+import pytest
+from pytest_bdd import given, scenario, then, when
+
+from tests.behavior.context import BehaviorContext
+from tests.behavior.utils import (
+    CleanupExtendedPayload,
+    TempFileRecord,
+    as_payload,
+    build_cleanup_payload,
+    ensure_cleanup_payload,
+)
+from tests.typing_helpers import TypedFixture
 
 
 # Fixtures
 @pytest.fixture
-def cleanup_extended_context():
+def cleanup_extended_context() -> BehaviorContext:
     """Create a context for storing test state and tracking resources."""
-    return as_payload({
-        "temp_files": [],
-        "env_vars": {},
-        "original_env": {},
-        "cleanup_errors": [],
-    })
+
+    payload: CleanupExtendedPayload = build_cleanup_payload()
+    return cast(BehaviorContext, as_payload(payload))
 
 
 # Scenarios
@@ -30,95 +41,100 @@ def cleanup_extended_context():
     "../features/test_cleanup_extended.feature",
     "Tests clean up temporary files properly",
 )
-def test_cleanup_temporary_files():
+def test_cleanup_temporary_files() -> None:
     """Test that temporary files are properly cleaned up."""
-    pass
+
+    return None
 
 
 @scenario(
     "../features/test_cleanup_extended.feature",
     "Tests clean up environment variables properly",
 )
-def test_cleanup_environment_variables():
+def test_cleanup_environment_variables() -> None:
     """Test that environment variables are properly restored."""
-    pass
+
+    return None
 
 
 @scenario(
     "../features/test_cleanup_extended.feature",
     "Tests handle cleanup errors gracefully",
 )
-def test_cleanup_errors():
+def test_cleanup_errors() -> None:
     """Test that cleanup errors are handled gracefully."""
-    pass
+
+    return None
 
 
 # Step definitions for "Tests clean up temporary files properly"
 @given("the system creates temporary files during testing")
-def system_creates_temporary_files(cleanup_extended_context):
+def system_creates_temporary_files(
+    cleanup_extended_context: BehaviorContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Set up the system to create temporary files during testing."""
-    # Store the original tempfile.mkstemp function
-    cleanup_extended_context["original_mkstemp"] = tempfile.mkstemp
 
-    # Track the created temporary files
-    def tracked_mkstemp(*args, **kwargs):
-        fd, path = cleanup_extended_context["original_mkstemp"](*args, **kwargs)
-        cleanup_extended_context["temp_files"].append((fd, path))
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    temp_files = payload["temp_files"]
+    original = tempfile.mkstemp
+
+    def tracked_mkstemp(*args: Any, **kwargs: Any) -> tuple[int, str]:
+        fd, path = original(*args, **kwargs)
+        temp_files.append(TempFileRecord(fd=fd, path=path))
         return fd, path
 
-    # Patch tempfile.mkstemp to track created files
-    tempfile.mkstemp = tracked_mkstemp
+    monkeypatch.setattr(tempfile, "mkstemp", tracked_mkstemp)
 
 
 @when("I run a test that creates temporary files")
-def run_test_creating_temporary_files(cleanup_extended_context):
+def run_test_creating_temporary_files(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Run a test that creates temporary files."""
-    # Create some temporary files
+
+    payload = ensure_cleanup_payload(cleanup_extended_context)
     for _ in range(3):
         fd, path = tempfile.mkstemp()
-        with os.fdopen(fd, "w") as f:
-            f.write("Test content")
-
-    # Verify that the files were created and tracked
-    assert len(cleanup_extended_context["temp_files"]) == 3
+        with os.fdopen(fd, "w") as handle:
+            handle.write("Test content")
+    assert len(payload["temp_files"]) == 3
 
 
 @then("all temporary files should be properly cleaned up")
-def temporary_files_properly_cleaned_up(cleanup_extended_context):
+def temporary_files_properly_cleaned_up(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Verify that all temporary files are properly cleaned up."""
-    # Clean up the temporary files
-    for fd, path in cleanup_extended_context["temp_files"]:
+
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    for record in payload["temp_files"]:
         try:
-            os.close(fd)
+            os.close(record.fd)
         except OSError:
-            # File descriptor might already be closed
             pass
-
         try:
-            os.unlink(path)
-        except OSError as e:
-            # File might already be deleted
-            cleanup_extended_context["cleanup_errors"].append(
-                f"Failed to delete {path}: {e}"
+            os.unlink(record.path)
+        except OSError as exc:
+            payload["cleanup_errors"].append(
+                f"Failed to delete {record.path}: {exc}"
             )
-
-    # Verify that all files were deleted
-    for _, path in cleanup_extended_context["temp_files"]:
-        assert not os.path.exists(path), f"Temporary file {path} was not deleted"
-
-    # Restore the original tempfile.mkstemp function
-    tempfile.mkstemp = cleanup_extended_context["original_mkstemp"]
+    for record in payload["temp_files"]:
+        assert not os.path.exists(record.path), (
+            f"Temporary file {record.path} was not deleted"
+        )
 
 
 # Step definitions for "Tests clean up environment variables properly"
 @given("the system modifies environment variables during testing")
-def system_modifies_environment_variables(cleanup_extended_context):
+def system_modifies_environment_variables(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Set up the system to modify environment variables during testing."""
-    # Store the original environment
-    cleanup_extended_context["original_env"] = os.environ.copy()
 
-    # Define test environment variables
-    cleanup_extended_context["env_vars"] = {
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    payload["original_env"] = os.environ.copy()
+    payload["env_vars"] = {
         "TEST_VAR1": "value1",
         "TEST_VAR2": "value2",
         "TEST_VAR3": "value3",
@@ -126,56 +142,67 @@ def system_modifies_environment_variables(cleanup_extended_context):
 
 
 @when("I run a test that modifies environment variables")
-def run_test_modifying_environment_variables(cleanup_extended_context, restore_environment):
+def run_test_modifying_environment_variables(
+    cleanup_extended_context: BehaviorContext,
+    restore_environment: TypedFixture[None],
+) -> None:
     """Run a test that modifies environment variables."""
-    # Set the test environment variables
-    for key, value in cleanup_extended_context["env_vars"].items():
-        os.environ[key] = value
 
-    # Verify that the environment variables were set
-    for key, value in cleanup_extended_context["env_vars"].items():
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    for key, value in payload["env_vars"].items():
+        os.environ[key] = value
         assert os.environ.get(key) == value
 
 
 @then("all environment variables should be properly restored")
-def environment_variables_properly_restored(cleanup_extended_context):
+def environment_variables_properly_restored(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Verify that all environment variables are properly restored."""
-    # Restore the original environment
-    for key in cleanup_extended_context["env_vars"].keys():
-        if key in cleanup_extended_context["original_env"]:
-            os.environ[key] = cleanup_extended_context["original_env"][key]
+
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    for key in payload["env_vars"].keys():
+        if key in payload["original_env"]:
+            os.environ[key] = payload["original_env"][key]
         else:
             os.environ.pop(key, None)
-
-    # Verify that the environment variables were restored
-    for key in cleanup_extended_context["env_vars"].keys():
-        assert os.environ.get(key) == cleanup_extended_context["original_env"].get(key)
+    for key in payload["env_vars"].keys():
+        assert os.environ.get(key) == payload["original_env"].get(key)
 
 
 # Step definitions for "Tests handle cleanup errors gracefully"
 @given("the system encounters errors during cleanup")
-def system_encounters_cleanup_errors(cleanup_extended_context):
+def system_encounters_cleanup_errors(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Mark that we expect cleanup errors during the test."""
-    cleanup_extended_context["expect_error"] = True
+
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    payload["expect_error"] = True
 
 
 @when("I run a test that encounters cleanup errors")
-def run_test_encountering_cleanup_errors(cleanup_extended_context):
+def run_test_encountering_cleanup_errors(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Run a test that encounters cleanup errors."""
-    # Create a mock cleanup function that will raise an exception
-    mock_cleanup = MagicMock(side_effect=Exception("Cleanup error"))
-    cleanup_extended_context["mock_cleanup"] = mock_cleanup
 
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    mock_cleanup = MagicMock(side_effect=Exception("Cleanup error"))
+    payload["mock_cleanup"] = mock_cleanup
     try:
-        # Call the mock cleanup function
         mock_cleanup()
-    except Exception as e:
-        cleanup_extended_context["cleanup_error"] = e
+    except Exception as exc:  # noqa: BLE001 - capturing test error context
+        payload["cleanup_error"] = exc
 
 
 @then("the test should handle cleanup errors gracefully")
-def test_handles_cleanup_errors_gracefully(cleanup_extended_context):
+def test_handles_cleanup_errors_gracefully(
+    cleanup_extended_context: BehaviorContext,
+) -> None:
     """Verify that the error raised during cleanup was captured."""
-    err = cleanup_extended_context.get("cleanup_error")
+
+    payload = ensure_cleanup_payload(cleanup_extended_context)
+    err = payload.get("cleanup_error")
     assert isinstance(err, Exception)
     assert str(err) == "Cleanup error"

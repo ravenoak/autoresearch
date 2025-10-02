@@ -12,6 +12,13 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     And the CLI output should record verification loop metrics
     And the AUTO metrics should record scout samples and agreement
 
+  Scenario: AUTO mode completes the configured PRDV verification loops
+    When I run the AUTO reasoning CLI for query "prdv verification rehearsal"
+    Then the CLI scout gate decision should escalate to debate
+    And the CLI output should record verification loop metrics
+    And the CLI verification loops should match the configured count
+    And the AUTO metrics should record scout samples and agreement
+
   Scenario: AUTO mode CLI run exits directly when the scout gate declines debate
     Given the scout gate will force a direct exit
     When I run the AUTO reasoning CLI for query "scout gate direct exit rehearsal"

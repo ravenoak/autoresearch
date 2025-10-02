@@ -12,6 +12,7 @@ from rich.table import Table as RichTable
 
 from autoresearch.cli_evaluation import EvaluationHarness
 from autoresearch.evaluation import EvaluationSummary
+from tests.behavior.context import BehaviorContext
 from tests.unit.typing_helpers import build_summary_fixture
 
 from . import common_steps  # noqa: F401  # Import shared steps
@@ -94,7 +95,7 @@ def stubbed_summaries(tmp_path: Path) -> tuple[EvaluationSummary, EvaluationSumm
 @given("the evaluation harness runner is stubbed for telemetry")
 def stub_evaluation_harness(
     monkeypatch: pytest.MonkeyPatch,
-    bdd_context: dict,
+    bdd_context: BehaviorContext,
     stubbed_summaries: tuple[EvaluationSummary, EvaluationSummary],
 ) -> None:
     """Patch the evaluation harness to return predictable telemetry."""
@@ -121,7 +122,7 @@ def stub_evaluation_harness(
 
 
 @then("the evaluation summary output should list the stubbed telemetry")
-def assert_summary_output(bdd_context: dict) -> None:
+def assert_summary_output(bdd_context: BehaviorContext) -> None:
     """Verify that the CLI output includes the telemetry table with metrics."""
 
     result = bdd_context["result"]
@@ -165,7 +166,7 @@ def assert_summary_output(bdd_context: dict) -> None:
 
 
 @then("the evaluation summary table should include the metric columns")
-def assert_summary_columns(bdd_context: dict) -> None:
+def assert_summary_columns(bdd_context: BehaviorContext) -> None:
     """Ensure the rendered summary table exposes each metric column header."""
 
     stdout = bdd_context["result"].stdout
@@ -202,7 +203,7 @@ def assert_summary_columns(bdd_context: dict) -> None:
 
 
 @then("the evaluation artifacts should reference the stubbed paths")
-def assert_artifact_listing(bdd_context: dict) -> None:
+def assert_artifact_listing(bdd_context: BehaviorContext) -> None:
     """Ensure artifact paths from the stubbed summary are printed."""
 
     result = bdd_context["result"]

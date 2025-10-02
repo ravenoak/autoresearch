@@ -1,7 +1,8 @@
 """Step definitions for A2A MCP integration scenarios."""
 
 from __future__ import annotations
-from tests.behavior.utils import as_payload
+from tests.behavior.context import BehaviorContext
+from tests.behavior.utils import as_payload, PayloadDict
 
 from unittest.mock import patch
 
@@ -23,7 +24,7 @@ def mock_server() -> FastMCP:
     server = FastMCP("Mock")
 
     @server.tool
-    async def research(query: str) -> dict:
+    async def research(query: str) -> PayloadDict:
         return as_payload({"answer": "42"})
 
     yield server
@@ -37,14 +38,18 @@ def given_server(mock_server: FastMCP) -> FastMCP:
 
 
 @when("I perform an A2A MCP handshake")
-def perform_a2a_mcp_handshake(server: FastMCP, bdd_context: dict) -> None:
+def perform_a2a_mcp_handshake(
+    server: FastMCP, bdd_context: BehaviorContext
+) -> None:
     """Execute a handshake through the MCP interface."""
     response = mcp_interface.query("hello", transport=server)
     bdd_context["response"] = response
 
 
 @when("the A2A MCP handshake times out")
-def handshake_times_out(server: FastMCP, bdd_context: dict) -> None:
+def handshake_times_out(
+    server: FastMCP, bdd_context: BehaviorContext
+) -> None:
     """Simulate a timeout during handshake."""
     with patch(
         "autoresearch.mcp_interface.Client.call_tool",
@@ -56,7 +61,9 @@ def handshake_times_out(server: FastMCP, bdd_context: dict) -> None:
 
 
 @when("the A2A MCP handshake fails once and then succeeds")
-def handshake_recovers(server: FastMCP, bdd_context: dict) -> None:
+def handshake_recovers(
+    server: FastMCP, bdd_context: BehaviorContext
+) -> None:
     """Force a transient failure followed by success."""
 
     class FlakyClient(Client):
@@ -87,13 +94,15 @@ def handshake_recovers(server: FastMCP, bdd_context: dict) -> None:
 
 
 @then(parsers.parse('the handshake result should be "{answer}"'))
-def check_handshake_result(bdd_context: dict, answer: str) -> None:
+def check_handshake_result(
+    bdd_context: BehaviorContext, answer: str
+) -> None:
     """Validate the handshake response content."""
     assert bdd_context["response"]["answer"] == answer
 
 
 @then("the A2A interface should report a timeout")
-def check_timeout(bdd_context: dict) -> None:
+def check_timeout(bdd_context: BehaviorContext) -> None:
     """Confirm that a timeout error was surfaced."""
     assert "timeout" in bdd_context["error"].lower()
 
