@@ -247,13 +247,13 @@ def make_psutil_stub(
     )
 
 
-class StreamlitSessionState(dict):
+class StreamlitSessionState(dict[str, Any]):
     """Dictionary with attribute access to mirror Streamlit's session state."""
 
-    def __getattr__(self, key: str):  # pragma: no cover - trivial
+    def __getattr__(self, key: str) -> Any:  # pragma: no cover - trivial
         return self[key]
 
-    def __setattr__(self, key: str, value):  # pragma: no cover - trivial
+    def __setattr__(self, key: str, value: Any) -> None:  # pragma: no cover - trivial
         self[key] = value
 
 
@@ -271,7 +271,7 @@ def make_streamlit_stub(
 ) -> StreamlitStub:
     """Return a Streamlit stub with a mutable session state."""
 
-    def _default_markdown(*_args, **_kwargs) -> None:  # pragma: no cover - trivial
+    def _default_markdown(*_args: Any, **_kwargs: Any) -> None:  # pragma: no cover - trivial
         return None
 
     return StreamlitStub(

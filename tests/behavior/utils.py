@@ -212,7 +212,8 @@ def build_scout_metadata(
     if audit_badges is not None:
         metadata["audit_badges"] = dict(audit_badges)
     if extra is not None:
-        metadata.update(dict(extra))
+        extended = cast(MutableMapping[str, Any], metadata)
+        extended.update(dict(extra))
     return metadata
 
 

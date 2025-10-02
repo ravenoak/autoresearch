@@ -1,10 +1,11 @@
 from __future__ import annotations
-from tests.behavior.utils import as_payload
-from typing import Any
-
 import json
+from typing import Any, cast
 from unittest.mock import patch
 
+import pytest
+from click import Command
+from click.testing import CliRunner
 from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
@@ -12,20 +13,21 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.main import app as cli_app
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
+from tests.behavior.utils import PayloadDict, as_payload
 
 
 @scenario("../features/reasoning_mode_cli.feature", "Direct mode via CLI")
-def test_direct_mode_cli():
+def test_direct_mode_cli() -> None:
     pass
 
 
 @scenario("../features/reasoning_mode_cli.feature", "Dialectical mode via CLI")
-def test_dialectical_mode_cli():
+def test_dialectical_mode_cli() -> None:
     pass
 
 
 @scenario("../features/reasoning_mode_cli.feature", "Chain-of-thought mode via CLI")
-def test_chain_of_thought_mode_cli():
+def test_chain_of_thought_mode_cli() -> None:
     pass
 
 
@@ -33,7 +35,7 @@ def test_chain_of_thought_mode_cli():
     "../features/reasoning_mode_cli.feature",
     "Mode switching within a session via CLI",
 )
-def test_mode_switch_cli():
+def test_mode_switch_cli() -> None:
     pass
 
 
@@ -41,7 +43,7 @@ def test_mode_switch_cli():
     "../features/reasoning_mode_cli.feature",
     "Invalid reasoning mode via CLI",
 )
-def test_invalid_mode_cli():
+def test_invalid_mode_cli() -> None:
     pass
 
 
@@ -49,18 +51,15 @@ def test_invalid_mode_cli():
     "../features/reasoning_mode_cli.feature",
     "Invalid reasoning mode via SPARQL CLI",
 )
-def test_invalid_mode_sparql_cli():
+def test_invalid_mode_sparql_cli() -> None:
     pass
 
 
 @given(
     parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
 )
-def loops_config(count: int, monkeypatch):
-    cfg = ConfigModel.model_construct(
-        agents=["Synthesizer", "Contrarian", "FactChecker"],
-        loops=count,
-    )
+def loops_config(count: int, monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
+    cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     return cfg
 
@@ -69,20 +68,22 @@ def loops_config(count: int, monkeypatch):
     parsers.parse('I run `autoresearch search "{query}" --mode {mode}`'),
     target_fixture="run_result",
 )
-def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
+def run_search(
+    query: str, mode: str, config: ConfigModel, cli_runner: CliRunner
+) -> PayloadDict:
     record: list[str] = []
-    params: dict[str, Any] = {}
+    params: PayloadDict = {}
     logs: list[str] = []
-    state = {"active": True}
+    state: dict[str, bool] = {"active": True}
 
     class DummyAgent:
         def __init__(self, name: str) -> None:
             self.name = name
 
-        def can_execute(self, *args, **kwargs) -> bool:
+        def can_execute(self, *args: object, **kwargs: object) -> bool:
             return True
 
-        def execute(self, *args, **kwargs) -> dict:
+        def execute(self, *args: object, **kwargs: object) -> PayloadDict:
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
@@ -102,7 +103,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
 
     original_parse = Orchestrator._parse_config
 
-    def spy_parse(cfg: ConfigModel):
+    def spy_parse(cfg: ConfigModel) -> PayloadDict:
         out = original_parse(cfg)
         params.update(out)
         return out
@@ -117,16 +118,17 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
             side_effect=spy_parse,
         ),
     ):
+        command = cast(Command, cli_app)
         result = cli_runner.invoke(
-            cli_app, ["search", query, "--mode", mode, "--output", "json"]
+            command, ["search", query, "--mode", mode, "--output", "json"]
         )
         if result.exit_code != 0:
             logs.append("unsupported reasoning mode")
     state["active"] = False
 
-    data: dict[str, Any] = {}
+    data: PayloadDict = {}
     try:
-        data = json.loads(result.stdout)
+        data = as_payload(json.loads(result.stdout))
     except Exception:
         lines = result.stdout.splitlines()
         start_idx = None
@@ -136,9 +138,9 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
                 break
         if start_idx is not None:
             try:
-                data = json.loads("\n".join(lines[start_idx:]))
+                data = as_payload(json.loads("\n".join(lines[start_idx:])))
             except Exception:
-                data: dict[str, Any] = {}
+                data = {}
     return as_payload({
         "record": record,
         "config_params": params,
@@ -155,21 +157,23 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
     parsers.parse('I run `autoresearch sparql "{query}" --mode {mode}`'),
     target_fixture="run_result",
 )
-def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
+def run_sparql(
+    query: str, mode: str, config: ConfigModel, cli_runner: CliRunner
+) -> PayloadDict:
     record: list[str] = []
-    params: dict[str, Any] = {}
+    params: PayloadDict = {}
     logs: list[str] = []
-    state = {"active": True}
+    state: dict[str, bool] = {"active": True}
 
-    def get_agent(name: str):
+    def get_agent(name: str) -> object:
         class DummyAgent:
             def __init__(self, n: str) -> None:
                 self.name = n
 
-            def can_execute(self, *args, **kwargs) -> bool:
+            def can_execute(self, *args: object, **kwargs: object) -> bool:
                 return True
 
-            def execute(self, *args, **kwargs) -> dict:
+            def execute(self, *args: object, **kwargs: object) -> PayloadDict:
                 record.append(self.name)
                 return as_payload({"claims": [], "results": {"final_answer": ""}})
 
@@ -177,7 +181,7 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
 
     original_parse = Orchestrator._parse_config
 
-    def spy_parse(cfg: ConfigModel):
+    def spy_parse(cfg: ConfigModel) -> PayloadDict:
         out = original_parse(cfg)
         params.update(out)
         return out
@@ -192,17 +196,18 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
             side_effect=spy_parse,
         ),
     ):
+        command = cast(Command, cli_app)
         result = cli_runner.invoke(
-            cli_app, ["sparql", query, "--mode", mode, "--output", "json"]
+            command, ["sparql", query, "--mode", mode, "--output", "json"]
         )
         if result.exit_code != 0:
             logs.append("unsupported reasoning mode")
     state["active"] = False
-    data: dict[str, Any] = {}
+    data: PayloadDict = {}
     try:
-        data = json.loads(result.stdout)
+        data = as_payload(json.loads(result.stdout))
     except Exception:
-        data: dict[str, Any] = {}
+        pass
     return as_payload({
         "record": record,
         "config_params": params,
@@ -216,23 +221,23 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
 
 
 @then("the CLI should exit successfully")
-def cli_success(run_result):
+def cli_success(run_result: PayloadDict) -> None:
     assert run_result["exit_code"] == 0
     assert run_result.get("stderr", "") == ""
 
 
 @then(parsers.parse("the loops used should be {count:d}"))
-def assert_loops(run_result: dict, count: int) -> None:
+def assert_loops(run_result: PayloadDict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
 
 
 @then(parsers.parse('the reasoning mode selected should be "{mode}"'))
-def assert_mode(run_result: dict, mode: str) -> None:
+def assert_mode(run_result: PayloadDict, mode: str) -> None:
     assert run_result["config_params"].get("mode") == ReasoningMode(mode)
 
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
-def assert_groups(run_result: dict, groups: str) -> None:
+def assert_groups(run_result: PayloadDict, groups: str) -> None:
     expected = [
         [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
     ]
@@ -240,26 +245,26 @@ def assert_groups(run_result: dict, groups: str) -> None:
 
 
 @then(parsers.parse('the agents executed should be "{order}"'))
-def assert_order(run_result: dict, order: str) -> None:
+def assert_order(run_result: PayloadDict, order: str) -> None:
     expected = [a.strip() for a in order.split(",")]
     assert run_result["record"] == expected
 
 
 @then(parsers.parse('the reasoning steps should be "{steps}"'))
-def assert_reasoning(run_result: dict, steps: str) -> None:
+def assert_reasoning(run_result: PayloadDict, steps: str) -> None:
     expected = [s.strip() for s in steps.split(";") if s.strip()]
     actual = [c.get("content") for c in run_result["data"].get("reasoning", [])]
     assert actual == expected
 
 
 @then(parsers.parse("the metrics should record {count:d} cycles"))
-def assert_metrics_cycles(run_result: dict, count: int) -> None:
+def assert_metrics_cycles(run_result: PayloadDict, count: int) -> None:
     metrics = run_result["data"].get("metrics", {}).get("execution_metrics", {})
     assert metrics.get("cycles_completed") == count
 
 
 @then(parsers.parse('the metrics should list agents "{agents}"'))
-def assert_metrics_agents(run_result: dict, agents: str) -> None:
+def assert_metrics_agents(run_result: PayloadDict, agents: str) -> None:
     expected = [a.strip() for a in agents.split(",") if a.strip()]
     metrics = run_result["data"].get("metrics", {}).get("execution_metrics", {})
     actual = list(metrics.get("agent_timings", {}).keys())
@@ -267,12 +272,12 @@ def assert_metrics_agents(run_result: dict, agents: str) -> None:
 
 
 @then("the CLI should exit with an error")
-def cli_error(run_result: dict) -> None:
+def cli_error(run_result: PayloadDict) -> None:
     assert run_result["exit_code"] != 0
     assert "mode" in run_result["output"].lower()
     assert run_result.get("stderr") not in (None, "")
 
 
 @then("no agents should execute")
-def assert_no_agents(run_result: dict) -> None:
+def assert_no_agents(run_result: PayloadDict) -> None:
     assert run_result["record"] == []

@@ -84,6 +84,7 @@ tasks:
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
       - uv run mypy src # distributed modules included; no exclude flag
+      - task mypy:behavior
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
@@ -380,6 +381,10 @@ tasks:
           set -eu
           uv run mypy src
           echo "[verify][mypy] src passed"
+      - |
+          set -eu
+          uv run mypy --strict tests/behavior
+          echo "[verify][mypy] behavior passed"
       - |
           set -eu
           uv run mypy tests/unit tests/integration

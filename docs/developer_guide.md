@@ -36,6 +36,7 @@ extension. Include the `git` extra when setting up the environment, for example:
  ```bash
   uv run flake8 src tests
   uv run mypy src
+  uv run mypy --strict tests/behavior
   ```
 - Public modules and functions should include concise docstrings.
 - Keep commits focused and avoid temporary files.
