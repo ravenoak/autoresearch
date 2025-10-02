@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Self
+from threading import RLock
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Protocol, Self, TypeVar
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic.functional_validators import model_validator
@@ -15,6 +16,25 @@ from .validators import (
     validate_reasoning_mode,
     validate_token_budget,
 )
+
+
+_ModelCopySelf = TypeVar("_ModelCopySelf", bound="SupportsModelCopy")
+
+
+class SupportsModelCopy(Protocol):
+    """Protocol documenting the ``model_copy`` contract for config models."""
+
+    def model_copy(
+        self: _ModelCopySelf,
+        *,
+        update: Mapping[str, Any] | None = ...,  # noqa: D401 - protocol stub
+        deep: bool | None = ...,
+        memo: dict[int, Any] | None = ...,
+    ) -> _ModelCopySelf:
+        """Return a copy of the model."""
+
+
+LOCK_TYPE = type(RLock())
 
 
 class ContextAwareSearchConfig(BaseModel):
@@ -459,14 +479,6 @@ class ConfigModel(BaseModel):
         description="Allow agents to exchange messages during cycles",
     )
 
-    if TYPE_CHECKING:  # pragma: no cover - typing helper for mypy
-        def model_copy(
-            self,
-            *,
-            update: Mapping[str, Any] | None = ...,  # noqa: D401 - typing stub
-            deep: bool | None = ...,
-        ) -> "ConfigModel":
-            """Return a copy of the configuration model."""
     enable_feedback: bool = Field(
         default=False,
         description="Enable cross-agent feedback messages",
@@ -586,15 +598,22 @@ class ConfigModel(BaseModel):
         self,
         *,
         update: Mapping[str, Any] | None = None,
-        deep: bool = False,
+        deep: bool | None = None,
+        memo: dict[int, Any] | None = None,
     ) -> Self:
         """Return a cloned configuration while preserving model typing."""
 
         payload = self.model_dump(mode="python")
-        if deep:
-            payload = copy.deepcopy(payload)
         if update:
             payload = {**payload, **dict(update)}
+
+        if deep:
+            effective_memo = dict(memo or {})
+            for value in self.__dict__.values():
+                if isinstance(value, LOCK_TYPE):
+                    effective_memo.setdefault(id(value), value)
+            payload = copy.deepcopy(payload, effective_memo)
+
         return type(self).model_validate(payload)
 
     model_config: ClassVar[SettingsConfigDict] = {"extra": "ignore"}
