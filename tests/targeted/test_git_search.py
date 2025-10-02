@@ -2,63 +2,35 @@
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
-import sys
 from collections.abc import Iterable
 from pathlib import Path
-from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 
+from tests.targeted.helpers.git import (
+    GitComponentTypes,
+    GitComponentsUnavailable,
+    load_git_components,
+)
+
 if TYPE_CHECKING:  # pragma: no cover - used only for static analysis
-    from git.search import SearchResult  # type: ignore[import-untyped]
+    from git.search import SearchResult
 
 
 @pytest.fixture()
-def git_components(monkeypatch: pytest.MonkeyPatch) -> tuple[type[Any], type[Any], type[Any]]:
+def git_components() -> GitComponentTypes:
     """Return Git search classes, installing stubs when extras are absent."""
 
     try:
-        git_module = importlib.import_module("git")
-    except ModuleNotFoundError:
-        repo_root = Path(__file__).resolve().parents[2]
-        stub_path = repo_root / "src" / "git" / "__init__.py"
-        spec = importlib.util.spec_from_file_location("git", stub_path)
-        if spec is None or spec.loader is None:  # pragma: no cover - defensive guard
-            pytest.skip("git module unavailable")
-        git_module = importlib.util.module_from_spec(spec)
-        sys.modules["git"] = git_module
-        spec.loader.exec_module(git_module)
-
-    git_module_typed: ModuleType = git_module
-    try:
-        search_module = importlib.import_module("git.search")
-    except ModuleNotFoundError:
-        search_module = None
-
-    git_searcher = getattr(git_module_typed, "GitSearcher", None)
-    search_result = getattr(git_module_typed, "SearchResult", None)
-    repo_cls = getattr(git_module_typed, "Repo", None)
-
-    if search_module is not None:
-        if git_searcher is None and hasattr(search_module, "GitSearcher"):
-            git_searcher = getattr(search_module, "GitSearcher")
-            monkeypatch.setattr(git_module_typed, "GitSearcher", git_searcher, raising=False)
-        if search_result is None and hasattr(search_module, "SearchResult"):
-            search_result = getattr(search_module, "SearchResult")
-            monkeypatch.setattr(git_module_typed, "SearchResult", search_result, raising=False)
-
-    if git_searcher is None or repo_cls is None or search_result is None:
-        pytest.skip("Git search components unavailable")
-
-    return git_searcher, repo_cls, search_result
+        return load_git_components()
+    except GitComponentsUnavailable as exc:
+        pytest.skip(str(exc))
 
 
 @pytest.mark.requires_git
 def test_build_index_tracks_files(
-    tmp_path: Path, git_components: tuple[type[Any], type[Any], type[Any]]
+    tmp_path: Path, git_components: GitComponentTypes
 ) -> None:
     """File contents are indexed by relative path."""
 
@@ -75,7 +47,7 @@ def test_build_index_tracks_files(
 
 @pytest.mark.requires_git
 def test_search_finds_file_and_commit(
-    tmp_path: Path, git_components: tuple[type[Any], type[Any], type[Any]]
+    tmp_path: Path, git_components: GitComponentTypes
 ) -> None:
     """Search returns matches from files and commit messages."""
 

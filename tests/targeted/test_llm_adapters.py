@@ -28,15 +28,31 @@ class RecordingResponse:
         return self._headers
 
 
-class RecordingSession:
+class DummyAdapter:
+    """Minimal adapter implementation satisfying ``RequestsAdapterProtocol``."""
+
+    def close(self) -> None:  # pragma: no cover - no resources to release
+        return None
+
+
+class RecordingSession(RequestsSessionProtocol):
     def __init__(self, response: RecordingResponse) -> None:
         self._response = response
         self.mounted: list[tuple[str, object]] = []
         self.requests: list[tuple[str, str, dict[str, Any]]] = []
         self._headers: dict[str, str] = {}
+        self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
+        self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
     def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         self.mounted.append((prefix, adapter))
+        self._adapters.append((prefix, adapter))
+
+    def get_adapter(self, url: str) -> RequestsAdapterProtocol:
+        for prefix, adapter in reversed(self._adapters):
+            if url.startswith(prefix):
+                return adapter
+        return self._adapters[-1][1] if self._adapters else self._default_adapter
 
     def close(self) -> None:
         pass
@@ -98,9 +114,11 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
     def boom(*args: Any, **kwargs: Any) -> RecordingResponse:  # pragma: no cover - type stub
         raise requests.RequestException("boom")
 
-    class FailingSession:
+    class FailingSession(RequestsSessionProtocol):
         def __init__(self) -> None:
             self._headers: dict[str, str] = {}
+            self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
+            self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
         def post(self, *args: Any, **kwargs: Any) -> RecordingResponse:
             return boom(*args, **kwargs)
@@ -108,7 +126,7 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
         def mount(
             self, prefix: str, adapter: RequestsAdapterProtocol
         ) -> None:  # pragma: no cover - not invoked
-            return None
+            self._adapters.append((prefix, adapter))
 
         def close(self) -> None:  # pragma: no cover - not invoked
             return None
@@ -118,6 +136,12 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
 
         def request(self, *args: Any, **kwargs: Any) -> RecordingResponse:  # pragma: no cover - type stub
             return boom(*args, **kwargs)
+
+        def get_adapter(self, url: str) -> RequestsAdapterProtocol:
+            for prefix, adapter in reversed(self._adapters):
+                if url.startswith(prefix):  # pragma: no cover - not used in tests
+                    return adapter
+            return self._adapters[-1][1] if self._adapters else self._default_adapter
 
         @property
         def headers(self) -> dict[str, str]:
