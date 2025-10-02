@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 from typing import TYPE_CHECKING
 
-"""Behavior step package."""
+"""Behavior step package with shared context and payload helpers."""
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         get_required,
         set_value,
     )
+    from tests.behavior.utils import PayloadDict, as_payload
 
     app_running: Callable[..., None]
     app_running_with_default: Callable[..., None]
@@ -37,6 +38,10 @@ else:
     get_required = _context.get_required
     get_optional = _context.get_optional
     set_value = _context.set_value
+
+    _utils = importlib.import_module("tests.behavior.utils")
+    PayloadDict = _utils.PayloadDict
+    as_payload = _utils.as_payload
 
 if not TYPE_CHECKING:
     # Import step modules so pytest-bdd discovers them when running the package.
@@ -67,4 +72,6 @@ __all__ = [
     "get_required",
     "get_optional",
     "set_value",
+    "PayloadDict",
+    "as_payload",
 ]
