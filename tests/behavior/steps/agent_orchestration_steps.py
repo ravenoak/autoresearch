@@ -1,4 +1,6 @@
 # flake8: noqa
+from tests.behavior.utils import as_payload
+from typing import Any
 from unittest.mock import patch
 from pytest_bdd import scenario, given, when, then, parsers
 import logging
@@ -64,7 +66,7 @@ def run_orchestrator_on_query(query):
         except ValueError:
             cfg.reasoning_mode = ReasoningMode.DIALECTICAL
     record = []
-    config_params = {}
+    config_params: dict[str, Any] = {}
 
     class DummyAgent:
         def __init__(self, name):
@@ -75,7 +77,7 @@ def run_orchestrator_on_query(query):
 
         def execute(self, state, config):
             record.append(self.name)
-            return {}
+            return as_payload({})
 
     def get_agent(name):
         return DummyAgent(name)
@@ -97,7 +99,7 @@ def run_orchestrator_on_query(query):
         orch = Orchestrator()
         orch.run_query(query, cfg)
 
-    return {"record": record, "config_params": config_params}
+    return as_payload({"record": record, "config_params": config_params})
 
 
 @then(parsers.parse('the agents executed should be "{order}"'))
@@ -145,7 +147,7 @@ def submit_query_via_cli(query, monkeypatch, cli_runner):
             idx = len(agent_invocations)
             logger.info("%s executing (cycle %s)", self.name, idx)
             agent_invocations.append(self.name)
-            return {}
+            return as_payload({})
 
     def get_agent(name: str):
         return DummyAgent(name)
@@ -166,7 +168,7 @@ def submit_query_via_cli(query, monkeypatch, cli_runner):
     ):
         result = cli_runner.invoke(cli_app, ["search", query])
 
-    return {"result": result, "agent_invocations": agent_invocations}
+    return as_payload({"result": result, "agent_invocations": agent_invocations})
 
 
 @then(

@@ -4,6 +4,7 @@ This module contains step definitions for verifying that tests clean up
 their side effects properly, including temporary files, environment variables,
 and handling cleanup errors.
 """
+from tests.behavior.utils import as_payload
 
 import os
 import tempfile
@@ -16,12 +17,12 @@ from unittest.mock import MagicMock
 @pytest.fixture
 def cleanup_extended_context():
     """Create a context for storing test state and tracking resources."""
-    return {
+    return as_payload({
         "temp_files": [],
         "env_vars": {},
         "original_env": {},
         "cleanup_errors": [],
-    }
+    })
 
 
 # Scenarios

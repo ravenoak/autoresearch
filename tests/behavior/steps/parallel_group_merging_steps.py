@@ -1,8 +1,9 @@
 """Step definitions for parallel group merging feature."""
 
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
-from typing import TypedDict
+from typing import TypedDict, cast
 
 from pytest_bdd import given, scenarios, then, when
 
@@ -28,7 +29,7 @@ class RunResult(TypedDict):
 @given("two agent groups", target_fixture="run_result")
 def two_agent_groups() -> RunResult:
     """Provide two distinct agent groups for the orchestrator."""
-    return {"groups": ["group_a", "group_b"], "reasoning": []}
+    return cast(RunResult, as_payload({"groups": ["group_a", "group_b"], "reasoning": []}))
 
 
 @when("the orchestrator runs them in parallel")

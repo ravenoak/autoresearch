@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then, parsers, given
 from unittest.mock import patch
 import pytest
@@ -52,7 +53,7 @@ def test_mcp_interface_consistency():
 
 
 @when(parsers.parse('I execute a query "{query}" via CLI'))
-def execute_query_via_cli(bdd_context, query):
+def execute_query_via_cli(bdd_context: BehaviorContext, query):
     """Execute a query via CLI."""
     # Mock CLI query execution
     with patch("autoresearch.main.search") as mock_query_command:
@@ -75,7 +76,7 @@ def execute_query_via_cli(bdd_context, query):
 
 
 @when("I open the Streamlit GUI")
-def open_streamlit_gui(bdd_context):
+def open_streamlit_gui(bdd_context: BehaviorContext):
     """Open the Streamlit GUI."""
     # Mock Streamlit app
     initial_state: dict[str, object] = {}
@@ -98,7 +99,7 @@ def open_streamlit_gui(bdd_context):
 
 
 @then(parsers.parse('the query history should include "{query}"'))
-def check_query_history(bdd_context, query):
+def check_query_history(bdd_context: BehaviorContext, query):
     """Check that the query history includes the specified query."""
     # Get the session state
     session_state = bdd_context["streamlit_session"]
@@ -114,7 +115,7 @@ def check_query_history(bdd_context, query):
 
 
 @then("I should be able to rerun the query from the GUI")
-def check_rerun_query(bdd_context):
+def check_rerun_query(bdd_context: BehaviorContext):
     """Check that I can rerun the query from the GUI."""
     # Mock Streamlit button press
     with patch("streamlit.button", return_value=True):
@@ -139,7 +140,7 @@ def check_rerun_query(bdd_context):
 
 
 @then("the results should be consistent with the CLI results")
-def check_consistent_results(bdd_context):
+def check_consistent_results(bdd_context: BehaviorContext):
     """Check that the results are consistent between CLI and GUI."""
     cli_result = bdd_context["cli_result"]
     gui_result = bdd_context["gui_result"]
@@ -152,7 +153,7 @@ def check_consistent_results(bdd_context):
 
 
 @when("I execute an invalid query via CLI")
-def execute_invalid_query_cli(bdd_context):
+def execute_invalid_query_cli(bdd_context: BehaviorContext):
     """Execute an invalid query via CLI."""
     # Mock CLI query execution with an error
     with patch("autoresearch.main.search") as mock_query_command:
@@ -170,14 +171,14 @@ def execute_invalid_query_cli(bdd_context):
 
 
 @then("I should receive a specific error message")
-def check_cli_error_message(bdd_context):
+def check_cli_error_message(bdd_context: BehaviorContext):
     """Check that I receive a specific error message."""
     assert "cli_error" in bdd_context
     assert "Invalid query" in bdd_context["cli_error"]
 
 
 @when("I execute the same invalid query via GUI")
-def execute_invalid_query_gui(bdd_context):
+def execute_invalid_query_gui(bdd_context: BehaviorContext):
     """Execute the same invalid query via GUI."""
     # Mock Streamlit query execution with an error
     with patch(
@@ -194,14 +195,14 @@ def execute_invalid_query_gui(bdd_context):
 
 
 @then("I should receive the same error message in the GUI")
-def check_gui_error_message(bdd_context):
+def check_gui_error_message(bdd_context: BehaviorContext):
     """Check that I receive the same error message in the GUI."""
     assert "gui_error" in bdd_context
     assert bdd_context["cli_error"] == bdd_context["gui_error"]
 
 
 @when("I update the configuration via CLI")
-def update_config_via_cli(bdd_context):
+def update_config_via_cli(bdd_context: BehaviorContext):
     """Update the configuration via CLI."""
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
@@ -217,7 +218,7 @@ def update_config_via_cli(bdd_context):
 
 
 @then("the GUI should reflect the updated configuration")
-def check_gui_config(bdd_context):
+def check_gui_config(bdd_context: BehaviorContext):
     """Check that the GUI reflects the updated configuration."""
     # Mock Streamlit config display
     with patch("streamlit.json") as mock_json:
@@ -231,7 +232,7 @@ def check_gui_config(bdd_context):
 
 
 @when("I update the configuration via GUI")
-def update_config_via_gui(bdd_context):
+def update_config_via_gui(bdd_context: BehaviorContext):
     """Update the configuration via GUI."""
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
@@ -247,7 +248,7 @@ def update_config_via_gui(bdd_context):
 
 
 @when("I check the configuration via CLI")
-def check_config_via_cli(bdd_context):
+def check_config_via_cli(bdd_context: BehaviorContext):
     """Check the configuration via CLI."""
     # In the real CLI this would print the configuration. For testing
     # we simply expose the stored configuration.
@@ -255,13 +256,13 @@ def check_config_via_cli(bdd_context):
 
 
 @then("the CLI should show the updated configuration")
-def check_cli_config_updated(bdd_context):
+def check_cli_config_updated(bdd_context: BehaviorContext):
     """Check that the CLI shows the updated configuration."""
     assert bdd_context["cli_config"] == bdd_context["updated_config"]
 
 
 @when("I execute a query via the A2A interface")
-def execute_query_via_a2a(bdd_context):
+def execute_query_via_a2a(bdd_context: BehaviorContext):
     """Execute a query via the A2A interface."""
     from autoresearch.a2a_interface import A2AInterface
     from a2a.utils.message import new_agent_text_message
@@ -288,7 +289,7 @@ def execute_query_via_a2a(bdd_context):
 
 
 @then("the response format should match the CLI response format")
-def check_response_format(bdd_context):
+def check_response_format(bdd_context: BehaviorContext):
     """Check that the interface response format matches the CLI format."""
     cli_result = QueryResponse(
         answer="Paris is the capital of France.",
@@ -309,7 +310,7 @@ def check_response_format(bdd_context):
 
 
 @then("the response should contain the same fields as the GUI response")
-def check_response_fields(bdd_context):
+def check_response_fields(bdd_context: BehaviorContext):
     """Check that the response contains the same fields as the GUI response."""
     expected_fields = ["answer", "reasoning", "citations", "metrics"]
 
@@ -319,7 +320,7 @@ def check_response_fields(bdd_context):
 
 
 @then("the error handling should be consistent with other interfaces")
-def check_error_handling(bdd_context):
+def check_error_handling(bdd_context: BehaviorContext):
     """Ensure interface errors match CLI errors."""
     # Generate CLI error
     with patch("autoresearch.main.search") as mock_cli_query:
@@ -365,7 +366,7 @@ def check_error_handling(bdd_context):
 
 
 @when("I execute a query via the MCP interface")
-def execute_query_via_mcp(bdd_context):
+def execute_query_via_mcp(bdd_context: BehaviorContext):
     """Execute a query via the MCP interface."""
     # Mock MCP query execution
     with patch("autoresearch.mcp_interface.query") as mock_mcp_query:

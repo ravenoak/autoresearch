@@ -1,4 +1,6 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
+from typing import Any
 
 import json
 from unittest.mock import patch
@@ -69,7 +71,7 @@ def loops_config(count: int, monkeypatch):
 )
 def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
     record: list[str] = []
-    params: dict = {}
+    params: dict[str, Any] = {}
     logs: list[str] = []
     state = {"active": True}
 
@@ -84,7 +86,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return {
+            return as_payload({
                 "claims": [
                     {
                         "id": str(step),
@@ -93,7 +95,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
                     }
                 ],
                 "results": {"final_answer": content},
-            }
+            })
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -122,7 +124,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
             logs.append("unsupported reasoning mode")
     state["active"] = False
 
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = json.loads(result.stdout)
     except Exception:
@@ -136,8 +138,8 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
             try:
                 data = json.loads("\n".join(lines[start_idx:]))
             except Exception:
-                data = {}
-    return {
+                data: dict[str, Any] = {}
+    return as_payload({
         "record": record,
         "config_params": params,
         "exit_code": result.exit_code,
@@ -146,7 +148,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
         "stderr": result.stderr,
         "logs": logs,
         "state": state,
-    }
+    })
 
 
 @when(
@@ -155,7 +157,7 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
 )
 def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
     record: list[str] = []
-    params: dict = {}
+    params: dict[str, Any] = {}
     logs: list[str] = []
     state = {"active": True}
 
@@ -169,7 +171,7 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
 
             def execute(self, *args, **kwargs) -> dict:
                 record.append(self.name)
-                return {"claims": [], "results": {"final_answer": ""}}
+                return as_payload({"claims": [], "results": {"final_answer": ""}})
 
         return DummyAgent(name)
 
@@ -196,12 +198,12 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
         if result.exit_code != 0:
             logs.append("unsupported reasoning mode")
     state["active"] = False
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = json.loads(result.stdout)
     except Exception:
-        data = {}
-    return {
+        data: dict[str, Any] = {}
+    return as_payload({
         "record": record,
         "config_params": params,
         "exit_code": result.exit_code,
@@ -210,7 +212,7 @@ def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
         "stderr": result.stderr,
         "logs": logs,
         "state": state,
-    }
+    })
 
 
 @then("the CLI should exit successfully")

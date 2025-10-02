@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 import subprocess
 
 from pytest_bdd import scenario, then, when
@@ -7,7 +8,7 @@ from autoresearch.main import app as cli_app
 
 @when("I run `autoresearch gui --port 8502 --no-browser`")
 def run_gui_no_browser(
-    cli_runner, bdd_context, monkeypatch, temp_config, isolate_network
+    cli_runner, bdd_context: BehaviorContext, monkeypatch, temp_config, isolate_network
 ):
     calls: list = []
 
@@ -23,13 +24,13 @@ def run_gui_no_browser(
 
 
 @when("I run `autoresearch gui --help`")
-def run_gui_help(cli_runner, bdd_context, temp_config, isolate_network):
+def run_gui_help(cli_runner, bdd_context: BehaviorContext, temp_config, isolate_network):
     result = cli_runner.invoke(cli_app, ["gui", "--help"], catch_exceptions=False)
     bdd_context["result"] = result
 
 
 @when("I run `autoresearch gui --port not-a-number`")
-def run_gui_invalid_port(cli_runner, bdd_context, temp_config, isolate_network):
+def run_gui_invalid_port(cli_runner, bdd_context: BehaviorContext, temp_config, isolate_network):
     result = cli_runner.invoke(
         cli_app, ["gui", "--port", "not-a-number"], catch_exceptions=False
     )
@@ -37,7 +38,7 @@ def run_gui_invalid_port(cli_runner, bdd_context, temp_config, isolate_network):
 
 
 @then("the CLI should exit successfully")
-def cli_success(bdd_context):
+def cli_success(bdd_context: BehaviorContext):
     result = bdd_context["result"]
     assert result.exit_code == 0
     assert result.stdout != ""

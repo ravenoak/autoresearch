@@ -1,6 +1,7 @@
 """Step definitions for API authentication and rate limiting."""
 
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 import importlib
 
@@ -71,7 +72,7 @@ def _install_orchestrator_stub(monkeypatch: pytest.MonkeyPatch) -> None:
             answer="ok",
             citations=[],
             reasoning=[],
-            metrics={},
+            metrics=empty_metrics(),
         )
 
     monkeypatch.setattr(Orchestrator, "run_query", _run_query_stub)

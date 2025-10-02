@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 import sys
 import types
 
@@ -22,7 +23,7 @@ def capabilities_env(monkeypatch):
 
 
 @when("I run the capabilities command")
-def run_capabilities(cli_runner, bdd_context):
+def run_capabilities(cli_runner, bdd_context: BehaviorContext):
     result = cli_runner.invoke(cli_app, ["capabilities"])
     bdd_context["result"] = result
 

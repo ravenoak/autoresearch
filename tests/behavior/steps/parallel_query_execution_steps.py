@@ -4,6 +4,8 @@ This module contains step definitions for testing the parallel query execution
 functionality of the orchestrator, including running multiple agent groups in
 parallel, handling errors, and synthesizing results.
 """
+from tests.behavior.utils import as_payload
+from typing import Any
 
 import time
 import pytest
@@ -20,7 +22,7 @@ from autoresearch.models import QueryResponse
 @pytest.fixture
 def test_context():
     """Create a context for storing test state."""
-    return {
+    return as_payload({
         "config": None,
         "agent_groups": [],
         "executed_groups": [],
@@ -28,14 +30,14 @@ def test_context():
         "errors": [],
         "start_time": 0,
         "end_time": 0,
-    }
+    })
 
 
 @pytest.fixture
 def mock_agent_factory():
     """Create a mock agent factory for testing."""
     factory = MagicMock()
-    agents = {}
+    agents: dict[str, Any] = {}
 
     def get_agent(name):
         if name not in agents:

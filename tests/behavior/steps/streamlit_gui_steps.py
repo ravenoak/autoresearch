@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 from collections.abc import Iterator
 from contextlib import ExitStack
@@ -427,7 +428,7 @@ def check_config_used(bdd_context: BehaviorContext) -> None:
 
     with patch(
         "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
-        return_value=QueryResponse(answer="", citations=[], reasoning=[], metrics={}),
+        return_value=QueryResponse(answer="", citations=[], reasoning=[], metrics=empty_metrics()),
     ) as mock_run:
         from autoresearch.orchestration.orchestrator import Orchestrator
         from autoresearch.config.models import ConfigModel

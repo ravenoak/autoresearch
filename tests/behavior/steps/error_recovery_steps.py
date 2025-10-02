@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 import types
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -432,7 +433,7 @@ def reliable_agent(
             return True
 
         def execute(self, *args: object, **kwargs: object) -> dict[str, Any]:
-            return {}
+            return as_payload({})
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
     monkeypatch.setattr(
@@ -461,7 +462,7 @@ def storage_failure_agent(
 
         def execute(self, *args: object, **kwargs: object) -> dict[str, Any]:
             StorageManager.persist_claim({"id": "1"})
-            return {"claims": [], "results": {}}
+            return as_payload({"claims": [], "results": {}})
 
     monkeypatch.setattr(StorageManager, "persist_claim", fail_persist)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)

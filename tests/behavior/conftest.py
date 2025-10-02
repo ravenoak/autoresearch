@@ -31,6 +31,7 @@ from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
 from tests.behavior.context import BehaviorContext  # noqa: E402
+from tests.behavior.utils import ensure_dict  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 from tests.typing_helpers import TypedFixture
 
@@ -61,6 +62,7 @@ pytest_plugins = (
     "pytest_bdd",
     "tests.behavior.fixtures",
     "tests.behavior.steps",
+    "tests.behavior.utils",
 )
 
 
@@ -98,7 +100,7 @@ def pytest_configure(config: pytest.Config) -> None:
 @pytest.fixture
 def test_context() -> TypedFixture[BehaviorContext]:
     """Mutable mapping for sharing state in behavior tests."""
-    return {}
+    return ensure_dict()
 
 
 @pytest.fixture

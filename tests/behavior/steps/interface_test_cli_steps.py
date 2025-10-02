@@ -1,16 +1,18 @@
+from tests.behavior.utils import as_payload
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then
 from autoresearch.main import app as cli_app
 
 
 @when('I run `autoresearch test_mcp --host 127.0.0.1 --port 8080`')
-def run_test_mcp(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
+def run_test_mcp(cli_runner, bdd_context: BehaviorContext, monkeypatch, temp_config, isolate_network):
 
     class DummyClient:
         def __init__(self, host='127.0.0.1', port=8080):
             pass
 
         def run_test_suite(self):
-            return {'connection_test': {'status': 'success'}}
+            return as_payload({'connection_test': {'status': 'success'}})
     monkeypatch.setattr('autoresearch.main.app.MCPTestClient', DummyClient)
     monkeypatch.setattr('autoresearch.main.app.format_test_results', lambda r, f: 'ok')
     result = cli_runner.invoke(
@@ -22,7 +24,7 @@ def run_test_mcp(cli_runner, bdd_context, monkeypatch, temp_config, isolate_netw
 
 
 @when('I run `autoresearch test_mcp --port 9`')
-def run_test_mcp_fail(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
+def run_test_mcp_fail(cli_runner, bdd_context: BehaviorContext, monkeypatch, temp_config, isolate_network):
 
     class FailingClient:
         def __init__(self, host='127.0.0.1', port=9):
@@ -33,14 +35,14 @@ def run_test_mcp_fail(cli_runner, bdd_context, monkeypatch, temp_config, isolate
 
 
 @when('I run `autoresearch test_a2a --host 127.0.0.1 --port 8765`')
-def run_test_a2a(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
+def run_test_a2a(cli_runner, bdd_context: BehaviorContext, monkeypatch, temp_config, isolate_network):
 
     class DummyClient:
         def __init__(self, host='127.0.0.1', port=8765):
             pass
 
         def run_test_suite(self):
-            return {'connection_test': {'status': 'success'}}
+            return as_payload({'connection_test': {'status': 'success'}})
     monkeypatch.setattr('autoresearch.main.app.A2ATestClient', DummyClient)
     monkeypatch.setattr('autoresearch.main.app.format_test_results', lambda r, f: 'ok')
     result = cli_runner.invoke(
@@ -52,7 +54,7 @@ def run_test_a2a(cli_runner, bdd_context, monkeypatch, temp_config, isolate_netw
 
 
 @when('I run `autoresearch test_a2a --port 9`')
-def run_test_a2a_fail(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
+def run_test_a2a_fail(cli_runner, bdd_context: BehaviorContext, monkeypatch, temp_config, isolate_network):
 
     class FailingClient:
         def __init__(self, host='127.0.0.1', port=9):
@@ -63,14 +65,14 @@ def run_test_a2a_fail(cli_runner, bdd_context, monkeypatch, temp_config, isolate
 
 
 @then('the CLI should exit successfully')
-def cli_success(bdd_context):
+def cli_success(bdd_context: BehaviorContext):
     result = bdd_context['result']
     assert result.exit_code == 0
     assert result.stderr == ''
 
 
 @then('the CLI should exit with an error')
-def cli_error(bdd_context):
+def cli_error(bdd_context: BehaviorContext):
     result = bdd_context['result']
     assert result.exit_code != 0
     assert result.stderr != '' or result.exception is not None

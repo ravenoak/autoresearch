@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenarios, when, then, parsers
 
 from autoresearch.orchestration import ReasoningMode
@@ -8,10 +9,10 @@ scenarios("../features/reasoning_modes.feature")
 
 
 @when(parsers.parse('a reasoning mode "{mode}" is chosen'))
-def choose_mode(bdd_context, mode):
+def choose_mode(bdd_context: BehaviorContext, mode):
     bdd_context["mode"] = ReasoningMode(mode)
 
 
 @then(parsers.parse('bdd_context records mode "{mode}"'))
-def record_mode(bdd_context, mode):
+def record_mode(bdd_context: BehaviorContext, mode):
     assert bdd_context.get("mode") == ReasoningMode(mode)

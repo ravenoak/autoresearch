@@ -1,6 +1,8 @@
 """Step definitions for server command scenarios."""
+from tests.behavior.context import BehaviorContext
 
 import threading
+from typing import Any
 from unittest.mock import MagicMock
 
 from pytest_bdd import scenario, then, when
@@ -9,21 +11,21 @@ from autoresearch.main import app as cli_app
 
 
 @when("I run `autoresearch serve --help`")
-def run_serve_help(cli_runner, bdd_context):
+def run_serve_help(cli_runner, bdd_context: BehaviorContext):
     """Invoke the `serve` command with help flag."""
     result = cli_runner.invoke(cli_app, ["serve", "--help"])
     bdd_context["result"] = result
 
 
 @when("I run `autoresearch serve-a2a --help`")
-def run_a2a_help(cli_runner, bdd_context):
+def run_a2a_help(cli_runner, bdd_context: BehaviorContext):
     """Invoke the `serve-a2a` command with help flag."""
     result = cli_runner.invoke(cli_app, ["serve-a2a", "--help"])
     bdd_context["result"] = result
 
 
 @when("I run `autoresearch serve-a2a`")
-def run_a2a(cli_runner, monkeypatch, bdd_context):
+def run_a2a(cli_runner, monkeypatch, bdd_context: BehaviorContext):
     """Start and stop the A2A server."""
     mock_interface = MagicMock()
     mock_ctor = MagicMock(return_value=mock_interface)
@@ -33,7 +35,7 @@ def run_a2a(cli_runner, monkeypatch, bdd_context):
         lambda _x: (_ for _ in ()).throw(KeyboardInterrupt()),
     )
 
-    result_container: dict = {}
+    result_container: dict[str, Any] = {}
 
     def invoke() -> None:
         result_container["result"] = cli_runner.invoke(cli_app, ["serve-a2a"])
@@ -52,7 +54,7 @@ def run_a2a(cli_runner, monkeypatch, bdd_context):
 
 
 @then("the CLI should exit successfully")
-def cli_success(bdd_context):
+def cli_success(bdd_context: BehaviorContext):
     """Confirm the command completed without errors."""
     result = bdd_context["result"]
     assert result.exit_code == 0
@@ -61,7 +63,7 @@ def cli_success(bdd_context):
 
 
 @then("the A2A server should start and stop")
-def a2a_started_and_stopped(bdd_context):
+def a2a_started_and_stopped(bdd_context: BehaviorContext):
     """Check that the server lifecycle executed."""
     result = bdd_context["result"]
     mock_interface = bdd_context["mock_interface"]

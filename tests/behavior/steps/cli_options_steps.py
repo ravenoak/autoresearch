@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 from dataclasses import dataclass
 from typing import Callable
@@ -78,7 +79,7 @@ def _install_query_stub(
         storage_manager: object | None = None,
     ) -> QueryResponse:
         set_value(bdd_context, "captured_config", cfg)
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics=empty_metrics())
 
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel())
@@ -183,7 +184,7 @@ def run_parallel_cli(
         agent_groups: list[list[str]],
     ) -> QueryResponse:
         set_value(bdd_context, "captured_config", cfg)
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics=empty_metrics())
 
     monkeypatch.setattr(Orchestrator, "run_parallel_query", mock_parallel)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel())

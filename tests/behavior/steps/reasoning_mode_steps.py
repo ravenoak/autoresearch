@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 import json
 from dataclasses import dataclass, field
@@ -320,7 +321,7 @@ def run_orchestrator(
 
         def execute(self, *args: object, **kwargs: object) -> dict[str, Any]:
             record.append(self.name)
-            return {}
+            return as_payload({})
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -545,7 +546,7 @@ def _run_orchestrator_with_failure(
             if overflow:
                 if call_count > config.loops:
                     raise NotFoundError("loop overflow")
-                return {}
+                return as_payload({})
             raise NotFoundError("missing resource")
 
     def get_agent(name: str, llm_adapter=None):

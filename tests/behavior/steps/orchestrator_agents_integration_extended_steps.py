@@ -5,6 +5,7 @@ the orchestrator and agents, including multiple loops, different reasoning modes
 and agent state persistence.
 """
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from typing import Any, Callable, MutableMapping, cast
 
@@ -58,7 +59,7 @@ def system_using_dummy_llm_adapter(
 @pytest.fixture
 def extended_test_context() -> ExtendedTestContext:
     """Create a context for storing test state."""
-    return {
+    return as_payload({
         "config": None,
         "agents": [],
         "executed_agents": [],
@@ -66,7 +67,7 @@ def extended_test_context() -> ExtendedTestContext:
         "loop_executions": {},
         "result": None,
         "errors": [],
-    }
+    })
 
 
 # Scenarios
@@ -433,11 +434,11 @@ def agent_that_modifies_state(
             state["counter"] = 1
         else:
             state["counter"] += 1
-        return {
+        return as_payload({
             "agent": "StateModifier",
             "result": f"Result from StateModifier (counter: {state['counter']})",
             "counter": state["counter"],
-        }
+        })
 
     state_modifying_agent.execute.side_effect = execute_with_state_modification
 

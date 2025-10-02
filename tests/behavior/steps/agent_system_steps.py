@@ -1,6 +1,8 @@
 """
 Step definitions for agent system feature.
 """
+from tests.behavior.utils import as_payload
+from typing import Any
 
 from pytest_bdd import scenario, given, when, then
 import pytest
@@ -51,7 +53,7 @@ def examine_their_code(have_multiple_agent_implementations):
     """Examine the code of multiple agent implementations."""
     agents = have_multiple_agent_implementations
     # Store the source code of each agent for later analysis
-    agent_sources = {}
+    agent_sources: dict[str, Any] = {}
     for agent_class in agents:
         agent_sources[agent_class.__name__] = inspect.getsource(agent_class)
     return agent_sources
@@ -286,7 +288,7 @@ def create_prompt_with_template(template_registry):
         "test.template", agent_name="TestAgent", variable="test value"
     )
 
-    return {"template": test_template, "rendered": rendered}
+    return as_payload({"template": test_template, "rendered": rendered})
 
 
 @pytest.fixture
@@ -395,7 +397,7 @@ def have_agent_specific_configuration():
         },
     }
 
-    return {"valid": valid_config, "invalid": invalid_config}
+    return as_payload({"valid": valid_config, "invalid": invalid_config})
 
 
 @pytest.fixture
@@ -419,7 +421,7 @@ def load_configuration(agent_configs):
     with pytest.raises(ValueError) as excinfo:
         AgentConfig(**invalid_config)
 
-    return {"valid_config": valid_config, "error": str(excinfo.value)}
+    return as_payload({"valid_config": valid_config, "error": str(excinfo.value)})
 
 
 @pytest.fixture

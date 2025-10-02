@@ -1,4 +1,6 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
+from tests.behavior.context import BehaviorContext
 
 from pytest_bdd import given, then, when
 
@@ -9,7 +11,7 @@ from autoresearch.orchestration.state_registry import QueryStateRegistry
 
 
 @given("a stored query state with claim audits")
-def stored_query_state(bdd_context, monkeypatch):
+def stored_query_state(bdd_context: BehaviorContext, monkeypatch):
     """Create and register a query state with baseline claim audits."""
 
     state = QueryState(query="Reverify scenario")
@@ -32,7 +34,7 @@ def stored_query_state(bdd_context, monkeypatch):
     def fake_execute(self, run_state, run_config):
         overrides = run_state.metadata.get("_reverify_options", {})
         bdd_context["captured_options"] = dict(overrides)
-        return {
+        return as_payload({
             "claims": [],
             "metadata": {},
             "results": {},
@@ -70,7 +72,7 @@ def stored_query_state(bdd_context, monkeypatch):
                     },
                 }
             ],
-        }
+        })
 
     monkeypatch.setattr(
         "autoresearch.orchestration.reverify.FactChecker.execute",
@@ -80,7 +82,7 @@ def stored_query_state(bdd_context, monkeypatch):
 
 
 @when("I request claim re-verification with broadened sources")
-def request_reverification(bdd_context):
+def request_reverification(bdd_context: BehaviorContext):
     """Trigger the re-verification workflow with broader retrieval."""
 
     response = run_reverification(
@@ -92,7 +94,7 @@ def request_reverification(bdd_context):
 
 
 @then("the refreshed audits should replace the previous results")
-def refreshed_audits_replace_previous(bdd_context):
+def refreshed_audits_replace_previous(bdd_context: BehaviorContext):
     """Ensure that refreshed audits override the baseline ones."""
 
     response = bdd_context["reverify_response"]
@@ -105,7 +107,7 @@ def refreshed_audits_replace_previous(bdd_context):
 
 
 @then("the registry snapshot should include the broadened provenance")
-def registry_snapshot_includes_broadened_metadata(bdd_context):
+def registry_snapshot_includes_broadened_metadata(bdd_context: BehaviorContext):
     """Validate that provenance captures broadened retrieval parameters."""
 
     options = bdd_context.get("captured_options", {})

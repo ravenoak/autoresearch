@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 from collections.abc import Iterator
 from typing import Any
@@ -94,7 +95,7 @@ def run_search_visualize(
     )
 
     def dummy_run_query(*_args: Any, **_kwargs: Any) -> QueryResponse:
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics=empty_metrics())
 
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
     result = cli_runner.invoke(cli_app, ["search", query, "--visualize"])

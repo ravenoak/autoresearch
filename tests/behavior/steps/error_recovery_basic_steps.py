@@ -1,4 +1,5 @@
-from typing import TypedDict
+from tests.behavior.utils import as_payload
+from typing import TypedDict, cast
 
 from pytest_bdd import given, scenario, then, when
 
@@ -24,7 +25,7 @@ def test_basic_error_recovery() -> None:
 
 @given("a failing operation", target_fixture="run_result")
 def failing_operation() -> RunResult:
-    return {"recovery_info": {}}
+    return cast(RunResult, as_payload({"recovery_info": {}}))
 
 
 @when("recovery is attempted")

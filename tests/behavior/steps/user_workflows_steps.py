@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 import pytest
 from pytest_bdd import given, scenario, then, when
 
@@ -15,7 +16,7 @@ pytest_plugins = [
 
 
 @scenario("../features/user_workflows.feature", "CLI search completes successfully")
-def test_cli_workflow(bdd_context):
+def test_cli_workflow(bdd_context: BehaviorContext):
     assert bdd_context["result"].exit_code == 0
 
 
@@ -23,7 +24,7 @@ def test_cli_workflow(bdd_context):
     "../features/user_workflows.feature",
     "CLI search with invalid backend reports error",
 )
-def test_cli_workflow_invalid_backend(bdd_context):
+def test_cli_workflow_invalid_backend(bdd_context: BehaviorContext):
     assert bdd_context["result"].exit_code != 0
 
 
@@ -45,7 +46,7 @@ def test_layered_ux_guidance() -> None:
 
 
 @given("a layered depth payload with claim audits")
-def layered_payload(bdd_context) -> None:
+def layered_payload(bdd_context: BehaviorContext) -> None:
     """Build a standard-depth payload containing claim audits."""
 
     response = QueryResponse(
@@ -75,7 +76,7 @@ def layered_payload(bdd_context) -> None:
 
 
 @when("I derive layered UX guidance")
-def derive_guidance(bdd_context) -> None:
+def derive_guidance(bdd_context: BehaviorContext) -> None:
     """Derive toggle defaults and Socratic prompts."""
 
     payload = bdd_context["depth_payload"]
@@ -84,7 +85,7 @@ def derive_guidance(bdd_context) -> None:
 
 
 @then("the layered payload exposes claim toggles")
-def assert_claim_toggles(bdd_context) -> None:
+def assert_claim_toggles(bdd_context: BehaviorContext) -> None:
     """Ensure the claim table toggle is available and enabled."""
 
     toggles = bdd_context["toggle_defaults"]
@@ -93,7 +94,7 @@ def assert_claim_toggles(bdd_context) -> None:
 
 
 @then("Socratic prompts include claim follow-ups")
-def assert_socratic_prompts(bdd_context) -> None:
+def assert_socratic_prompts(bdd_context: BehaviorContext) -> None:
     """Verify generated Socratic prompts reference the claim."""
 
     prompts = bdd_context["socratic_prompts"]

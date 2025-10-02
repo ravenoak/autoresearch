@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.main import app as cli_app
@@ -21,7 +22,7 @@ def work_dir(tmp_path, monkeypatch):
 def run_config_init(
     work_dir,
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     isolate_network,
     restore_environment,
 ):
@@ -30,7 +31,7 @@ def run_config_init(
 
 
 @when("I run `autoresearch config validate`")
-def run_config_validate(cli_runner, bdd_context, isolate_network, restore_environment):
+def run_config_validate(cli_runner, bdd_context: BehaviorContext, isolate_network, restore_environment):
     result = cli_runner.invoke(cli_app, ["config", "validate"])
     bdd_context["result"] = result
 
@@ -42,7 +43,7 @@ def run_config_validate(cli_runner, bdd_context, isolate_network, restore_enviro
 )
 def run_config_reasoning(
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     mode: str,
     loops: int,
     isolate_network,
@@ -57,7 +58,7 @@ def run_config_reasoning(
 @when(parsers.parse('I run `autoresearch config reasoning --mode {mode}`'))
 def run_config_reasoning_mode_only(
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     mode: str,
     isolate_network,
     restore_environment,
@@ -73,12 +74,12 @@ def check_config_files(work_dir):
 
 
 @then("the CLI should exit successfully")
-def cli_success(bdd_context):
+def cli_success(bdd_context: BehaviorContext):
     assert_cli_success(bdd_context["result"])
 
 
 @then("the CLI should exit with an error")
-def cli_error(bdd_context):
+def cli_error(bdd_context: BehaviorContext):
     assert_cli_error(bdd_context["result"])
 
 
@@ -95,7 +96,7 @@ def assert_loops(work_dir, loops: int):
 
 
 @then(parsers.parse('the error message should contain "{text}"'))
-def error_message_contains(bdd_context, text: str):
+def error_message_contains(bdd_context: BehaviorContext, text: str):
     exc = bdd_context["result"].exception
     assert exc is not None, "Expected an exception but none occurred"
     assert text in str(exc)

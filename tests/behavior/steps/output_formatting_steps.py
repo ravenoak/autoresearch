@@ -1,4 +1,5 @@
 # flake8: noqa
+from tests.behavior.context import BehaviorContext
 import json
 from pytest_bdd import scenario, when, then, parsers
 
@@ -6,7 +7,7 @@ from .common_steps import app_running, app_running_with_default, application_run
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in TTY mode'))
-def run_in_terminal(query, monkeypatch, bdd_context, cli_runner):
+def run_in_terminal(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     result = cli_runner.invoke(cli_app, ["search", query])
     bdd_context["terminal_result"] = result
@@ -15,7 +16,7 @@ def run_in_terminal(query, monkeypatch, bdd_context, cli_runner):
 @then(
     "the output should be in Markdown with sections `# Answer`, `## Citations`, `## Reasoning`, and `## Metrics`"
 )
-def check_markdown_output(bdd_context):
+def check_markdown_output(bdd_context: BehaviorContext):
     result = bdd_context["terminal_result"]
     output = result.stdout
     assert "# Answer" in output
@@ -26,7 +27,7 @@ def check_markdown_output(bdd_context):
 
 
 @when(parsers.parse('I run `autoresearch search "{query}" | cat`'))
-def run_piped(query, monkeypatch, bdd_context, cli_runner):
+def run_piped(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     result = cli_runner.invoke(cli_app, ["search", query])
@@ -36,7 +37,7 @@ def run_piped(query, monkeypatch, bdd_context, cli_runner):
 @then(
     "the output should be valid JSON with keys `answer`, `citations`, `reasoning`, and `metrics`"
 )
-def check_json_output(bdd_context):
+def check_json_output(bdd_context: BehaviorContext):
     result = bdd_context["piped_result"]
     output = result.stdout
     data = json.loads(output)
@@ -48,13 +49,13 @@ def check_json_output(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output json`'))
-def run_with_json_flag(query, monkeypatch, bdd_context, cli_runner):
+def run_with_json_flag(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     result = cli_runner.invoke(cli_app, ["search", query, "--output", "json"])
     bdd_context["json_flag_result"] = result
 
 
 @then("the output should be valid JSON regardless of terminal context")
-def check_json_output_with_flag(bdd_context):
+def check_json_output_with_flag(bdd_context: BehaviorContext):
     result = bdd_context["json_flag_result"]
     output = result.stdout
     data = json.loads(output)
@@ -66,13 +67,13 @@ def check_json_output_with_flag(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output markdown`'))
-def run_with_markdown_flag(query, monkeypatch, bdd_context, cli_runner):
+def run_with_markdown_flag(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     result = cli_runner.invoke(cli_app, ["search", query, "--output", "markdown"])
     bdd_context["markdown_flag_result"] = result
 
 
 @then("the output should be Markdown-formatted as in TTY mode")
-def check_markdown_output_with_flag(bdd_context):
+def check_markdown_output_with_flag(bdd_context: BehaviorContext):
     result = bdd_context["markdown_flag_result"]
     output = result.stdout
     assert "# Answer" in output
@@ -83,38 +84,38 @@ def check_markdown_output_with_flag(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output graph`'))
-def run_with_graph_flag(query, bdd_context, cli_runner):
+def run_with_graph_flag(query, bdd_context: BehaviorContext, cli_runner):
     result = cli_runner.invoke(cli_app, ["search", query, "--output", "graph"])
     bdd_context["graph_flag_result"] = result
 
 
 @then('the output should include "Knowledge Graph"')
-def check_graph_output(bdd_context):
+def check_graph_output(bdd_context: BehaviorContext):
     result = bdd_context["graph_flag_result"]
     assert "Knowledge Graph" in result.stdout
     assert result.stderr == ""
 
 
 @scenario("../features/output_formatting.feature", "Default TTY output")
-def test_default_tty_output(bdd_context):
+def test_default_tty_output(bdd_context: BehaviorContext):
     assert bdd_context["terminal_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Piped output defaults to JSON")
-def test_piped_json_output(bdd_context):
+def test_piped_json_output(bdd_context: BehaviorContext):
     assert bdd_context["piped_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Explicit JSON flag")
-def test_explicit_json_flag(bdd_context):
+def test_explicit_json_flag(bdd_context: BehaviorContext):
     assert bdd_context["json_flag_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Explicit Markdown flag")
-def test_explicit_markdown_flag(bdd_context):
+def test_explicit_markdown_flag(bdd_context: BehaviorContext):
     assert bdd_context["markdown_flag_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Graph output format")
-def test_graph_output(bdd_context):
+def test_graph_output(bdd_context: BehaviorContext):
     assert bdd_context["graph_flag_result"].exit_code == 0
