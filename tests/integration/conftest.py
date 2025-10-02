@@ -9,6 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app as api_app
+from autoresearch.distributed.broker import (
+    MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
+)
 from tests.integration._orchestrator_stubs import (
     AgentDouble,
     BrokerQueueStub,
@@ -122,7 +126,7 @@ def search_baseline(
 
 AgentGetter = Callable[[str], AgentDouble]
 PersistCallable = Callable[[dict[str, Any], bool], None]
-QueuePatcher = Callable[[BrokerQueueStub | None], BrokerQueueStub]
+QueuePatcher = Callable[[StorageBrokerQueueProtocol | None], StorageBrokerQueueProtocol]
 
 
 @pytest.fixture
@@ -161,7 +165,11 @@ def stub_storage_queue(
 ) -> TypedFixture[QueuePatcher]:
     """Return a helper that injects a :class:`BrokerQueueStub` instance."""
 
-    def _apply(queue: BrokerQueueStub | None = None) -> BrokerQueueStub:
-        return patch_storage_queue(monkeypatch, queue)
+    def _apply(
+        queue: StorageBrokerQueueProtocol | None = None,
+    ) -> StorageBrokerQueueProtocol:
+        stub = patch_storage_queue(monkeypatch, queue)
+        queue_view: MessageQueueProtocol = stub
+        return cast(StorageBrokerQueueProtocol, queue_view)
 
     return cast(TypedFixture[QueuePatcher], _apply)
