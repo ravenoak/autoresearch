@@ -87,6 +87,25 @@ def test_query_state_registry_clone_produces_independent_copies() -> None:
     second_state._lock.release()
 
 
+def test_query_state_model_copy_deep_clone_separates_mutable_data() -> None:
+    """`model_copy(deep=True)` keeps locks healthy and nested data independent."""
+
+    state = QueryState(query="memoized-locks")
+    state.metadata["nested"] = {"inner": {"value": 1}}
+
+    state_id = QueryStateRegistry.register(state, ConfigModel())
+    stored_state = QueryStateRegistry._store[state_id].state
+
+    clone = stored_state.model_copy(deep=True)
+
+    clone.metadata["nested"]["inner"]["value"] = 5
+
+    assert stored_state.metadata["nested"]["inner"]["value"] == 1
+    assert clone.metadata["nested"]["inner"]["value"] == 5
+    assert clone._lock is not stored_state._lock
+    assert isinstance(clone._lock, type(stored_state._lock))
+
+
 def test_query_state_registry_update_refreshes_snapshots() -> None:
     """Updates replace stored snapshots with fresh copies and locks."""
 
