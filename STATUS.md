@@ -19,6 +19,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 1, 2025
+- Restored the 92.4 % coverage gate at **18:19 UTC** after replacing
+  `QueryStateRegistry` cloning with typed deep copies that rehydrate locks. The
+  new regression suite covers register, update, and round-trip flows so `_lock`
+  handles are never shared between snapshots while the coverage log confirms
+  the gate finishes cleanly with the TestPyPI hold still active.
+  【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+  【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 - Captured a **14:39 UTC** repo-wide `uv run mypy --strict src tests` sweep;
   the run now reports 2,114 errors across 211 files, concentrating the strict
   backlog inside analysis, integration, and behavior fixtures that still need

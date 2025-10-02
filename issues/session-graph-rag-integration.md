@@ -2,6 +2,17 @@
 
 ## Context
 Phase 3 introduces session-scoped knowledge graphs that augment retrieval and
+Phase 3 inherits the registry clone fix and semantic fallback guard so the
+restored 92.4 % coverage run exercises graph-conditioned planner flows
+without `_thread.RLock` reuse or optional dependency crashes. The unit
+regressions cover register/update/round-trip snapshots plus the encode
+fallback, keeping telemetry stable while GraphRAG work resumes.
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+
 surface contradictions for the gate policy. We need to extract entities and
 relations from evidence, maintain lightweight graph storage, and expose graph
 artifacts plus contradiction signals to the orchestrator.

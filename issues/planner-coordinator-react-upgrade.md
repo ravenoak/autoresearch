@@ -2,6 +2,17 @@
 
 ## Context
 Phase 2 of the deep research program promotes the planner output into a
+Phase 2 now depends on the registry clone fix that deep-copies QueryState
+snapshots with typed memo support and on the semantic fallback guard that
+keeps coverage green when fastembed is absent. The regression suites cover
+register/update/round-trip flows plus the encode fallback, so planner
+telemetry can rely on restored coverage while strict typing proceeds.
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+
 structured task graph that the coordinator can schedule deterministically while
 logging ReAct traces. We need richer prompts, tool affinity metadata, and
 telemetry hooks so decomposition quality and routing choices remain auditable.

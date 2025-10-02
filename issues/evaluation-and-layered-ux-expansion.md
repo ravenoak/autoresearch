@@ -2,6 +2,17 @@
 
 ## Context
 Phase 4 expands the benchmark harness and layered user experience so we can
+Phase 4 tracks the same registry clone and semantic fallback protections,
+keeping the restored 92.4 % coverage run available for UX regressions
+while strict typing work continues. The unit suites cover snapshot
+register/update/round-trip behaviour and the encode fallback, ensuring
+evaluation exports stay stable when optional dependencies shift.
+【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
+【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:src/autoresearch/search/core.py†L147-L199】
+【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
+
 measure truthfulness improvements and deliver transparent research outputs.
 Work includes automating TruthfulQA, FEVER, and HotpotQA sweeps, wiring
 telemetry dashboards, and synchronizing CLI/GUI depth controls with per-claim
