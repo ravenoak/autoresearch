@@ -31,7 +31,7 @@ __all__ = [
 
 # ``MutableMapping`` rather than ``dict`` so fixtures can swap in custom
 # implementations (e.g., ``defaultdict``) without breaking the type contract.
-BehaviorContext = MutableMapping[str, object]
+BehaviorContext = MutableMapping[str, Any]
 """Type alias for the shared mutable context passed between BDD steps."""
 
 T = TypeVar("T")
@@ -59,7 +59,7 @@ def set_value(context: BehaviorContext, key: str, value: T) -> T:
 
 
 @overload
-def get_required(context: BehaviorContext, key: str, /) -> object:
+def get_required(context: BehaviorContext, key: str, /) -> Any:
     ...
 
 
@@ -77,7 +77,7 @@ def get_required(
     context: BehaviorContext,
     key: str,
     expected_type: type[T] | tuple[type[T], ...] | None = None,
-) -> T | object:
+) -> Any:
     """Retrieve a required value from ``context``.
 
     Parameters
@@ -106,12 +106,38 @@ def get_required(
     return value
 
 
+@overload
+def get_optional(context: BehaviorContext, key: str, /) -> Any | None:
+    ...
+
+
+@overload
+def get_optional(
+    context: BehaviorContext,
+    key: str,
+    expected_type: type[T] | tuple[type[T], ...],
+    /,
+) -> T | None:
+    ...
+
+
+@overload
+def get_optional(
+    context: BehaviorContext,
+    key: str,
+    expected_type: type[T] | tuple[type[T], ...] | None,
+    default: T,
+    /,
+) -> T:
+    ...
+
+
 def get_optional(
     context: BehaviorContext,
     key: str,
     expected_type: type[T] | tuple[type[T], ...] | None = None,
     default: T | None = None,
-) -> T | object | None:
+) -> Any:
     """Fetch an optional value from ``context`` with an optional type check."""
 
     if key not in context:

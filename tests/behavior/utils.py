@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, MutableMapping, cast
+from typing import Any, Mapping, cast
 
 from tests.behavior.context import BehaviorContext
 
@@ -27,12 +27,13 @@ def store_payload(context: BehaviorContext, key: str, **values: Any) -> PayloadD
     return payload
 
 
-def ensure_dict(mapping: MutableMapping[str, Any] | None = None) -> MutableMapping[str, Any]:
-    """Return a mutable mapping defaulting to an empty ``dict[str, Any]``."""
+def ensure_dict(mapping: BehaviorContext | None = None) -> BehaviorContext:
+    """Return a mutable mapping defaulting to an empty ``BehaviorContext``."""
 
     if mapping is not None:
         return mapping
-    return cast(MutableMapping[str, Any], {})
+    context: BehaviorContext = {}
+    return context
 
 
 def empty_metrics() -> PayloadDict:

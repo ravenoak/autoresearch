@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 from typer.testing import CliRunner
 
 from tests.behavior.context import BehaviorContext
-from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture
-def bdd_context() -> TypedFixture[BehaviorContext]:
+def bdd_context() -> Generator[BehaviorContext, None, None]:
     """Mutable mapping for sharing data between BDD steps."""
     ctx: BehaviorContext = {}
     yield ctx
@@ -19,6 +20,6 @@ def bdd_context() -> TypedFixture[BehaviorContext]:
 
 
 @pytest.fixture
-def cli_runner() -> TypedFixture[CliRunner]:
+def cli_runner() -> CliRunner:
     """Provide a Typer CLI runner for behavior scenarios."""
     return CliRunner()
