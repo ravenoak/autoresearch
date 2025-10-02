@@ -98,10 +98,10 @@ def test_fakeredis_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
         "pid": 4321,
     }
     broker.publish(message)
-    queue = cast(StorageBrokerQueueProtocol, broker.queue)
+    queue: StorageBrokerQueueProtocol = cast(StorageBrokerQueueProtocol, broker.queue)
     queue_protocol: MessageQueueProtocol = queue
     queued_message: BrokerMessage = queue_protocol.get()
-    assert queued_message == message
+    assert cast(AgentResultMessage, queued_message) == message
     broker.shutdown()
 
 

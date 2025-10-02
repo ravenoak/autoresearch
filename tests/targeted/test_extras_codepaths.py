@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,11 +22,17 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
     else:  # If even that fails, raise a clear error
         raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
 
+from autoresearch.distributed.broker import (
+    AgentResultMessage,
+    BrokerMessage,
+    MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
+)
 from tests.targeted.helpers.distributed import build_agent_result_message
 
 
 @pytest.mark.requires_nlp
-def test_try_import_spacy(monkeypatch):
+def test_try_import_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     """SearchContext imports spaCy when NLP extras are available."""
     import_or_skip("spacy")
     from autoresearch.search import context
@@ -41,7 +48,7 @@ def test_try_import_spacy(monkeypatch):
 
 
 @pytest.mark.requires_gpu
-def test_try_import_bertopic(monkeypatch):
+def test_try_import_bertopic(monkeypatch: pytest.MonkeyPatch) -> None:
     """SearchContext imports BERTopic when GPU extras are available."""
     try:
         import_or_skip("bertopic")
@@ -61,7 +68,7 @@ def test_try_import_bertopic(monkeypatch):
 
 
 @pytest.mark.requires_llm
-def test_try_import_sentence_transformers(monkeypatch):
+def test_try_import_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> None:
     """SearchContext imports fastembed when LLM extras are available."""
     import_or_skip("fastembed")
     from autoresearch.search import context
@@ -77,7 +84,7 @@ def test_try_import_sentence_transformers(monkeypatch):
 
 
 @pytest.mark.requires_ui
-def test_apply_theme_settings(monkeypatch):
+def test_apply_theme_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     """Streamlit UI helper executes with both theme states."""
     import_or_skip("streamlit")
     from autoresearch import streamlit_ui
@@ -97,7 +104,9 @@ def test_apply_theme_settings(monkeypatch):
 
 
 @pytest.mark.requires_ui
-def test_apply_accessibility_settings_high_contrast(monkeypatch):
+def test_apply_accessibility_settings_high_contrast(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """High-contrast mode injects the expected CSS overrides."""
     import_or_skip("streamlit")
     from autoresearch import streamlit_ui
@@ -118,7 +127,7 @@ def test_apply_accessibility_settings_high_contrast(monkeypatch):
 
 
 @pytest.mark.requires_vss
-def test_vss_extension_loader(monkeypatch):
+def test_vss_extension_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     """VSSExtensionLoader loads extension using a dummy connection."""
     import_or_skip("duckdb_extension_vss")
     from autoresearch.extensions import VSSExtensionLoader
@@ -141,7 +150,7 @@ def test_vss_extension_loader(monkeypatch):
 
 
 @pytest.mark.requires_git
-def test_local_git_backend(monkeypatch):
+def test_local_git_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """Local Git backend searches this repository."""
     import_or_skip("git")
     from autoresearch.search.core import _local_git_backend
@@ -161,7 +170,7 @@ def test_local_git_backend(monkeypatch):
 
 
 @pytest.mark.requires_distributed
-def test_redis_broker_publish(monkeypatch):
+def test_redis_broker_publish(monkeypatch: pytest.MonkeyPatch) -> None:
     """RedisBroker publishes and retrieves messages using fakeredis."""
     import_or_skip("redis")
     import fakeredis
@@ -172,21 +181,25 @@ def test_redis_broker_publish(monkeypatch):
 
     class DummyRedis:
         @classmethod
-        def from_url(cls, *a, **k):
+        def from_url(
+            cls, *args: object, **kwargs: object
+        ) -> fakeredis.FakeRedis:  # pragma: no cover - stub
+            del args, kwargs
             return fake
 
     monkeypatch.setattr(redis, "Redis", DummyRedis)
     broker = RedisBroker()
-    expected = build_agent_result_message(result={"value": 1})
+    expected: AgentResultMessage = build_agent_result_message(result={"value": 1})
     broker.publish(expected)
     queue: StorageBrokerQueueProtocol = broker.queue
-    message = queue.get()
-    assert message == expected
+    queue_protocol: MessageQueueProtocol = queue
+    message: BrokerMessage = queue_protocol.get()
+    assert cast(AgentResultMessage, message) == expected
     broker.shutdown()
 
 
 @pytest.mark.requires_analysis
-def test_metrics_dataframe(monkeypatch):
+def test_metrics_dataframe(monkeypatch: pytest.MonkeyPatch) -> None:
     """metrics_dataframe builds a Polars DataFrame."""
     import_or_skip("polars")
     from autoresearch.data_analysis import metrics_dataframe
@@ -202,7 +215,9 @@ def test_metrics_dataframe(monkeypatch):
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_docx(tmp_path, monkeypatch):
+def test_local_file_backend_docx(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Local file backend extracts text from DOCX files."""
     docx = import_or_skip("docx")
     from autoresearch.search.core import _local_file_backend
@@ -222,7 +237,9 @@ def test_local_file_backend_docx(tmp_path, monkeypatch):
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_pdf(tmp_path, monkeypatch):
+def test_local_file_backend_pdf(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Local file backend extracts text from PDF files."""
     import_or_skip("pdfminer.high_level")
     from autoresearch.search.core import _local_file_backend
