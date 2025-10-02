@@ -5,9 +5,12 @@ backends and the main search functionality.
 """
 
 import subprocess
+from pathlib import Path
+from typing import Iterator, Mapping, Sequence
+
+import importlib.util
 
 import pytest
-import importlib.util
 
 try:
     _spec = importlib.util.find_spec("git")
@@ -26,8 +29,11 @@ pytestmark = [
 ]
 
 
+SearchResults = Sequence[Mapping[str, object]]
+
+
 @pytest.fixture(autouse=True)
-def cleanup_search():
+def cleanup_search() -> Iterator[None]:
     """Clean up the search system after each test.
 
     This fixture ensures that the search system is properly cleaned up
@@ -53,11 +59,11 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     # Setup
     calls = []
 
-    def backend1(query, max_results=5):
+    def backend1(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b1")
         return [{"title": "t1", "url": "u1"}]
 
-    def backend2(query, max_results=5):
+    def backend2(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b2")
         return [{"title": "t2", "url": "u2"}]
 
@@ -70,7 +76,7 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     # Execute
-    results = Search.external_lookup("q", max_results=1)
+    results: SearchResults = Search.external_lookup("q", max_results=1)
 
     # Verify
     assert calls == ["b1", "b2"]
@@ -89,7 +95,7 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     assert "u2" in urls
 
 
-def _init_git_repo(repo_path):
+def _init_git_repo(repo_path: Path) -> None:
     """Initialize a git repo with a single file."""
     subprocess.run(["git", "init"], cwd=repo_path, check=True)
     subprocess.run(["git", "config", "user.email", "you@example.com"],
@@ -101,7 +107,9 @@ def _init_git_repo(repo_path):
     subprocess.run(["git", "commit", "-m", "init"], cwd=repo_path, check=True)
 
 
-def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
+def test_local_file_and_git_backends_called(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Invoke local_file and local_git backends when configured."""
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
@@ -118,11 +126,11 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
     original_file_backend = Search.backends["local_file"]
     original_git_backend = Search.backends["local_git"]
 
-    def file_wrapper(query, max_results=5):
+    def file_wrapper(query: str, max_results: int = 5) -> SearchResults:
         calls.append("file")
         return original_file_backend(query, max_results)
 
-    def git_wrapper(query, max_results=5):
+    def git_wrapper(query: str, max_results: int = 5) -> SearchResults:
         calls.append("git")
         return original_git_backend(query, max_results)
 
@@ -134,7 +142,7 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    results = Search.external_lookup("hello", max_results=5)
+    results: SearchResults = Search.external_lookup("hello", max_results=5)
 
     assert calls == ["file", "git"]
     urls = [r["url"] for r in results]
@@ -142,13 +150,13 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
     assert str(repo_path / "README.md") in urls
 
 
-def test_ranking_across_backends(monkeypatch):
+def test_ranking_across_backends(monkeypatch: pytest.MonkeyPatch) -> None:
     """Results from different backends should be ranked together."""
 
-    def b1(query, max_results=5):
+    def b1(query: str, max_results: int = 5) -> SearchResults:
         return [{"title": "python foo", "url": "u1"}]
 
-    def b2(query, max_results=5):
+    def b2(query: str, max_results: int = 5) -> SearchResults:
         return [{"title": "other", "url": "u2"}]
 
     monkeypatch.setitem(Search.backends, "b1", b1)

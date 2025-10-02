@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Protocol, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Mapping,
+    MutableMapping,
+    Protocol,
+    Sequence,
+    cast,
+)
 
 import networkx as nx
 import numpy as np
@@ -15,6 +25,11 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from autoresearch.search import storage as search_storage
 from autoresearch.storage import StorageManager
+from autoresearch.typing.http import (
+    RequestsAdapterProtocol,
+    RequestsResponseProtocol,
+    RequestsSessionProtocol,
+)
 from tests.conftest import VSS_AVAILABLE
 
 if TYPE_CHECKING:  # pragma: no cover - typing helpers
@@ -29,7 +44,44 @@ pytestmark = [
 
 
 Claim = dict[str, object]
-VectorSearchResults = list[dict[str, object]]
+VectorSearchResults = Sequence[Mapping[str, object]]
+
+
+class _DummyAdapter(RequestsAdapterProtocol):
+    """Minimal adapter satisfying the requests session protocol."""
+
+    def close(self) -> None:
+        return None
+
+
+class _DummySession(RequestsSessionProtocol):
+    """Session stub that prevents outbound HTTP requests."""
+
+    def __init__(self) -> None:
+        self._headers: MutableMapping[str, str] = {}
+        self._adapter = _DummyAdapter()
+
+    @property
+    def headers(self) -> MutableMapping[str, str]:
+        return self._headers
+
+    def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
+        self._adapter = adapter
+
+    def get_adapter(self, url: str) -> RequestsAdapterProtocol:
+        return self._adapter
+
+    def close(self) -> None:
+        return None
+
+    def request(self, method: str, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
+        raise AssertionError(f"unexpected request: {method} {url}")
+
+    def get(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
+        raise AssertionError(f"unexpected GET: {url}")
+
+    def post(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
+        raise AssertionError(f"unexpected POST: {url}")
 
 
 class StorageBackendProtocol(Protocol):
@@ -180,11 +232,7 @@ def test_search_returns_persisted_claim(monkeypatch: pytest.MonkeyPatch) -> None
 
     monkeypatch.setattr(StorageManager, "vector_search", fake_vector_search)
 
-    class DummySession:
-        def get(self, *args: object, **kwargs: object) -> object:  # pragma: no cover
-            raise AssertionError("network call not expected")
-
-    monkeypatch.setattr(Search, "get_http_session", lambda: DummySession())
+    monkeypatch.setattr(Search, "get_http_session", _DummySession)
 
     results = Search.external_lookup(
         {"text": "", "embedding": np.array(claim["embedding"])}, max_results=1
@@ -212,11 +260,7 @@ def test_storage_cleared_between_tests(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(StorageManager, "vector_search", empty_vector_search)
 
-    class DummySession:
-        def get(self, *args: object, **kwargs: object) -> object:  # pragma: no cover
-            raise AssertionError("network call not expected")
-
-    monkeypatch.setattr(Search, "get_http_session", lambda: DummySession())
+    monkeypatch.setattr(Search, "get_http_session", _DummySession)
 
     results = Search.external_lookup({"text": "", "embedding": np.array([0.2, 0.1])}, max_results=1)
     assert all(r["url"] != "c1" for r in results)

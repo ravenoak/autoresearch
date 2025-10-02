@@ -6,15 +6,21 @@ to improve test coverage, focusing on edge cases, different vector dimensions,
 and error handling in vector search.
 """
 
-import pytest
 import logging
-from unittest.mock import patch
+from pathlib import Path
+from types import ModuleType
+from typing import Mapping, Sequence
+
 import duckdb  # noqa: E402
+import pytest
+from unittest.mock import patch
+
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.errors import StorageError  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 from autoresearch.storage import StorageManager  # noqa: E402
-from autoresearch.config.models import ConfigModel, StorageConfig
-from autoresearch.config.loader import ConfigLoader
-from autoresearch.errors import StorageError  # noqa: E402
+from autoresearch.storage_typing import DuckDBConnectionProtocol
 
 try:
     _tmp_conn = duckdb.connect(database=":memory:")
@@ -33,8 +39,10 @@ logger = logging.getLogger(__name__)
 
 
 def test_vector_search_with_different_dimensions(
-    storage_manager, tmp_path, monkeypatch
-):
+    storage_manager: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test vector search with different embedding dimensions.
 
     This test verifies that:
@@ -54,13 +62,13 @@ def test_vector_search_with_different_dimensions(
 
     # Clear storage and prepare test data
     StorageManager.clear_all()
-    conn = StorageManager.get_duckdb_conn()
+    conn: DuckDBConnectionProtocol = StorageManager.get_duckdb_conn()
 
     # Persist test claims with embeddings of different dimensions
-    dimensions = [2, 3, 4, 10]
+    dimensions: list[int] = [2, 3, 4, 10]
     for dim in dimensions:
         # Create a vector of the specified dimension
-        vec = [float(i) / dim for i in range(dim)]
+        vec: list[float] = [float(i) / dim for i in range(dim)]
         StorageManager.persist_claim(
             {
                 "id": f"dim{dim}",
@@ -95,7 +103,7 @@ def test_vector_search_with_different_dimensions(
         query_vec = [float(i) / dim for i in range(dim)]
 
         # Perform vector search
-        results = StorageManager.vector_search(query_vec, k=1)
+        results: Sequence[Mapping[str, object]] = StorageManager.vector_search(query_vec, k=1)
 
         # Verify that the correct claim was found
         assert results[0]["node_id"] == f"dim{dim}", (
@@ -103,7 +111,11 @@ def test_vector_search_with_different_dimensions(
         )
 
 
-def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
+def test_vector_search_edge_cases(
+    storage_manager: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test vector search edge cases.
 
     This test verifies that:
@@ -127,7 +139,7 @@ def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
     StorageManager.clear_all()
 
     # Persist test claims with different vectors
-    test_vectors = {
+    test_vectors: dict[str, list[float]] = {
         "zero": [0.0, 0.0, 0.0],
         "large": [1000.0, 2000.0, 3000.0],
         "small": [0.000001, 0.000002, 0.000003],
@@ -146,7 +158,7 @@ def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
         )
 
     # Test vector search with zero vector
-    results = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
+    results: Sequence[Mapping[str, object]] = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
     assert results[0]["node_id"] == "zero", (
         "Vector search with zero vector should find 'zero'"
     )
@@ -172,7 +184,11 @@ def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
     assert len(results) == 5, "Vector search with k=10 should return all 5 vectors"
 
 
-def test_vector_search_error_handling(storage_manager, tmp_path, monkeypatch):
+def test_vector_search_error_handling(
+    storage_manager: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test error handling in vector search.
 
     This test verifies that:
@@ -229,7 +245,11 @@ def test_vector_search_error_handling(storage_manager, tmp_path, monkeypatch):
             StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
 
 
-def test_vector_search_with_no_embeddings(storage_manager, tmp_path, monkeypatch):
+def test_vector_search_with_no_embeddings(
+    storage_manager: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test vector search when no embeddings are stored.
 
     This test verifies that:
@@ -260,7 +280,7 @@ def test_vector_search_with_no_embeddings(storage_manager, tmp_path, monkeypatch
     )
 
     # Test vector search
-    results = StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
+    results: Sequence[Mapping[str, object]] = StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
     assert len(results) == 0, (
         "Vector search with no embeddings should return empty results"
     )

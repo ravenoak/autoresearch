@@ -1,26 +1,33 @@
-import time
-import tomli_w
-import tomllib
+from __future__ import annotations
 
+import time
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Mapping, Sequence
 
 import pytest
+import tomli_w
+import tomllib
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
+SearchResults = Sequence[Mapping[str, object]]
+
 
 @pytest.mark.slow
-def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
+def test_search_storage_hot_reload(
+    example_autoresearch_toml: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Search and storage should respect configuration reloads."""
 
     # Setup
-    cfg_file = example_autoresearch_toml
+    cfg_file: Path = example_autoresearch_toml
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
 
-    def fake_load(self):
+    def fake_load(self: ConfigLoader) -> SimpleNamespace:
         data = tomllib.loads(cfg_file.read_text())
         return SimpleNamespace(
             search=SimpleNamespace(
@@ -34,11 +41,11 @@ def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
     calls: list[str] = []
     stored: list[str] = []
 
-    def backend1(query: str, max_results: int = 5):
+    def backend1(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b1")
         return [{"title": "t1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5):
+    def backend2(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b2")
         return [{"title": "t2", "url": "u2"}]
 
@@ -46,20 +53,23 @@ def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
     monkeypatch.setitem(Search.backends, "b2", backend2)
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
 
-    def external_lookup(query: str, max_results: int = 5):
-        cfg = loader.config
-        results = []
+    def external_lookup(query: str, max_results: int = 5) -> SearchResults:
+        cfg: SimpleNamespace = loader.config
+        results: list[Mapping[str, object]] = []
         for b in cfg.search.backends:
-            results.extend(Search.backends[b](query, max_results))
+            backend_results: SearchResults = Search.backends[b](query, max_results)
+            results.extend(backend_results)
         for r in results:
-            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
+            StorageManager.persist_claim(
+                {"id": r["url"], "type": "source", "content": r["title"]}
+            )
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)
 
     events: list[list[str]] = []
 
-    def on_change(cfg):
+    def on_change(cfg: SimpleNamespace) -> None:
         events.append(cfg.search.backends)
 
     # Execute
@@ -79,12 +89,14 @@ def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
 
 
 @pytest.mark.slow
-def test_search_storage_hot_reload_realistic(example_autoresearch_toml, monkeypatch):
-    cfg_file = example_autoresearch_toml
+def test_search_storage_hot_reload_realistic(
+    example_autoresearch_toml: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg_file: Path = example_autoresearch_toml
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
 
-    def fake_load(self):
+    def fake_load(self: ConfigLoader) -> SimpleNamespace:
         data = tomllib.loads(cfg_file.read_text())
         return SimpleNamespace(
             search=SimpleNamespace(
@@ -98,11 +110,11 @@ def test_search_storage_hot_reload_realistic(example_autoresearch_toml, monkeypa
     calls: list[str] = []
     stored: list[str] = []
 
-    def backend1(query: str, max_results: int = 5):
+    def backend1(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b1")
         return [{"title": "t1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5):
+    def backend2(query: str, max_results: int = 5) -> SearchResults:
         calls.append("b2")
         return [{"title": "t2", "url": "u2"}]
 
@@ -110,13 +122,16 @@ def test_search_storage_hot_reload_realistic(example_autoresearch_toml, monkeypa
     monkeypatch.setitem(Search.backends, "b2", backend2)
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
 
-    def external_lookup(query: str, max_results: int = 5):
-        cfg = loader.config
-        results = []
+    def external_lookup(query: str, max_results: int = 5) -> SearchResults:
+        cfg: SimpleNamespace = loader.config
+        results: list[Mapping[str, object]] = []
         for b in cfg.search.backends:
-            results.extend(Search.backends[b](query, max_results))
+            backend_results: SearchResults = Search.backends[b](query, max_results)
+            results.extend(backend_results)
         for r in results:
-            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
+            StorageManager.persist_claim(
+                {"id": r["url"], "type": "source", "content": r["title"]}
+            )
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)

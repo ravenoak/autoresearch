@@ -1,16 +1,25 @@
 import logging
+from pathlib import Path
+from types import ModuleType
+from typing import Mapping, Sequence
+
 import pytest
 
-from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.storage import StorageManager
+from autoresearch.storage_typing import DuckDBConnectionProtocol
 
 logger = logging.getLogger(__name__)
 
 pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 
-def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
+def test_vector_search_with_real_duckdb(
+    storage_manager: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test vector search functionality with a real DuckDB instance.
 
     This test verifies that:
@@ -31,7 +40,7 @@ def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
 
     # Clear storage and prepare test data
     StorageManager.clear_all()
-    conn = StorageManager.get_duckdb_conn()
+    conn: DuckDBConnectionProtocol = StorageManager.get_duckdb_conn()
 
     # Persist test claims with embeddings
     for idx, vec in enumerate([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]]):
@@ -54,7 +63,7 @@ def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
         result = conn.execute(
             "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
         ).fetchall()
-        vector_extension_available = result and len(result) > 0
+        vector_extension_available = bool(result)
         if vector_extension_available:
             logger.info("Vector extension is available")
         else:
@@ -72,7 +81,7 @@ def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
 
         if indexes:
             # Test vector search
-            results = StorageManager.vector_search([0.0, 0.0], k=1)
+            results: Sequence[Mapping[str, object]] = StorageManager.vector_search([0.0, 0.0], k=1)
             assert results[0]["node_id"] == "n0"
         else:
             logger.warning("Vector extension is available but no indexes were created")
