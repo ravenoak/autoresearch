@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 
 def latency_model(arrival_rate: float, service_rate: float, workers: int) -> float:
@@ -17,29 +18,79 @@ def latency_model(arrival_rate: float, service_rate: float, workers: int) -> flo
     return 1.0 / (service_rate - per_worker_arrival)
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
     from typing import Protocol
 
-    class Axes(Protocol):
+    class PlotAxes(Protocol):
         """Subset of matplotlib ``Axes`` used for plotting."""
 
         def plot(self, x: Sequence[float], y: Sequence[float], **kwargs: object) -> object:
             ...
 
-        def set_xlabel(self, label: str) -> None:
+        def xlabel(self, label: str) -> None:
             ...
 
-        def set_ylabel(self, label: str) -> None:
+        def ylabel(self, label: str) -> None:
             ...
 
-        def set_title(self, label: str) -> None:
+        def title(self, label: str) -> None:
             ...
 
-    class Figure(Protocol):
+    class PlotFigure(Protocol):
         """Subset of matplotlib ``Figure`` used for persistence."""
 
         def savefig(self, fname: str | Path, **kwargs: object) -> None:
             ...
+
+
+class _AxesWrapper:
+    """Adapter exposing a stable plotting interface."""
+
+    def __init__(self, axes: object) -> None:
+        self._axes = axes
+
+    def plot(self, x: Sequence[float], y: Sequence[float], **kwargs: object) -> object:
+        plot = getattr(self._axes, "plot")
+        return plot(x, y, **kwargs)
+
+    def xlabel(self, label: str) -> None:
+        setter = getattr(self._axes, "set_xlabel", None)
+        if setter is not None:
+            setter(label)
+            return
+        fallback = getattr(self._axes, "xlabel")
+        fallback(label)
+
+    def ylabel(self, label: str) -> None:
+        setter = getattr(self._axes, "set_ylabel", None)
+        if setter is not None:
+            setter(label)
+            return
+        fallback = getattr(self._axes, "ylabel")
+        fallback(label)
+
+    def title(self, label: str) -> None:
+        setter = getattr(self._axes, "set_title", None)
+        if setter is not None:
+            setter(label)
+            return
+        fallback = getattr(self._axes, "title")
+        fallback(label)
+
+
+class _FigureWrapper:
+    """Adapter for figure persistence methods."""
+
+    def __init__(self, figure: object) -> None:
+        self._figure = figure
+
+    def savefig(self, fname: str | Path, **kwargs: object) -> None:
+        save = getattr(self._figure, "savefig")
+        save(fname, **kwargs)
+
+    def raw(self) -> object:
+        """Return the underlying figure for cleanup."""
+
+        return self._figure
 
 
 def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float]:
@@ -57,14 +108,14 @@ def run(arrival_rate: float = 5.0, service_rate: float = 2.0) -> dict[int, float
         xs = sorted(results)
         ys = [results[w] for w in xs]
         fig_obj, ax_obj = plt.subplots()
-        fig = cast("Figure", fig_obj)
-        ax = cast("Axes", ax_obj)
+        fig = _FigureWrapper(fig_obj)
+        ax = _AxesWrapper(ax_obj)
         ax.plot(xs, ys, marker="o")
-        ax.set_xlabel("workers")
-        ax.set_ylabel("seconds")
-        ax.set_title("Estimated latency")
+        ax.xlabel("workers")
+        ax.ylabel("seconds")
+        ax.title("Estimated latency")
         fig.savefig(out_dir / "agent_latency.svg", format="svg")
-        plt.close(fig)
+        plt.close(fig.raw())
     except Exception:  # pragma: no cover
         pass
     return results

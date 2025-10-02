@@ -3,33 +3,21 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Generator
 from pathlib import Path
-from typing import Protocol
 
 import pytest
 
 METRIC_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "backend_metrics.json"
 
 
-class MetricsBaselineFn(Protocol):
-    """Callable signature for backend metric comparisons."""
-
-    def __call__(
-        self,
-        backend: str,
-        precision: float,
-        recall: float,
-        latency: float,
-        tolerance: float = ...,
-    ) -> None:
-        ...
+MetricsBaselineFn = Callable[[str, float, float, float], None]
 
 
 @pytest.fixture
 def metrics_baseline(
     request: pytest.FixtureRequest,
-) -> Iterator[MetricsBaselineFn]:
+) -> Generator[MetricsBaselineFn, None, None]:
     """Record and compare backend metrics across test runs."""
 
     def _check(
@@ -37,6 +25,7 @@ def metrics_baseline(
         precision: float,
         recall: float,
         latency: float,
+        *,
         tolerance: float = 0.05,
     ) -> None:
         data = json.loads(METRIC_BASELINE_FILE.read_text()) if METRIC_BASELINE_FILE.exists() else {}
@@ -59,24 +48,13 @@ def metrics_baseline(
 TOKEN_MEMORY_FILE = Path(__file__).resolve().parents[1] / "data" / "token_memory_benchmark.json"
 
 
-class TokenMemoryBaselineFn(Protocol):
-    """Callable signature for token and memory baseline comparisons."""
-
-    def __call__(
-        self,
-        in_tokens: int,
-        out_tokens: int,
-        memory_mb: float,
-        duration: float,
-        tolerance: float = ...,
-    ) -> None:
-        ...
+TokenMemoryBaselineFn = Callable[[int, int, float, float], None]
 
 
 @pytest.fixture
 def token_memory_baseline(
     request: pytest.FixtureRequest,
-) -> Iterator[TokenMemoryBaselineFn]:
+) -> Generator[TokenMemoryBaselineFn, None, None]:
     """Record and compare token and resource metrics across runs."""
 
     def _check(
@@ -84,6 +62,7 @@ def token_memory_baseline(
         out_tokens: int,
         memory_mb: float,
         duration: float,
+        *,
         tolerance: float = 0.10,
     ) -> None:
         data = json.loads(TOKEN_MEMORY_FILE.read_text()) if TOKEN_MEMORY_FILE.exists() else {}
