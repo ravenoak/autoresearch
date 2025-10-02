@@ -37,6 +37,49 @@ class SupportsModelCopy(Protocol):
 LOCK_TYPE = type(RLock())
 
 
+def _register_lock_memo(value: Any, memo: dict[int, Any]) -> None:
+    """Populate ``memo`` with locks found in ``value`` to stabilise deep copies."""
+
+    if isinstance(value, LOCK_TYPE):
+        memo.setdefault(id(value), value)
+        return
+
+    if isinstance(value, dict):
+        for nested in value.values():
+            _register_lock_memo(nested, memo)
+        return
+
+    if isinstance(value, (list, tuple, set, frozenset)):
+        for nested in value:
+            _register_lock_memo(nested, memo)
+
+
+class SupportsModelCopyMixin(BaseModel):
+    """Mixin providing ``model_copy`` with lock-aware deep copy behaviour."""
+
+    def model_copy(
+        self: Self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool | None = None,
+        memo: dict[int, Any] | None = None,
+    ) -> Self:
+        """Return a copy of the model, preserving lock instances when cloning deeply."""
+
+        payload = self.model_dump(mode="python")
+        if update:
+            payload = {**payload, **dict(update)}
+
+        if deep:
+            effective_memo = dict(memo or {})
+            _register_lock_memo(payload, effective_memo)
+            for value in self.__dict__.values():
+                _register_lock_memo(value, effective_memo)
+            payload = copy.deepcopy(payload, effective_memo)
+
+        return type(self).model_validate(payload)
+
+
 class ContextAwareSearchConfig(BaseModel):
     """Configuration for context-aware search functionality."""
 
@@ -263,7 +306,7 @@ class SearchConfig(BaseModel):
     _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
 
 
-class StorageConfig(BaseModel):
+class StorageConfig(SupportsModelCopyMixin):
     """Storage configuration for DuckDB, RDF, and more.
 
     Attributes:
@@ -315,19 +358,6 @@ class StorageConfig(BaseModel):
             "to deterministic limits."
         ),
     )
-
-    def model_copy(
-        self,
-        *,
-        update: Mapping[str, Any] | None = None,
-        deep: bool = False,
-    ) -> "StorageConfig":
-        """Return a cloned storage configuration preserving type information."""
-
-        payload = self.model_dump(mode="python")
-        if update:
-            payload = {**payload, **dict(update)}
-        return StorageConfig.model_validate(payload)
 
     _validate_rdf_backend = field_validator("rdf_backend")(validate_rdf_backend)
 
@@ -419,7 +449,7 @@ class AnalysisConfig(BaseModel):
     polars_enabled: bool = Field(default=False)
 
 
-class ConfigModel(BaseModel):
+class ConfigModel(SupportsModelCopyMixin):
     """Main configuration model with validation."""
 
     backend: str = Field(default="lmstudio")
@@ -593,27 +623,5 @@ class ConfigModel(BaseModel):
                     except Exception:  # pragma: no cover - ignore bad fields
                         continue
             return model
-
-    def model_copy(
-        self,
-        *,
-        update: Mapping[str, Any] | None = None,
-        deep: bool | None = None,
-        memo: dict[int, Any] | None = None,
-    ) -> Self:
-        """Return a cloned configuration while preserving model typing."""
-
-        payload = self.model_dump(mode="python")
-        if update:
-            payload = {**payload, **dict(update)}
-
-        if deep:
-            effective_memo = dict(memo or {})
-            for value in self.__dict__.values():
-                if isinstance(value, LOCK_TYPE):
-                    effective_memo.setdefault(id(value), value)
-            payload = copy.deepcopy(payload, effective_memo)
-
-        return type(self).model_validate(payload)
 
     model_config: ClassVar[SettingsConfigDict] = {"extra": "ignore"}
