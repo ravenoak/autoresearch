@@ -9,14 +9,15 @@ from autoresearch.storage import StorageManager, teardown
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.kg_reasoning import register_reasoner
+from autoresearch.storage_utils import graph_add, graph_subject_objects, graph_triples
 
 
 def _simple_rdfs(graph: rdflib.Graph) -> None:
     """Tiny RDFS subclass reasoner used for integration tests."""
 
-    for subj, obj in graph.subject_objects(rdflib.RDF.type):
-        for _s, _p, super_cls in graph.triples((obj, rdflib.RDFS.subClassOf, None)):
-            graph.add((subj, rdflib.RDF.type, super_cls))
+    for subj, obj in graph_subject_objects(graph, rdflib.RDF.type):
+        for _s, _p, super_cls in graph_triples(graph, (obj, rdflib.RDFS.subClassOf, None)):
+            graph_add(graph, (subj, rdflib.RDF.type, super_cls))
 
 
 @pytest.fixture(autouse=True)

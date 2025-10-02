@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app as api_app
+from autoresearch.config.models import ConfigModel
 from autoresearch.distributed.broker import (
     MessageQueueProtocol,
     StorageBrokerQueueProtocol,
@@ -26,6 +27,34 @@ from tests.typing_helpers import TypedFixture
 BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "token_baselines.json"
 METRIC_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "backend_metrics.json"
 SEARCH_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "search_baselines.json"
+
+
+@pytest.fixture
+def config_factory() -> TypedFixture[Callable[..., ConfigModel]]:
+    """Build :class:`ConfigModel` instances via Pydantic validation."""
+
+    def _deep_merge(base: dict[str, Any], overrides: Mapping[str, Any]) -> dict[str, Any]:
+        merged = dict(base)
+        for key, value in overrides.items():
+            if isinstance(value, Mapping) and isinstance(merged.get(key), dict):
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = value
+        return merged
+
+    def _build(
+        overrides: Mapping[str, Any] | None = None,
+        *,
+        disable_context_aware: bool = True,
+    ) -> ConfigModel:
+        data: dict[str, Any] = {}
+        if disable_context_aware:
+            data = {"search": {"context_aware": {"enabled": False}}}
+        if overrides:
+            data = _deep_merge(data, overrides)
+        return ConfigModel.model_validate(data)
+
+    return cast(TypedFixture[Callable[..., ConfigModel]], _build)
 
 
 @pytest.fixture

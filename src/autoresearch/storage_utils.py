@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterator
+from typing import Any, cast
+
+from rdflib.graph import Graph
+from rdflib.term import Node as RDFNode
 
 from .errors import StorageError
 from .logging_utils import get_logger
+from .storage_typing import RDFTriple, RDFTriplePattern
 
 log = get_logger(__name__)
 
@@ -49,3 +54,42 @@ def initialize_schema_version_without_fetchone(conn: Any) -> None:
 
 # Backward compatibility alias
 initialize_schema_version = initialize_schema_version_without_fetchone
+
+
+def ensure_rdf_node(value: RDFNode | str | None) -> RDFNode | None:
+    """Cast *value* to an :class:`rdflib.term.Node` when available."""
+
+    if value is None:
+        return None
+    return cast(RDFNode, value)
+
+
+def graph_triples(graph: Graph, pattern: RDFTriplePattern) -> Iterator[RDFTriple]:
+    """Yield triples from *graph* with properly typed ``rdflib`` nodes."""
+
+    normalized: RDFTriplePattern = (
+        ensure_rdf_node(pattern[0]),
+        ensure_rdf_node(pattern[1]),
+        ensure_rdf_node(pattern[2]),
+    )
+    return graph.triples(normalized)
+
+
+def graph_add(graph: Graph, triple: RDFTriple) -> None:
+    """Add *triple* to *graph* ensuring node compatibility."""
+
+    graph.add(
+        (
+            cast(RDFNode, triple[0]),
+            cast(RDFNode, triple[1]),
+            cast(RDFNode, triple[2]),
+        )
+    )
+
+
+def graph_subject_objects(
+    graph: Graph, predicate: RDFNode | str
+) -> Iterator[tuple[RDFNode, RDFNode]]:
+    """Iterate over subject/object pairs for *predicate* with node typing."""
+
+    return graph.subject_objects(cast(RDFNode, predicate))

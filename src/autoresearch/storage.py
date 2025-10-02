@@ -58,6 +58,7 @@ from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
+from .storage_utils import graph_add, graph_triples
 from .storage_backends import DuckDBStorageBackend, init_rdf_store
 from .storage_typing import (
     DuckDBConnectionProtocol,
@@ -1622,14 +1623,15 @@ class StorageManager(metaclass=StorageManagerMeta):
         if StorageManager.context.rdf_store is None:
             # RDF backend not available; skip semantic persistence.
             return
+        rdf_store = cast(rdflib.Graph, StorageManager.context.rdf_store)
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            StorageManager.context.rdf_store.add(_as_rdf_triple(subj, pred, obj))
+            graph_add(rdf_store, _as_rdf_triple(subj, pred, obj))
 
         # Apply ontology reasoning so advanced queries see inferred triples
-        run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
+        run_ontology_reasoner(rdf_store)
 
     @staticmethod
     def update_knowledge_graph(
@@ -1704,6 +1706,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 backend.persist_graph_relations(relation_list)
 
             if rdf_store is not None:
+                rdf_graph = cast(rdflib.Graph, rdf_store)
                 rdf_triples: list[RDFTriple] = []
                 if triples:
                     for subj_id, pred, obj_id in triples:
@@ -1731,10 +1734,10 @@ class StorageManager(metaclass=StorageManagerMeta):
                             )
                         )
                 for triple in rdf_triples:
-                    rdf_store.add(triple)
+                    graph_add(rdf_graph, triple)
 
                 try:
-                    run_ontology_reasoner(cast(rdflib.Graph, rdf_store))
+                    run_ontology_reasoner(rdf_graph)
                 except StorageError:
                     log.debug(
                         "Ontology reasoning skipped for knowledge graph update", exc_info=True
@@ -1966,19 +1969,21 @@ class StorageManager(metaclass=StorageManagerMeta):
         assert StorageManager.context.rdf_store is not None
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
 
+        rdf_store = cast(rdflib.Graph, StorageManager.context.rdf_store)
+
         if not partial_update:
             # Remove all existing triples for this subject
             pattern = cast(RDFTriplePattern, (subj, None, None))
-            for s, p, o in StorageManager.context.rdf_store.triples(pattern):
-                StorageManager.context.rdf_store.remove((s, p, o))
+            for s, p, o in graph_triples(rdf_store, pattern):
+                rdf_store.remove((s, p, o))
 
         # Add new triples
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            StorageManager.context.rdf_store.add(_as_rdf_triple(subj, pred, obj))
+            graph_add(rdf_store, _as_rdf_triple(subj, pred, obj))
         # Apply ontology reasoning so updates expose inferred triples
-        run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
+        run_ontology_reasoner(rdf_store)
 
     @staticmethod
     def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
@@ -2460,7 +2465,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             getattr(backend_handle, "identifier", backend_handle.__class__.__name__)
         ).lower()
         if configured_backend == "memory" and actual_backend not in {"memory", "iomemory"}:
-            preserved_triples = list(store.triples((None, None, None)))
+            preserved_triples = list(graph_triples(store, (None, None, None)))
             preserved_namespaces = list(cast(Any, store).namespaces())
             with StorageManager.state.lock:
                 _reset_context(StorageManager.context)
@@ -2473,7 +2478,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     except Exception:  # pragma: no cover - namespace restoration best-effort
                         log.debug("Failed to restore namespace binding", exc_info=True)
                 for triple in preserved_triples:
-                    rdf_store.add(triple)
+                    graph_add(rdf_store, triple)
                 store = rdf_store
         run_ontology_reasoner(store, engine)
 

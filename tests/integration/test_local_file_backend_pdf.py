@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_pdf(tmp_path, monkeypatch):
+def test_local_file_backend_pdf(tmp_path, monkeypatch, config_factory):
     """_local_file_backend should parse PDFs using pdfminer."""
     dummy_pdf = tmp_path / "sample.pdf"
     dummy_pdf.write_text("content")
@@ -16,12 +16,17 @@ def test_local_file_backend_pdf(tmp_path, monkeypatch):
     from autoresearch.search import core
     importlib.reload(core)
 
-    class Cfg:
-        class search:
-            class local_file:
-                path = str(tmp_path)
-                file_types = ["pdf"]
-
-    monkeypatch.setattr(core, "get_config", lambda: Cfg)
+    cfg = config_factory(
+        {
+            "search": {
+                "local_file": {
+                    "path": str(tmp_path),
+                    "file_types": ["pdf"],
+                }
+            }
+        }
+    )
+    monkeypatch.setattr(core, "get_config", lambda: cfg)
     results = core._local_file_backend("dummy")
-    assert results and results[0]["snippet"] == "dummy snippet"
+    assert results, "local_file backend should return at least one match"
+    assert results[0]["snippet"] == "dummy snippet"

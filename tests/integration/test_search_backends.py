@@ -20,7 +20,6 @@ except Exception:
 
 from autoresearch.search import Search
 from autoresearch import cache
-from autoresearch.config.models import ConfigModel
 
 pytestmark = [
     pytest.mark.slow,
@@ -50,7 +49,7 @@ def cleanup_search() -> Iterator[None]:
     cache.clear()
 
 
-def test_multiple_backends_called_and_merged(monkeypatch):
+def test_multiple_backends_called_and_merged(monkeypatch, config_factory):
     """Test that multiple search backends are called and results are merged.
 
     This test verifies that when multiple search backends are configured,
@@ -70,9 +69,7 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["b1", "b2"]
-    cfg.search.context_aware.enabled = False
+    cfg = config_factory({"loops": 1, "search": {"backends": ["b1", "b2"]}})
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     # Execute
@@ -108,7 +105,7 @@ def _init_git_repo(repo_path: Path) -> None:
 
 
 def test_local_file_and_git_backends_called(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, config_factory
 ) -> None:
     """Invoke local_file and local_git backends when configured."""
     docs_dir = tmp_path / "docs"
@@ -119,6 +116,8 @@ def test_local_file_and_git_backends_called(
     repo_path = tmp_path / "repo"
     repo_path.mkdir()
     _init_git_repo(repo_path)
+    head_ref = (repo_path / ".git" / "HEAD").read_text().strip()
+    branch_name = head_ref.split("/")[-1] if "/" in head_ref else head_ref
 
     calls = []
 
@@ -137,9 +136,20 @@ def test_local_file_and_git_backends_called(
     monkeypatch.setitem(Search.backends, "local_file", file_wrapper)
     monkeypatch.setitem(Search.backends, "local_git", git_wrapper)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["local_file", "local_git"]
-    cfg.search.context_aware.enabled = False
+    cfg = config_factory(
+        {
+            "loops": 1,
+            "search": {
+                "backends": ["local_file", "local_git"],
+                "local_file": {"path": str(docs_dir), "file_types": ["txt"]},
+                "local_git": {
+                    "repo_path": str(repo_path),
+                    "branches": [branch_name],
+                    "history_depth": 5,
+                },
+            },
+        }
+    )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results: SearchResults = Search.external_lookup("hello", max_results=5)
@@ -150,7 +160,7 @@ def test_local_file_and_git_backends_called(
     assert str(repo_path / "README.md") in urls
 
 
-def test_ranking_across_backends(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ranking_across_backends(monkeypatch: pytest.MonkeyPatch, config_factory) -> None:
     """Results from different backends should be ranked together."""
 
     def b1(query: str, max_results: int = 5) -> SearchResults:
@@ -162,9 +172,7 @@ def test_ranking_across_backends(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(Search.backends, "b1", b1)
     monkeypatch.setitem(Search.backends, "b2", b2)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["b1", "b2"]
-    cfg.search.context_aware.enabled = False
+    cfg = config_factory({"loops": 1, "search": {"backends": ["b1", "b2"]}})
     cfg.search.semantic_similarity_weight = 0.6
     cfg.search.bm25_weight = 0.4
     cfg.search.source_credibility_weight = 0.0
@@ -187,7 +195,7 @@ def test_ranking_across_backends(monkeypatch: pytest.MonkeyPatch) -> None:
     assert results[0]["url"] == "u1"
 
 
-def test_embeddings_added_to_results(monkeypatch):
+def test_embeddings_added_to_results(monkeypatch, config_factory):
     """Ensure embeddings are added for all backend results."""
 
     class DummyModel:
@@ -201,9 +209,7 @@ def test_embeddings_added_to_results(monkeypatch):
 
     monkeypatch.setitem(Search.backends, "b1", b1)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["b1"]
-    cfg.search.context_aware.enabled = False
+    cfg = config_factory({"loops": 1, "search": {"backends": ["b1"]}})
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
 
@@ -213,7 +219,7 @@ def test_embeddings_added_to_results(monkeypatch):
     assert "similarity" in results[0]
 
 
-def test_git_backend_returns_context(monkeypatch, tmp_path):
+def test_git_backend_returns_context(monkeypatch, tmp_path, config_factory):
     """Git backend should include context lines in snippets."""
 
     repo_path = tmp_path / "repo"
@@ -226,12 +232,21 @@ def test_git_backend_returns_context(monkeypatch, tmp_path):
     subprocess.run(["git", "add", "code.txt"], cwd=repo_path, check=True)
     subprocess.run(["git", "commit", "-m", "add context"], cwd=repo_path, check=True)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["local_git"]
-    cfg.search.context_aware.enabled = False
-    cfg.search.local_git.repo_path = str(repo_path)
-    cfg.search.local_git.branches = ["main"]
-    cfg.search.local_git.history_depth = 10
+    head_ref = (repo_path / ".git" / "HEAD").read_text().strip()
+    branch_name = head_ref.split("/")[-1] if "/" in head_ref else head_ref
+    cfg = config_factory(
+        {
+            "loops": 1,
+            "search": {
+                "backends": ["local_git"],
+                "local_git": {
+                    "repo_path": str(repo_path),
+                    "branches": [branch_name],
+                    "history_depth": 10,
+                },
+            },
+        }
+    )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results = Search.external_lookup("context", max_results=5)
@@ -239,7 +254,7 @@ def test_git_backend_returns_context(monkeypatch, tmp_path):
     assert any("\n" in r["snippet"] for r in results)
 
 
-def test_combined_local_and_web_results(monkeypatch, tmp_path):
+def test_combined_local_and_web_results(monkeypatch, tmp_path, config_factory):
     """Local and web backend results should be ranked together."""
 
     docs_dir = tmp_path / "docs"
@@ -252,11 +267,15 @@ def test_combined_local_and_web_results(monkeypatch, tmp_path):
 
     monkeypatch.setitem(Search.backends, "web", web_backend)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["local_file", "web"]
-    cfg.search.context_aware.enabled = False
-    cfg.search.local_file.path = str(docs_dir)
-    cfg.search.local_file.file_types = ["txt"]
+    cfg = config_factory(
+        {
+            "loops": 1,
+            "search": {
+                "backends": ["local_file", "web"],
+                "local_file": {"path": str(docs_dir), "file_types": ["txt"]},
+            },
+        }
+    )
     cfg.search.semantic_similarity_weight = 0.6
     cfg.search.bm25_weight = 0.4
     cfg.search.source_credibility_weight = 0.0
@@ -281,7 +300,7 @@ def test_combined_local_and_web_results(monkeypatch, tmp_path):
     assert {str(file_path), "https://example.com"} <= urls
 
 
-def test_weight_optimization_improves_ranking(monkeypatch):
+def test_weight_optimization_improves_ranking(monkeypatch, config_factory):
     """Tuned weights should improve ranking order."""
 
     def b1(query, max_results=5):
@@ -293,9 +312,7 @@ def test_weight_optimization_improves_ranking(monkeypatch):
     monkeypatch.setitem(Search.backends, "b1", b1)
     monkeypatch.setitem(Search.backends, "b2", b2)
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["b1", "b2"]
-    cfg.search.context_aware.enabled = False
+    cfg = config_factory({"loops": 1, "search": {"backends": ["b1", "b2"]}})
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     monkeypatch.setattr(
