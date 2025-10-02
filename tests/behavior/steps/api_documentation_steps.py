@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi.openapi.docs import get_swagger_ui_html
 from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+from tests.behavior.context import BehaviorContext
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @given("the API server is running")
 def api_server_running(
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     api_client,
     monkeypatch,
     temp_config,
@@ -40,7 +39,7 @@ def api_server_running(
 
 
 @when("I request the docs endpoint")
-def request_docs(bdd_context: dict[str, Any]) -> None:
+def request_docs(bdd_context: BehaviorContext) -> None:
     """Send a GET request to the Swagger UI endpoint."""
 
     client = bdd_context["client"]
@@ -48,7 +47,7 @@ def request_docs(bdd_context: dict[str, Any]) -> None:
 
 
 @when("I request the openapi endpoint")
-def request_openapi(bdd_context: dict[str, Any]) -> None:
+def request_openapi(bdd_context: BehaviorContext) -> None:
     """Send a GET request to the OpenAPI schema endpoint."""
 
     client = bdd_context["client"]
@@ -56,14 +55,14 @@ def request_openapi(bdd_context: dict[str, Any]) -> None:
 
 
 @then("the response status should be 200")
-def check_status_ok(bdd_context: dict[str, Any]) -> None:
+def check_status_ok(bdd_context: BehaviorContext) -> None:
     """Assert that the HTTP status code is 200."""
 
     assert bdd_context["response"].status_code == 200
 
 
 @then(parsers.parse('the response body should contain "{text}"'))
-def check_body_contains(text: str, bdd_context: dict[str, Any]) -> None:
+def check_body_contains(text: str, bdd_context: BehaviorContext) -> None:
     """Verify that the response body contains the expected substring."""
     body = bdd_context["response"].text.lower().replace(" ", "").replace("-", "")
     expected = text.lower().replace(" ", "").replace("-", "")

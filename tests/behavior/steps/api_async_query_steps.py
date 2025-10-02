@@ -1,11 +1,9 @@
 """Step definitions for asynchronous query API behavior tests."""
 
 from __future__ import annotations
-from tests.behavior.utils import build_async_submission_payload
 
 import asyncio
 import time
-from typing import Any
 from unittest.mock import patch
 
 from pytest_bdd import given, parsers, scenario, then, when
@@ -16,8 +14,10 @@ from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.errors import AgentError, TimeoutError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
-from . import common_steps  # noqa: F401
+from tests.behavior.context import BehaviorContext
+from tests.behavior.utils import build_async_submission_payload
 
+from . import common_steps  # noqa: F401
 from .error_recovery_steps import (  # noqa: F401
     assert_error_category,
     assert_logs,
@@ -28,7 +28,7 @@ from .error_recovery_steps import (  # noqa: F401
 
 @given("the API server is running")
 def api_server_running(
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     api_client,
     temp_config,
     restore_environment,
@@ -41,7 +41,7 @@ def api_server_running(
 @when(parsers.parse('I submit an async query "{query}"'))
 def submit_async_query(
     query: str,
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     monkeypatch,
     dummy_query_response: QueryResponse,
     temp_config,
@@ -67,7 +67,7 @@ def submit_async_query(
 
 
 @then("the response should include a query ID")
-def check_query_id(bdd_context: dict[str, Any]) -> None:
+def check_query_id(bdd_context: BehaviorContext) -> None:
     """Ensure the async submission returned an identifier."""
 
     resp = bdd_context["submit_response"]
@@ -77,7 +77,7 @@ def check_query_id(bdd_context: dict[str, Any]) -> None:
 
 
 @when("I request the status for that query ID")
-def request_status(bdd_context: dict[str, Any], monkeypatch) -> None:
+def request_status(bdd_context: BehaviorContext, monkeypatch) -> None:
     """Retrieve the result for the previously submitted query."""
 
     monkeypatch.setattr(time, "sleep", lambda *_: None)
@@ -92,7 +92,7 @@ def request_status(bdd_context: dict[str, Any], monkeypatch) -> None:
 
 
 @then("the response should contain an answer")
-def check_answer(bdd_context: dict[str, Any]) -> None:
+def check_answer(bdd_context: BehaviorContext) -> None:
     """Verify the async query returned an answer."""
 
     resp = bdd_context["status_response"]
@@ -104,7 +104,7 @@ def check_answer(bdd_context: dict[str, Any]) -> None:
 
 @given("an async query has been submitted")
 def async_query_submitted(
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     api_client,
     monkeypatch,
     dummy_query_response: QueryResponse,
@@ -130,7 +130,7 @@ def async_query_submitted(
 
 
 @when("I cancel the async query")
-def cancel_async_query(bdd_context: dict[str, Any]) -> None:
+def cancel_async_query(bdd_context: BehaviorContext) -> None:
     """Cancel the previously submitted asynchronous query."""
 
     query_id = bdd_context["query_id"]
@@ -140,7 +140,7 @@ def cancel_async_query(bdd_context: dict[str, Any]) -> None:
 
 
 @then("the response should indicate cancellation")
-def check_cancellation(bdd_context: dict[str, Any]) -> None:
+def check_cancellation(bdd_context: BehaviorContext) -> None:
     """Ensure the async query was cancelled and cleaned up."""
 
     resp = bdd_context["cancel_response"]

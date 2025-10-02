@@ -1,6 +1,7 @@
 """Step definitions for API authentication and rate limiting."""
 
 from __future__ import annotations
+from tests.behavior.context import BehaviorContext
 from tests.behavior.utils import empty_metrics
 
 import importlib
@@ -78,7 +79,7 @@ def _install_orchestrator_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(Orchestrator, "run_query", _run_query_stub)
 
 
-def _get_response(test_context: dict[str, object], key: str) -> HttpResponse:
+def _get_response(test_context: BehaviorContext, key: str) -> HttpResponse:
     """Retrieve and type-cast a stored HTTP response from the context."""
 
     return cast(HttpResponse, test_context[key])
@@ -139,7 +140,7 @@ def require_api_key_no_permissions(
 )
 def send_query_with_header(
     api_client_factory: ApiClientFactory,
-    test_context: dict[str, object],
+    test_context: BehaviorContext,
     query: str,
     header: str,
     value: str,
@@ -152,7 +153,7 @@ def send_query_with_header(
 @when(parsers.parse('I send a query "{query}" without credentials'))
 def send_query_without_credentials(
     api_client_factory: ApiClientFactory,
-    test_context: dict[str, object],
+    test_context: BehaviorContext,
     query: str,
 ) -> None:
     client = api_client_factory(None)
@@ -162,7 +163,7 @@ def send_query_without_credentials(
 
 @when("I send two queries to the API")
 def send_two_queries(
-    api_client_factory: ApiClientFactory, test_context: dict[str, object]
+    api_client_factory: ApiClientFactory, test_context: BehaviorContext
 ) -> None:
     client = api_client_factory(None)
     test_context["resp1"] = client.post("/query", json={"query": "q"})
@@ -170,7 +171,7 @@ def send_two_queries(
 
 
 @then(parsers.parse("the response status should be {status:d}"))
-def check_status(test_context: dict[str, object], status: int) -> None:
+def check_status(test_context: BehaviorContext, status: int) -> None:
     response = _get_response(test_context, "response")
     assert response.status_code == status
     data = response.json()
@@ -184,7 +185,7 @@ def check_status(test_context: dict[str, object], status: int) -> None:
     parsers.parse('the response should include header "{header}" with value "{value}"')
 )
 def check_response_header(
-    test_context: dict[str, object], header: str, value: str
+    test_context: BehaviorContext, header: str, value: str
 ) -> None:
     response = _get_response(test_context, "response")
     assert header in response.headers
@@ -192,7 +193,7 @@ def check_response_header(
 
 
 @then(parsers.parse("the first response status should be {status:d}"))
-def check_first_status(test_context: dict[str, object], status: int) -> None:
+def check_first_status(test_context: BehaviorContext, status: int) -> None:
     response = _get_response(test_context, "resp1")
     assert response.status_code == status
     data = response.json()
@@ -201,7 +202,7 @@ def check_first_status(test_context: dict[str, object], status: int) -> None:
 
 
 @then(parsers.parse("the second response status should be {status:d}"))
-def check_second_status(test_context: dict[str, object], status: int) -> None:
+def check_second_status(test_context: BehaviorContext, status: int) -> None:
     response = _get_response(test_context, "resp2")
     assert response.status_code == status
     if status == 429:

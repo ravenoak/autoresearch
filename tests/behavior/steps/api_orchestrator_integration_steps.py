@@ -4,31 +4,37 @@ This module contains step definitions for testing the integration between
 the API and orchestration system, including query forwarding, error handling,
 parameter handling, and concurrent request handling.
 """
-from tests.behavior.utils import as_payload
+
+import concurrent.futures
+from unittest.mock import MagicMock
 
 import pytest
-import concurrent.futures
 from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import MagicMock
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
-from autoresearch.config.models import ConfigModel, APIConfig
+
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.errors import OrchestrationError
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
+from tests.behavior.context import BehaviorContext
+from tests.behavior.utils import PayloadDict, as_payload, store_payload
 
 
 # Fixtures
 @pytest.fixture
-def test_context():
+def test_context() -> BehaviorContext:
     """Create a context for storing test state."""
-    return as_payload({
-        "client": None,
-        "mock_orchestrator": None,
-        "query": None,
-        "response": None,
-        "errors": [],
-        "concurrent_responses": [],
-    })
+    payload: PayloadDict = as_payload(
+        {
+            "client": None,
+            "mock_orchestrator": None,
+            "query": None,
+            "response": None,
+            "errors": [],
+            "concurrent_responses": [],
+        }
+    )
+    return payload
 
 
 @pytest.fixture
@@ -54,7 +60,7 @@ def mock_orchestrator():
     "../features/api_orchestrator_integration.feature",
     "API forwards queries to the orchestrator",
 )
-def test_api_forwards_queries():
+def test_api_forwards_queries() -> None:
     """Test that the API forwards queries to the orchestrator."""
     pass
 
@@ -63,13 +69,13 @@ def test_api_forwards_queries():
     "../features/api_orchestrator_integration.feature",
     "API handles orchestrator errors gracefully",
 )
-def test_api_handles_errors():
+def test_api_handles_errors() -> None:
     """Test that the API handles orchestrator errors gracefully."""
     pass
 
 
 @scenario("../features/api_orchestrator_integration.feature", "API respects query parameters")
-def test_api_respects_parameters():
+def test_api_respects_parameters() -> None:
     """Test that the API respects query parameters."""
     pass
 
@@ -78,7 +84,7 @@ def test_api_respects_parameters():
     "../features/api_orchestrator_integration.feature",
     "API handles concurrent requests",
 )
-def test_api_handles_concurrent_requests():
+def test_api_handles_concurrent_requests() -> None:
     """Test that the API handles concurrent requests."""
     pass
 
@@ -87,7 +93,7 @@ def test_api_handles_concurrent_requests():
     "../features/api_orchestrator_integration.feature",
     "API paginates batch queries",
 )
-def test_api_batch_pagination():
+def test_api_batch_pagination() -> None:
     """Test that the API paginates batch query results."""
     pass
 
@@ -96,7 +102,7 @@ def test_api_batch_pagination():
     "../features/api_orchestrator_integration.feature",
     "API returns 404 for unknown async query ID",
 )
-def test_async_query_not_found():
+def test_async_query_not_found() -> None:
     """Unknown async query IDs should return 404."""
     pass
 
@@ -105,14 +111,16 @@ def test_async_query_not_found():
     "../features/api_orchestrator_integration.feature",
     "API configuration CRUD",
 )
-def test_api_config_crud():
+def test_api_config_crud() -> None:
     """Test configuration CRUD operations."""
     pass
 
 
 # Background steps
 @given("the API server is running")
-def api_server_running(test_context, api_client, monkeypatch):
+def api_server_running(
+    test_context: BehaviorContext, api_client, monkeypatch
+) -> None:
     """Set up a running API server for testing with permissive permissions."""
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"].extend(["capabilities", "config"])
@@ -121,7 +129,9 @@ def api_server_running(test_context, api_client, monkeypatch):
 
 
 @given("the orchestrator is configured with test agents")
-def orchestrator_with_test_agents(test_context, mock_orchestrator, monkeypatch):
+def orchestrator_with_test_agents(
+    test_context: BehaviorContext, mock_orchestrator, monkeypatch
+) -> None:
     """Configure the orchestrator with test agents."""
     test_context["mock_orchestrator"] = mock_orchestrator
     monkeypatch.setattr(Orchestrator, "run_query", mock_orchestrator.run_query)
@@ -129,7 +139,7 @@ def orchestrator_with_test_agents(test_context, mock_orchestrator, monkeypatch):
 
 # Scenario: API forwards queries to the orchestrator
 @when(parsers.parse('I send a query "{query}" to the API'))
-def send_query_to_api(query, test_context):
+def send_query_to_api(query: str, test_context: BehaviorContext) -> None:
     """Send a query to the API."""
     test_context["query"] = query
     response = test_context["client"].post("/query", json={"query": query})
@@ -137,7 +147,7 @@ def send_query_to_api(query, test_context):
 
 
 @then("the orchestrator should receive the query")
-def orchestrator_receives_query(test_context):
+def orchestrator_receives_query(test_context: BehaviorContext) -> None:
     """Verify that the orchestrator received the query."""
     mock_orchestrator = test_context["mock_orchestrator"]
     mock_orchestrator.run_query.assert_called_once()
@@ -148,7 +158,7 @@ def orchestrator_receives_query(test_context):
 
 
 @then("the API should return the orchestrator's response")
-def api_returns_orchestrator_response(test_context):
+def api_returns_orchestrator_response(test_context: BehaviorContext) -> None:
     """Verify that the API returns the orchestrator's response."""
     response = test_context["response"]
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
@@ -170,7 +180,7 @@ def api_returns_orchestrator_response(test_context):
 
 
 @then("the response should include an answer")
-def response_includes_answer(test_context):
+def response_includes_answer(test_context: BehaviorContext) -> None:
     """Verify that the response includes the expected answer."""
     response = test_context["response"]
     data = response.json()
@@ -178,7 +188,7 @@ def response_includes_answer(test_context):
 
 
 @then("the response should include citations")
-def response_includes_citations(test_context):
+def response_includes_citations(test_context: BehaviorContext) -> None:
     """Verify that the response includes the expected citations."""
     response = test_context["response"]
     expected = [{"text": "Test citation", "url": "https://example.com"}]
@@ -186,7 +196,7 @@ def response_includes_citations(test_context):
 
 
 @then("the response should include reasoning")
-def response_includes_reasoning(test_context):
+def response_includes_reasoning(test_context: BehaviorContext) -> None:
     """Verify that the response includes the expected reasoning."""
     response = test_context["response"]
     expected = ["Test reasoning step 1", "Test reasoning step 2"]
@@ -195,7 +205,9 @@ def response_includes_reasoning(test_context):
 
 # Scenario: API handles orchestrator errors gracefully
 @given("the orchestrator is configured to raise an error")
-def orchestrator_raises_error(test_context, monkeypatch):
+def orchestrator_raises_error(
+    test_context: BehaviorContext, monkeypatch
+) -> None:
     """Configure the orchestrator to raise an error."""
 
     def mock_run_query(*args, **kwargs):
@@ -205,7 +217,7 @@ def orchestrator_raises_error(test_context, monkeypatch):
 
 
 @then("the API should return an error response")
-def api_returns_error_response(test_context):
+def api_returns_error_response(test_context: BehaviorContext) -> None:
     """Verify that the API returns an error response."""
     response = test_context["response"]
     # Check for either a 4xx/5xx status code or error information in the response body
@@ -220,7 +232,7 @@ def api_returns_error_response(test_context):
 
 
 @then("the error response should include a helpful message")
-def error_response_includes_message(test_context):
+def error_response_includes_message(test_context: BehaviorContext) -> None:
     """Verify that the error response includes a helpful message."""
     response = test_context["response"]
     data = response.json()
@@ -236,7 +248,9 @@ def error_response_includes_message(test_context):
 
 
 @then("the error should be logged")
-def error_is_logged(test_context, monkeypatch, caplog):
+def error_is_logged(
+    test_context: BehaviorContext, monkeypatch, caplog
+) -> None:
     """Verify that the error is logged."""
     # This is a bit tricky to test without modifying the code
     # In a real implementation, we would add a hook to capture log messages
@@ -255,10 +269,10 @@ def error_is_logged(test_context, monkeypatch, caplog):
 
 # Scenario: API respects query parameters
 @when("I send a query with custom parameters to the API")
-def send_query_with_parameters(test_context):
+def send_query_with_parameters(test_context: BehaviorContext) -> None:
     """Send a query with custom parameters to the API."""
     query = "Test query with parameters"
-    parameters = {
+    parameters: PayloadDict = {
         "query": query,
         "reasoning_mode": "dialectical",
         "max_sources": 5,
@@ -266,12 +280,12 @@ def send_query_with_parameters(test_context):
     }
     response = test_context["client"].post("/query", json=parameters)
     test_context["query"] = query
-    test_context["parameters"] = parameters
+    store_payload(test_context, "parameters", parameters)
     test_context["response"] = response
 
 
 @then("the orchestrator should receive the query with those parameters")
-def orchestrator_receives_parameters(test_context):
+def orchestrator_receives_parameters(test_context: BehaviorContext) -> None:
     """Verify that the orchestrator received the query with the custom parameters."""
     mock_orchestrator = test_context["mock_orchestrator"]
     mock_orchestrator.run_query.assert_called_once()
@@ -292,7 +306,7 @@ def orchestrator_receives_parameters(test_context):
 
 
 @then("the API should return a response that reflects the custom parameters")
-def response_reflects_parameters(test_context):
+def response_reflects_parameters(test_context: BehaviorContext) -> None:
     """Verify that the API response reflects the custom parameters."""
     response = test_context["response"]
     assert response.status_code == 200
@@ -303,7 +317,7 @@ def response_reflects_parameters(test_context):
 
 # Scenario: API handles concurrent requests
 @when("I send multiple concurrent queries to the API")
-def send_concurrent_queries(test_context):
+def send_concurrent_queries(test_context: BehaviorContext) -> None:
     """Send multiple concurrent queries to the API."""
     queries = ["Query 1", "Query 2", "Query 3", "Query 4", "Query 5"]
 
@@ -320,7 +334,7 @@ def send_concurrent_queries(test_context):
 
 
 @then("all queries should be processed")
-def all_queries_processed(test_context):
+def all_queries_processed(test_context: BehaviorContext) -> None:
     """Verify that all queries were processed."""
     responses = test_context["concurrent_responses"]
     assert len(responses) == len(test_context["queries"]), "Not all queries were processed"
@@ -328,7 +342,7 @@ def all_queries_processed(test_context):
 
 
 @then("each response should be correct for its query")
-def responses_match_queries(test_context):
+def responses_match_queries(test_context: BehaviorContext) -> None:
     """Verify that each response matches its originating query."""
     responses = test_context["concurrent_responses"]
     for query, response in zip(test_context["queries"], responses):
@@ -344,10 +358,12 @@ def responses_match_queries(test_context):
 # Scenario: API paginates batch queries
 
 
-@when(parsers.parse("I send a batch query with page {page:d} and page size {size:d} to the API"))
-def send_batch_query(test_context, page: int, size: int):
+@when(
+    parsers.parse("I send a batch query with page {page:d} and page size {size:d} to the API")
+)
+def send_batch_query(test_context: BehaviorContext, page: int, size: int) -> None:
     """Send a batch query to the API with pagination."""
-    payload = {"queries": [{"query": f"q{i}"} for i in range(1, 5)]}
+    payload: PayloadDict = {"queries": [{"query": f"q{i}"} for i in range(1, 5)]}
     client = test_context["client"]
     response = client.post(f"/query/batch?page={page}&page_size={size}", json=payload)
     test_context["response"] = response
@@ -357,7 +373,7 @@ def send_batch_query(test_context, page: int, size: int):
 
 
 @then("the API should return the second page of results")
-def check_batch_pagination(test_context):
+def check_batch_pagination(test_context: BehaviorContext) -> None:
     """Verify that the API returned the expected page of results."""
     response = test_context["response"]
     assert response.status_code == 200
@@ -374,14 +390,14 @@ def check_batch_pagination(test_context):
 
 
 @when("I request the status of an unknown async query")
-def request_unknown_query(test_context):
+def request_unknown_query(test_context: BehaviorContext) -> None:
     """Request a non-existent async query."""
     client = test_context["client"]
     test_context["response"] = client.get("/query/unknown")
 
 
 @then("the API should respond with status 404")
-def check_404_status(test_context):
+def check_404_status(test_context: BehaviorContext) -> None:
     """Verify that the response status code is 404."""
     resp = test_context["response"]
     assert resp.status_code == 404
@@ -392,14 +408,14 @@ def check_404_status(test_context):
 
 
 @when("I replace the configuration via the API")
-def replace_config_api(test_context):
+def replace_config_api(test_context: BehaviorContext) -> None:
     """Replace the running configuration."""
     client = test_context["client"]
     test_context["response"] = client.post("/config", json={"loops": 2})
 
 
 @then("the API should report the updated value")
-def check_config_updated(test_context):
+def check_config_updated(test_context: BehaviorContext) -> None:
     resp = test_context["response"]
     assert resp.status_code == 200
     data = resp.json()
@@ -408,13 +424,13 @@ def check_config_updated(test_context):
 
 
 @when("I reset the configuration via the API")
-def reset_config_api(test_context):
+def reset_config_api(test_context: BehaviorContext) -> None:
     client = test_context["client"]
     test_context["reset_resp"] = client.delete("/config")
 
 
 @then("the API should return the default configuration")
-def check_config_reset(test_context):
+def check_config_reset(test_context: BehaviorContext) -> None:
     resp = test_context["reset_resp"]
     assert resp.status_code == 200
     data = resp.json()
