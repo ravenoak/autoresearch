@@ -120,9 +120,15 @@ Tests are organized into four categories:
 2. **Integration Tests** (`tests/integration/`): Test interactions between
    components
 3. **Behavior Tests** (`tests/behavior/`): BDD-style tests using Gherkin syntax
-4. **Targeted Tests** (`tests/targeted/`): Temporary tests for specific issues.
+   4. **Targeted Tests** (`tests/targeted/`): Temporary tests for specific issues.
    Run them manually and migrate to unit or integration suites once
    validated.
+
+Behavior scenarios covering AUTO reasoning now exercise the PRDV verification
+loop telemetry end-to-end. The `reasoning_modes/auto_cli_verify_loop.feature`
+suite adds "AUTO mode completes the configured PRDV verification loops" to
+assert that CLI payloads, orchestrator metrics, and audit rollups report the
+configured loop count consistently.
 
 During `task coverage`, targeted smoke tests execute once per optional extra.
 The task iterates over `ALL_EXTRAS` and runs `pytest tests/targeted -m

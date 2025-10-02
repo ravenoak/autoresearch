@@ -13,11 +13,32 @@ from typing import (
     TypedDict,
     cast,
 )
+from unittest.mock import MagicMock
 
 from tests.behavior.context import BehaviorContext
 
 PayloadDict = dict[str, Any]
 """Concrete alias for payload dictionaries shared across steps."""
+
+
+@dataclass(slots=True)
+class TempFileRecord:
+    """Representation of a tracked temporary file descriptor and path."""
+
+    fd: int
+    path: str
+
+
+class CleanupExtendedPayload(TypedDict, total=False):
+    """Schema for the cleanup verification context shared across steps."""
+
+    temp_files: list[TempFileRecord]
+    env_vars: dict[str, str]
+    original_env: dict[str, str]
+    cleanup_errors: list[str]
+    expect_error: bool
+    mock_cleanup: MagicMock
+    cleanup_error: Exception
 
 
 class ScoutClaimAudit(TypedDict):
@@ -88,6 +109,24 @@ def as_payload(payload: Mapping[str, Any] | None = None, /, **values: Any) -> Pa
     data: PayloadDict = dict(payload or {})
     data.update(values)
     return data
+
+
+def build_cleanup_payload() -> CleanupExtendedPayload:
+    """Create the default payload used by cleanup verification steps."""
+
+    payload: CleanupExtendedPayload = {
+        "temp_files": [],
+        "env_vars": {},
+        "original_env": {},
+        "cleanup_errors": [],
+    }
+    return payload
+
+
+def ensure_cleanup_payload(context: BehaviorContext) -> CleanupExtendedPayload:
+    """Cast ``context`` to :class:`CleanupExtendedPayload` for typed access."""
+
+    return cast(CleanupExtendedPayload, context)
 
 
 def store_payload(

@@ -28,6 +28,7 @@ from autoresearch.orchestration.orchestration_utils import (
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search.context import SearchContext
 
+from tests.behavior.context import BehaviorContext
 from tests.helpers import ConfigModelStub, make_config_model
 
 ConfigLike = ConfigModel | ConfigModelStub
@@ -57,7 +58,7 @@ def configure_reasoning_mode(config: ConfigLike, mode: str) -> ConfigLike:
 
 
 @given("the planner proposes verification tasks")
-def planner_verification_tasks(bdd_context: dict[str, Any]) -> None:
+def planner_verification_tasks(bdd_context: BehaviorContext) -> None:
     bdd_context["task_graph"] = {
         "tasks": [
             {
@@ -86,7 +87,7 @@ def planner_verification_tasks(bdd_context: dict[str, Any]) -> None:
 def run_auto_planner_cycle(
     query: str,
     config: ConfigLike,
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
 ) -> dict[str, Any]:
     task_graph: dict[str, Any] = bdd_context["task_graph"]
 
@@ -342,7 +343,7 @@ def assert_audit_badges(
 
 @then("the planner task graph snapshot should include verification goals")
 def assert_planner_snapshot(
-    auto_cycle_result: dict[str, Any], bdd_context: dict[str, Any]
+    auto_cycle_result: dict[str, Any], bdd_context: BehaviorContext
 ) -> None:
     response: QueryResponse = auto_cycle_result["response"]
     assert response.task_graph is not None
@@ -377,7 +378,7 @@ def enable_planner_graph_conditioning(config: ConfigModel) -> ConfigModel:
 
 
 @given("the knowledge graph metadata includes contradictions and neighbours")
-def configure_graph_metadata(bdd_context: dict[str, Any]) -> None:
+def configure_graph_metadata(bdd_context: BehaviorContext) -> None:
     stage_metadata = {
         "contradictions": {
             "raw_score": 0.8,
@@ -443,7 +444,7 @@ def configure_graph_metadata(bdd_context: dict[str, Any]) -> None:
 def execute_planner_with_graph_context(
     query: str,
     config: ConfigLike,
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     monkeypatch,
 ) -> dict[str, Any]:
     stage_metadata = bdd_context["graph_stage_metadata"]

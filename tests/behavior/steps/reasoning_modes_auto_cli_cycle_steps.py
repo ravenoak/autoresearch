@@ -31,6 +31,7 @@ from autoresearch.orchestration.orchestration_utils import (
 from autoresearch.search.context import SearchContext
 from autoresearch.output_format import OutputDepth, OutputFormatter
 
+from tests.behavior.context import BehaviorContext
 from tests.behavior.steps.common_steps import assert_cli_success
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ def set_reasoning_mode(config: ConfigModel, mode: str) -> ConfigModel:
 
 
 @given("the planner proposes verification tasks")
-def planner_proposes_tasks(bdd_context: dict[str, Any]) -> None:
+def planner_proposes_tasks(bdd_context: BehaviorContext) -> None:
     """Seed a deterministic planner task graph for AUTO-mode runs."""
 
     bdd_context["task_graph"] = {
@@ -75,7 +76,7 @@ def planner_proposes_tasks(bdd_context: dict[str, Any]) -> None:
 
 
 @given("the scout gate will force a direct exit")
-def force_direct_exit_gate(bdd_context: dict[str, Any]) -> None:
+def force_direct_exit_gate(bdd_context: BehaviorContext) -> None:
     """Stub the scout gate to avoid escalation."""
 
     bdd_context["force_gate_should_debate"] = False
@@ -89,7 +90,7 @@ def force_direct_exit_gate(bdd_context: dict[str, Any]) -> None:
 def run_auto_reasoning_cli(
     query: str,
     config: ConfigModel,
-    bdd_context: dict[str, Any],
+    bdd_context: BehaviorContext,
     cli_runner: CliRunner,
 ) -> dict[str, Any]:
     """Invoke the AUTO-mode CLI with deterministic planner, gate, and verifier."""
@@ -230,7 +231,7 @@ def run_auto_reasoning_cli(
         def can_execute(self, _state: "QueryState", _config: ConfigModel) -> bool:
             return True
 
-        def execute(self, _state: "QueryState", _cfg: ConfigModel) -> dict[str, Any]:
+        def execute(self, _state: "QueryState", cfg: ConfigModel) -> dict[str, Any]:
             audits = [
                 build_scout_audit(
                     claim_id="c1",
@@ -257,9 +258,10 @@ def run_auto_reasoning_cli(
                         sources=["src-verify"],
                     )
                 )
+            configured_loops = max(1, cfg.loops or 0)
             metadata = build_scout_metadata(
                 audit_badges={"supported": 1, "needs_review": 1},
-                extra={"verification_loops": 1},
+                extra={"verification_loops": configured_loops},
             )
             return build_scout_payload(
                 claim_audits=audits,
@@ -333,7 +335,8 @@ def run_auto_reasoning_cli(
         nonlocal captured_response
         response = original_run_query(Orchestrator(), query_text, cfg, callbacks, **kwargs)
         auto_metrics = response.metrics.setdefault("auto_mode", {})
-        auto_metrics.setdefault("verification_loops", 1)
+        configured_loops = max(1, cfg.loops or 0)
+        auto_metrics.setdefault("verification_loops", configured_loops)
         captured_response = response
         return response
 
@@ -484,6 +487,23 @@ def assert_cli_verification_loop(auto_cli_cycle: dict[str, Any]) -> None:
     badge_rollup = metrics.get("audit_badges", {})
     assert badge_rollup.get("supported", 0) >= 1
     assert badge_rollup.get("needs_review", 0) >= 1
+
+
+@then("the CLI verification loops should match the configured count")
+def assert_cli_loop_count(
+    auto_cli_cycle: dict[str, Any], config: ConfigModel
+) -> None:
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    metrics: dict[str, Any] = payload.get("metrics", {})
+    auto_mode = metrics.get("auto_mode", {})
+    loops_value = int(auto_mode.get("verification_loops", 0))
+    expected_loops = max(1, config.loops or 0)
+    assert loops_value == expected_loops
+    response: QueryResponse = auto_cli_cycle["response"]
+    response_loops = int(
+        response.metrics.get("auto_mode", {}).get("verification_loops", 0)
+    )
+    assert response_loops == expected_loops
 
 
 @then("the AUTO metrics should record scout samples and agreement")
