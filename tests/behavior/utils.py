@@ -1,4 +1,4 @@
-"""Typed helpers for behavior test payloads."""
+"""Typed helpers for composing and storing behavior test payloads."""
 
 from __future__ import annotations
 
@@ -90,10 +90,26 @@ def as_payload(payload: Mapping[str, Any] | None = None, /, **values: Any) -> Pa
     return data
 
 
-def store_payload(context: BehaviorContext, key: str, **values: Any) -> PayloadDict:
-    """Update ``context`` with a typed payload dictionary and return it."""
+def store_payload(
+    context: BehaviorContext,
+    key: str,
+    payload: Mapping[str, Any] | None = None,
+    /,
+    **values: Any,
+) -> PayloadDict:
+    """Update ``context`` with a typed payload dictionary and return it.
 
-    payload = as_payload(**values)
+    Args:
+        context: The behavior context being updated.
+        key: The lookup key for the stored payload.
+        payload: Optional base mapping to merge into the stored payload.
+        **values: Additional key-value pairs merged into the payload.
+
+    Returns:
+        The merged payload stored in ``context``.
+    """
+
+    payload = as_payload(payload, **values)
     context[key] = payload
     return payload
 
