@@ -1,11 +1,15 @@
 import os
-import ray
+from pathlib import Path
+
 import pytest
-from autoresearch.distributed import RayExecutor
+import ray
+
 from autoresearch.config.models import ConfigModel, DistributedConfig, StorageConfig
-from autoresearch.storage import StorageManager
+from autoresearch.distributed import RayExecutor
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
+from autoresearch.storage import StorageManager
+from autoresearch.storage_typing import JSONDict
 
 pytestmark = pytest.mark.slow
 
@@ -18,17 +22,21 @@ class ClaimAgent:
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:  # pragma: no cover - dummy
         return True
 
-    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> JSONDict:
         self._pids.append(os.getpid())
-        StorageManager.persist_claim({"id": self.name, "type": "fact", "content": "x"})
-        state.update({"results": {self.name: "ok"}})
-        return {"results": {self.name: "ok"}}
+        claim: JSONDict = {"id": self.name, "type": "fact", "content": "x"}
+        StorageManager.persist_claim(claim)
+        result: JSONDict = {"results": {self.name: "ok"}}
+        state.update(result)
+        return result
 
 
-def test_distributed_storage_with_executor(tmp_path, monkeypatch):
+def test_distributed_storage_with_executor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))
-    cfg = ConfigModel(
+    cfg: ConfigModel = ConfigModel(
         agents=["A", "B"],
         loops=1,
         distributed=True,

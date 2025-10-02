@@ -14,7 +14,11 @@ from autoresearch.config.models import ConfigModel, DistributedConfig
 from autoresearch import search
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.distributed import executors
-from autoresearch.distributed.broker import BrokerMessage, MessageQueueProtocol
+from autoresearch.distributed.broker import (
+    BrokerMessage,
+    MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
+)
 from autoresearch.llm import pool as llm_pool
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
@@ -54,7 +58,7 @@ def _dummy_execute_agent_remote(
     state: QueryState,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: MessageQueueProtocol | None = None,
+    storage_queue: StorageBrokerQueueProtocol | None = None,
     http_session: object | None = None,
     llm_session: object | None = None,
 ) -> BrokerMessage:
@@ -74,8 +78,9 @@ def _dummy_execute_agent_remote(
         "result": res,
         "pid": os.getpid(),
     }
-    if result_queue is not None:
-        result_queue.put(msg)
+    result_queue_local: MessageQueueProtocol | None = result_queue
+    if result_queue_local is not None:
+        result_queue_local.put(msg)
     return msg
 
 
@@ -83,7 +88,7 @@ class DummyRemote:
     """Wrapper mirroring Ray's ``RemoteFunction`` callable interface."""
 
     def __init__(self, func: Callable[..., BrokerMessage] | None = None) -> None:
-        self._func = func or _dummy_execute_agent_remote
+        self._func: Callable[..., BrokerMessage] = func or _dummy_execute_agent_remote
 
     def remote(
         self,
@@ -91,7 +96,7 @@ class DummyRemote:
         state: QueryState,
         config: ConfigModel,
         result_queue: MessageQueueProtocol | None = None,
-        storage_queue: MessageQueueProtocol | None = None,
+        storage_queue: StorageBrokerQueueProtocol | None = None,
         http_session: object | None = None,
         llm_session: object | None = None,
     ) -> BrokerMessage:  # pragma: no cover - wrapper

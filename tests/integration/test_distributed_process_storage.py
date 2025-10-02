@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
-
 import autoresearch.orchestration.orchestrator as orchestrator_module
 from autoresearch.config.models import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.distributed import ProcessExecutor
@@ -28,16 +25,19 @@ class ClaimAgent:
         return True
 
     def execute(
-        self, state: QueryState, config: ConfigModel, **_: Any
+        self, state: QueryState, config: ConfigModel, **_: object
     ) -> JSONDict:
         self._pids.append(os.getpid())
         claim: JSONDict = {"id": self.name, "type": "fact", "content": "x"}
         StorageManager.persist_claim(claim)
-        state.update({"results": {self.name: "ok"}})
-        return {"results": {self.name: "ok"}}
+        result: JSONDict = {"results": {self.name: "ok"}}
+        state.update(result)
+        return result
 
 
-def test_process_storage_with_executor(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+def test_process_storage_with_executor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     pids: list[int] = []
 
     def agent_factory(name: str) -> ClaimAgent:
