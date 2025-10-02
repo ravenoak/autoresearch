@@ -21,6 +21,8 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
     else:  # If even that fails, raise a clear error
         raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
 
+from tests.targeted.helpers.distributed import build_agent_result_message
+
 
 @pytest.mark.requires_nlp
 def test_try_import_spacy(monkeypatch):
@@ -164,7 +166,7 @@ def test_redis_broker_publish(monkeypatch):
     import_or_skip("redis")
     import fakeredis
     import redis
-    from autoresearch.distributed.broker import RedisBroker
+    from autoresearch.distributed.broker import RedisBroker, StorageBrokerQueueProtocol
 
     fake = fakeredis.FakeRedis()
 
@@ -175,8 +177,11 @@ def test_redis_broker_publish(monkeypatch):
 
     monkeypatch.setattr(redis, "Redis", DummyRedis)
     broker = RedisBroker()
-    broker.publish({"x": 1})
-    assert broker.queue.get() == {"x": 1}
+    expected = build_agent_result_message(result={"value": 1})
+    broker.publish(expected)
+    queue: StorageBrokerQueueProtocol = broker.queue
+    message = queue.get()
+    assert message == expected
     broker.shutdown()
 
 
