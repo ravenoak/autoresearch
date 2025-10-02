@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Mapping, Sequence
+
 import pytest
 import requests
 
@@ -13,7 +15,7 @@ def test_external_lookup_timeout_integration(
 ) -> None:
     """Verify timeout exceptions propagate through integration layer."""
 
-    def timeout_backend(query: str, max_results: int = 5) -> list[dict[str, object]]:
+    def timeout_backend(query: str, max_results: int = 5) -> Sequence[Mapping[str, object]]:
         raise requests.exceptions.Timeout("slow")
 
     monkeypatch.setitem(Search.backends, "timeout", timeout_backend)

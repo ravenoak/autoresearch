@@ -8,7 +8,7 @@ SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "check_token_regressi
 pytestmark = pytest.mark.slow
 
 
-def test_token_regression_script():
+def test_token_regression_script() -> None:
     result = subprocess.run([
         "poetry",
         "run",

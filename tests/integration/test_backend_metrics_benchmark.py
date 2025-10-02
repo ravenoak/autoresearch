@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from tests.optional_imports import import_or_skip
 
@@ -41,7 +42,10 @@ pytestmark = [pytest.mark.slow, pytest.mark.integration]
 import_or_skip("pytest_benchmark")
 
 
-def test_backend_metrics(benchmark, metrics_baseline) -> None:
+def test_backend_metrics(
+    benchmark: BenchmarkFixture,
+    metrics_baseline: Callable[[str, float, float, float, float], None],
+) -> None:
     """Record metrics for each backend and check against baselines."""
     rows = load_data()
     grouped: Dict[str, List[Dict[str, str]]] = {}
@@ -52,6 +56,6 @@ def test_backend_metrics(benchmark, metrics_baseline) -> None:
             for _ in range(1000):
                 compute_metrics(data)
 
-        latency = benchmark(run)
+        latency: float = benchmark(run)
         precision, recall = compute_metrics(data)
         metrics_baseline(backend, precision, recall, latency)

@@ -1,10 +1,16 @@
 import rdflib
-from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel, StorageConfig
+from pathlib import Path
+
+import pytest
+import rdflib
+
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.storage import StorageManager
+from autoresearch.storage_typing import GraphProtocol, RDFQueryResultProtocol
 
 
-def _configure(tmp_path, monkeypatch):
+def _configure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(
         storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf"))
     )
@@ -13,7 +19,9 @@ def _configure(tmp_path, monkeypatch):
     ConfigLoader()._config = None
 
 
-def test_query_with_reasoning_engine(tmp_path, monkeypatch):
+def test_query_with_reasoning_engine(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 
@@ -27,7 +35,7 @@ ex:A rdfs:subClassOf ex:B .
     )
     StorageManager.load_ontology(str(onto))
 
-    store = StorageManager.get_rdf_store()
+    store: GraphProtocol = StorageManager.get_rdf_store()
     store.add(
         (
             rdflib.URIRef("http://example.com/x"),
@@ -36,7 +44,7 @@ ex:A rdfs:subClassOf ex:B .
         )
     )
 
-    res = StorageManager.query_with_reasoning(
+    res: RDFQueryResultProtocol = StorageManager.query_with_reasoning(
         "ASK { <http://example.com/x> a <http://example.com/B> }", engine="owlrl"
     )
     assert res.askAnswer

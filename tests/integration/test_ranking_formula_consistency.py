@@ -1,12 +1,19 @@
 from unittest.mock import patch
 
+from typing import Mapping, Sequence
+
+from unittest.mock import patch
+
 import pytest
 
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search import Search
 
 
-def test_convex_combination_matches_docs(monkeypatch):
+SearchResults = Sequence[Mapping[str, object]]
+
+
+def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> None:
     search_cfg = SearchConfig.model_construct(
         semantic_similarity_weight=0.2,
         bm25_weight=0.6,
@@ -16,10 +23,10 @@ def test_convex_combination_matches_docs(monkeypatch):
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    bm25 = [0.7, 0.2]
-    semantic = [0.4, 0.9]
-    cred = [0.5, 0.1]
-    docs = [
+    bm25: list[float] = [0.7, 0.2]
+    semantic: list[float] = [0.4, 0.9]
+    cred: list[float] = [0.5, 0.1]
+    docs: list[Mapping[str, object]] = [
         {"id": 0, "similarity": semantic[0]},
         {"id": 1, "similarity": semantic[1]},
     ]
@@ -33,7 +40,7 @@ def test_convex_combination_matches_docs(monkeypatch):
         ),
         patch.object(Search, "assess_source_credibility", return_value=cred),
     ):
-        ranked = Search.rank_results("q", docs)
+        ranked: SearchResults = Search.rank_results("q", docs)
 
     w_s = search_cfg.semantic_similarity_weight
     w_b = search_cfg.bm25_weight
