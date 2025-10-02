@@ -23,6 +23,17 @@ if TYPE_CHECKING:
     application_running: Callable[..., None]
     cli_app: Callable[..., None]
 else:
+    _context = importlib.import_module("tests.behavior.context")
+    BehaviorContext = _context.BehaviorContext
+    CLIInvocation = _context.CLIInvocation
+    APICapture = _context.APICapture
+    get_required = _context.get_required
+    get_optional = _context.get_optional
+    get_cli_result = _context.get_cli_result
+    set_cli_result = _context.set_cli_result
+    set_cli_invocation = _context.set_cli_invocation
+    set_value = _context.set_value
+
     _common_steps = importlib.import_module(
         "tests.behavior.steps.common_steps"
     )
@@ -30,14 +41,6 @@ else:
     app_running_with_default = _common_steps.app_running_with_default
     application_running = _common_steps.application_running
     cli_app = _common_steps.cli_app
-
-    _context = importlib.import_module("tests.behavior.context")
-    BehaviorContext = _context.BehaviorContext
-    CLIInvocation = _context.CLIInvocation
-    APICapture = _context.APICapture
-    get_required = _context.get_required
-    get_optional = _context.get_optional
-    set_value = _context.set_value
 
     _utils = importlib.import_module("tests.behavior.utils")
     PayloadDict = _utils.PayloadDict
@@ -72,6 +75,9 @@ __all__ = [
     "APICapture",
     "get_required",
     "get_optional",
+    "get_cli_result",
+    "set_cli_result",
+    "set_cli_invocation",
     "set_value",
     "PayloadDict",
     "as_payload",
