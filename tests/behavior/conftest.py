@@ -1,10 +1,9 @@
 """Behavior test configuration and shared fixtures."""
-
 from __future__ import annotations
 
 import os
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import TypeVar
 
@@ -33,7 +32,6 @@ from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
 from tests.behavior.context import BehaviorContext  # noqa: E402
 from tests.behavior.utils import ensure_dict  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
-from tests.typing_helpers import TypedFixture
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -98,25 +96,27 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture
-def test_context() -> TypedFixture[BehaviorContext]:
+def test_context() -> BehaviorContext:
     """Mutable mapping for sharing state in behavior tests."""
     return ensure_dict()
 
 
 @pytest.fixture
-def query_state() -> TypedFixture[QueryState]:
+def query_state() -> QueryState:
     """Provide a fresh ``QueryState`` instance for each scenario."""
     return QueryState(query="")
 
 
 @pytest.fixture
-def config_model() -> TypedFixture[ConfigModel]:
+def config_model() -> ConfigModel:
     """Provide a fresh ``ConfigModel`` instance for each scenario."""
     return ConfigModel()
 
 
 @pytest.fixture(autouse=True)
-def enable_real_vss(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
+def enable_real_vss(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     """Enable real VSS extension only when available."""
     if VSS_AVAILABLE:
         monkeypatch.setenv("REAL_VSS_TEST", "1")
@@ -134,7 +134,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 @pytest.fixture(autouse=True)
-def reset_api_request_log() -> TypedFixture[None]:
+def reset_api_request_log() -> None:
     """Clear API request log before each scenario."""
     reset_request_log()
     reset_limiter_state()
@@ -144,14 +144,14 @@ def reset_api_request_log() -> TypedFixture[None]:
 @pytest.fixture(autouse=True)
 def bdd_storage_manager(
     storage_manager: StorageManager,
-) -> TypedFixture[StorageManager]:
+) -> Generator[StorageManager, None, None]:
     """Use the global temporary storage fixture for behavior tests."""
     yield storage_manager
     return None
 
 
 @pytest.fixture(autouse=True)
-def reset_global_state() -> TypedFixture[None]:
+def reset_global_state() -> Generator[None, None, None]:
     """Reset ConfigLoader, environment variables, and storage after each scenario."""
     original_env = os.environ.copy()
     ConfigLoader.reset_instance()
@@ -164,7 +164,7 @@ def reset_global_state() -> TypedFixture[None]:
 
 
 @pytest.fixture
-def storage_error_handler() -> TypedFixture[StorageErrorHandler]:
+def storage_error_handler() -> StorageErrorHandler:
     """Provide a helper object for verifying storage exceptions in steps."""
 
     return StorageErrorHandler()
