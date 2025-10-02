@@ -1,13 +1,12 @@
 import asyncio
 import time
 from dataclasses import asdict, dataclass, field
-from typing import cast
-
 import pytest
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
 from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.orchestration.state import QueryState
+from autoresearch.storage_typing import JSONDict
 
 from tests.integration._orchestrator_stubs import AgentDouble, patch_agent_factory_get
 
@@ -41,10 +40,10 @@ class SleepAgentDouble(AgentDouble):
         state: QueryState,
         config: ConfigModel,
         **_: object,
-    ) -> dict[str, object]:
+    ) -> JSONDict:
         self.starts.append(time.perf_counter())
         time.sleep(self.delay)
-        payload = cast(dict[str, object], {"results": {self.name: "ok"}})
+        payload: JSONDict = {"results": {self.name: "ok"}}
         state.update(payload)
         state.results["final_answer"] = "ok"
         return payload

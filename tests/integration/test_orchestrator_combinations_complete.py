@@ -5,9 +5,12 @@ import pytest
 from autoresearch.agents import AgentRegistry, AgentFactory
 from autoresearch.agents.feedback import FeedbackEvent
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.state import QueryState
 from autoresearch.storage import StorageManager
+from autoresearch.storage_typing import JSONDict
 
 
 # Register a coalition to exercise coalition handling
@@ -22,10 +25,21 @@ def make_agent(name: str, order: list[str]):
         def __init__(self, name: str, llm_adapter=None) -> None:
             self.name = name
 
-        def can_execute(self, state, config):  # noqa: D401
+        def can_execute(
+            self,
+            state: QueryState,
+            config: ConfigModel,
+        ) -> bool:  # noqa: D401
+            _ = state, config
             return True
 
-        def execute(self, state, config, **kwargs):  # noqa: D401
+        def execute(
+            self,
+            state: QueryState,
+            config: ConfigModel,
+            **kwargs: object,
+        ) -> JSONDict:  # noqa: D401
+            _ = config, kwargs
             state.update(
                 {
                     "claims": [
@@ -47,15 +61,24 @@ def make_agent(name: str, order: list[str]):
                 _ = state.get_feedback_events(recipient="FactChecker")
             if self.name == "Synthesizer" or self.name == order[-1]:
                 state.results["final_answer"] = f"Answer from {self.name}"
-            return {"results": {self.name: "ok"}}
+            payload: JSONDict = {"results": {self.name: "ok"}}
+            return payload
 
     return DummyAgent(name)
 
 
 @pytest.mark.parametrize("agents", ALL_PAIRS)
-def test_all_agent_pairs(monkeypatch, agents):
-    order = list(agents)
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: None)
+def test_all_agent_pairs(
+    monkeypatch: pytest.MonkeyPatch,
+    agents: tuple[str, str],
+) -> None:
+    order: list[str] = list(agents)
+
+    def _persist_claim(_: JSONDict, partial_update: bool = False) -> None:
+        _ = partial_update
+        return None
+
+    monkeypatch.setattr(StorageManager, "persist_claim", _persist_claim)
     monkeypatch.setattr(
         AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order)
     )
@@ -72,10 +95,18 @@ def test_all_agent_pairs(monkeypatch, agents):
 
 
 @pytest.mark.parametrize("coalition", COALITIONS)
-def test_registered_coalitions(monkeypatch, coalition):
+def test_registered_coalitions(
+    monkeypatch: pytest.MonkeyPatch,
+    coalition: str,
+) -> None:
     members = AgentRegistry.get_coalition(coalition)
     order = ["Synthesizer"] + members
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: None)
+
+    def _persist_claim(_: JSONDict, partial_update: bool = False) -> None:
+        _ = partial_update
+        return None
+
+    monkeypatch.setattr(StorageManager, "persist_claim", _persist_claim)
     monkeypatch.setattr(
         AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order)
     )
