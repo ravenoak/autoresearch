@@ -13,6 +13,10 @@ The module includes:
 3. Built-in backends for DuckDuckGo and Serper
 4. Error handling for network issues, timeouts, and invalid responses
 
+Embedding model caches are automatically cleared whenever the active backend
+changes, is disabled, or when helper APIs reset state, ensuring subsequent
+embedding requests use a freshly instantiated model.
+
 See also the algorithm references in ``docs/algorithms`` for detailed
 descriptions of the ranking components:
 
@@ -121,6 +125,25 @@ SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
+def _clear_shared_sentence_transformer() -> None:
+    """Reset cached embedding model instances across ``Search`` objects."""
+
+    search_cls = globals().get("Search")
+    if search_cls is None:
+        return
+
+    if hasattr(search_cls, "_shared_sentence_transformer"):
+        setattr(search_cls, "_shared_sentence_transformer", None)
+
+    instances = getattr(search_cls, "_instances", None)
+    if instances is None:
+        return
+
+    for instance in list(instances):
+        if hasattr(instance, "_sentence_transformer"):
+            setattr(instance, "_sentence_transformer", None)
+
+
 def _resolve_sentence_transformer_cls() -> SentenceTransformerType | None:
     """Resolve the fastembed embedding class, preferring the new API."""
     candidates: tuple[tuple[str, str], ...] = (
@@ -145,8 +168,10 @@ def _try_import_sentence_transformers() -> bool:
     2) sentence_transformers.SentenceTransformer
     """
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
-    if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
-        return SENTENCE_TRANSFORMERS_AVAILABLE
+    previous_cls = SentenceTransformer
+    previous_available = SENTENCE_TRANSFORMERS_AVAILABLE
+    if SentenceTransformer is not None and SENTENCE_TRANSFORMERS_AVAILABLE:
+        return True
     cfg = _get_runtime_config()
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
@@ -164,9 +189,13 @@ def _try_import_sentence_transformers() -> bool:
             raise ImportError("No embedding backend available (fastembed or sentence-transformers)")
         SentenceTransformer = resolved
         SENTENCE_TRANSFORMERS_AVAILABLE = True
+        if previous_cls is not resolved:
+            _clear_shared_sentence_transformer()
     except Exception:
         SentenceTransformer = None
         SENTENCE_TRANSFORMERS_AVAILABLE = False
+        if previous_available:
+            _clear_shared_sentence_transformer()
     return SENTENCE_TRANSFORMERS_AVAILABLE
 
 
@@ -620,7 +649,7 @@ class Search:
         self.backends = dict(type(self)._default_backends)
         self.embedding_backends = dict(type(self)._default_embedding_backends)
         self._sentence_transformer = None
-        type(self)._shared_sentence_transformer = None
+        _clear_shared_sentence_transformer()
         self.close_http_session()
         type(self).backends = self.backends
         type(self).embedding_backends = self.embedding_backends
@@ -636,6 +665,7 @@ class Search:
             yield temp
         finally:
             temp.close_http_session()
+            _clear_shared_sentence_transformer()
 
     @hybridmethod
     def get_sentence_transformer(self) -> Optional[EmbeddingModelProtocol]:

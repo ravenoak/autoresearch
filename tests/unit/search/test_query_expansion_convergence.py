@@ -179,3 +179,44 @@ def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
     assert embedding is not None
     assert embedding.tolist() == [3.0, 4.0, 5.0]
     assert FakeSentenceTransformer.last_input == ["omega"]
+
+
+def test_search_embedding_backend_switches_without_reset(monkeypatch):
+    """Assume swapping embedding providers flushes cached instances automatically."""
+
+    cfg = make_config_model()
+    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_core, "SentenceTransformer", None)
+
+    class FakeFastEmbed:
+        def embed(self, sentences):
+            return [[1.0]]
+
+        def encode(self, sentences):  # pragma: no cover - defensive
+            raise AssertionError("encode should not run for fastembed fakes")
+
+    class FakeSentenceTransformer:
+        def encode(self, sentences):
+            return [[2.0]]
+
+    monkeypatch.setattr(
+        search_core,
+        "_resolve_sentence_transformer_cls",
+        lambda: FakeFastEmbed,
+    )
+
+    search = Search()
+    first_model = search.get_sentence_transformer()
+    assert isinstance(first_model, FakeFastEmbed)
+
+    module = ModuleType("sentence_transformers")
+    module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+    monkeypatch.setattr(search_core, "SentenceTransformer", None)
+    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
+
+    second_model = search.get_sentence_transformer()
+    assert isinstance(second_model, FakeSentenceTransformer)
+    assert second_model is not first_model
