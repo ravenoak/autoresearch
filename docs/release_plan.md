@@ -288,6 +288,10 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   【F:src/autoresearch/search/core.py†L705-L760】
   【F:src/autoresearch/orchestration/parallel.py†L145-L182】
   【F:tests/stubs/numpy.py†L12-L81】
+- [ ] Storage checklist:
+  - Document that the deterministic resident node floor stays at `2`
+    whenever release configs omit `minimum_deterministic_resident_nodes` so
+    reviewers confirm storage stability without extra overrides.
 - [x] Revalidated the DuckDB vector path now emits two search-phase instance
   lookups plus the direct-only pair (four calls total) while the legacy branch
   stays capped at the direct pair. The refreshed

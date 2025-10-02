@@ -308,10 +308,12 @@ class ConfigLoader:
             "use_kuzu": storage_cfg.get("use_kuzu", False),
             "kuzu_path": storage_cfg.get("kuzu_path", "kuzu.db"),
             "deterministic_node_budget": storage_cfg.get("deterministic_node_budget"),
-            "minimum_deterministic_resident_nodes": storage_cfg.get(
-                "minimum_deterministic_resident_nodes"
-            ),
         }
+        minimum_resident_nodes = storage_cfg.get("minimum_deterministic_resident_nodes")
+        if minimum_resident_nodes is not None:
+            storage_settings[
+                "minimum_deterministic_resident_nodes"
+            ] = minimum_resident_nodes
         _merge_dict(storage_settings, storage_env)
 
         api_section = raw.get("api", {})
