@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-from typing import Any
 
 import pytest
 
@@ -9,6 +8,8 @@ from autoresearch.agents.registry import AgentRegistry
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.state import QueryState
+from autoresearch.storage_typing import JSONDict
 from pytest import MonkeyPatch
 from tests.integration._orchestrator_stubs import (
     AgentDouble,
@@ -40,12 +41,12 @@ def test_orchestrator_all_registered_pairs(
         double = AgentDouble(name=agent_name)
 
         def result_factory(
-            state: Any,
+            state: QueryState,
             config: ConfigModel,
             *,
             name: str = agent_name,
             stub: AgentDouble = double,
-        ) -> dict[str, Any]:
+        ) -> JSONDict:
             original_factory = stub.result_factory
             stub.result_factory = None
             try:
