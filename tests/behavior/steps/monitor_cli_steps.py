@@ -2,6 +2,7 @@
 """Monitor CLI behavior step implementations."""
 
 from __future__ import annotations
+from tests.behavior.context import BehaviorContext
 
 import time
 
@@ -21,7 +22,7 @@ def _app_running():
 @when("I run `autoresearch monitor`")
 def run_monitor(
     monkeypatch,
-    bdd_context,
+    bdd_context: BehaviorContext,
     cli_runner,
     dummy_query_response,
     reset_global_registries,
@@ -40,7 +41,7 @@ def run_monitor(
 @when("I run `autoresearch monitor -w`")
 def run_monitor_watch(
     monkeypatch,
-    bdd_context,
+    bdd_context: BehaviorContext,
     cli_runner,
     dummy_query_response,
     reset_global_registries,
@@ -66,7 +67,7 @@ def run_monitor_watch(
 @when("I run `autoresearch monitor` with metrics backend unavailable")
 def run_monitor_backend_unavailable(
     monkeypatch,
-    bdd_context,
+    bdd_context: BehaviorContext,
     cli_runner,
     dummy_query_response,
     reset_global_registries,
@@ -83,32 +84,32 @@ def run_monitor_backend_unavailable(
 
 
 @then("the monitor command should exit successfully")
-def monitor_exit_successfully(bdd_context):
+def monitor_exit_successfully(bdd_context: BehaviorContext):
     result = bdd_context["monitor_result"]
     assert result.exit_code == 0
     assert result.stderr == ""
 
 
 @then("the monitor output should show CPU and memory usage")
-def monitor_output_metrics(bdd_context):
+def monitor_output_metrics(bdd_context: BehaviorContext):
     output = bdd_context["monitor_result"].stdout
     assert "cpu_percent" in output
     assert "memory_percent" in output
 
 
 @then("the monitor should refresh every second")
-def monitor_refresh_interval(bdd_context):
+def monitor_refresh_interval(bdd_context: BehaviorContext):
     assert bdd_context.get("sleep_calls") == [1]
 
 
 @then("the monitor command should exit with an error")
-def monitor_exit_error(bdd_context):
+def monitor_exit_error(bdd_context: BehaviorContext):
     result = bdd_context["monitor_result"]
     assert result.exit_code != 0
 
 
 @then("the monitor output should include a friendly metrics backend error message")
-def monitor_error_message(bdd_context):
+def monitor_error_message(bdd_context: BehaviorContext):
     result = bdd_context["monitor_result"]
     output = result.stdout + result.stderr
     if not output and result.exception:
@@ -138,7 +139,7 @@ def test_monitor_backend_unavailable():
 @when("I run `autoresearch monitor resources -d 1`")
 def run_monitor_resources(
     monkeypatch,
-    bdd_context,
+    bdd_context: BehaviorContext,
     cli_runner,
     dummy_query_response,
     reset_global_registries,

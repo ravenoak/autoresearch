@@ -1,4 +1,5 @@
 # flake8: noqa
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then, parsers
 import requests
 import responses
@@ -9,7 +10,7 @@ A2A_URL = "http://a2a.example/message"
 
 
 @when(parsers.parse('I send a valid A2A query "{query}"'))
-def send_valid_a2a_query(query, bdd_context):
+def send_valid_a2a_query(query, bdd_context: BehaviorContext):
     with responses.RequestsMock() as rsps:
         rsps.post(
             A2A_URL,
@@ -21,7 +22,7 @@ def send_valid_a2a_query(query, bdd_context):
 
 
 @when("I send malformed JSON to the A2A interface")
-def send_malformed_json(bdd_context):
+def send_malformed_json(bdd_context: BehaviorContext):
     with responses.RequestsMock() as rsps:
         rsps.post(
             A2A_URL,
@@ -33,7 +34,7 @@ def send_malformed_json(bdd_context):
 
 
 @when("the A2A interface returns a server error")
-def send_server_error(bdd_context):
+def send_server_error(bdd_context: BehaviorContext):
     with responses.RequestsMock() as rsps:
         rsps.post(
             A2A_URL,
@@ -45,13 +46,13 @@ def send_server_error(bdd_context):
 
 
 @then(parsers.parse("the response status code should be {status:d}"))
-def check_status_code(status, bdd_context):
+def check_status_code(status, bdd_context: BehaviorContext):
     resp = bdd_context["a2a_response"]
     assert resp.status_code == status
 
 
 @then("the response should include a JSON message with an answer")
-def check_json_response(bdd_context):
+def check_json_response(bdd_context: BehaviorContext):
     resp = bdd_context["a2a_response"]
     data = resp.json()
     assert data.get("status") == "success"
@@ -60,7 +61,7 @@ def check_json_response(bdd_context):
 
 
 @then(parsers.parse('the error message should contain "{message}"'))
-def check_error_message(message, bdd_context):
+def check_error_message(message, bdd_context: BehaviorContext):
     resp = bdd_context["a2a_response"]
     data = resp.json()
     assert data.get("status") == "error"

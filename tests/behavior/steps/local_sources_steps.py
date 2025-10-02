@@ -1,4 +1,5 @@
 # flake8: noqa
+from tests.behavior.context import BehaviorContext
 import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
@@ -23,7 +24,7 @@ if not _git_available:
 
 
 @given("a directory with text files")
-def directory_with_text_files(tmp_path, bdd_context):
+def directory_with_text_files(tmp_path, bdd_context: BehaviorContext):
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     file_path = docs_dir / "note.txt"
@@ -35,7 +36,7 @@ def directory_with_text_files(tmp_path, bdd_context):
 
 
 @when(parsers.parse('I search the directory for "{query}"'))
-def search_directory(query, monkeypatch, bdd_context):
+def search_directory(query, monkeypatch, bdd_context: BehaviorContext):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["local_file"]
     cfg.search.context_aware.enabled = False
@@ -47,14 +48,14 @@ def search_directory(query, monkeypatch, bdd_context):
 
 
 @then("I should get results from the text files")
-def check_directory_results(bdd_context):
+def check_directory_results(bdd_context: BehaviorContext):
     results = bdd_context["search_results"]
     file_path = bdd_context["file_path"]
     assert any(r["url"] == str(file_path) for r in results)
 
 
 @given("a directory with PDF and DOCX files")
-def directory_with_pdf_docx(tmp_path, bdd_context):
+def directory_with_pdf_docx(tmp_path, bdd_context: BehaviorContext):
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     pdf_path = docs_dir / "note.pdf"
@@ -77,7 +78,7 @@ def directory_with_pdf_docx(tmp_path, bdd_context):
 
 
 @when(parsers.parse('I search the directory for "{query}" using document parser'))
-def search_directory_documents(query, monkeypatch, bdd_context):
+def search_directory_documents(query, monkeypatch, bdd_context: BehaviorContext):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["local_file"]
     cfg.search.context_aware.enabled = False
@@ -89,14 +90,14 @@ def search_directory_documents(query, monkeypatch, bdd_context):
 
 
 @then("I should get results from the PDF and DOCX files")
-def check_document_results(bdd_context):
+def check_document_results(bdd_context: BehaviorContext):
     results = bdd_context["search_results"]
     assert any(r["url"] == str(bdd_context["pdf_path"]) for r in results)
     assert any(r["url"] == str(bdd_context["docx_path"]) for r in results)
 
 
 @given(parsers.parse('a local Git repository with commits containing "{term}"'))
-def local_git_repository(tmp_path, bdd_context, term):
+def local_git_repository(tmp_path, bdd_context: BehaviorContext, term):
     repo_path = tmp_path / "repo"
     repo_path.mkdir()
     subprocess.run(["git", "init"], cwd=repo_path, check=True)
@@ -111,7 +112,7 @@ def local_git_repository(tmp_path, bdd_context, term):
 
 
 @given(parsers.parse('a local Git repository with diffs containing "{term}"'))
-def local_git_repository_with_diff(tmp_path, bdd_context, term):
+def local_git_repository_with_diff(tmp_path, bdd_context: BehaviorContext, term):
     repo_path = tmp_path / "repo"
     repo_path.mkdir()
     subprocess.run(["git", "init"], cwd=repo_path, check=True)
@@ -130,7 +131,7 @@ def local_git_repository_with_diff(tmp_path, bdd_context, term):
 
 
 @when(parsers.parse('I search the repository for "{query}"'))
-def search_repository(query, monkeypatch, bdd_context):
+def search_repository(query, monkeypatch, bdd_context: BehaviorContext):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["local_git"]
     cfg.search.context_aware.enabled = False
@@ -143,7 +144,7 @@ def search_repository(query, monkeypatch, bdd_context):
 
 
 @then("I should see results referencing commit messages or code")
-def check_git_results(bdd_context):
+def check_git_results(bdd_context: BehaviorContext):
     results = bdd_context["search_results"]
     repo_path = bdd_context["repo_path"]
     term = bdd_context["term"]
@@ -152,14 +153,14 @@ def check_git_results(bdd_context):
 
 
 @then("I should see commit diff results with metadata")
-def check_git_diff_results(bdd_context):
+def check_git_diff_results(bdd_context: BehaviorContext):
     results = bdd_context["search_results"]
     assert any(r.get("diff") for r in results)
     assert any(r.get("author") and r.get("date") for r in results if r.get("diff"))
 
 
 @then("the diff results should include surrounding code context")
-def check_diff_code_context(bdd_context):
+def check_diff_code_context(bdd_context: BehaviorContext):
     results = bdd_context["search_results"]
     term = bdd_context["term"]
     for r in results:
@@ -171,7 +172,7 @@ def check_diff_code_context(bdd_context):
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for text files")
-def test_search_directory(bdd_context):
+def test_search_directory(bdd_context: BehaviorContext):
     assert bdd_context["search_results"]
 
 
@@ -179,12 +180,12 @@ def test_search_directory(bdd_context):
     "../features/local_sources.feature",
     "Searching a local Git repository for code snippets or commit messages",
 )
-def test_search_git_repo(bdd_context):
+def test_search_git_repo(bdd_context: BehaviorContext):
     assert bdd_context["search_results"]
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for PDF and DOCX files")
-def test_search_document_directory(bdd_context):
+def test_search_document_directory(bdd_context: BehaviorContext):
     assert bdd_context["search_results"]
 
 
@@ -192,7 +193,7 @@ def test_search_document_directory(bdd_context):
     "../features/local_sources.feature",
     "Searching commit diffs and metadata in a local Git repository",
 )
-def test_search_git_diffs(bdd_context):
+def test_search_git_diffs(bdd_context: BehaviorContext):
     assert bdd_context["search_results"]
 
 
@@ -200,5 +201,5 @@ def test_search_git_diffs(bdd_context):
     "../features/local_sources.feature",
     "Searching commit diffs with code context",
 )
-def test_search_git_diff_context(bdd_context):
+def test_search_git_diff_context(bdd_context: BehaviorContext):
     assert bdd_context["search_results"]

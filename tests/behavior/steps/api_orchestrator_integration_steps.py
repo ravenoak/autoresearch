@@ -4,6 +4,7 @@ This module contains step definitions for testing the integration between
 the API and orchestration system, including query forwarding, error handling,
 parameter handling, and concurrent request handling.
 """
+from tests.behavior.utils import as_payload
 
 import pytest
 import concurrent.futures
@@ -20,14 +21,14 @@ from autoresearch.errors import OrchestrationError
 @pytest.fixture
 def test_context():
     """Create a context for storing test state."""
-    return {
+    return as_payload({
         "client": None,
         "mock_orchestrator": None,
         "query": None,
         "response": None,
         "errors": [],
         "concurrent_responses": [],
-    }
+    })
 
 
 @pytest.fixture

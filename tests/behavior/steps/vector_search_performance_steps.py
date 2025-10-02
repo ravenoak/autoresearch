@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then
 from unittest.mock import patch
 import time
@@ -15,7 +16,7 @@ def test_vector_search_performance():
 
 
 @when("I measure vector search time", target_fixture="search_duration")
-def measure_vector_search_time(persisted_claims, bdd_context):
+def measure_vector_search_time(persisted_claims, bdd_context: BehaviorContext):
     start = time.time()
     orig_has_vss = StorageManager.has_vss
     from autoresearch import storage as storage_module
@@ -39,7 +40,7 @@ def check_duration(search_duration):
 
 
 @then("vector search should be invoked correctly")
-def vector_search_invoked_correctly(bdd_context):
+def vector_search_invoked_correctly(bdd_context: BehaviorContext):
     args, kwargs = bdd_context["vs_call"]
     assert args[0] == [0.0, 0.0]
     assert kwargs.get("k") == 1
@@ -47,7 +48,7 @@ def vector_search_invoked_correctly(bdd_context):
 
 
 @then("storage methods should be restored after the call")
-def storage_methods_restored(bdd_context):
+def storage_methods_restored(bdd_context: BehaviorContext):
     from autoresearch import storage as storage_module
 
     assert StorageManager.has_vss is bdd_context["orig_has_vss"]

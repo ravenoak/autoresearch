@@ -1,6 +1,7 @@
 """Step definitions for A2A MCP integration scenarios."""
 
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from unittest.mock import patch
 
@@ -23,7 +24,7 @@ def mock_server() -> FastMCP:
 
     @server.tool
     async def research(query: str) -> dict:
-        return {"answer": "42"}
+        return as_payload({"answer": "42"})
 
     yield server
     server.tools.clear()
@@ -76,7 +77,7 @@ def handshake_recovers(server: FastMCP, bdd_context: dict) -> None:
                 raise ConnectionError("temporary failure")
             if hasattr(self.target, "call_tool"):
                 return await self.target.call_tool(name, params)
-            return {}
+            return as_payload({})
 
     with patch("autoresearch.mcp_interface.Client", FlakyClient):
         with pytest.raises(ConnectionError):

@@ -2,6 +2,7 @@
 
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
+from tests.behavior.utils import as_payload
 from autoresearch.errors import (
     ConfigError,
     StorageError,
@@ -107,7 +108,7 @@ def uninitialized_storage():
             )
 
     pytest.storage = MockStorageManager()
-    pytest.bdd_context = {}  # Initialize BDD context for storage_error_handler
+    pytest.bdd_context = as_payload()  # Initialize BDD context for storage_error_handler
 
 
 @when("I try to perform a storage operation")

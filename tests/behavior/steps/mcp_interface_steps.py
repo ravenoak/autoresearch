@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from unittest.mock import patch
 
@@ -21,7 +22,7 @@ def mock_server():
     async def research(query: str) -> dict:
         if query == "bad":
             raise ValueError("malformed request")
-        return {"answer": "42"}
+        return as_payload({"answer": "42"})
 
     yield server
 
@@ -75,7 +76,7 @@ def retry_after_connection_failure(server: FastMCP, bdd_context: dict) -> None:
                 raise ConnectionError("temporary outage")
             if hasattr(self.target, "call_tool"):
                 return await self.target.call_tool(name, params)
-            return {}
+            return as_payload({})
 
     with patch("autoresearch.mcp_interface.Client", FlakyClient):
         with pytest.raises(ConnectionError):

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 import json
 from typing import TYPE_CHECKING, Any, Callable
@@ -165,7 +166,7 @@ def run_auto_reasoning_cli(
                 )
             state.metadata.setdefault("planner", {})["task_graph"] = task_graph
             if cfg.reasoning_mode == ReasoningMode.DIRECT:
-                return {
+                return as_payload({
                     "claims": scout_claims,
                     "sources": scout_sources,
                     "metadata": metadata,
@@ -173,8 +174,8 @@ def run_auto_reasoning_cli(
                         "final_answer": "Initial scout summary",
                         "task_graph": task_graph,
                     },
-                }
-            return {
+                })
+            return as_payload({
                 "claims": [
                     {
                         "id": "c3",
@@ -187,7 +188,7 @@ def run_auto_reasoning_cli(
                     "task_graph": task_graph,
                 },
                 "metadata": metadata,
-            }
+            })
 
     class DebateContrarian:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -198,7 +199,7 @@ def run_auto_reasoning_cli(
             return True
 
         def execute(self, _state: "QueryState", _cfg: ConfigModel) -> dict[str, Any]:
-            return {
+            return as_payload({
                 "claims": [
                     {
                         "id": "c2",
@@ -213,7 +214,7 @@ def run_auto_reasoning_cli(
                     }
                 ],
                 "results": {"contrarian_note": "Verification gaps recorded"},
-            }
+            })
 
     class VerifierFactChecker:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -250,14 +251,14 @@ def run_auto_reasoning_cli(
                         "sources": ["src-verify"],
                     }
                 )
-            return {
+            return as_payload({
                 "claim_audits": audits,
                 "metadata": {
                     "audit_badges": {"supported": 1, "needs_review": 1},
                     "verification_loops": 1,
                 },
                 "results": {"verification_summary": "Audit badges recorded"},
-            }
+            })
 
     agent_builders: dict[str, Callable[[str, object | None], object]] = {
         "Synthesizer": lambda name, adapter: PlannerSynthesizer(name, adapter),

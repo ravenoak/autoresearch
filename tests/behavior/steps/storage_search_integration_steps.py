@@ -4,6 +4,7 @@ This module contains step definitions for testing the integration between
 the storage system and search functionality, including vector search,
 eviction policies, and error handling.
 """
+from tests.behavior.utils import as_payload
 
 import os
 import pytest
@@ -18,7 +19,7 @@ from autoresearch.config.loader import ConfigLoader
 @pytest.fixture
 def test_context():
     """Create a context for storing test state."""
-    return {"claims": [], "search_results": [], "errors": [], "logs": []}
+    return as_payload({"claims": [], "search_results": [], "errors": [], "logs": []})
 
 
 @pytest.fixture

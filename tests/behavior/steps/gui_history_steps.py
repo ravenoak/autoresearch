@@ -1,4 +1,6 @@
 # flake8: noqa
+from tests.behavior.utils import empty_metrics
+from tests.behavior.context import BehaviorContext
 import json
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -13,7 +15,7 @@ pytestmark = pytest.mark.requires_ui
 
 
 @given("the Streamlit application has a stored query history")
-def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context):
+def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context: BehaviorContext):
     import streamlit as st
 
     # Isolate session state
@@ -47,7 +49,7 @@ def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context):
         answer="The answer",
         citations=[],
         reasoning=[],
-        metrics={},
+        metrics=empty_metrics(),
     )
     cfg = ConfigModel()
     fake_store("What is AI?", result, cfg)
@@ -59,7 +61,7 @@ def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context):
 
 
 @when("I view the query history")
-def view_query_history(bdd_context):
+def view_query_history(bdd_context: BehaviorContext):
     import streamlit as st
 
     @contextmanager
@@ -79,14 +81,14 @@ def view_query_history(bdd_context):
 
 
 @then("the previous query should be visible")
-def previous_query_visible(bdd_context):
+def previous_query_visible(bdd_context: BehaviorContext):
     (args, _kwargs) = bdd_context["history_df_call"]
     df = args[0]
     assert any(q == "What is AI?" for q in df["Query"])
 
 
 @when("I rerun the query from history")
-def rerun_query_from_history(bdd_context):
+def rerun_query_from_history(bdd_context: BehaviorContext):
     import streamlit as st
 
     @contextmanager
@@ -120,7 +122,7 @@ def rerun_query_from_history(bdd_context):
 
 
 @then("the rerun results should match the stored results")
-def rerun_matches_original(bdd_context):
+def rerun_matches_original(bdd_context: BehaviorContext):
     assert bdd_context["rerun_result"] == bdd_context["original_result"]
 
 

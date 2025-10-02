@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 import json
 from typing import Any, Callable
@@ -143,7 +144,7 @@ def run_auto_planner_cycle(
                 },
             ]
             if cfg.reasoning_mode == ReasoningMode.DIRECT:
-                return {
+                return as_payload({
                     "claims": scout_claims,
                     "sources": scout_sources,
                     "metadata": metadata,
@@ -151,8 +152,8 @@ def run_auto_planner_cycle(
                         "final_answer": "Initial scout summary",
                         "task_graph": task_graph,
                     },
-                }
-            return {
+                })
+            return as_payload({
                 "claims": [
                     {
                         "id": "c3",
@@ -164,7 +165,7 @@ def run_auto_planner_cycle(
                     "final_answer": "Verified synthesis with planner context.",
                     "task_graph": task_graph,
                 },
-            }
+            })
 
     class DebateContrarian:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -175,7 +176,7 @@ def run_auto_planner_cycle(
             return True
 
         def execute(self, _state: QueryState, _cfg: ConfigLike) -> dict[str, Any]:
-            return {
+            return as_payload({
                 "claims": [
                     {
                         "id": "c2",
@@ -190,7 +191,7 @@ def run_auto_planner_cycle(
                     }
                 ],
                 "results": {"contrarian_note": "Verification gaps recorded"},
-            }
+            })
 
     class VerifierFactChecker:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -217,11 +218,11 @@ def run_auto_planner_cycle(
                     "sources": ["src-verify"],
                 },
             ]
-            return {
+            return as_payload({
                 "claim_audits": audits,
                 "metadata": {"audit_badges": {"supported": 1, "needs_review": 1}},
                 "results": {"verification_summary": "Audit badges recorded"},
-            }
+            })
 
     agent_builders: dict[str, Callable[[str, object | None], object]] = {
         "Synthesizer": lambda name, adapter: PlannerSynthesizer(name, adapter),
@@ -498,13 +499,13 @@ def execute_planner_with_graph_context(
     prompt = trace_entries[-1]["payload"]["prompt"]
     telemetry = state.metadata.get("planner", {}).get("telemetry", {})
 
-    return {
+    return as_payload({
         "state": state,
         "result": result,
         "prompt": prompt,
         "telemetry": telemetry,
         "adapter_prompts": adapter_prompts,
-    }
+    })
 
 
 @then("the planner prompt should include contradiction and neighbour cues")

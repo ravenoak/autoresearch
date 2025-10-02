@@ -1,6 +1,8 @@
 """Step definitions for distributed execution feature."""
 
 from __future__ import annotations
+from tests.behavior.utils import as_payload
+from tests.behavior.context import BehaviorContext
 
 import importlib.util
 import os
@@ -47,7 +49,7 @@ def _get_distributed_artifacts(bdd_context: BehaviorContext) -> DistributedArtif
 @pytest.mark.slow
 @pytest.mark.requires_distributed
 @scenario("../features/distributed_execution.feature", "Run distributed query with Ray executor")
-def test_ray_executor(bdd_context):
+def test_ray_executor(bdd_context: BehaviorContext):
     """Run distributed query with Ray executor."""
     pass
 
@@ -55,7 +57,7 @@ def test_ray_executor(bdd_context):
 @pytest.mark.slow
 @pytest.mark.requires_distributed
 @scenario("../features/distributed_execution.feature", "Run distributed query with multiprocessing")
-def test_process_executor(bdd_context):
+def test_process_executor(bdd_context: BehaviorContext):
     """Run distributed query with multiprocessing."""
     pass
 
@@ -86,7 +88,7 @@ def mock_agents(monkeypatch: pytest.MonkeyPatch, pids: list[int]) -> None:
             claim = {"id": self.name, "type": "fact", "content": self.name}
             StorageManager.persist_claim(claim)
             state.update({"results": {self.name: "ok"}, "claims": [claim]})
-            return {"results": {self.name: "ok"}, "claims": [claim]}
+            return as_payload({"results": {self.name: "ok"}, "claims": [claim]})
 
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))
 

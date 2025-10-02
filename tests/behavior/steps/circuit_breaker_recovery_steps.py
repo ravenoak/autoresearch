@@ -1,6 +1,7 @@
 """Step definitions for circuit breaker recovery feature."""
 
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -22,7 +23,7 @@ def breaker_fixture(threshold: int, cooldown: int) -> dict:
         return time_state["t"]
 
     mgr = CircuitBreakerManager(threshold=threshold, cooldown=cooldown, time_func=now)
-    return {"manager": mgr, "time": time_state}
+    return as_payload({"manager": mgr, "time": time_state})
 
 
 @when("three critical failures occur")

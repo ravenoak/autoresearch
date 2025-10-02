@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 from pathlib import Path
 from typing import Callable, cast
@@ -298,7 +299,7 @@ def check_dynamic_content_announcements(bdd_context: BehaviorContext) -> None:
     from autoresearch.models import QueryResponse
     from autoresearch.streamlit_app import display_results
 
-    dummy = QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+    dummy = QueryResponse(answer="ok", citations=[], reasoning=[], metrics=empty_metrics())
     with patch("streamlit.markdown") as mock_markdown:
         display_results(dummy)
 

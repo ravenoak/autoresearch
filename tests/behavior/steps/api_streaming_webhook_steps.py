@@ -1,6 +1,7 @@
 """Step definitions for API streaming and webhook scenarios."""
 
 from __future__ import annotations
+from tests.behavior.utils import empty_metrics
 
 from dataclasses import dataclass
 import json
@@ -113,7 +114,7 @@ def send_query_with_webhook(
         Orchestrator,
         "run_query",
         lambda q, c, callbacks=None, **k: QueryResponse(
-            answer="ok", citations=[], reasoning=[], metrics={}
+            answer="ok", citations=[], reasoning=[], metrics=empty_metrics()
         ),
     )
     stats = WebhookStats(status_code=0, call_count=0)

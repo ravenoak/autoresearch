@@ -1,4 +1,5 @@
 """Step definitions for message broker configuration scenarios."""
+from tests.behavior.context import BehaviorContext
 
 import pytest
 from pytest_bdd import given, scenario, then, when
@@ -10,13 +11,13 @@ from autoresearch.distributed import (
 
 
 @given('the message broker name "{name}"')
-def given_broker_name(bdd_context, name: str) -> None:
+def given_broker_name(bdd_context: BehaviorContext, name: str) -> None:
     """Store the broker name for later retrieval."""
     bdd_context["broker_name"] = name
 
 
 @when("I obtain a message broker instance")
-def obtain_broker_instance(bdd_context) -> None:
+def obtain_broker_instance(bdd_context: BehaviorContext) -> None:
     """Instantiate the configured message broker."""
     name = bdd_context["broker_name"]
     try:
@@ -29,13 +30,13 @@ def obtain_broker_instance(bdd_context) -> None:
 
 
 @then("an in-memory broker should be returned")
-def assert_in_memory_broker(bdd_context) -> None:
+def assert_in_memory_broker(bdd_context: BehaviorContext) -> None:
     """Verify the resolved broker is the in-memory implementation."""
     assert isinstance(bdd_context["broker"], InMemoryBroker)
 
 
 @then("a message broker error should be raised")
-def assert_broker_error(bdd_context) -> None:
+def assert_broker_error(bdd_context: BehaviorContext) -> None:
     """Ensure an error was captured during broker resolution."""
     assert bdd_context["broker"] is None
     err = bdd_context.get("broker_error")
@@ -44,7 +45,7 @@ def assert_broker_error(bdd_context) -> None:
 
 
 @then("a redis broker should be returned")
-def assert_redis_broker(bdd_context) -> None:
+def assert_redis_broker(bdd_context: BehaviorContext) -> None:
     """Verify the resolved broker is the Redis implementation."""
     assert isinstance(bdd_context["broker"], RedisBroker)
 

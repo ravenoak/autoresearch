@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from pathlib import Path
 from typing import Any
@@ -29,7 +30,7 @@ class Sender(Agent):
 
     def execute(self, state: QueryState, config: ConfigModel) -> dict[str, Any]:
         self.send_message(state, "hi", to="Receiver")
-        return {}
+        return as_payload({})
 
 
 class Broadcaster(Agent):
@@ -38,7 +39,7 @@ class Broadcaster(Agent):
 
     def execute(self, state: QueryState, config: ConfigModel) -> dict[str, Any]:
         self.broadcast(state, "hello team", "team")
-        return {}
+        return as_payload({})
 
 
 class Receiver(Agent):
@@ -49,7 +50,7 @@ class Receiver(Agent):
         msgs = self.get_messages(state, from_agent="Sender")
         content = msgs[0].content if msgs else None
         state.results["received"] = content
-        return {}
+        return as_payload({})
 
 
 class TeamReceiver(Agent):
@@ -63,7 +64,7 @@ class TeamReceiver(Agent):
             protocol=MessageProtocol.BROADCAST,
         )
         state.results[self.name] = msgs[0].content if msgs else None
-        return {}
+        return as_payload({})
 
 
 @scenario(

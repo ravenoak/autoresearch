@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
 
 from typing import Any, Callable, MutableMapping, cast
 from unittest.mock import MagicMock, patch
@@ -52,7 +53,7 @@ def config() -> ConfigModel:
 @pytest.fixture
 def context() -> ScenarioContext:
     """Shared context for steps."""
-    return {}
+    return as_payload({})
 
 
 # Background steps

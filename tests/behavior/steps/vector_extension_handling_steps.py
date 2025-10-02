@@ -1,3 +1,4 @@
+from tests.behavior.context import BehaviorContext
 import logging
 import os
 from unittest.mock import MagicMock, patch
@@ -22,7 +23,7 @@ pytestmark = pytest.mark.requires_vss
     "../features/vector_extension_handling.feature",
     "Load VSS extension from filesystem",
 )
-def test_load_from_filesystem(bdd_context):
+def test_load_from_filesystem(bdd_context: BehaviorContext):
     """Test scenario: Load vector extension from filesystem."""
     bdd_context["scenario_name"] = "Load vector extension from filesystem"
     pass
@@ -32,7 +33,7 @@ def test_load_from_filesystem(bdd_context):
     "../features/vector_extension_handling.feature",
     "Download VSS extension automatically",
 )
-def test_download_automatically(bdd_context):
+def test_download_automatically(bdd_context: BehaviorContext):
     """Test scenario: Download VSS extension automatically."""
     bdd_context["scenario_name"] = "Download VSS extension automatically"
     pass
@@ -42,7 +43,7 @@ def test_download_automatically(bdd_context):
     "../features/vector_extension_handling.feature",
     "Fallback to download when local extension is invalid",
 )
-def test_fallback_to_download(bdd_context):
+def test_fallback_to_download(bdd_context: BehaviorContext):
     """Test scenario: Fallback to download when local extension is invalid."""
     bdd_context["scenario_name"] = "Fallback to download when local extension is invalid"
     pass
@@ -52,7 +53,7 @@ def test_fallback_to_download(bdd_context):
     "../features/vector_extension_handling.feature",
     "Handle offline environment with local extension",
 )
-def test_offline_with_local_extension(bdd_context):
+def test_offline_with_local_extension(bdd_context: BehaviorContext):
     """Test scenario: Handle offline environment with local extension."""
     bdd_context["scenario_name"] = "Handle offline environment with local extension"
     pass
@@ -62,7 +63,7 @@ def test_offline_with_local_extension(bdd_context):
     "../features/vector_extension_handling.feature",
     "Handle offline environment without local extension",
 )
-def test_offline_without_local_extension(bdd_context):
+def test_offline_without_local_extension(bdd_context: BehaviorContext):
     """Test scenario: Handle offline environment without local extension."""
     bdd_context["scenario_name"] = "Handle offline environment without local extension"
     pass
@@ -72,7 +73,7 @@ def test_offline_without_local_extension(bdd_context):
     "../features/vector_extension_handling.feature",
     "Embedding search wrapper dispatches to backend",
 )
-def test_embedding_wrapper(bdd_context):
+def test_embedding_wrapper(bdd_context: BehaviorContext):
     """Test scenario: Embedding search wrapper dispatches to backend."""
     bdd_context["scenario_name"] = "Embedding search wrapper dispatches to backend"
     pass
@@ -216,7 +217,7 @@ def invalid_extension(tmp_path, monkeypatch):
 
 
 @given("I have configured the VSS extension path")
-def configure_extension_path(monkeypatch, config, bdd_context, request):
+def configure_extension_path(monkeypatch, config, bdd_context: BehaviorContext, request):
     """Configure the VSS extension path in the configuration."""
     # Try to get either local_extension or invalid_extension from the request
     extension_path = None
@@ -283,7 +284,7 @@ def offline_environment(monkeypatch):
 
 
 @when("I initialize the storage system")
-def initialize_storage_step(reset_storage, monkeypatch, bdd_context):
+def initialize_storage_step(reset_storage, monkeypatch, bdd_context: BehaviorContext):
     """Initialize the storage system and capture any logs or errors."""
     # Capture logs
     log_messages = []
@@ -349,7 +350,7 @@ def initialize_storage_step(reset_storage, monkeypatch, bdd_context):
 
 
 @then("the VSS extension should be loaded from the filesystem")
-def check_loaded_from_filesystem(bdd_context):
+def check_loaded_from_filesystem(bdd_context: BehaviorContext):
     """Verify that the VSS extension was loaded from the filesystem."""
     # Get the extension path from the context
     extension_path = None
@@ -383,7 +384,7 @@ def check_loaded_from_filesystem(bdd_context):
 
 
 @then("the VSS extension should be downloaded automatically")
-def check_downloaded_automatically(bdd_context):
+def check_downloaded_automatically(bdd_context: BehaviorContext):
     """Verify that the VSS extension was downloaded automatically."""
     # Add the expected log messages directly to the context
     if "logs" not in bdd_context:
@@ -422,7 +423,7 @@ def check_downloaded_automatically(bdd_context):
 
 
 @then("the system should attempt to download the extension")
-def check_download_attempt(bdd_context):
+def check_download_attempt(bdd_context: BehaviorContext):
     """Verify that the system attempted to download the extension."""
     # Add the expected log messages directly to the context
     if "logs" not in bdd_context:
@@ -474,7 +475,7 @@ def check_download_attempt(bdd_context):
 
 
 @then("a warning should be logged about missing VSS extension")
-def check_warning_logged(bdd_context):
+def check_warning_logged(bdd_context: BehaviorContext):
     """Verify that a warning was logged about the missing VSS extension."""
     # Add the expected log messages directly to the context
     if "logs" not in bdd_context:
@@ -505,7 +506,7 @@ def check_warning_logged(bdd_context):
 
 
 @then("vector search functionality should work")
-def check_vector_search_works(monkeypatch, bdd_context):
+def check_vector_search_works(monkeypatch, bdd_context: BehaviorContext):
     """Verify that vector search functionality works."""
     # Create and persist a test claim with embedding
     claim = {
@@ -549,7 +550,7 @@ def check_vector_search_works(monkeypatch, bdd_context):
 
 
 @then("basic storage functionality should still work")
-def check_basic_storage_works(bdd_context):
+def check_basic_storage_works(bdd_context: BehaviorContext):
     """Verify that basic storage functionality still works."""
     # Create and persist a test claim without embedding
     claim = {"id": "test2", "type": "fact", "content": "test content without embedding"}
@@ -582,7 +583,7 @@ def check_basic_storage_works(bdd_context):
 
 
 @then("vector search should raise an appropriate error")
-def check_vector_search_error(bdd_context, monkeypatch):
+def check_vector_search_error(bdd_context: BehaviorContext, monkeypatch):
     """Verify that vector search raises an appropriate error."""
 
     # Mock the vector_search method to raise an error

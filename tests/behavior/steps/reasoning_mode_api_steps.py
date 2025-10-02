@@ -1,4 +1,6 @@
 from __future__ import annotations
+from tests.behavior.utils import as_payload
+from typing import Any
 
 import asyncio
 from unittest.mock import patch
@@ -62,7 +64,7 @@ def test_invalid_mode_api():
 
 @given("the API server is running", target_fixture="test_context")
 def api_server_running(api_client):
-    return {"client": api_client}
+    return as_payload({"client": api_client})
 
 
 @given(
@@ -80,7 +82,7 @@ def loops_config(count: int, monkeypatch):
 )
 def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
     record: list[str] = []
-    params: dict = {}
+    params: dict[str, Any] = {}
     logs: list[str] = []
     state = {"active": True}
 
@@ -95,7 +97,7 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return {
+            return as_payload({
                 "claims": [
                     {
                         "id": str(step),
@@ -104,7 +106,7 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
                     }
                 ],
                 "results": {"final_answer": content},
-            }
+            })
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -132,19 +134,19 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
         if response.status_code != 200:
             logs.append("unsupported reasoning mode")
     state["active"] = False
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = response.json()
     except Exception:
-        data = {}
+        data: dict[str, Any] = {}
     test_context["response"] = response
-    return {
+    return as_payload({
         "record": record,
         "config_params": params,
         "data": data,
         "logs": logs,
         "state": state,
-    }
+    })
 
 
 @when(
@@ -155,7 +157,7 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
 )
 def send_async_query(test_context: dict, query: str, mode: str, config: ConfigModel):
     record: list[str] = []
-    params: dict = {}
+    params: dict[str, Any] = {}
     logs: list[str] = []
     state = {"active": True}
 
@@ -170,7 +172,7 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return {
+            return as_payload({
                 "claims": [
                     {
                         "id": str(step),
@@ -179,7 +181,7 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
                     }
                 ],
                 "results": {"final_answer": content},
-            }
+            })
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -216,13 +218,13 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
             logs.append("unsupported reasoning mode")
             test_context["response"] = submit
             state["active"] = False
-            return {
+            return as_payload({
                 "record": record,
                 "config_params": params,
                 "data": {},
                 "logs": logs,
                 "state": state,
-            }
+            })
         query_id = submit.json()["query_id"]
         task = client.app.state.async_tasks.get(query_id)
         assert isinstance(task, asyncio.Task)
@@ -230,26 +232,26 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
             pass
         response = client.get(f"/query/{query_id}")
     state["active"] = False
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = response.json()
     except Exception:
-        data = {}
+        data: dict[str, Any] = {}
     test_context["response"] = response
-    return {
+    return as_payload({
         "record": record,
         "config_params": params,
         "data": data,
         "logs": logs,
         "state": state,
-    }
+    })
 
 
 @then(parsers.parse("the response status should be {status:d}"))
 def assert_status(test_context: dict, status: int) -> None:
     resp = test_context["response"]
     assert resp.status_code == status
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = resp.json()
     except Exception:
@@ -307,7 +309,7 @@ def assert_metrics_agents(run_result: dict, agents: str) -> None:
 
 @then("a reasoning mode error should be returned")
 def assert_reasoning_mode_error(test_context: dict) -> None:
-    data = {}
+    data: dict[str, Any] = {}
     try:
         data = test_context["response"].json()
     except Exception:

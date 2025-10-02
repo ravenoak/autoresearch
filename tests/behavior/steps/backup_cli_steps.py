@@ -1,3 +1,5 @@
+from tests.behavior.context import BehaviorContext
+from tests.behavior.utils import backup_restore_result
 from pathlib import Path
 from datetime import datetime
 
@@ -34,7 +36,7 @@ def dummy_backup_file(work_dir, path):
 def run_backup_create(
     dir,
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     monkeypatch,
     isolate_network,
     restore_environment,
@@ -70,7 +72,7 @@ def run_backup_create(
 def run_backup_list(
     dir,
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     monkeypatch,
     isolate_network,
     restore_environment,
@@ -98,7 +100,7 @@ def run_backup_restore(
     path,
     dir,
     cli_runner,
-    bdd_context,
+    bdd_context: BehaviorContext,
     monkeypatch,
     isolate_network,
     restore_environment,
@@ -108,10 +110,10 @@ def run_backup_restore(
     monkeypatch.setattr(
         BackupManager,
         "restore_backup",
-        lambda backup_path, target_dir=None, db_filename="db.duckdb", rdf_filename="store.rdf": {
-            "db_path": "db.duckdb",
-            "rdf_path": "store.rdf",
-        },
+        lambda backup_path, target_dir=None, db_filename="db.duckdb", rdf_filename="store.rdf": backup_restore_result(
+            db_path="db.duckdb",
+            rdf_path="store.rdf",
+        ),
     )
     result = cli_runner.invoke(
         cli_app,
@@ -121,14 +123,14 @@ def run_backup_restore(
 
 
 @then("the backup directory should contain a backup file")
-def check_backup(bdd_context, work_dir):
+def check_backup(bdd_context: BehaviorContext, work_dir):
     backup_dir = work_dir / bdd_context["backup_dir"]
     assert backup_dir.exists() and any(backup_dir.iterdir())
     assert_cli_success(bdd_context["result"])
 
 
 @then("the CLI should exit successfully")
-def cli_success(bdd_context):
+def cli_success(bdd_context: BehaviorContext):
     assert_cli_success(bdd_context["result"])
 
 

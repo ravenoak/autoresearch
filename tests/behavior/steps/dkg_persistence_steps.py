@@ -1,4 +1,5 @@
 # flake8: noqa
+from tests.behavior.context import BehaviorContext
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import patch
@@ -269,7 +270,7 @@ def test_clear_dkg():
 
 
 @when("I try to persist the claim")
-def try_persist_invalid_claim(invalid_claim, bdd_context, storage_error_handler):
+def try_persist_invalid_claim(invalid_claim, bdd_context: BehaviorContext, storage_error_handler):
     """Attempt to persist an invalid claim and store any exception raised in the context."""
     from autoresearch.storage import StorageManager
 
@@ -283,7 +284,7 @@ def try_persist_invalid_claim(invalid_claim, bdd_context, storage_error_handler)
 
 @when("I try to persist a valid claim")
 def try_persist_valid_claim_uninit(
-    valid_claim, uninit_storage, bdd_context, storage_error_handler
+    valid_claim, uninit_storage, bdd_context: BehaviorContext, storage_error_handler
 ):
     """Attempt to persist a valid claim to uninitialized storage and store any exception raised in the context."""
     from autoresearch.storage import StorageManager
@@ -342,7 +343,7 @@ def perform_vector_search(persisted_claims):
 
 
 @then("a StorageError should be raised with a message about missing ID")
-def check_missing_id_error(bdd_context, storage_error_handler):
+def check_missing_id_error(bdd_context: BehaviorContext, storage_error_handler):
     """Verify that a StorageError is raised with a message about missing ID."""
     storage_error_handler.verify_error(
         bdd_context,
@@ -352,7 +353,7 @@ def check_missing_id_error(bdd_context, storage_error_handler):
 
 
 @then("a StorageError should be raised with a message about uninitialized storage")
-def check_uninit_storage_error(bdd_context, storage_error_handler):
+def check_uninit_storage_error(bdd_context: BehaviorContext, storage_error_handler):
     """Verify that a StorageError is raised with a message about uninitialized storage."""
     storage_error_handler.verify_error(
         bdd_context,
