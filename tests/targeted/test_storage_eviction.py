@@ -13,6 +13,7 @@ from autoresearch.storage import (  # noqa: E402
     StorageState,
     initialize_storage,
 )
+from autoresearch.storage_backends import DuckDBStorageBackend  # noqa: E402
 
 
 def test_initialize_storage_idempotent() -> None:
@@ -20,9 +21,13 @@ def test_initialize_storage_idempotent() -> None:
     ctx = StorageContext()
     st = StorageState()
     initialize_storage(db_path=":memory:", context=ctx, state=st)
-    first = ctx.db_backend._conn.execute("show tables").fetchall()
+    db_backend = ctx.db_backend
+    assert isinstance(db_backend, DuckDBStorageBackend)
+    first = db_backend._conn.execute("show tables").fetchall()
     initialize_storage(db_path=":memory:", context=ctx, state=st)
-    second = ctx.db_backend._conn.execute("show tables").fetchall()
+    db_backend_second = ctx.db_backend
+    assert isinstance(db_backend_second, DuckDBStorageBackend)
+    second = db_backend_second._conn.execute("show tables").fetchall()
     assert first == second
     StorageManager.teardown(remove_db=True, context=ctx, state=st)
     StorageManager.state = StorageState()

@@ -69,7 +69,9 @@ def test_initialize_handles_missing_extension(tmp_path, monkeypatch):
     storage.teardown(remove_db=True)
     ctx = storage.initialize_storage(str(db_file))
     assert db_file.exists()
-    assert ctx.db_backend.has_vss() is False
+    db_backend = ctx.db_backend
+    assert isinstance(db_backend, storage.DuckDBStorageBackend)
+    assert db_backend.has_vss() is False
     assert called["count"] >= 1
-    ctx.db_backend._conn.execute("SELECT 1 FROM nodes LIMIT 1")
+    db_backend._conn.execute("SELECT 1 FROM nodes LIMIT 1")
     storage.teardown(remove_db=True, context=ctx)

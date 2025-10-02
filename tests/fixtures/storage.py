@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
 import pytest
 
+
+from .protocols import JSONMapping, StorageHandle, StorageSetup
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
     from autoresearch.storage_typing import JSONDict
@@ -18,7 +20,7 @@ class _StorageManagerStub:
     """Minimal drop-in replacement for :class:`autoresearch.storage.StorageManager`."""
 
     @staticmethod
-    def persist_claim(claim: Mapping[str, Any] | JSONDict) -> None:  # pragma: no cover - stub
+    def persist_claim(claim: JSONMapping | JSONDict) -> None:  # pragma: no cover - stub
         """Accept a claim payload without persisting it."""
 
         return None
@@ -36,7 +38,7 @@ class _StorageManagerStub:
 
 
 @pytest.fixture()
-def dummy_storage(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+def dummy_storage(monkeypatch: pytest.MonkeyPatch) -> StorageHandle:
     """Register a no-op ``autoresearch.storage`` module for tests.
 
     The stub provides a minimal ``StorageManager`` with the methods used by
@@ -52,8 +54,13 @@ def dummy_storage(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     ) -> _StorageManagerStub:
         return _StorageManagerStub()
 
-    setup_stub: Callable[..., _StorageManagerStub] = _setup_stub
+    setup_stub: StorageSetup = _setup_stub
     setattr(module, "StorageManager", _StorageManagerStub)
     setattr(module, "setup", setup_stub)
     monkeypatch.setitem(sys.modules, "autoresearch.storage", module)
-    return module
+    handle = StorageHandle(
+        module=module,
+        manager=_StorageManagerStub,
+        setup=setup_stub,
+    )
+    return handle
