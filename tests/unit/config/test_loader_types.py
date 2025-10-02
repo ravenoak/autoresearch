@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -49,6 +50,24 @@ def test_env_storage_override_round_trips(tmp_path: Path, monkeypatch: pytest.Mo
 
     assert config.storage.vector_nprobe == 5
     assert config.storage.ontology_reasoner == "owlrl"
+
+
+def test_storage_defaults(tmp_path: Path) -> None:
+    """Loading a minimal config should keep storage defaults intact."""
+
+    config_path = tmp_path / "autoresearch.toml"
+    config_path.write_text("[core]\nloops = 1\n")
+
+    loader = ConfigLoader.new_for_tests(search_paths=[config_path])
+    try:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            config = loader.load_config()
+    finally:
+        ConfigLoader.reset_instance()
+
+    assert not caught
+    assert config.storage.minimum_deterministic_resident_nodes == 2
 
 
 def test_normalize_ranking_weights_balances_missing_values() -> None:
