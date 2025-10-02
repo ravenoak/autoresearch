@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Mapping, Sequence
 
 import pytest
@@ -10,10 +9,22 @@ import tomli_w
 import tomllib
 
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
 SearchResults = Sequence[Mapping[str, object]]
+
+
+def _load_config_from_file(path: Path) -> ConfigModel:
+    """Parse *path* into a :class:`ConfigModel` with context disabled."""
+
+    data = tomllib.loads(path.read_text())
+    search_section = dict(data.get("search", {}))
+    context_section = dict(search_section.get("context_aware", {}))
+    context_section.setdefault("enabled", False)
+    search_section["context_aware"] = context_section
+    return ConfigModel.model_validate({"search": search_section})
 
 
 @pytest.mark.slow
@@ -27,14 +38,8 @@ def test_search_storage_hot_reload(
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
 
-    def fake_load(self: ConfigLoader) -> SimpleNamespace:
-        data = tomllib.loads(cfg_file.read_text())
-        return SimpleNamespace(
-            search=SimpleNamespace(
-                backends=data["search"]["backends"],
-                context_aware=SimpleNamespace(enabled=False),
-            )
-        )
+    def fake_load(self: ConfigLoader) -> ConfigModel:
+        return _load_config_from_file(cfg_file)
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
     loader = ConfigLoader()
@@ -54,7 +59,7 @@ def test_search_storage_hot_reload(
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
 
     def external_lookup(query: str, max_results: int = 5) -> SearchResults:
-        cfg: SimpleNamespace = loader.config
+        cfg: ConfigModel = loader.config
         results: list[Mapping[str, object]] = []
         for b in cfg.search.backends:
             backend_results: SearchResults = Search.backends[b](query, max_results)
@@ -69,7 +74,7 @@ def test_search_storage_hot_reload(
 
     events: list[list[str]] = []
 
-    def on_change(cfg: SimpleNamespace) -> None:
+    def on_change(cfg: ConfigModel) -> None:
         events.append(cfg.search.backends)
 
     # Execute
@@ -96,14 +101,8 @@ def test_search_storage_hot_reload_realistic(
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
 
-    def fake_load(self: ConfigLoader) -> SimpleNamespace:
-        data = tomllib.loads(cfg_file.read_text())
-        return SimpleNamespace(
-            search=SimpleNamespace(
-                backends=data["search"]["backends"],
-                context_aware=SimpleNamespace(enabled=False),
-            )
-        )
+    def fake_load(self: ConfigLoader) -> ConfigModel:
+        return _load_config_from_file(cfg_file)
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
     loader = ConfigLoader()
@@ -123,7 +122,7 @@ def test_search_storage_hot_reload_realistic(
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
 
     def external_lookup(query: str, max_results: int = 5) -> SearchResults:
-        cfg: SimpleNamespace = loader.config
+        cfg: ConfigModel = loader.config
         results: list[Mapping[str, object]] = []
         for b in cfg.search.backends:
             backend_results: SearchResults = Search.backends[b](query, max_results)

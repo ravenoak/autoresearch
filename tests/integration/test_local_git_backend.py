@@ -6,7 +6,6 @@ import pytest
 
 from tests.optional_imports import import_or_skip
 
-from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import _local_git_backend
 from autoresearch.storage import StorageManager
 
@@ -25,7 +24,7 @@ def _dummy_connection():
 
 
 @pytest.mark.requires_git
-def test_local_git_backend_finds_file_content(tmp_path, monkeypatch):
+def test_local_git_backend_finds_file_content(tmp_path, monkeypatch, config_factory):
     git = import_or_skip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
@@ -34,11 +33,18 @@ def test_local_git_backend_finds_file_content(tmp_path, monkeypatch):
     repo.index.add([str(file_path)])
     repo.index.commit("add data")
 
-    cfg = ConfigModel()
-    cfg.search.local_git.repo_path = str(repo_path)
-    cfg.search.local_git.branches = [repo.active_branch.name]
-    cfg.search.local_git.history_depth = 5
-    cfg.search.local_file.file_types = ["txt"]
+    cfg = config_factory(
+        {
+            "search": {
+                "local_git": {
+                    "repo_path": str(repo_path),
+                    "branches": [repo.active_branch.name],
+                    "history_depth": 5,
+                },
+                "local_file": {"file_types": ["txt"]},
+            }
+        }
+    )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.search.core.Repo", git.Repo)
     monkeypatch.setattr(StorageManager, "connection", staticmethod(_dummy_connection))
@@ -48,7 +54,7 @@ def test_local_git_backend_finds_file_content(tmp_path, monkeypatch):
 
 
 @pytest.mark.requires_git
-def test_local_git_backend_finds_commit_message(tmp_path, monkeypatch):
+def test_local_git_backend_finds_commit_message(tmp_path, monkeypatch, config_factory):
     git = import_or_skip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
@@ -60,11 +66,18 @@ def test_local_git_backend_finds_commit_message(tmp_path, monkeypatch):
     repo.index.add([str(file_path)])
     repo.index.commit("feature commitmarker")
 
-    cfg = ConfigModel()
-    cfg.search.local_git.repo_path = str(repo_path)
-    cfg.search.local_git.branches = [repo.active_branch.name]
-    cfg.search.local_git.history_depth = 5
-    cfg.search.local_file.file_types = ["txt"]
+    cfg = config_factory(
+        {
+            "search": {
+                "local_git": {
+                    "repo_path": str(repo_path),
+                    "branches": [repo.active_branch.name],
+                    "history_depth": 5,
+                },
+                "local_file": {"file_types": ["txt"]},
+            }
+        }
+    )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.search.core.Repo", git.Repo)
     monkeypatch.setattr(StorageManager, "connection", staticmethod(_dummy_connection))

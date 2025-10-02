@@ -172,7 +172,7 @@ def clean_storage(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None
 
 
 def _config_without_network() -> ConfigModel:
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_validate({})
     cfg.search.backends = []
     cfg.search.embedding_backends = ["duckdb"]
     cfg.search.context_aware.enabled = False
