@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from threading import RLock
+
 import pytest
 
 from autoresearch.config.models import ConfigModel
@@ -40,6 +42,26 @@ def test_register_and_clone_preserve_lock_and_metadata_types() -> None:
     assert isinstance(cloned_state.metadata["score"], float)
     assert isinstance(cloned_state.metadata["flags"], dict)
     assert isinstance(cloned_state.metadata["flags"]["high_priority"], bool)
+
+
+def test_config_model_deep_copy_with_embedded_lock() -> None:
+    """Deep cloning configs succeeds even with nested locks and preserves structure."""
+
+    config = ConfigModel()
+    config.user_preferences["lock"] = RLock()
+    config.user_preferences["nested"] = {"value": 1}
+
+    cloned = config.model_copy(deep=True)
+
+    assert cloned is not config
+    assert isinstance(cloned.user_preferences["lock"], LOCK_TYPE)
+    assert cloned.user_preferences["lock"] is config.user_preferences["lock"]
+    assert cloned.user_preferences is not config.user_preferences
+    assert cloned.user_preferences["nested"] is not config.user_preferences["nested"]
+    assert cloned.user_preferences["nested"]["value"] == 1
+
+    cloned.user_preferences["nested"]["value"] = 5
+    assert config.user_preferences["nested"]["value"] == 1
 
 
 def test_update_replaces_snapshot_and_preserves_lock_integrity() -> None:
