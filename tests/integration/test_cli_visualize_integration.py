@@ -1,19 +1,28 @@
+from pathlib import Path
+from typing import Any
+
 import pytest
 from typer.testing import CliRunner
 
-from autoresearch.main import app as cli_app
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.config.models import ConfigModel
+from autoresearch.main import app as cli_app
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 pytestmark = pytest.mark.slow
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel(loops=1))
 
-    def dummy_run_query(self, query, config, callbacks=None, **kwargs):
+    def dummy_run_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: dict[str, Any] | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         return QueryResponse(
             answer="ok",
             citations=["c"],
@@ -39,7 +48,9 @@ def _setup(monkeypatch):
     )
 
 
-def test_search_visualize_option_integration(monkeypatch):
+def test_search_visualize_option_integration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _setup(monkeypatch)
     runner = CliRunner()
     result = runner.invoke(cli_app, ["search", "q", "--visualize"])
@@ -48,11 +59,15 @@ def test_search_visualize_option_integration(monkeypatch):
     assert "m" in result.stdout
 
 
-def test_visualize_command_integration(monkeypatch, tmp_path):
+def test_visualize_command_integration(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _setup(monkeypatch)
-    saved = {}
+    saved: dict[str, str] = {}
 
-    def fake_save(result, path, layout="spring"):
+    def fake_save(
+        result: QueryResponse, path: Path, layout: str = "spring"
+    ) -> None:
         saved["path"] = str(path)
 
     monkeypatch.setattr("autoresearch.visualization.save_knowledge_graph", fake_save)
@@ -65,7 +80,9 @@ def test_visualize_command_integration(monkeypatch, tmp_path):
     assert "Metrics Summary" in result.stdout
 
 
-def test_graph_export_options(monkeypatch, tmp_path):
+def test_graph_export_options(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _setup(monkeypatch)
     runner = CliRunner()
     graphml_path = tmp_path / "graph.graphml"

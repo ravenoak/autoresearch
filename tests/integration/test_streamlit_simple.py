@@ -12,7 +12,7 @@ APP_FILE = os.path.join("src", "autoresearch", "streamlit_app.py")
 
 
 @pytest.mark.integration
-def test_streamlit_page_runs():
+def test_streamlit_page_runs() -> None:
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False
     at.run()

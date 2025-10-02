@@ -1,26 +1,36 @@
 import json
 import time
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from pytest_httpx import HTTPXMock
 
 import autoresearch.api as api
+import autoresearch.api.streaming as streaming_module
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
-import autoresearch.api.streaming as streaming_module
 
 
 @pytest.mark.slow
-def test_stream_emits_keepalive(monkeypatch, api_client):
+def test_stream_emits_keepalive(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Long-running queries should keep streams alive with heartbeat lines."""
 
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def long_query(self, query, config, callbacks=None, **kwargs):
+    def long_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: dict[str, Any] | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         time.sleep(0.2)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -36,7 +46,9 @@ def test_stream_emits_keepalive(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_stream_webhook_final_only(monkeypatch, api_client):
+def test_stream_webhook_final_only(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Streaming should POST only the final result to the webhook."""
 
     cfg = ConfigModel(api=APIConfig(webhook_timeout=1, webhook_retries=2, webhook_backoff=0.1))
@@ -45,12 +57,24 @@ def test_stream_webhook_final_only(monkeypatch, api_client):
     api.config_loader._config = cfg
     monkeypatch.setattr(streaming_module, "get_config", lambda: cfg)
 
-    calls = []
+    calls: list[tuple[str, float | int, int, float]] = []
 
-    def fake_notify(url, result, timeout, retries=3, backoff=0.5):  # noqa: D401
+    def fake_notify(
+        url: str,
+        result: QueryResponse,
+        timeout: float | int,
+        retries: int = 3,
+        backoff: float = 0.5,
+    ) -> None:
         calls.append((result.answer, timeout, retries, backoff))
 
-    def run_query(self, query, config, callbacks=None, **kwargs):
+    def run_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: dict[str, Any] | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         from autoresearch.orchestration.state import QueryState
 
         state = QueryState(query=query)
@@ -73,7 +97,9 @@ def test_stream_webhook_final_only(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_streaming_error_triggers_webhook(monkeypatch, httpx_mock):
+def test_streaming_error_triggers_webhook(
+    monkeypatch: pytest.MonkeyPatch, httpx_mock: HTTPXMock
+) -> None:
     """Errors in streaming queries should still trigger webhook delivery."""
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
@@ -83,7 +109,13 @@ def test_streaming_error_triggers_webhook(monkeypatch, httpx_mock):
     app = api.create_app(loader)
     client = TestClient(app)
 
-    def failing_query(self, query, config, callbacks=None, **kwargs):
+    def failing_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        callbacks: dict[str, Any] | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
         raise RuntimeError("boom")
 
     monkeypatch.setattr(Orchestrator, "run_query", failing_query)

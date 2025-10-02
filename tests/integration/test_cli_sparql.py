@@ -13,14 +13,18 @@ def test_sparql_query_cli_handles_missing_headers(monkeypatch: pytest.MonkeyPatc
 
     outputs: list[str] = []
 
-    rows = [("subject", "object")]
+    rows: list[tuple[str, str]] = [("subject", "object")]
 
     monkeypatch.setattr(
         "autoresearch.storage.StorageManager.query_rdf",
         staticmethod(lambda _query: rows),
     )
 
-    def fake_tabulate(rows_arg, headers_arg, tablefmt_arg):
+    def fake_tabulate(
+        rows_arg: list[tuple[str, str]],
+        headers_arg: list[str],
+        tablefmt_arg: str,
+    ) -> str:
         return f"{headers_arg}:{list(rows_arg)}"
 
     monkeypatch.setattr("autoresearch.cli_utils.tabulate", fake_tabulate)

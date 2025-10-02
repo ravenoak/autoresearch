@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import cast
+
 import pytest
 
 from tests.optional_imports import import_or_skip
@@ -49,7 +52,7 @@ def test_duckdb_query() -> None:
 
 
 @pytest.mark.requires_git
-def test_gitpython_commit(tmp_path) -> None:
+def test_gitpython_commit(tmp_path: Path) -> None:
     git = import_or_skip("git")
     repo = git.Repo.init(tmp_path)
     file_path = tmp_path / "README.txt"
@@ -95,7 +98,7 @@ def test_fakeredis_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
         "pid": 4321,
     }
     broker.publish(message)
-    queue: StorageBrokerQueueProtocol = broker.queue
+    queue = cast(StorageBrokerQueueProtocol, broker.queue)
     queue_protocol: MessageQueueProtocol = queue
     queued_message: BrokerMessage = queue_protocol.get()
     assert queued_message == message
@@ -117,7 +120,7 @@ def test_polars_groupby() -> None:
 
 
 @pytest.mark.requires_parsers
-def test_docx_roundtrip(tmp_path) -> None:
+def test_docx_roundtrip(tmp_path: Path) -> None:
     docx = import_or_skip("docx")
     doc = docx.Document()
     sample = tmp_path / "sample.docx"

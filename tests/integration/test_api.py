@@ -1,19 +1,24 @@
 """Integration tests for versioned query endpoint."""
 
+import pytest
+from fastapi.testclient import TestClient
+
 from autoresearch.api.models import QueryResponseV1
 from autoresearch.config import APIConfig, ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
-def _setup(monkeypatch) -> None:
+def _setup(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(api=APIConfig())
     ConfigLoader.reset_instance()
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
 
-def test_query_returns_version(monkeypatch, api_client) -> None:
+def test_query_returns_version(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """The standard query endpoint returns a versioned response."""
     _setup(monkeypatch)
     monkeypatch.setattr(

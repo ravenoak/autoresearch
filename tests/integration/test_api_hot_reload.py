@@ -1,4 +1,6 @@
 import time
+from pathlib import Path
+
 import tomllib
 import tomli_w
 
@@ -12,11 +14,13 @@ from autoresearch.config.models import ConfigModel
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_api_detects_config_file_change(example_autoresearch_toml, monkeypatch):
+def test_api_detects_config_file_change(
+    example_autoresearch_toml: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     cfg_file = example_autoresearch_toml
     cfg_file.write_text(tomli_w.dumps({"loops": 1}))
 
-    def load_config(self):
+    def load_config(self: ConfigLoader) -> ConfigModel:
         data = tomllib.loads(cfg_file.read_text())
         data.setdefault("api", {})
         data["api"].setdefault("role_permissions", {"anonymous": ["config"]})
