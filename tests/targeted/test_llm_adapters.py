@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -72,6 +73,9 @@ class RecordingSession(RequestsSessionProtocol):
         return self.request("POST", url, *args, **kwargs)
 
 
+AdapterFactory = Callable[[], adapters.LLMAdapter]
+
+
 @pytest.mark.parametrize(
     ("adapter_cls", "env"),
     [
@@ -80,7 +84,11 @@ class RecordingSession(RequestsSessionProtocol):
         (adapters.OpenRouterAdapter, {"OPENROUTER_API_KEY": "or-test"}),
     ],
 )
-def test_adapter_generate_invokes_raise_for_status(monkeypatch, adapter_cls, env):
+def test_adapter_generate_invokes_raise_for_status(
+    monkeypatch: pytest.MonkeyPatch,
+    adapter_cls: type[adapters.LLMAdapter],
+    env: dict[str, str],
+) -> None:
     """Adapters use the shared session and trigger response validation."""
 
     payload = {"choices": [{"message": {"content": "ok"}}]}
@@ -108,7 +116,9 @@ def test_adapter_generate_invokes_raise_for_status(monkeypatch, adapter_cls, env
         lambda: adapters.OpenRouterAdapter(),
     ],
 )
-def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory):
+def test_adapter_generate_wraps_request_exceptions(
+    monkeypatch: pytest.MonkeyPatch, adapter_factory: AdapterFactory
+) -> None:
     """Network failures surface as LLMError with preserved context."""
 
     def boom(*args: Any, **kwargs: Any) -> RecordingResponse:  # pragma: no cover - type stub
@@ -165,7 +175,9 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
         adapters.OpenRouterAdapter,
     ],
 )
-def test_adapter_requires_api_key(monkeypatch, adapter_factory):
+def test_adapter_requires_api_key(
+    monkeypatch: pytest.MonkeyPatch, adapter_factory: type[adapters.LLMAdapter]
+) -> None:
     """Adapters validate API keys before performing network calls."""
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

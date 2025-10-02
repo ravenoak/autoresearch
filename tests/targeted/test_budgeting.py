@@ -1,8 +1,9 @@
 """Coverage for adaptive token budgeting."""
 
-from types import SimpleNamespace
+from __future__ import annotations
 
 from tests.helpers.modules import ensure_stub_module
+from tests.typing_helpers import make_config_model
 
 ensure_stub_module(
     "pydantic_settings",
@@ -18,21 +19,21 @@ from autoresearch.orchestration.budgeting import _apply_adaptive_token_budget  #
 
 def test_budget_none_leaves_value() -> None:
     """No token budget leaves config unchanged."""
-    cfg = SimpleNamespace(token_budget=None)
+    cfg = make_config_model(token_budget=None)
     _apply_adaptive_token_budget(cfg, "one two")
     assert cfg.token_budget is None
 
 
 def test_budget_adjusts_for_loops() -> None:
     """Loops reduce available budget."""
-    cfg = SimpleNamespace(token_budget=50, loops=2)
+    cfg = make_config_model(token_budget=50, loops=2)
     _apply_adaptive_token_budget(cfg, "alpha beta")
     assert cfg.token_budget == 25
 
 
 def test_budget_caps_maximum() -> None:
     """Budget above cap reduces to query-based max."""
-    cfg = SimpleNamespace(token_budget=500)
+    cfg = make_config_model(token_budget=500)
     query = " ".join(["q"] * 10)
     _apply_adaptive_token_budget(cfg, query)
     assert cfg.token_budget == 200
@@ -40,7 +41,7 @@ def test_budget_caps_maximum() -> None:
 
 def test_budget_raises_minimum() -> None:
     """Budget below query tokens adds buffer."""
-    cfg = SimpleNamespace(token_budget=5)
+    cfg = make_config_model(token_budget=5)
     query = " ".join(["q"] * 10)
     _apply_adaptive_token_budget(cfg, query)
     assert cfg.token_budget == 20
@@ -48,7 +49,7 @@ def test_budget_raises_minimum() -> None:
 
 def test_budget_stays_within_range() -> None:
     """Budget within bounds remains unchanged."""
-    cfg = SimpleNamespace(token_budget=50)
+    cfg = make_config_model(token_budget=50, loops=1)
     query = " ".join(["q"] * 5)
     _apply_adaptive_token_budget(cfg, query)
     assert cfg.token_budget == 50
