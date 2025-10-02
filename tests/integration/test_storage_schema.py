@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from autoresearch.config import ConfigLoader
+from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.storage import (
     StorageContext,
     StorageState,
@@ -24,7 +24,7 @@ from autoresearch.storage_utils import initialize_schema_version_without_fetchon
 def test_initialize_storage_creates_tables(tmp_path: Path, db_path: str) -> None:
     """Required DuckDB tables exist after initialize_storage."""
     ConfigLoader()._config = None
-    cfg = ConfigLoader().config
+    cfg: ConfigModel = ConfigLoader().config
     cfg.storage.vector_extension = False
     path = ":memory:" if db_path == ":memory:" else str(tmp_path / "kg.duckdb")
     if db_path != ":memory":
