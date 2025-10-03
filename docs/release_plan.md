@@ -18,6 +18,14 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **October 2, 2025 at 23:57 UTC** strict sweep now finishes cleanly with
+`uv run mypy --strict src tests`, clearing the 2,114-error backlog logged the
+day before and reopening Phase 2 planner delivery once follow-up verify and
+coverage sweeps confirm the gate stays green. Until we refresh the coverage
+evidence, the 92.4 % run from September 30 remains the authoritative record for
+release sign-off.
+【F:baseline/logs/mypy-strict-20251002T235732Z.log†L1-L1】
+
 The **September 30, 2025 at 18:19 UTC** coverage rerun restored the 92.4 %
 gate after replacing the registry clone with typed deep copies that rehydrate
 locks. New regression tests cover register, update, and round-trip paths so
@@ -75,9 +83,9 @@ remains deferred.
 The **September 30, 2025 at 14:55 UTC** `task verify` sweep now reaches
 `mypy --strict` before failing on 118 untyped test fixtures and the
 `EvaluationSummary` constructor, which expects planner depth and routing
-metrics. Until those annotations and harness updates land, the strict gate stays
-red and coverage remains at risk even though the prior 92.4 % log is still the
-latest green record.
+metrics. These historical logs capture the pre-fix backlog; the October 2
+strict pass above marks the backlog resolved while we continue to monitor
+follow-up sweeps for regressions.
 【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
 【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
 

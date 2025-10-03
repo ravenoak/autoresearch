@@ -22,8 +22,9 @@ keep truthfulness, verifiability, and cost discipline in balance.
 Phase 1 is complete, and the **October 1, 2025** strict and coverage sweeps
 confirm the remaining blockers sit inside typed evaluation fixtures and the
 `QueryStateRegistry.register` clone. Planner upgrades and GraphRAG expansion now
-proceed once the `_thread.RLock` handling and `EvaluationSummary` signature land,
-with the new logs capturing the narrowed scope of work and the **15:27 UTC**
+proceed once the `_thread.RLock` handling and `EvaluationSummary` signature
+land, with the new logs capturing the narrowed scope of work and the
+**15:27 UTC**
 coverage rerun showing the FastEmbed fallback failure after the registry fix.
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
@@ -53,11 +54,15 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
      green. Fresh **14:28 UTC** `task verify` and **14:30 UTC** `task coverage`
      runs captured after documenting the final-answer audit loop keep the gate
      current while the `QueryState.model_copy` and `A2AMessage` gaps remain
-     open.
+     open. The audit and registry artifacts are now stabilized with direct
+     regression coverage guarding the deep-copy path and audit badges across the
+     CLI and coordinator tests.
      【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
      【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
      【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
      【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+     【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
+     【F:tests/unit/orchestration/test_task_coordinator.py†L1-L80】
    - **Acceptance criteria:** Keep the Task CLI verify and coverage stages
      publishing scout-gate telemetry and audit tables, and maintain coverage at
      or above 92.4 % while TestPyPI remains deferred under the release gate.
@@ -70,6 +75,16 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
      new agents.
    - Extend `orchestration/coordinator.py` scheduling rules to consume
      those affinities while reusing the existing coordinator instance.
+   - **Upcoming deliverables:**
+     - Harden planner telemetry exports so `QueryState.set_task_graph`
+       persists normalized nodes with warning metadata guarded by
+       `tests/behavior/steps/reasoning_mode_steps.py`.
+       【F:tests/behavior/steps/reasoning_mode_steps.py†L1-L120】
+     - Expand `TaskCoordinator.record_react_step` ordering metadata,
+       leveraging the regression assertions already in
+       `tests/unit/orchestration/test_task_coordinator.py` to keep
+       affinity tie-breakers deterministic.
+       【F:tests/unit/orchestration/test_task_coordinator.py†L33-L80】
    - **Acceptance criteria:** Ship typed planner graphs with audited ReAct
      traces, coordinator scheduling that honors affinity tie-breakers, and
      regression coverage that locks telemetry formats before expanding scope.
