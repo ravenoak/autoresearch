@@ -229,8 +229,10 @@ class SearchContext:
         self._graph_stage_metadata: dict[str, Any] = {}
         self._scout_metadata: dict[str, Any] = {}
         self._scout_lock = threading.Lock()
+        self._search_strategy: dict[str, Any] = {}
         if get_config().search.context_aware.enabled:
             self._initialize_nlp()
+        self.reset_search_strategy()
 
     @property
     def graph_pipeline(self) -> "SessionGraphPipeline":
@@ -307,6 +309,119 @@ class SearchContext:
                 )
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to initialize spaCy NLP model: {e}")
+
+    def _ensure_search_strategy_locked(self) -> dict[str, Any]:
+        if not self._search_strategy:
+            self._search_strategy = {
+                "rewrites": [],
+                "fetch_plan": {"base_k": None, "attempts": []},
+                "self_critique": {},
+            }
+        return self._search_strategy
+
+    def reset_search_strategy(self) -> None:
+        """Clear adaptive search bookkeeping for the next query."""
+
+        with self._scout_lock:
+            self._search_strategy = {
+                "rewrites": [],
+                "fetch_plan": {"base_k": None, "attempts": []},
+                "self_critique": {},
+            }
+
+    def record_fetch_plan(
+        self,
+        *,
+        base_k: int,
+        attempt: int,
+        effective_k: int,
+        reason: str,
+        metrics: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Persist adaptive fetch telemetry for the active query."""
+
+        with self._scout_lock:
+            strategy = self._ensure_search_strategy_locked()
+            plan = strategy.setdefault(
+                "fetch_plan", {"base_k": int(base_k), "attempts": []}
+            )
+            plan.setdefault("attempts", [])
+            if plan.get("base_k") is None:
+                plan["base_k"] = int(base_k)
+            entry: dict[str, Any] = {
+                "attempt": int(attempt),
+                "k": int(effective_k),
+                "reason": str(reason),
+            }
+            if metrics is not None:
+                entry["metrics"] = dict(metrics)
+            plan["attempts"].append(entry)
+
+    def record_query_rewrite(
+        self,
+        *,
+        original: str,
+        rewritten: str,
+        reason: str,
+        attempt: int,
+    ) -> None:
+        """Record a rewrite applied during adaptive search."""
+
+        with self._scout_lock:
+            strategy = self._ensure_search_strategy_locked()
+            rewrites = strategy.setdefault("rewrites", [])
+            rewrites.append(
+                {
+                    "attempt": int(attempt),
+                    "from": original,
+                    "to": rewritten,
+                    "reason": str(reason),
+                }
+            )
+
+    def register_self_critique_marker(self, key: str, value: Any) -> None:
+        """Store a self-critique marker surfaced by adaptive search."""
+
+        with self._scout_lock:
+            strategy = self._ensure_search_strategy_locked()
+            markers = strategy.setdefault("self_critique", {})
+            markers[str(key)] = value
+
+    def get_search_strategy(self) -> dict[str, Any]:
+        """Return a sanitized snapshot of adaptive search telemetry."""
+
+        with self._scout_lock:
+            strategy = copy.deepcopy(self._ensure_search_strategy_locked())
+
+        rewrites = strategy.get("rewrites") or []
+        if not rewrites:
+            strategy.pop("rewrites", None)
+
+        markers = strategy.get("self_critique") or {}
+        if not markers:
+            strategy.pop("self_critique", None)
+
+        plan = strategy.get("fetch_plan") or {}
+        attempts = plan.get("attempts") or []
+        if not attempts and plan.get("base_k") is None:
+            strategy.pop("fetch_plan", None)
+        else:
+            if not attempts:
+                plan.pop("attempts", None)
+            else:
+                plan["attempts"] = [dict(entry) for entry in attempts]
+            if plan.get("base_k") is None:
+                plan.pop("base_k", None)
+            strategy["fetch_plan"] = plan
+
+        return strategy
+
+    def get_self_critique_markers(self) -> dict[str, Any]:
+        """Return recorded self-critique markers for the latest query."""
+
+        strategy = self.get_search_strategy()
+        markers = strategy.get("self_critique") if strategy else None
+        return dict(markers or {})
 
     def add_to_history(self, query: str, results: List[Dict[str, str]]) -> None:
         """Record a query and results for context-aware search.
@@ -411,6 +526,99 @@ class SearchContext:
             log.info("Expanded query: '%s' -> '%s'", query, expanded_query)
             return expanded_query
         return query
+
+    def suggest_rewrites(self, query: str, *, limit: int = 3) -> list[dict[str, str]]:
+        """Return candidate rewrites for ``query`` using contextual signals."""
+
+        cleaned = query.strip()
+        if not cleaned:
+            return []
+
+        suggestions: list[dict[str, str]] = []
+        seen: set[str] = {cleaned.lower()}
+
+        expanded = self.expand_query(cleaned)
+        expanded_key = expanded.strip().lower()
+        if expanded and expanded_key not in seen and expanded != cleaned:
+            suggestions.append({"query": expanded.strip(), "reason": "context_entities"})
+            seen.add(expanded_key)
+            if len(suggestions) >= limit:
+                return suggestions[:limit]
+
+        entities_sorted = sorted(self.entities.items(), key=lambda item: item[1], reverse=True)
+        for label, _ in entities_sorted:
+            candidate = f"{cleaned} {label}".strip()
+            lowered = candidate.lower()
+            if not label or label.lower() in cleaned.lower() or lowered in seen:
+                continue
+            suggestions.append({"query": candidate, "reason": "history_entity"})
+            seen.add(lowered)
+            break
+        if len(suggestions) >= limit:
+            return suggestions[:limit]
+
+        question_variant = cleaned if cleaned.endswith("?") else f"What is {cleaned}?"
+        lowered_question = question_variant.lower()
+        if lowered_question not in seen:
+            suggestions.append({"query": question_variant, "reason": "question_form"})
+            seen.add(lowered_question)
+            if len(suggestions) >= limit:
+                return suggestions[:limit]
+
+        descriptive = f"{cleaned} detailed analysis"
+        lowered_desc = descriptive.lower()
+        if lowered_desc not in seen:
+            suggestions.append({"query": descriptive, "reason": "descriptor"})
+
+        return suggestions[:limit]
+
+    def summarize_retrieval_outcome(
+        self,
+        query: str,
+        ranked_results: Sequence[Mapping[str, Any]],
+        *,
+        fetch_limit: int,
+        by_backend: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    ) -> dict[str, Any]:
+        """Return coverage metrics for ranked results used in adaptive search."""
+
+        limit = max(1, int(fetch_limit))
+        ranked_list = list(ranked_results)
+        unique_ids = {
+            self._extract_identifier(doc)
+            for doc in ranked_list
+            if isinstance(doc, Mapping) and doc
+        }
+        total_results = len(ranked_list)
+        unique_count = len(unique_ids)
+        coverage = min(1.0, unique_count / float(limit))
+        coverage_gap = max(0.0, 1.0 - coverage)
+
+        backend_counts: dict[str, int] = {}
+        if by_backend:
+            for name, docs in by_backend.items():
+                backend_counts[str(name)] = len(list(docs))
+
+        metrics: dict[str, Any] = {
+            "query": query,
+            "result_count": total_results,
+            "unique_results": unique_count,
+            "coverage": coverage,
+            "coverage_gap": coverage_gap,
+            "duplicates": max(0, total_results - unique_count),
+            "backend_counts": backend_counts,
+        }
+
+        if total_results == 0:
+            self.register_self_critique_marker("no_results", True)
+        if coverage_gap > 0.0:
+            self.register_self_critique_marker("coverage_gap", coverage_gap)
+        if backend_counts:
+            empty = [name for name, count in backend_counts.items() if count == 0]
+            if empty:
+                self.register_self_critique_marker("empty_backends", empty)
+
+        return metrics
 
     # ------------------------------------------------------------------
     # Knowledge graph accessors
@@ -637,6 +845,10 @@ class SearchContext:
             "timestamp": time.time(),
         }
 
+        strategy = self.get_search_strategy()
+        if strategy:
+            payload["search_strategy"] = strategy
+
         with self._scout_lock:
             self._scout_metadata = payload
 
@@ -661,6 +873,8 @@ class SearchContext:
             cloned["complexity"] = dict(meta.get("complexity", {}))
         if "graph" in meta:
             cloned["graph"] = copy.deepcopy(meta.get("graph", {}))
+        if "search_strategy" in meta:
+            cloned["search_strategy"] = copy.deepcopy(meta.get("search_strategy", {}))
         return cloned
 
     def apply_scout_metadata(self, state: "QueryState") -> bool:
@@ -698,6 +912,11 @@ class SearchContext:
             if isinstance(scout_stage, dict) and "graph" in scout_stage:
                 scout_stage.pop("graph", None)
                 updated = True
+
+        strategy = metadata.get("search_strategy")
+        if strategy and "search_strategy" not in state.metadata:
+            state.metadata["search_strategy"] = strategy
+            updated = True
 
         return updated
 

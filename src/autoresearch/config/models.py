@@ -80,6 +80,72 @@ class SupportsModelCopyMixin(BaseModel):
         return type(self).model_validate(payload)
 
 
+class QueryRewriteConfig(BaseModel):
+    """Configuration flags governing on-demand query rewriting."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Enable on-demand rewrites when retrieval coverage is low.",
+    )
+    max_attempts: int = Field(
+        default=2,
+        ge=1,
+        description="Maximum number of rewrite attempts per query execution.",
+    )
+    min_results: int = Field(
+        default=3,
+        ge=1,
+        description="Target minimum ranked results before rewrites stop triggering.",
+    )
+    min_unique_sources: int = Field(
+        default=3,
+        ge=1,
+        description="Target minimum of unique identifiers retrieved before stopping rewrites.",
+    )
+    coverage_gap_threshold: float = Field(
+        default=0.45,
+        ge=0.0,
+        le=1.0,
+        description="Trigger rewrites when uncovered ratio exceeds this threshold.",
+    )
+
+
+class AdaptiveKConfig(BaseModel):
+    """Configuration for adaptive result fetch counts."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Increase per-backend fetch counts when coverage is low.",
+    )
+    min_k: int = Field(
+        default=5,
+        ge=1,
+        description="Lower bound applied to adaptive fetch planning.",
+    )
+    max_k: int = Field(
+        default=12,
+        ge=1,
+        description="Upper bound applied to adaptive fetch planning.",
+    )
+    step: int = Field(
+        default=3,
+        ge=1,
+        description="Increment applied each time coverage requires a larger fetch count.",
+    )
+    coverage_gap_threshold: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Gap threshold that triggers a larger fetch count.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_bounds(self) -> "AdaptiveKConfig":
+        if self.max_k < self.min_k:
+            raise ValueError("adaptive_k.max_k must be greater than or equal to min_k")
+        return self
+
+
 class ContextAwareSearchConfig(BaseModel):
     """Configuration for context-aware search functionality."""
 
@@ -266,6 +332,8 @@ class SearchConfig(BaseModel):
     backends: List[str] = Field(default=["serper"])
     embedding_backends: List[str] = Field(default_factory=list)
     max_results_per_query: int = Field(default=5, ge=1)
+    query_rewrite: QueryRewriteConfig = Field(default_factory=QueryRewriteConfig)
+    adaptive_k: AdaptiveKConfig = Field(default_factory=AdaptiveKConfig)
     hybrid_query: bool = Field(
         default=False,
         description="Combine keyword and semantic search when true",
@@ -593,6 +661,14 @@ class ConfigModel(SupportsModelCopyMixin):
             "Policy for evicting nodes from the knowledge graph. Supported "
             'policies: "LRU", "score", "hybrid", "priority", "adaptive"'
         ),
+    )
+    gate_capture_query_strategy: bool = Field(
+        default=True,
+        description="Record adaptive fetch counts and rewrites in scout telemetry.",
+    )
+    gate_capture_self_critique: bool = Field(
+        default=True,
+        description="Expose search self-critique markers to gate telemetry.",
     )
     default_model: str = Field(default="mistral")
     active_profile: Optional[str] = None

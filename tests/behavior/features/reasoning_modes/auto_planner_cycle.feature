@@ -12,3 +12,11 @@ Feature: AUTO reasoning integrates planner, scout gate, and verification
     And the planner task graph snapshot should include verification goals
     And the AUTO metrics should record scout samples and agreement
     And the AUTO metrics should include planner depth and routing deltas
+
+  Scenario: AUTO telemetry captures adaptive search strategy improvements
+    Given loops is set to 2 in configuration
+    And reasoning mode is "auto"
+    And the planner proposes verification tasks
+    And the scout metadata includes adaptive search strategy signals
+    When I run the auto planner cycle for query "adaptive telemetry rehearsal"
+    Then the auto planner cycle should surface search strategy telemetry

@@ -259,6 +259,26 @@ class LocalGitConfigProtocol(Protocol):
     history_depth: int
 
 
+class QueryRewriteConfigProtocol(Protocol):
+    """Protocol describing query rewrite configuration consumed by search."""
+
+    enabled: bool
+    max_attempts: int
+    min_results: int
+    min_unique_sources: int
+    coverage_gap_threshold: float
+
+
+class AdaptiveKConfigProtocol(Protocol):
+    """Protocol describing adaptive fetch planning configuration."""
+
+    enabled: bool
+    min_k: int
+    max_k: int
+    step: int
+    coverage_gap_threshold: float
+
+
 class SearchConfigProtocol(Protocol):
     """Protocol capturing search configuration attributes consumed here."""
 
@@ -272,7 +292,11 @@ class SearchConfigProtocol(Protocol):
     semantic_similarity_weight: float
     source_credibility_weight: float
     max_workers: int
+    parallel_enabled: bool
+    parallel_prefetch: int
     context_aware: ContextAwareConfigProtocol
+    query_rewrite: QueryRewriteConfigProtocol
+    adaptive_k: AdaptiveKConfigProtocol
     local_file: LocalFileConfigProtocol
     local_git: LocalGitConfigProtocol
 
@@ -394,6 +418,58 @@ class _LocalGitConfig(LocalGitConfigProtocol):
 
 
 @dataclass(frozen=True, slots=True)
+class _QueryRewriteConfig(QueryRewriteConfigProtocol):
+    """Typed adapter for query rewrite configuration."""
+
+    enabled: bool
+    max_attempts: int
+    min_results: int
+    min_unique_sources: int
+    coverage_gap_threshold: float
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_QueryRewriteConfig":
+        return cls(
+            enabled=_coerce_bool(getattr(obj, "enabled", None), default=True),
+            max_attempts=_coerce_int(getattr(obj, "max_attempts", None), default=2, minimum=1),
+            min_results=_coerce_int(getattr(obj, "min_results", None), default=3, minimum=1),
+            min_unique_sources=_coerce_int(
+                getattr(obj, "min_unique_sources", None), default=3, minimum=1
+            ),
+            coverage_gap_threshold=_coerce_float(
+                getattr(obj, "coverage_gap_threshold", None), default=0.45
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _AdaptiveKConfig(AdaptiveKConfigProtocol):
+    """Typed adapter for adaptive fetch planning configuration."""
+
+    enabled: bool
+    min_k: int
+    max_k: int
+    step: int
+    coverage_gap_threshold: float
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_AdaptiveKConfig":
+        min_k = _coerce_int(getattr(obj, "min_k", None), default=5, minimum=1)
+        max_k = _coerce_int(getattr(obj, "max_k", None), default=12, minimum=1)
+        if max_k < min_k:
+            max_k = min_k
+        return cls(
+            enabled=_coerce_bool(getattr(obj, "enabled", None), default=True),
+            min_k=min_k,
+            max_k=max_k,
+            step=_coerce_int(getattr(obj, "step", None), default=3, minimum=1),
+            coverage_gap_threshold=_coerce_float(
+                getattr(obj, "coverage_gap_threshold", None), default=0.4
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class _SearchConfig(SearchConfigProtocol):
     """Typed adapter ensuring ``Search`` sees a consistent configuration."""
 
@@ -407,7 +483,11 @@ class _SearchConfig(SearchConfigProtocol):
     semantic_similarity_weight: float
     source_credibility_weight: float
     max_workers: int
+    parallel_enabled: bool
+    parallel_prefetch: int
     context_aware: ContextAwareConfigProtocol
+    query_rewrite: QueryRewriteConfigProtocol
+    adaptive_k: AdaptiveKConfigProtocol
     local_file: LocalFileConfigProtocol
     local_git: LocalGitConfigProtocol
 
@@ -418,6 +498,8 @@ class _SearchConfig(SearchConfigProtocol):
         context_obj = getattr(obj, "context_aware", SimpleNamespace())
         local_file_obj = getattr(obj, "local_file", SimpleNamespace())
         local_git_obj = getattr(obj, "local_git", SimpleNamespace())
+        rewrite_obj = getattr(obj, "query_rewrite", SimpleNamespace())
+        adaptive_obj = getattr(obj, "adaptive_k", SimpleNamespace())
         return cls(
             backends=backends,
             embedding_backends=embedding_backends,
@@ -441,7 +523,15 @@ class _SearchConfig(SearchConfigProtocol):
                 default=max(1, len(backends)) if backends else 4,
                 minimum=1,
             ),
+            parallel_enabled=_coerce_bool(
+                getattr(obj, "parallel_enabled", None), default=True
+            ),
+            parallel_prefetch=_coerce_int(
+                getattr(obj, "parallel_prefetch", None), default=0, minimum=0
+            ),
             context_aware=_ContextAwareConfig.from_object(context_obj),
+            query_rewrite=_QueryRewriteConfig.from_object(rewrite_obj),
+            adaptive_k=_AdaptiveKConfig.from_object(adaptive_obj),
             local_file=_LocalFileConfig.from_object(local_file_obj),
             local_git=_LocalGitConfig.from_object(local_git_obj),
         )
@@ -1722,6 +1812,7 @@ class Search:
 
         return queries
 
+
     @hybridmethod
     def external_lookup(
         self,
@@ -1730,49 +1821,8 @@ class Search:
         *,
         return_handles: bool = False,
     ) -> List[Dict[str, Any]] | ExternalLookupResult:
-        """Perform an external search using configured backends.
+        """Perform an external search using configured backends."""
 
-        This method performs a search using all backends configured in the
-        search_backends list in the configuration. It handles caching of results,
-        error handling, and merging results from multiple backends.
-
-        The method attempts to use each configured backend in sequence. If a backend
-        fails, it logs the error and continues with the next backend. If all backends
-        fail, it returns fallback results.
-
-        If context-aware search is enabled, this method will:
-        1. Expand the query based on search context (entities, topics, history)
-        2. Update the search context with the new query and results
-        3. Build or update the topic model if needed
-
-        Args:
-            query: The search query string to look up.
-            max_results: The maximum number of results to return per backend.
-                Default is 5.
-            return_handles: When ``True`` return an
-                :class:`ExternalLookupResult` bundling the ranked results,
-                cache handle, and storage manager reference. Defaults to
-                ``False`` for backwards compatibility.
-
-        Returns:
-            A list of dictionaries containing search results. Each dictionary
-            has at least 'title' and 'url' keys. When ``return_handles`` is
-            ``True`` an :class:`ExternalLookupResult` is returned instead,
-            providing the ranked results alongside the storage and cache
-            handles used to hydrate them.
-
-        Raises:
-            SearchError: If a search backend fails due to network issues, invalid
-                        JSON responses, or other errors.
-            TimeoutError: If a search backend times out.
-
-        Example:
-            >>> Search.external_lookup("python", max_results=2)
-            [
-                {"title": "Python Programming Language", "url": "https://python.org"},
-                {"title": "Python (programming language) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Python_(programming_language)"}
-            ]
-        """
         cfg = _get_runtime_config()
 
         if isinstance(query, dict):
@@ -1784,24 +1834,34 @@ class Search:
 
         context = SearchContext.get_instance()
 
-        # Apply context-aware search if enabled
         context_cfg = cfg.search.context_aware
         search_query = text_query
         if context_cfg.enabled:
-            # Expand the query based on context
             expanded_query = context.expand_query(text_query)
-
-            # Use the expanded query if available
             if expanded_query != text_query:
                 log.info(f"Using context-aware expanded query: '{expanded_query}'")
                 search_query = expanded_query
 
-        results: List[Dict[str, Any]] = []
-        results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
+        adaptive_cfg = cfg.search.adaptive_k
+        rewrite_cfg = cfg.search.query_rewrite
 
-        embedding_backends: Tuple[str, ...] = tuple(cfg.search.embedding_backends)
-        pending_embedding_backends: set[str] = set(embedding_backends)
-        embedding_lookup_invoked = False
+        context.reset_search_strategy()
+
+        allow_rewrite = rewrite_cfg.enabled and query_embedding is None
+        base_max_results = max_results
+        if adaptive_cfg.enabled:
+            max_results = max(max_results, adaptive_cfg.min_k)
+            max_results = min(max_results, adaptive_cfg.max_k)
+
+        attempt_count = 0
+        rewrite_attempts = 0
+        plan_reason = "initial"
+        attempted_plans: set[Tuple[str, int]] = set()
+
+        adaptive_span = max(0, adaptive_cfg.max_k - max_results) if adaptive_cfg.enabled else 0
+        adaptive_step = adaptive_cfg.step if adaptive_cfg.step > 0 else 1
+        max_attempts_guard = rewrite_cfg.max_attempts + 1 + adaptive_span // adaptive_step + 1
+        max_attempts_guard = max(1, max_attempts_guard)
 
         vss_available: Optional[bool] = None
 
@@ -1814,283 +1874,398 @@ class Search:
                     vss_available = False
             return vss_available
 
-        def _record_embedding_backend(
-            name: str, docs: Sequence[Dict[str, Any]] | None
-        ) -> None:
-            """Store embedding backend results without triggering duplicate lookups."""
+        while True:
+            attempt_count += 1
+            current_reason = plan_reason
+            plan_reason = "followup"
+            if attempt_count > max_attempts_guard:
+                allow_rewrite = False
 
-            pending_embedding_backends.discard(name)
-            if not docs:
-                results_by_backend.setdefault(name, [])
-                self.cache.cache_results(search_query, name, [])
-                return
+            plan_id = (search_query, max_results)
+            attempted_plans.add(plan_id)
 
-            normalised_docs = [dict(doc) for doc in docs]
-            for doc in normalised_docs:
-                doc.setdefault("backend", name)
-            results_by_backend[name] = normalised_docs
-            results.extend(normalised_docs)
-            self.cache.cache_results(search_query, name, normalised_docs)
+            results: List[Dict[str, Any]] = []
+            results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
 
-        np_query_embedding: Optional[np.ndarray] = None
-        if query_embedding is not None:
-            try:
-                np_query_embedding = np.array(query_embedding, dtype=float)
-            except Exception:  # pragma: no cover - defensive
-                np_query_embedding = None
-        else:
-            need_embedding = (
-                cfg.search.hybrid_query
-                or cfg.search.use_semantic_similarity
-                or bool(cfg.search.embedding_backends)
-            )
-            if not need_embedding:
-                need_embedding = _vss_available()
-            if need_embedding:
-                np_query_embedding = self.compute_query_embedding(search_query)
+            embedding_backends: Tuple[str, ...] = tuple(cfg.search.embedding_backends)
+            pending_embedding_backends: set[str] = set(embedding_backends)
+            embedding_lookup_invoked = False
 
-        if np_query_embedding is not None and pending_embedding_backends:
-            for backend_name in tuple(pending_embedding_backends):
-                cached_embedding = self.cache.get_cached_results(search_query, backend_name)
-                if cached_embedding is None:
-                    continue
-                _record_embedding_backend(backend_name, cached_embedding[:max_results])
+            current_query = search_query
 
-        def _ensure_embedding_results() -> None:
-            nonlocal embedding_lookup_invoked
+            def _record_embedding_backend(
+                name: str, docs: Sequence[Dict[str, Any]] | None
+            ) -> None:
+                pending_embedding_backends.discard(name)
+                if not docs:
+                    results_by_backend.setdefault(name, [])
+                    self.cache.cache_results(current_query, name, [])
+                    return
 
-            if embedding_lookup_invoked:
-                return
-            if np_query_embedding is None or not pending_embedding_backends:
-                return
+                normalised_docs = [dict(doc) for doc in docs]
+                for doc in normalised_docs:
+                    doc.setdefault("backend", name)
+                results_by_backend[name] = normalised_docs
+                results.extend(normalised_docs)
+                self.cache.cache_results(current_query, name, normalised_docs)
 
-            embedding_lookup_invoked = True
-            emb_results = self.embedding_lookup(np_query_embedding, max_results)
-            for backend_name in tuple(pending_embedding_backends):
-                docs = emb_results.get(backend_name)
-                if docs is None:
-                    pending_embedding_backends.discard(backend_name)
-                    results_by_backend.setdefault(backend_name, [])
-                    continue
-                _record_embedding_backend(backend_name, docs)
-
-        def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
-            backend = self.backends.get(name)
-            if not backend:
-                log.warning(f"Unknown search backend '{name}'")
-                available_backends = list(self.backends.keys()) or ["No backends registered"]
-                raise SearchError(
-                    f"Unknown search backend '{name}'",
-                    available_backends=available_backends,
-                    provided=name,
-                    suggestion="Configure a valid search backend in your configuration file",
+            np_query_embedding: Optional[np.ndarray] = None
+            if query_embedding is not None:
+                try:
+                    np_query_embedding = np.array(query_embedding, dtype=float)
+                except Exception:  # pragma: no cover - defensive
+                    np_query_embedding = None
+            else:
+                need_embedding = (
+                    cfg.search.hybrid_query
+                    or cfg.search.use_semantic_similarity
+                    or bool(cfg.search.embedding_backends)
                 )
+                if not need_embedding:
+                    need_embedding = _vss_available()
+                if need_embedding:
+                    np_query_embedding = self.compute_query_embedding(current_query)
 
-            cached = self.cache.get_cached_results(search_query, name)
-            if cached is not None:
-                self.add_embeddings(cached, np_query_embedding)
-                for r in cached:
-                    r.setdefault("backend", name)
-                return name, cached[:max_results]
+            if np_query_embedding is not None and pending_embedding_backends:
+                for backend_name in tuple(pending_embedding_backends):
+                    cached_embedding = self.cache.get_cached_results(current_query, backend_name)
+                    if cached_embedding is None:
+                        continue
+                    _record_embedding_backend(backend_name, cached_embedding[:max_results])
 
-            try:
-                backend_results = backend(search_query, max_results)
-            except requests.exceptions.Timeout as exc:
-                log.warning(f"{name} search timed out: {exc}")
-                from ..errors import TimeoutError
+            def _ensure_embedding_results() -> None:
+                nonlocal embedding_lookup_invoked
 
-                raise TimeoutError(
-                    f"{name} search timed out",
-                    cause=exc,
-                    backend=name,
-                    query=text_query,
-                )
-            except requests.exceptions.RequestException as exc:
-                log.warning(f"{name} search request failed: {exc}")
-                raise SearchError(
-                    f"{name} search failed",
-                    cause=exc,
-                    backend=name,
-                    query=text_query,
-                    suggestion="Check your network connection and ensure the search backend is properly configured",
-                )
-            except json.JSONDecodeError as exc:
-                log.warning(f"{name} search returned invalid JSON: {exc}")
-                raise SearchError(
-                    f"{name} search failed: invalid JSON response",
-                    cause=exc,
-                    backend=name,
-                    query=text_query,
-                    suggestion="The search backend returned an invalid response. Try a different search query or backend.",
-                )
-            except Exception as exc:  # pragma: no cover - unexpected errors
-                log.warning(f"{name} search failed with unexpected error: {exc}")
-                raise SearchError(
-                    f"{name} search failed",
-                    cause=exc,
-                    backend=name,
-                    query=text_query,
-                    suggestion="An unexpected error occurred. Check the logs for more details and consider using a different search backend.",
-                )
+                if embedding_lookup_invoked:
+                    return
+                if np_query_embedding is None or not pending_embedding_backends:
+                    return
 
-            if backend_results:
-                for r in backend_results:
-                    r.setdefault("backend", name)
-            self.cache.cache_results(search_query, name, backend_results)
-            self.add_embeddings(backend_results, np_query_embedding)
-            return name, backend_results
+                embedding_lookup_invoked = True
+                emb_results = self.embedding_lookup(np_query_embedding, max_results)
+                for backend_name in tuple(pending_embedding_backends):
+                    docs = emb_results.get(backend_name)
+                    if docs is None:
+                        pending_embedding_backends.discard(backend_name)
+                        results_by_backend.setdefault(backend_name, [])
+                        continue
+                    _record_embedding_backend(backend_name, docs)
 
-        backend_names = list(cfg.search.backends)
-        parallel_enabled = getattr(cfg.search, "parallel_enabled", True)
-        prefetch = getattr(cfg.search, "parallel_prefetch", 0)
-        if not parallel_enabled:
-            prefetch = len(backend_names)
-        else:
-            prefetch = max(0, min(prefetch, len(backend_names)))
+            def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
+                backend = self.backends.get(name)
+                if not backend:
+                    log.warning(f"Unknown search backend '{name}'")
+                    available_backends = list(self.backends.keys()) or ["No backends registered"]
+                    raise SearchError(
+                        f"Unknown search backend '{name}'",
+                        available_backends=available_backends,
+                        provided=name,
+                        suggestion="Configure a valid search backend in your configuration file",
+                    )
 
-        processed: set[str] = set()
-        sequential_backends = backend_names[:prefetch]
-        for candidate in sequential_backends:
-            name, backend_results = run_backend(candidate)
-            processed.add(name)
-            if backend_results:
-                results_by_backend[name] = backend_results
+                cached = self.cache.get_cached_results(current_query, name)
+                if cached is not None:
+                    self.add_embeddings(cached, np_query_embedding)
+                    for r in cached:
+                        r.setdefault("backend", name)
+                    return name, cached[:max_results]
+
+                try:
+                    backend_results = backend(current_query, max_results)
+                except requests.exceptions.Timeout as exc:
+                    log.warning(f"{name} search timed out: {exc}")
+                    from ..errors import TimeoutError
+
+                    raise TimeoutError(
+                        f"{name} search timed out",
+                        cause=exc,
+                        backend=name,
+                        query=current_query,
+                    )
+                except requests.exceptions.RequestException as exc:
+                    log.warning(f"{name} search request failed: {exc}")
+                    raise SearchError(
+                        f"{name} search failed",
+                        cause=exc,
+                        backend=name,
+                        query=current_query,
+                        suggestion="Check your network connection and ensure the search backend is properly configured",
+                    )
+                except json.JSONDecodeError as exc:
+                    log.warning(f"{name} search returned invalid JSON: {exc}")
+                    raise SearchError(
+                        f"{name} search failed: invalid JSON response",
+                        cause=exc,
+                        backend=name,
+                        query=current_query,
+                        suggestion="Verify the search backend returns valid JSON",
+                    )
+                except Exception as exc:
+                    log.warning(f"{name} search failed: {exc}")
+                    raise SearchError(
+                        f"{name} search failed",
+                        cause=exc,
+                        backend=name,
+                        query=current_query,
+                        suggestion="Check the search backend configuration",
+                    )
+
+                for doc in backend_results:
+                    doc.setdefault("backend", name)
+                self.cache.cache_results(current_query, name, backend_results)
                 results.extend(backend_results)
-                if name in pending_embedding_backends:
-                    pending_embedding_backends.discard(name)
+                return name, backend_results[:max_results]
 
-        remaining = [name for name in backend_names if name not in processed]
-        log.debug(
-            "Executing search backends",
-            extra={
-                "parallel_enabled": parallel_enabled,
-                "prefetch": prefetch,
-                "sequential_backends": sequential_backends,
-                "parallel_backends": remaining if parallel_enabled else [],
-            },
-        )
+            backends = cfg.search.backends
+            if not backends:
+                raise ConfigError(
+                    "No search backends configured",
+                    suggestion="Add at least one backend to 'search.backends' in the configuration file",
+                )
 
-        if parallel_enabled and remaining:
-            max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
-                    executor.submit(run_backend, name): name for name in remaining
-                }
-                for future in as_completed(futures):
-                    name, backend_results = future.result()
+            remaining = list(backends)
+            parallel_prefetch = max(0, min(cfg.search.parallel_prefetch, len(remaining)))
+            if parallel_prefetch:
+                sequential = remaining[:parallel_prefetch]
+                remaining = remaining[parallel_prefetch:]
+            else:
+                sequential = []
+
+            for name in sequential:
+                name, backend_results = run_backend(name)
+                if backend_results:
+                    results_by_backend[name] = backend_results
+                    if name in pending_embedding_backends:
+                        pending_embedding_backends.discard(name)
+
+            if remaining and cfg.search.parallel_enabled:
+                with ThreadPoolExecutor(max_workers=cfg.search.max_workers) as executor:
+                    futures = {
+                        executor.submit(run_backend, name): name for name in remaining
+                    }
+                    for future in as_completed(futures):
+                        name, backend_results = future.result()
+                        if backend_results:
+                            results_by_backend[name] = backend_results
+                            results.extend(backend_results)
+                            if name in pending_embedding_backends:
+                                pending_embedding_backends.discard(name)
+            elif remaining:
+                for candidate in remaining:
+                    name, backend_results = run_backend(candidate)
                     if backend_results:
                         results_by_backend[name] = backend_results
                         results.extend(backend_results)
                         if name in pending_embedding_backends:
                             pending_embedding_backends.discard(name)
-        elif remaining:
-            for candidate in remaining:
-                name, backend_results = run_backend(candidate)
-                if backend_results:
-                    results_by_backend[name] = backend_results
-                    results.extend(backend_results)
-                    if name in pending_embedding_backends:
-                        pending_embedding_backends.discard(name)
 
-        storage_results = self.storage_hybrid_lookup(
-            text_query, np_query_embedding, results_by_backend, max_results
-        )
-        for name, docs in storage_results.items():
-            if not docs:
-                continue
-            if name in results_by_backend:
-                results_by_backend[name].extend(docs)
-            else:
-                results_by_backend[name] = docs
-        if storage_results:
-            pending_embedding_backends.difference_update(
-                name for name in storage_results if name in pending_embedding_backends
+            storage_results = self.storage_hybrid_lookup(
+                current_query, np_query_embedding, results_by_backend, max_results
             )
+            for name, docs in storage_results.items():
+                if not docs:
+                    continue
+                if name in results_by_backend:
+                    results_by_backend[name].extend(docs)
+                else:
+                    results_by_backend[name] = docs
+            if storage_results:
+                pending_embedding_backends.difference_update(
+                    name for name in storage_results if name in pending_embedding_backends
+                )
 
-        storage_docs = storage_results.get("storage") or []
-        vector_storage_docs = [
-            dict(doc) for doc in storage_docs if "vector" in doc.get("storage_sources", [])
-        ]
+            storage_docs = storage_results.get("storage") or []
+            vector_storage_docs = [
+                dict(doc) for doc in storage_docs if "vector" in doc.get("storage_sources", [])
+            ]
 
-        duckdb_from_storage = False
-        if (
-            "duckdb" in embedding_backends
-            and np_query_embedding is not None
-            and _vss_available()
-        ):
-            duckdb_docs = vector_storage_docs[:max_results] if vector_storage_docs else []
-            results_by_backend["duckdb"] = [dict(doc) for doc in duckdb_docs]
-            pending_embedding_backends.discard("duckdb")
-            self.cache.cache_results(search_query, "duckdb", results_by_backend["duckdb"])
-            duckdb_from_storage = True
+            duckdb_from_storage = False
+            if (
+                "duckdb" in embedding_backends
+                and np_query_embedding is not None
+                and _vss_available()
+            ):
+                duckdb_docs = vector_storage_docs[:max_results] if vector_storage_docs else []
+                results_by_backend["duckdb"] = [dict(doc) for doc in duckdb_docs]
+                pending_embedding_backends.discard("duckdb")
+                self.cache.cache_results(current_query, "duckdb", results_by_backend["duckdb"])
+                duckdb_from_storage = True
 
-        if storage_results.get("storage"):
-            if not duckdb_from_storage:
-                results_by_backend.pop("duckdb", None)
-            pending_embedding_backends.discard("duckdb")
+            if storage_results.get("storage"):
+                if not duckdb_from_storage:
+                    results_by_backend.pop("duckdb", None)
+                pending_embedding_backends.discard("duckdb")
 
-        _ensure_embedding_results()
-        results = []
-        for docs in results_by_backend.values():
-            results.extend(docs)
+            _ensure_embedding_results()
+            results = []
+            for docs in results_by_backend.values():
+                results.extend(docs)
 
-        if results:
-            # Rank the results from all backends together
-            ranked_results = self.cross_backend_rank(
-                text_query, results_by_backend, np_query_embedding
-            )
+            if results:
+                ranked_results = self.cross_backend_rank(
+                    current_query, results_by_backend, np_query_embedding
+                )
 
-            search_storage.persist_results(ranked_results)
+                metrics = context.summarize_retrieval_outcome(
+                    current_query,
+                    ranked_results,
+                    fetch_limit=max_results,
+                    by_backend=results_by_backend,
+                )
+                context.record_fetch_plan(
+                    base_k=base_max_results,
+                    attempt=attempt_count,
+                    effective_k=max_results,
+                    reason=current_reason,
+                    metrics=metrics,
+                )
 
-            # Update search context if context-aware search is enabled
-            if cfg.search.context_aware.enabled:
-                # Add the query and results to the search history
-                context.add_to_history(text_query, ranked_results)
+                coverage_gap = float(metrics.get("coverage_gap", 0.0))
+                unique_results = int(metrics.get("unique_results", 0))
+                total_results = int(metrics.get("result_count", 0))
 
-                # Build or update the topic model if topic modeling is enabled
-                if cfg.search.context_aware.use_topic_modeling:
-                    context.build_topic_model()
+                adaptive_triggered = False
+                if adaptive_cfg.enabled and coverage_gap > adaptive_cfg.coverage_gap_threshold:
+                    proposed_k = min(
+                        adaptive_cfg.max_k,
+                        max(max_results + adaptive_cfg.step, adaptive_cfg.min_k),
+                    )
+                    if proposed_k > max_results and (current_query, proposed_k) not in attempted_plans:
+                        adaptive_triggered = True
+                        max_results = proposed_k
+                        plan_reason = "adaptive_increase"
 
-            context.record_scout_observation(
-                text_query,
-                ranked_results,
+                rewrite_triggered = False
+                if (
+                    allow_rewrite
+                    and not adaptive_triggered
+                    and rewrite_attempts < rewrite_cfg.max_attempts
+                ):
+                    rewrite_triggered = (
+                        total_results < rewrite_cfg.min_results
+                        or unique_results < rewrite_cfg.min_unique_sources
+                        or coverage_gap > rewrite_cfg.coverage_gap_threshold
+                    )
+                    if rewrite_triggered:
+                        suggestions = context.suggest_rewrites(
+                            current_query, limit=rewrite_cfg.max_attempts
+                        )
+                        chosen: dict[str, str] | None = None
+                        for suggestion in suggestions:
+                            candidate_query = suggestion.get("query", "").strip()
+                            if not candidate_query:
+                                continue
+                            if (candidate_query, max_results) in attempted_plans:
+                                continue
+                            chosen = suggestion
+                            break
+                        if chosen is not None:
+                            rewrite_attempts += 1
+                            context.record_query_rewrite(
+                                original=current_query,
+                                rewritten=chosen["query"],
+                                reason=chosen.get("reason", "context"),
+                                attempt=rewrite_attempts,
+                            )
+                            search_query = chosen["query"]
+                            plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
+                            allow_rewrite = rewrite_attempts < rewrite_cfg.max_attempts
+                        else:
+                            rewrite_triggered = False
+
+                if adaptive_triggered or rewrite_triggered:
+                    continue
+
+                search_storage.persist_results(ranked_results)
+
+                if cfg.search.context_aware.enabled:
+                    context.add_to_history(current_query, ranked_results)
+                    if cfg.search.context_aware.use_topic_modeling:
+                        context.build_topic_model()
+
+                context.record_scout_observation(
+                    current_query,
+                    ranked_results,
+                    by_backend=results_by_backend,
+                )
+
+                bundle = ExternalLookupResult(
+                    query=current_query,
+                    results=[dict(result) for result in ranked_results],
+                    by_backend={
+                        name: [dict(doc) for doc in docs]
+                        for name, docs in results_by_backend.items()
+                    },
+                    cache_base=self._cache_base,
+                    cache_view=self.cache,
+                    storage=StorageManager,
+                )
+                return bundle if return_handles else bundle.results
+
+            fallback_results = [
+                {"title": f"Result {i + 1} for {current_query}", "url": ""}
+                for i in range(max_results)
+            ]
+
+            metrics = context.summarize_retrieval_outcome(
+                current_query,
+                fallback_results,
+                fetch_limit=max_results,
                 by_backend=results_by_backend,
             )
+            context.record_fetch_plan(
+                base_k=base_max_results,
+                attempt=attempt_count,
+                effective_k=max_results,
+                reason=current_reason,
+                metrics=metrics,
+            )
+
+            if allow_rewrite and rewrite_attempts < rewrite_cfg.max_attempts:
+                suggestions = context.suggest_rewrites(
+                    current_query, limit=rewrite_cfg.max_attempts
+                )
+                chosen = None
+                for suggestion in suggestions:
+                    candidate_query = suggestion.get("query", "").strip()
+                    if not candidate_query:
+                        continue
+                    if (candidate_query, max_results) in attempted_plans:
+                        continue
+                    chosen = suggestion
+                    break
+                if chosen is not None:
+                    rewrite_attempts += 1
+                    context.record_query_rewrite(
+                        original=current_query,
+                        rewritten=chosen["query"],
+                        reason=chosen.get("reason", "context"),
+                        attempt=rewrite_attempts,
+                    )
+                    search_query = chosen["query"]
+                    plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
+                    continue
 
             bundle = ExternalLookupResult(
-                query=text_query,
-                results=[dict(result) for result in ranked_results],
+                query=current_query,
+                results=[dict(result) for result in fallback_results],
                 by_backend={
-                    name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
+                    name: [dict(doc) for doc in docs]
+                    for name, docs in results_by_backend.items()
                 },
                 cache_base=self._cache_base,
                 cache_view=self.cache,
                 storage=StorageManager,
             )
+
+            context.record_scout_observation(
+                current_query,
+                fallback_results,
+                by_backend=results_by_backend,
+            )
+
             return bundle if return_handles else bundle.results
 
-        # Fallback results when all backends fail
-        fallback_results = [
-            {"title": f"Result {i + 1} for {text_query}", "url": ""} for i in range(max_results)
-        ]
-        bundle = ExternalLookupResult(
-            query=text_query,
-            results=[dict(result) for result in fallback_results],
-            by_backend={
-                name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
-            },
-            cache_base=self._cache_base,
-            cache_view=self.cache,
-            storage=StorageManager,
-        )
-
-        context.record_scout_observation(
-            text_query,
-            fallback_results,
-            by_backend=results_by_backend,
-        )
-
-        return bundle if return_handles else bundle.results
 
 
 def get_search() -> Search:

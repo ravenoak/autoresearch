@@ -157,6 +157,24 @@ class ScoutGatePolicy:
         if isinstance(similarity_raw, Mapping):
             graph_similarity_details = dict(similarity_raw)
 
+        search_strategy: dict[str, object] = {}
+        if getattr(self.config, "gate_capture_query_strategy", True):
+            try:
+                strategy_snapshot = search_context.get_search_strategy()
+            except Exception:
+                strategy_snapshot = {}
+            if strategy_snapshot:
+                search_strategy = strategy_snapshot
+
+        self_critique_markers: dict[str, object] = {}
+        if getattr(self.config, "gate_capture_self_critique", True):
+            try:
+                markers_snapshot = search_context.get_self_critique_markers()
+            except Exception:
+                markers_snapshot = {}
+            if markers_snapshot:
+                self_critique_markers = markers_snapshot
+
         overrides = getattr(self.config, "gate_user_overrides", {})
         signal_overrides = overrides.get("signals", {}) if isinstance(overrides, dict) else {}
         for key, value in signal_overrides.items():
@@ -238,6 +256,10 @@ class ScoutGatePolicy:
             telemetry["graph"] = graph_telemetry
         if agreement_details:
             telemetry["scout_agreement"] = agreement_details
+        if search_strategy:
+            telemetry["search_strategy"] = search_strategy
+        if self_critique_markers:
+            telemetry["search_self_critique"] = self_critique_markers
 
         evaluate_gate_confidence_escalations(
             config=self.config,
@@ -266,6 +288,10 @@ class ScoutGatePolicy:
         scout_stage["agreement"] = agreement_details
         if graph_telemetry:
             scout_stage["graph_context"] = graph_telemetry
+        if search_strategy:
+            scout_stage["search_strategy"] = search_strategy
+        if self_critique_markers:
+            scout_stage["search_self_critique"] = self_critique_markers
         if state.sources:
             scout_stage["snippets"] = [
                 {
