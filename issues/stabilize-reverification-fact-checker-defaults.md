@@ -20,4 +20,12 @@ readiness until sensible defaults are restored.
   or successor release notes.
 
 ## Status
-Open
+Resolved – defaults load without validation errors and opt-out is documented.
+
+## Resolution
+- Reverification builds FactChecker kwargs from `ConfigModel.verification` and
+  injects deterministic defaults when missing.
+- Setting `verification.fact_checker.enabled` to `false` now skips the loop,
+  letting fixtures opt out without patching the agent.
+- `docs/release_plan.md` records the configuration contract and test coverage
+  was expanded in `tests/unit/orchestration/test_reverify.py`.

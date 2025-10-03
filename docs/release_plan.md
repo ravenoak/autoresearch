@@ -26,6 +26,11 @@ handshake fixtures. The new [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflig
 tracks the remediation work as a sequence of small PRs.
 【4b1e56†L1-L2】【7be155†L104-L262】
 
+Reverification now injects deterministic FactChecker defaults when
+`ConfigModel.verification.fact_checker` is omitted and respects
+`enabled=false` to skip the loop. This documents the configuration contract for
+test fixtures and future alpha reviews.
+
 TestPyPI remains paused by default. We will refresh coverage evidence only
 after PR-A through PR-D from the preflight plan land and the suite is green.
 Until then the **September 30, 2025 at 18:19 UTC** coverage run remains the
