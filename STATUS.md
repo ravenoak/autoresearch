@@ -18,6 +18,26 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 3, 2025
+- Manual CI dispatches now expose a `run_testpypi_dry_run` flag that defaults
+  to false, keeping the TestPyPI dry run paused while the verify job runs
+  `task mypy-strict` immediately after spec linting to surface strict typing
+  failures sooner.
+  【F:.github/workflows/ci.yml†L5-L48】【F:.github/workflows/ci.yml†L70-L104】
+- `task mypy-strict` completed at **01:31 UTC**, confirming the repository-wide
+  strict sweep still finishes without diagnostics.
+  【F:baseline/logs/mypy-strict-20251003T013152Z.log†L1-L1】
+- `uv run task verify EXTRAS="nlp ui vss git distributed analysis llm
+  parsers"` continues to fail in the flake8 stage because the behavior,
+  integration, and storage tests retain unused imports, blank-line debt, and
+  undefined helper references; the new log archives the failure details while
+  we triage the lint backlog.【F:baseline/logs/task-verify-20251003T013253Z.log†L1-L22】
+- `uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm
+  parsers"` still halts when `test_scheduler_restarts_existing_timer` observes
+  that the captured `DummyTimer` never marks itself as cancelled, so
+  `coverage.xml` remains unchanged until we address the scheduler regression.
+  【F:baseline/logs/task-coverage-20251003T013422Z.log†L1-L40】
+
 ## October 2, 2025
 - `uv run mypy --strict src tests` completed at **23:57 UTC** with zero
   findings, clearing the 2,114-error backlog logged on October 1 and restoring

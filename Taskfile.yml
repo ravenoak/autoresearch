@@ -59,9 +59,14 @@ tasks:
     cmds:
       - uv run python scripts/check_release_metadata.py
     desc: "Validate release version and date alignment"
-  mypy:strict-suite:
+  mypy-strict:
     cmds:
       - uv run mypy --strict src tests
+    desc: "Run mypy in strict mode across src and tests"
+
+  mypy:strict-suite:
+    cmds:
+      - task mypy-strict
     desc: "Run mypy in strict mode across src and tests"
 
   mypy:behavior:
@@ -83,7 +88,7 @@ tasks:
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
-      - uv run mypy --strict src tests
+      - task mypy-strict
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
@@ -376,10 +381,8 @@ tasks:
           set -eu
           uv run flake8 src tests
           echo "[verify][lint] flake8 passed"
-      - |
-          set -eu
-          uv run mypy --strict src tests
-          echo "[verify][mypy] strict suite passed"
+      - task mypy-strict
+      - echo "[verify][mypy] strict suite passed"
       - task lint-specs
       - echo "[verify][lint] spec lint passed"
       - task check-release-metadata
