@@ -207,6 +207,7 @@ def test_cache_is_backend_specific_without_embeddings(
         "calculate_bm25_scores",
         staticmethod(assert_bm25_signature),
     )
+
     def _no_transformer() -> None:
         return None
 

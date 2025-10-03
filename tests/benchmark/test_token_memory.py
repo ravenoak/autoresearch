@@ -15,6 +15,7 @@ class TokenMetrics(TypedDict):
     memory_delta_mb: float
     tokens: dict[str, dict[str, int]]
 
+
 ensure_stub_module("docx", {"Document": object})
 ensure_stub_module(
     "pdfminer.high_level", {"extract_text": lambda *a, **k: ""}

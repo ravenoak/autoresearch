@@ -1,7 +1,5 @@
 from typing import cast
 
-from typing import cast
-
 from scripts.agents_sim import _simulate
 
 

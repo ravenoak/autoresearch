@@ -358,7 +358,7 @@ def test_external_lookup_returns_handles(
     with Search.temporary_state() as search_instance:
         search_state: Search = search_instance
         search_state.cache.clear()
-        
+
         def vector_backend_func(
             embedding: Sequence[float], k: int = 5
         ) -> list[SearchPayload]:
