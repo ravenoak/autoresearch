@@ -8,18 +8,14 @@ from typing import Iterator
 import pytest
 from click.testing import CliRunner, Result
 from httpx import Client, Response
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import parsers, scenario, then, when
 
 from autoresearch.models import QueryResponse
 from tests.behavior.context import BehaviorContext, get_required, set_value
 
-from . import common_steps  # noqa: F401
-from .common_steps import (
-    app_running,
-    app_running_with_default,
-    application_running,
-    cli_app,
-)
+from .common_steps import cli_app
+
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @dataclass(slots=True)
@@ -44,12 +40,6 @@ class VisualizationResult:
 
     result: Result
     path: Path
-
-
-@given("the Autoresearch application is running")
-def _app_running() -> None:
-    """Background step placeholder for feature scenarios."""
-    return None
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))

@@ -12,12 +12,9 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from tests.behavior.context import BehaviorContext, get_required, set_value
 
-from .common_steps import (
-    app_running,
-    app_running_with_default,
-    application_running,
-    cli_app,
-)
+from .common_steps import cli_app
+
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @when(parsers.parse('I start `autoresearch monitor run` and enter "{text}"'))

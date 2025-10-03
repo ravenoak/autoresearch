@@ -11,7 +11,7 @@ from autoresearch.main import app as cli_app
 from autoresearch.orchestration.orchestrator import Orchestrator
 from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 
-from . import common_steps  # noqa: F401 - ensure shared steps are registered
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @when(
@@ -77,4 +77,3 @@ def test_search_direct() -> None:
 @scenario('../features/search_cli.feature', 'Missing query argument')
 def test_search_missing() -> None:
     """Scenario: Missing query argument produces an error."""
-

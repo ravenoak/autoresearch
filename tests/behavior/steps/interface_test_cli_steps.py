@@ -155,4 +155,3 @@ def test_a2a_success() -> None:
 @scenario('../features/interface_test_cli.feature', 'Fail to connect to A2A server')
 def test_a2a_failure() -> None:
     """Scenario: fail to connect to the A2A server."""
-

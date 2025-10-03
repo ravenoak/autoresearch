@@ -14,13 +14,7 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from tests.behavior.context import BehaviorContext, get_required, set_value
 
-from . import common_steps  # noqa: F401
-from .common_steps import (
-    app_running,
-    app_running_with_default,
-    application_running,
-    cli_app,
-)
+from .common_steps import cli_app
 
 
 @dataclass(slots=True)

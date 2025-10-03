@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 from autoresearch.main import app as cli_app
 from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 
-from . import common_steps  # noqa: F401 - ensure shared steps are registered
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @when('I run `autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"`')
@@ -79,4 +79,3 @@ def test_sparql_success() -> None:
 @scenario('../features/sparql_cli.feature', 'Invalid SPARQL query')
 def test_sparql_invalid() -> None:
     """Scenario: SPARQL command fails when the query is invalid."""
-

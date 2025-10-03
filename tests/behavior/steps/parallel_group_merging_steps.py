@@ -12,6 +12,8 @@ pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 scenarios("../features/parallel_group_merging.feature")
+
+
 class ReasoningEntry(TypedDict):
     """Describe a single reasoning entry produced by an agent group."""
 

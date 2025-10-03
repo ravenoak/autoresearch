@@ -1,7 +1,7 @@
 from __future__ import annotations
 from tests.behavior.utils import as_payload
 
-from typing import Any, Callable, MutableMapping, cast
+from typing import Any, MutableMapping, cast
 from unittest.mock import MagicMock, patch
 
 import pytest

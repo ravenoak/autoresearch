@@ -39,4 +39,3 @@ def run_capabilities(cli_runner: CliRunner, bdd_context: BehaviorContext) -> Non
 
 
 scenarios("../features/capabilities_cli.feature")
-

@@ -21,7 +21,6 @@ from autoresearch.orchestration.state import QueryState
 from autoresearch.storage import StorageManager
 
 
-BehaviorContext: TypeAlias = dict[str, Any]
 ExecutorClass: TypeAlias = type[ProcessExecutor] | type[RayExecutor]
 
 

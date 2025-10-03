@@ -6,7 +6,7 @@ import time
 from typing import Any
 
 import pytest
-from pytest_bdd import given, scenario, then, when
+from pytest_bdd import scenario, then, when
 from typer.testing import CliRunner
 
 from autoresearch.main import app as cli_app
@@ -19,12 +19,7 @@ from tests.behavior.steps import (
     store_payload,
 )
 
-from . import common_steps  # noqa: F401 - import for shared step registration
-
-
-@given("the application is running")
-def _app_running() -> None:
-    """Provide a no-op background step for CLI scenarios."""
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @when("I run `autoresearch monitor`")
@@ -185,4 +180,3 @@ def run_monitor_resources(
 @scenario("../features/monitor_cli.feature", "Resource monitoring for a duration")
 def test_monitor_resources_duration() -> None:
     """Scenario: Resource monitoring for a duration."""
-
