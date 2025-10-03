@@ -18,9 +18,40 @@ from ..storage import StorageManager
 from .state_registry import QueryStateRegistry
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checking only
+    from ..config.models import ConfigModel
     from .state import QueryState
 
 log = get_logger(__name__)
+
+
+_FACT_CHECKER_DEFAULTS: Dict[str, Any] = {"name": "FactChecker", "enabled": True}
+
+
+def _to_mapping(payload: object) -> Mapping[str, Any] | None:
+    """Return ``payload`` as a mapping when possible."""
+
+    if isinstance(payload, Mapping):
+        return payload
+    model_dump = getattr(payload, "model_dump", None)
+    if callable(model_dump):
+        dumped = model_dump()
+        if isinstance(dumped, Mapping):
+            return dumped
+    return None
+
+
+def _resolve_fact_checker_config(config: "ConfigModel") -> Dict[str, Any]:
+    """Derive FactChecker constructor kwargs from the configuration."""
+
+    verification_payload = _to_mapping(getattr(config, "verification", None))
+    fact_checker_payload: Mapping[str, Any] | None = None
+    if verification_payload is not None:
+        fact_checker_payload = _to_mapping(verification_payload.get("fact_checker"))
+
+    merged = dict(_FACT_CHECKER_DEFAULTS)
+    if fact_checker_payload:
+        merged.update({str(key): value for key, value in fact_checker_payload.items()})
+    return merged
 
 
 class ReverifyOptions(BaseModel):
@@ -85,6 +116,37 @@ def run_reverification(
     history = state.metadata.setdefault("reverify_history", [])
     reverify_meta = state.metadata.setdefault("reverify", {})
 
+    fact_checker_config = _resolve_fact_checker_config(config)
+    if not bool(fact_checker_config.get("enabled", True)):
+        state.metadata.pop("_reverify_options", None)
+        skip_reason = "fact_checker_disabled"
+        history.append(
+            {
+                "timestamp": time.time(),
+                "options": dict(overrides),
+                "attempt": 0,
+                "duration": 0.0,
+                "audit_count": 0,
+                "skipped": skip_reason,
+            }
+        )
+        state.metadata.setdefault("reverify_runs", 0)
+        state.metadata["reverify_runs"] += 1
+        reverify_meta["last_updated"] = time.time()
+        reverify_meta["last_options"] = overrides
+        reverify_meta["attempts"] = 0
+        reverify_meta["retries_used"] = 0
+        reverify_meta["audit_count"] = 0
+        reverify_meta["skipped"] = skip_reason
+        QueryStateRegistry.update(state_id, state, config)
+        response = state.synthesize()
+        response.state_id = state_id
+        log.info(
+            "Reverification skipped because FactChecker is disabled",
+            extra={"state_id": state_id},
+        )
+        return response
+
     base_claims = [dict(claim) for claim in state.claims]
     extracted_claims: list[str] = []
     if not base_claims:
@@ -117,7 +179,7 @@ def run_reverification(
     attempts = 0
     aggregated_audits: list[dict[str, Any]] = []
 
-    fact_checker = FactChecker()
+    fact_checker = FactChecker(**fact_checker_config)
     try:
         while attempts < max_retries:
             attempts += 1
