@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from typing import Iterable, List, Sequence
+from typing import Any, Iterable, List, Mapping, Sequence
 
 from ..storage import ClaimAuditStatus
 
@@ -198,6 +198,89 @@ def _tokenize(text: str) -> List[str]:
     return [token for token in re.findall(r"[a-z0-9']+", text.lower()) if token not in _STOPWORDS]
 
 
+def extract_candidate_claims(
+    text: str,
+    *,
+    max_claims: int = 8,
+    min_tokens: int = 5,
+) -> List[str]:
+    """Extract declarative claim candidates from ``text`` for reverification."""
+
+    cleaned = text.strip()
+    if not cleaned:
+        return []
+
+    claims: list[str] = []
+    seen: set[str] = set()
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    for line in lines or [cleaned]:
+        normalised = re.sub(r"^([0-9]+[.)]|[-*•])\s+", "", line).strip()
+        if not normalised:
+            continue
+        segments = re.split(r"(?<=[.!?])\s+", normalised) if " " in normalised else [normalised]
+        for segment in segments:
+            candidate = " ".join(segment.strip().split())
+            if not candidate:
+                continue
+            if candidate.endswith("?"):
+                continue
+            if len(candidate.split()) < min_tokens:
+                continue
+            key = candidate.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            claims.append(candidate)
+            if len(claims) >= max_claims:
+                return claims
+    return claims
+
+
+def should_retry_verification(
+    audits: Sequence[Mapping[str, Any]] | None,
+    *,
+    min_supported: int = 1,
+    min_sample_size: int = 1,
+) -> bool:
+    """Return ``True`` when another verification pass should run."""
+
+    if not audits:
+        return True
+
+    supported = 0
+    total_samples = 0
+    needs_review_only = True
+
+    for audit in audits:
+        status_token = audit.get("status")
+        try:
+            status = (
+                status_token
+                if isinstance(status_token, ClaimAuditStatus)
+                else ClaimAuditStatus(str(status_token))
+            )
+        except ValueError:
+            status = ClaimAuditStatus.NEEDS_REVIEW
+
+        if status is ClaimAuditStatus.SUPPORTED:
+            supported += 1
+            needs_review_only = False
+        elif status is ClaimAuditStatus.UNSUPPORTED:
+            needs_review_only = False
+
+        sample_size = audit.get("sample_size")
+        try:
+            total_samples += int(sample_size) if sample_size is not None else 0
+        except (TypeError, ValueError):
+            continue
+
+    if supported >= min_supported:
+        return False
+    if total_samples >= min_sample_size and not needs_review_only:
+        return False
+    return True
+
+
 def _frequency_vector(tokens: Iterable[str]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for token in tokens:
@@ -215,7 +298,9 @@ __all__ = [
     "EntailmentAggregate",
     "aggregate_entailment_scores",
     "classify_entailment",
+    "extract_candidate_claims",
     "expand_retrieval_queries",
     "sample_paraphrases",
     "score_entailment",
+    "should_retry_verification",
 ]

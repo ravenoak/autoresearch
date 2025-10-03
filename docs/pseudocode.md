@@ -255,6 +255,25 @@ function audit_claims(candidate, evidence, config):
     }
 ```
 
+## 8b. Reverification Loop (`orchestration/reverify.py`)
+```
+function reverify(state_id, options):
+    state, config = clone_state(state_id)
+    claims = state.claims or extract_claims(state.final_answer)
+    attempts = 0
+    while attempts < options.max_retries:
+        attempts += 1
+        audits, verification = fact_checker.execute(claims, config, options)
+        record_history(state, audits, attempts, options)
+        if audits_are_stable(audits):
+            break
+        reset_transient_state(state, claims)
+        sleep(options.retry_backoff)
+    persist_claims(StorageManager, claims + verification)
+    update_metadata(state, audits, attempts)
+    return state.synthesize()
+```
+
 ## 9. Planner and Coordinator (planning/coordinator.py)
 ```
 class PlannerPromptBuilder:

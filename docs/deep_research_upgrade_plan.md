@@ -45,9 +45,19 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
      `audit.hedge_mode`, `audit.require_human_ack`,
      `audit.operator_timeout_s`, and `audit.explain_conflicts`) so operators can
      balance automation with manual verification before releasing an answer.
+   - Extend reverification controls with configurable retries and
+     answer-based claim extraction so operators can refresh audits without
+     re-running the full query, while recording attempt counts, extraction
+     telemetry, and persistence outcomes for downstream dashboards.
+      【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+      【F:tests/unit/orchestration/test_reverify.py†L1-L80】
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof, including CLI
      orchestration to confirm telemetry exposes verification badges end to end.
+     The new `@reasoning_modes` scenario locks audit badge propagation into the
+     response payload so reverification signals remain visible.
+      【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+      【F:tests/behavior/steps/reasoning_modes_steps.py†L1-L40】
    - **Status:** Completed. The September 30 verify and coverage sweeps finish
      through the Task CLI with strict mypy, scout gate telemetry, and the 92.4 %
      statement rate restored, so Phase 1 objectives and evidence trails are all
@@ -102,6 +112,13 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
    - Surface contradiction checks to the scout gate through
      `SearchContext.get_contradiction_signal()` while exposing neighbour
      and path queries to agents for multi-hop reasoning.
+   - Persist GraphML/JSON exports as knowledge-graph claims so provenance,
+     contradiction weights, and export availability flow through
+     `SearchContext` and `QueryState.synthesize`, keeping operator telemetry and
+     downstream tools in sync.
+      【F:src/autoresearch/knowledge/graph.py†L113-L204】
+      【F:src/autoresearch/search/context.py†L618-L666】
+      【F:src/autoresearch/orchestration/state.py†L1120-L1135】
    - Extend `SearchContext` with on-demand query rewriting, adaptive fetch
      planning, and search self-critique telemetry so retrieval gaps can close
      before debate. These signals surface through `ScoutGateDecision.telemetry`
