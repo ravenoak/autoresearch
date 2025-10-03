@@ -42,101 +42,34 @@ share session metadata.
 
 Phase 1 is now complete and documented across the release plan and deep research
 strategy. The verification loop and retrieval exports above close the open PR5
-and PR4 deltas, and the **October 1, 2025** strict and coverage reruns confirm
-the gate is stable enough to resume Phase 2 planning once the typed
-`EvaluationSummary` fixtures and `_thread.RLock` registry clone are addressed,
-so the roadmap now tracks those prerequisites alongside the planner upgrades.
+and PR4 deltas. The new preflight readiness plan captures the remaining
+prerequisites—restoring a green pytest suite, refreshing coverage, and
+instrumenting AUTO mode—before Phase 2 planner upgrades resume.
 【F:docs/deep_research_upgrade_plan.md†L27-L58】
-【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
-【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
 
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. The **October 1, 2025 at 14:39 UTC** strict sweep
- still reports 2,114 errors, and the paired **14:40 UTC** coverage run stops in
-`test_auto_mode_escalates_to_debate_when_gate_requires_`
-`loops`, so TestPyPI stays deferred while the planner registry clone adopts
-typed state hand-offs.
-【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
-【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
-Sourcing the PATH helper emitted by
-`./scripts/setup.sh --print-path` keeps `task --version` at 3.45.4, and the fast
-pipeline now runs cleanly through the `uv` commands documented in `STATUS.md`.
-`uv run --extra dev-minimal --extra test flake8 src tests`, `uv run --extra
-dev-minimal --extra test mypy src`, the targeted pytest smoke, and `uv run task
-check` complete without lint failures, closing the archived [clean-up flake8
-regressions][clean-up-flake8] ticket.【F:STATUS.md†L3-L24】
-【F:STATUS.md†L117-L124】
-【F:issues/archive/clean-up-flake8-regressions-in-routing-and-search-storage.md†L29-L34】
-`task verify` finishes end-to-end with warnings promoted to errors.【F:STATUS.md†L44-L59】
-`STATUS.md` records the run results, and `TASK_PROGRESS.md` mirrors the same
-coverage totals across 890 unit, 324 integration, and 29 behavior tests with no
-resource tracker errors.【F:STATUS.md†L44-L59】【F:TASK_PROGRESS.md†L24-L56】 Phase 1
-of the deep research program now reports green objectives alongside the strict
-mypy gate, which clears in the September 30 `task verify` sweep cited across the
-status rollup, roadmap, and plan updates.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:docs/deep_research_upgrade_plan.md†L19-L41】
-The associated verification and coverage rerun tickets now live in the
-archive.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L49】
-【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
-Storage regressions remain contained: `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected,
-and 1 xfailed tests after targeted fixes held across reruns.【F:STATUS.md†L125-L130】
-【F:TASK_PROGRESS.md†L42-L45】 Spec coverage still maps every module to
-specifications with proofs, simulations, or tests.【F:SPEC_COVERAGE.md†L1-L120】
-Documentation builds now run without warnings. The testing guidelines link to
-`docs/wheels/gpu.md`, and the release plan references ticket slugs from within
-the docs tree.【F:docs/testing_guidelines.md†L96-L129】【F:docs/release_plan.md†L19-L38】
-The archived fixes record the resolved MkDocs warnings.
-【F:issues/archive/fix-testing-guidelines-gpu-link.md†L5-L34】
-【F:issues/archive/fix-release-plan-issue-links.md†L5-L28】
-`STATUS.md` and `TASK_PROGRESS.md` confirm `uv run --extra docs mkdocs build`
-completes without missing targets, leaving no outstanding MkDocs warnings. The
-deterministic storage resident floor is now documented while the TestPyPI stage
-remains paused by default.
-【F:STATUS.md†L1-L59】【F:TASK_PROGRESS.md†L1-L24】【F:docs/storage_resident_floor.md†L1-L23】
-The release sequence therefore references the archived resource tracker,
-deprecation warning, coverage rerun, and documentation warning tickets while the
-alpha checklist monitors for regressions alongside the open alpha coordination
-work.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L37-L49】
-【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
-【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
-【F:issues/archive/fix-testing-guidelines-gpu-link.md†L32-L34】
-【F:issues/archive/fix-release-plan-issue-links.md†L26-L28】
-The September 30, 2025 verify (17:45:12 UTC) and coverage (18:19:47 UTC) sweeps
-restore the Task CLI path with 92.4 % statement coverage; the alpha ticket,
-status rollup, task progress log, and code-complete plan all reference the logs
-so the remaining TestPyPI dry-run hold and sign-off coordination stay visible.
-XPASS cleanup and Phase 1 of the deep research initiative remain archived in the
-release plan while the deep research plan records the completion rationale.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
-【F:issues/prepare-first-alpha-release.md†L1-L57】【F:STATUS.md†L21-L69】
-【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L40】
-【F:docs/release_plan.md†L18-L38】【F:docs/deep_research_upgrade_plan.md†L19-L36】
-Fresh documentation of the final-answer audit loop and operator acknowledgement
-controls accompanies the **September 30, 2025 at 14:28 UTC** `task verify` and
-**14:30 UTC** `task coverage` runs. The new logs halt in the existing strict
-typing and Pydantic schema gaps, respectively, keeping the alpha gate current
-while TestPyPI remains deferred and the audit loop documentation propagates.
-【F:docs/release_plan.md†L11-L24】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
-【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
-The spec template lint cleanup is archived as
-[spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
-Fresh September 24 planning added
-[refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md)
- to document the heuristics proof gap and
-[stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md)
- to stage packaging outputs before tagging; both now sit under
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
-The same review opened
-[stabilize-ranking-weight-property](issues/archive/stabilize-ranking-weight-property.md),
-[restore-external-lookup-search-flow](issues/archive/restore-external-lookup-search-flow.md),
-[finalize-search-parser-backends](issues/archive/finalize-search-parser-backends.md),
-and [stabilize-storage-eviction-property](issues/archive/stabilize-storage-eviction-property.md)
-to close the remaining XFAIL guards before tagging 0.1.0a1.
+across project documentation. As of **October 3, 2025 at 14:52 UTC** the strict
+typing gate is green but the pytest suite is red: `uv run mypy --strict src
+tests` completes successfully, while `uv run --extra test pytest` still fails
+across reverification defaults, backup scheduling, search cache determinism,
+API parsing exports, and FastMCP shims. The new preflight readiness plan keeps
+the remediation path visible across documentation and issues.
+【4b1e56†L1-L2】【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
+
+The deterministic storage resident-floor documentation remains published and
+linked from the release plan, keeping the TestPyPI stage paused until coverage
+and verification sweeps can be refreshed.
+【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
+
+Phase 1 of the deep research initiative is still complete. Upcoming work
+focuses on the PR slices described in the preflight plan so AUTO telemetry,
+planner prompts, and retrieval upgrades land once the test suite is green.
+【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
 
 ## Milestones
 

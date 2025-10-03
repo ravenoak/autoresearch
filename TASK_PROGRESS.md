@@ -1,9 +1,11 @@
-As of **2025-10-03** at 01:31 UTC `task mypy-strict` completes without
-diagnostics, keeping the automated strict gate green now that Task `check`,
-Task `verify`, and the CI workflow all invoke the target directly. TestPyPI dry
-runs remain opt-in because the new `run_testpypi_dry_run` workflow input
-defaults to false, holding the publish stage until reviewers re-enable it.
-【F:baseline/logs/mypy-strict-20251003T013152Z.log†L1-L1】【F:.github/workflows/ci.yml†L5-L104】
+As of **2025-10-03 at 14:52 UTC** the strict typing gate remains green while the
+pytest suite is red. `uv run mypy --strict src tests` finishes without
+diagnostics, but `uv run --extra test pytest` still fails across
+reverification defaults, backup scheduling, search cache determinism, API
+parsing exports, and FastMCP shims. The new preflight plan captures the
+remediation path and splits the work into review-sized PRs so release
+preparation can continue once the suite is green again.
+【4b1e56†L1-L2】【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
 
 As of **2025-10-03** the deterministic storage resident-floor documentation is
 published at `docs/storage_resident_floor.md`, closing the alpha checklist note

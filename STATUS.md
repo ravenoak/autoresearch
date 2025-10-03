@@ -19,6 +19,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 3, 2025
+- Documented the v0.1.0a1 preflight readiness plan, capturing strict
+  typing success, current pytest failures, and the PR slices required to
+  restore coverage.
+  【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
 - `task check` and `task verify` now invoke `task mypy-strict` before other
   steps, giving the repository an automated strict gate on every local sweep.
   The CI workflow triggers the same target and keeps the `run_testpypi_dry_run`
