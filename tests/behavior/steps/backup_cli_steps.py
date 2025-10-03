@@ -177,4 +177,3 @@ def test_backup_list() -> None:
 @scenario("../features/backup_cli.feature", "Restore backup")
 def test_backup_restore_scenario() -> None:
     """Scenario for restoring a backup."""
-

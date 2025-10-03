@@ -39,4 +39,3 @@ def cli_reports_missing(bdd_context: BehaviorContext) -> None:
 @scenario('../features/visualize_metrics_cli.feature', 'Attempt to visualize metrics before implementation')
 def test_visualize_metrics_cli() -> None:
     """Scenario: attempt to visualize metrics before implementation."""
-

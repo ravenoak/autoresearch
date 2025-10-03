@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json
-from typing import Any, cast
+from typing import cast
 from unittest.mock import patch
 
 import pytest

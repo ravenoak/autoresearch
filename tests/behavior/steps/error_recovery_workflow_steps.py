@@ -20,6 +20,7 @@ class RecoveryInfo(TypedDict):
 class RunResult(TypedDict):
     recovery_info: RecoveryInfo
 
+
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 scenarios("../features/error_recovery_workflow.feature")

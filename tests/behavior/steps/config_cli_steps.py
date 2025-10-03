@@ -159,4 +159,3 @@ def test_config_reasoning() -> None:
 @scenario("../features/config_cli.feature", "Reject invalid reasoning mode")
 def test_config_reasoning_invalid() -> None:
     """Scenario: reject invalid reasoning mode inputs."""
-

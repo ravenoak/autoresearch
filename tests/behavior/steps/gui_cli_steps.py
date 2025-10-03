@@ -104,4 +104,3 @@ def test_gui_help() -> None:
 @scenario("../features/gui_cli.feature", "Launch GUI with invalid port")
 def test_gui_invalid_port() -> None:
     """Scenario: fail when providing an invalid port."""
-

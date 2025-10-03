@@ -1,8 +1,6 @@
 import pytest
 from pytest_bdd import given, scenario, then, when
 
-import pytest
-
 from tests.behavior.context import BehaviorContext
 
 

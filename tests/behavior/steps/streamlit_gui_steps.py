@@ -7,7 +7,7 @@ from typing import Callable, cast
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from pytest_bdd import given, parsers, scenario, then, when
+from pytest_bdd import given, scenario, then, when
 from unittest.mock import MagicMock, patch
 
 from autoresearch.models import QueryResponse
@@ -18,12 +18,6 @@ from tests.behavior.context import (
     StreamlitTabMocks,
     get_required,
     set_value,
-)
-
-from .common_steps import (
-    app_running,
-    app_running_with_default,
-    application_running,
 )
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
