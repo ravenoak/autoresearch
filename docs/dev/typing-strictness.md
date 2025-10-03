@@ -14,6 +14,21 @@
   newly added helper shims.
 - There are no `ignore_missing_imports` toggles or per-package allowlists, so
   missing stubs for optional extras surface directly in strict runs.
+- A single `tests.*` override keeps the suite runnable under strict mode by
+  enumerating the exact error codes currently suppressed (e.g. `no-any-return`,
+  `union-attr`, `typeddict-item`). Each code in
+  [pyproject.toml](../../pyproject.toml) must be burned down or justified with
+  inline ignores before new suppressions are added.
+
+## Test suite expectations
+
+- Every test module is expected to pass under `mypy --strict src tests`, the
+  same command wired into [`task check`](../../Taskfile.yml) and
+  [`task verify`](../../Taskfile.yml). The broad `ignore_errors = true`
+  overrides once applied to `tests.integration.*`, `tests.targeted.*`, and
+  archived behaviour suites have been removed. New suppressions must be
+  justified inline or with precise module-specific overrides that keep the
+  strict gate meaningful.
 
 ## Strict run snapshot (2025-09-29 02:23 UTC)
 

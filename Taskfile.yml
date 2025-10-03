@@ -83,8 +83,7 @@ tasks:
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
-      - uv run mypy src # distributed modules included; no exclude flag
-      - task mypy:behavior
+      - uv run mypy --strict src tests
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
@@ -379,18 +378,8 @@ tasks:
           echo "[verify][lint] flake8 passed"
       - |
           set -eu
-          uv run mypy src
-          echo "[verify][mypy] src passed"
-      - |
-          set -eu
-          uv run mypy --strict tests/behavior
-          echo "[verify][mypy] behavior passed"
-      - |
-          set -eu
-          uv run mypy tests/unit tests/integration
-          echo "[verify][mypy] tests passed"
-      - task: mypy:strict-suite
-      - echo "[verify][mypy] strict suite passed"
+          uv run mypy --strict src tests
+          echo "[verify][mypy] strict suite passed"
       - task lint-specs
       - echo "[verify][lint] spec lint passed"
       - task check-release-metadata
@@ -451,7 +440,7 @@ tasks:
       - echo "[release:alpha] running flake8"
       - uv run flake8 src tests
       - echo "[release:alpha] running mypy"
-      - uv run mypy src
+      - uv run mypy --strict src tests
       - echo "[release:alpha] linting specs"
       - uv run python scripts/lint_specs.py
       - echo "[release:alpha] checking release metadata"
