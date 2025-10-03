@@ -112,7 +112,7 @@ def test_token_budget_limit(
     monkeypatch.setattr(AgentFactory, "get", _build_dummy_agent)
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy", token_budget=4)
     cfg.api.role_permissions["anonymous"] = ["query"]
-    
+
     def _load_config_stub(self: ConfigLoader) -> ConfigModel:
         return cfg
 

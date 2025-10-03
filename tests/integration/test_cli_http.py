@@ -12,7 +12,6 @@ from autoresearch.errors import StorageError
 from autoresearch.llm import DummyAdapter
 from autoresearch.main import app as cli_app
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.types import CallbackMap
 from tests.integration import configure_api_defaults, stub_orchestrator_run_query

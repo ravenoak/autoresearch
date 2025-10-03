@@ -47,10 +47,29 @@ def stub_orchestrator_run_query(
         return QueryResponse(answer=query, citations=[], reasoning=[], metrics={})
 
     factory: QueryResponseFactory
+
     if response is None:
-        factory = lambda q, cfg, cb, kwargs: default_response(q, cfg, cb, kwargs)
+
+        def default_factory(
+            query: str,
+            config: ConfigModel,
+            callbacks: CallbackMap | None,
+            extra: dict[str, Any] | None,
+        ) -> QueryResponse:
+            return default_response(query, config, callbacks, extra)
+
+        factory = default_factory
     elif isinstance(response, QueryResponse):
-        factory = lambda *_args, **_kwargs: response
+
+        def constant_factory(
+            _query: str,
+            _config: ConfigModel,
+            _callbacks: CallbackMap | None,
+            _extra: dict[str, Any] | None,
+        ) -> QueryResponse:
+            return response
+
+        factory = constant_factory
     else:
         factory = response
 
@@ -64,9 +83,16 @@ def stub_orchestrator_run_query(
         return factory(query, config, callbacks, dict(kwargs))
 
     monkeypatch.setattr(Orchestrator, "run_query", patched_run_query)
-    return lambda query, config, callbacks=None, **kwargs: factory(
-        query, config, callbacks, dict(kwargs)
-    )
+
+    def query_runner(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: Any,
+    ) -> QueryResponse:
+        return factory(query, config, callbacks, dict(kwargs))
+
+    return query_runner
 
 
 __all__ = [
