@@ -18,6 +18,17 @@ lifting the TestPyPI hold.
 【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+PR5 reverification now extracts stored claims, retries audits with structured
+attempt metadata, and persists outcomes through `StorageManager.persist_claim`,
+while behavior coverage keeps audit badges visible in response payloads. PR4
+retrieval exports GraphML/JSON artifacts with contradiction signals so the gate
+and planner consume the same session metadata.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)

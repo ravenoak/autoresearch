@@ -27,6 +27,15 @@ UX reviewers can trace the outstanding work while TestPyPI stays deferred.
 【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+Automated strict gating runs via `task mypy-strict` inside the Task CLI and CI
+workflow, the deterministic storage resident floor is documented for release
+audits, and PR5/PR4 upgrades add reverification badges plus session-graph
+exports that the layered UX must surface alongside evaluation telemetry.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+【F:docs/storage_resident_floor.md†L1-L23】
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:src/autoresearch/search/context.py†L618-L666】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [session-graph-rag-integration](session-graph-rag-integration.md)

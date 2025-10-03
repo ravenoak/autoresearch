@@ -14,6 +14,17 @@ planner and GraphRAG dependencies explicit while Phase 2 spins up.
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
+`task check` and `task verify` now invoke `task mypy-strict` directly, giving the
+initiative an automated strict gate in every local run while the CI workflow
+keeps the TestPyPI flag paused by default. The deterministic storage resident
+floor is documented for release reviewers, and PR5/PR4 upgrades ship the
+reverification loop plus session-graph exports so later phases build on shared
+telemetry.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+【F:docs/storage_resident_floor.md†L1-L23】
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 

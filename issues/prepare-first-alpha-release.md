@@ -29,6 +29,31 @@ coverage sweeps stay green.
 【F:baseline/logs/mypy-strict-20251002T235732Z.log†L1-L1】
 【F:STATUS.md†L17-L24】【F:docs/release_plan.md†L16-L25】
 【F:TASK_PROGRESS.md†L1-L12】【F:CODE_COMPLETE_PLAN.md†L9-L33】
+
+`task check` and `task verify` now invoke `task mypy-strict` directly, giving
+the release gate an automated strict sweep every time the tasks run. The CI
+workflow triggers the same target and keeps the `run_testpypi_dry_run` flag
+defaulted to false so the TestPyPI stage stays paused until we deliberately
+reenable it.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+
+`docs/storage_resident_floor.md` documents the deterministic two-node floor for
+knowledge-graph eviction, closing the alpha checklist note and letting
+reviewers cite the guardrail while the publish stage remains paused.
+【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
+
+PR5 reverification now extracts stored claims, retries audits with structured
+attempt metadata, and persists outcomes via `StorageManager.persist_claim`,
+with behavior coverage guarding audit badge propagation. PR4 retrieval exports
+GraphML and JSON artifacts with contradiction signals captured through
+`SearchContext` and `QueryState`, giving the gate and planner shared session
+metadata ahead of Phase 2 coordination.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+【F:src/autoresearch/orchestration/state.py†L1120-L1135】
 On **October 1, 2025 at 14:39 UTC** a repo-wide `uv run mypy --strict src tests`
 run reported 2,114 errors across 211 files, showing that the strict backlog now
 resides inside analysis, integration, and behavior fixtures still expecting the
@@ -122,6 +147,8 @@ typing gap is closed ahead of the alpha tag.【F:src/autoresearch/api/middleware
   `docs/release_plan.md` using the **14:55 UTC** log for traceability.
 - [x] Reconcile the deep research plan, performance guide, and pseudocode with
   the PRDV telemetry loop and new `EvaluationSummary` fields.
+- [x] Publish the deterministic storage resident-floor note and link it from the
+  release checklist so auditors can cite the two-node default.
 - [ ] Clear the strict typing backlog and restore coverage by updating the test
   fixtures and evaluation harness highlighted in
   `baseline/logs/task-verify-20250930T145541Z.log`.
@@ -150,6 +177,9 @@ typing gap is closed ahead of the alpha tag.【F:src/autoresearch/api/middleware
 - Confirm XPASS cleanup and Phase 1 of the deep research initiative remain
   archived in the release plan and deep research plan so the alpha gate reflects
   the current state of evidence.
+- Keep the deterministic storage floor documentation linked from the release
+  plan, STATUS.md, and TASK_PROGRESS.md while the TestPyPI stage remains
+  paused.
 - Lift the TestPyPI dry-run hold when the publish directive changes, capture the
   resulting log, and update `docs/release_plan.md` and `STATUS.md` before
   proposing the tag.

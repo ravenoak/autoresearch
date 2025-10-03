@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 24, 2025** and
+`2025-05-18`). This schedule was last updated on **October 3, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -78,10 +78,42 @@ its deterministic graph budget without emitting warnings.
 【F:tests/unit/config/test_loader_types.py†L1-L120】
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 
-The alpha checklist still tracks the open storage documentation note, deferred
-TestPyPI dry run, and verification reruns required for sign-off. Reviewers can
-follow the outstanding items in the release checklist while we sequence the
-publish directive update.
+Automated strict-typing gates now run inside the Task CLI and the CI workflow,
+so every `task check`, `task verify`, and repository workflow execution invokes
+`task mypy-strict` before other jobs proceed. The dedicated Task target wraps
+`uv run mypy --strict src tests`, and the `ci.yml` dispatch exposes the
+`run_testpypi_dry_run` input so release operators can keep the publish stage
+paused until the directive changes.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+
+The alpha checklist now records the deterministic storage resident-floor note
+as satisfied. `docs/storage_resident_floor.md` documents the two-node floor and
+its regression coverage, keeping reviewers aligned on the guardrails while the
+TestPyPI dry run remains paused by default.
+【F:docs/storage_resident_floor.md†L1-L23】
+
+Expanded reverification captures PR5’s verification loop: the engine extracts
+claims from stored answers, retries audits with structured attempt metadata,
+and persists outcomes via `StorageManager.persist_claim`. Behavior coverage and
+unit tests assert that audit badges propagate through response payloads, so the
+verification backlog now focuses on lingering coverage debt rather than missing
+instrumentation.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+
+Graph-augmented retrieval from PR4 now exports GraphML and JSON artifacts with
+contradiction signals embedded in session metadata. `SearchContext` exposes the
+signals to the gate, `QueryState` captures export flags, and dedicated tests
+lock the serialization path so downstream tools can trust the new artifacts.
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
+
+The alpha checklist still tracks the deferred TestPyPI dry run and verification
+reruns required for sign-off. Reviewers can follow the outstanding items in the
+release checklist while we sequence the publish directive update.
 【F:docs/release_plan.md†L291-L372】
 
 The **October 1, 2025 at 14:39 UTC** repo-wide `mypy --strict` sweep records
@@ -360,10 +392,12 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   【F:src/autoresearch/search/core.py†L705-L760】
   【F:src/autoresearch/orchestration/parallel.py†L145-L182】
   【F:tests/stubs/numpy.py†L12-L81】
-- [ ] Storage checklist:
+- [x] Storage checklist:
   - Document that the deterministic resident node floor stays at `2`
     whenever release configs omit `minimum_deterministic_resident_nodes` so
-    reviewers confirm storage stability without extra overrides.
+    reviewers confirm storage stability without extra overrides. See
+    [storage_resident_floor.md](storage_resident_floor.md) for the published
+    guidance and regression coverage summary.
 - [x] Revalidated the DuckDB vector path now emits two search-phase instance
   lookups plus the direct-only pair (four calls total) while the legacy branch
   stays capped at the direct pair. The refreshed

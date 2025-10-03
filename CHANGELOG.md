@@ -6,6 +6,22 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Landed PR5’s verification loop enhancements: claim extraction from stored
+  answers now feeds retry counters and persistence telemetry through
+  `StorageManager.persist_claim`, while behavior coverage guarantees audit
+  badges stay visible in responses. The reverification namespace records
+  extraction counts, attempt tallies, and persistence outcomes for operators.
+  【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+  【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+  【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+- Integrated PR4’s retrieval updates so session graphs export GraphML/JSON
+  artifacts with contradiction signals for the gate and planner. `SearchContext`
+  propagates export flags, `QueryState` persists availability markers, and unit
+  coverage locks serialization of the structured claims.
+  【F:src/autoresearch/knowledge/graph.py†L113-L204】
+  【F:src/autoresearch/search/context.py†L618-L666】
+  【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+  【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
 - Restored QueryState registry cloning by deep-copying typed snapshots that
   rehydrate locks, added regression coverage for register/update/round-trip
   flows, and kept the **18:19 UTC** coverage run green while the TestPyPI hold

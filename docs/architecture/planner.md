@@ -26,6 +26,36 @@ and exit criteria for reporting.
 - Existing telemetry such as planner confidence values are merged rather than
   overwritten, ensuring routing signals survive graph refreshes.
 
+## Verification and retrieval integration
+
+- PR5’s reverification loop extracts stored claims, retries audits with
+  structured attempt metadata, and persists outcomes via
+  `StorageManager.persist_claim`, ensuring planner telemetry aligns with the
+  verification badges surfaced to clients.
+  【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+  【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+- PR4’s retrieval upgrade exports GraphML and JSON artifacts with contradiction
+  signals, allowing the planner to consume session graph availability flags
+  while the gate monitors contradiction intensity.
+  【F:src/autoresearch/knowledge/graph.py†L113-L204】
+  【F:src/autoresearch/search/context.py†L618-L666】
+  【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+- Behavior coverage locks audit badge propagation through the reasoning modes
+  scenario so reverification status stays visible in planner metrics.
+  【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+
+```mermaid
+flowchart TD
+    Planner[Planner output] -->|TaskGraph| Coordinator
+    Coordinator -->|QueryState.set_task_graph| State
+    State -->|PR4 session graph flags| Retrieval
+    Retrieval -->|GraphML/JSON exports|
+        Storage[StorageManager.persist_claim]
+    State -->|PR5 verification badge telemetry| Clients
+    Storage -->|Persisted claims| Verification
+    Verification -->|Audit badges| Clients
+```
+
 ## Scheduling affinity
 
 - `TaskCoordinator.schedule_next` orders pending tasks by readiness, whether a

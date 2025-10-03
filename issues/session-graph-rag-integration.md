@@ -13,6 +13,16 @@ fallback, keeping telemetry stable while GraphRAG work resumes.
 【F:src/autoresearch/search/core.py†L147-L199】
 【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
 
+Automated strict gating and the documented storage resident floor keep release
+prerequisites visible while TestPyPI stays paused, and PR4 retrieval exports
+GraphML/JSON artifacts with contradiction signals that this issue must extend.
+PR5 reverification provides shared audit badges, so session graphs need to feed
+verification telemetry alongside planner conditioning.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+【F:docs/storage_resident_floor.md†L1-L23】
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+
 surface contradictions for the gate policy. We need to extract entities and
 relations from evidence, maintain lightweight graph storage, and expose graph
 artifacts plus contradiction signals to the orchestrator.
