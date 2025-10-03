@@ -616,7 +616,19 @@ class QueryState(BaseModel):
             planner_meta["task_graph"] = stats
             telemetry = self._planner_telemetry_snapshot(normalized, top_level)
             if telemetry["tasks"] or telemetry.get("objectives") or telemetry.get("exit_criteria"):
-                planner_meta["telemetry"] = telemetry
+                existing = planner_meta.get("telemetry")
+                merged: dict[str, Any] = {}
+                if isinstance(existing, Mapping):
+                    merged.update(existing)
+                merged.update(telemetry)
+                planner_meta["telemetry"] = merged
+                self.add_react_log_entry(
+                    "planner.telemetry",
+                    {
+                        "telemetry": merged,
+                        "task_graph_stats": stats,
+                    },
+                )
             if warnings:
                 self.add_react_log_entry(
                     "planner.normalization",

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, TypedDict
+from typing import Any, Dict, Iterable, List, Mapping, Sequence, TypedDict
+from typing import Required
 
 
 class TaskEdgePayload(TypedDict, total=False):
@@ -28,12 +31,15 @@ class TaskNodePayload(TypedDict, total=False):
     explanation: str
 
 
-class TaskGraphPayload(TypedDict):
+class TaskGraphPayload(TypedDict, total=False):
     """Typed payload for planner task graphs."""
 
-    tasks: List[TaskNodePayload]
-    edges: List[TaskEdgePayload]
-    metadata: Dict[str, Any]
+    tasks: Required[List[TaskNodePayload]]
+    edges: Required[List[TaskEdgePayload]]
+    metadata: Required[Dict[str, Any]]
+    objectives: List[str]
+    exit_criteria: List[str]
+    explanation: str
 
 
 @dataclass(slots=True)
@@ -142,15 +148,25 @@ class TaskGraph:
     tasks: List[TaskNode] = field(default_factory=list)
     edges: List[TaskEdge] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    objectives: List[str] = field(default_factory=list)
+    exit_criteria: List[str] = field(default_factory=list)
+    explanation: str | None = None
 
     def to_payload(self) -> TaskGraphPayload:
         """Convert the graph into a serialisable payload."""
 
-        return {
+        payload: TaskGraphPayload = {
             "tasks": [task.to_payload() for task in self.tasks],
             "edges": [edge.to_payload() for edge in self.edges],
             "metadata": dict(self.metadata),
         }
+        if self.objectives:
+            payload["objectives"] = list(self.objectives)
+        if self.exit_criteria:
+            payload["exit_criteria"] = list(self.exit_criteria)
+        if self.explanation:
+            payload["explanation"] = self.explanation
+        return payload
 
     @classmethod
     def from_mapping(cls, payload: Mapping[str, Any]) -> "TaskGraph":
@@ -161,35 +177,43 @@ class TaskGraph:
         metadata_payload = payload.get("metadata", {})
 
         tasks: List[TaskNode] = []
-        for node in tasks_payload:
+        for index, node in enumerate(tasks_payload, start=1):
             if not isinstance(node, Mapping):
                 continue
+            task_id = str(node.get("id") or f"task-{index}")
+            question = _extract_question(node)
+            tools = _coerce_tools(node.get("tools"))
+            depends_on = _coerce_strings(node.get("depends_on"))
+            criteria = _coerce_strings(
+                node.get("criteria") or node.get("exit_criteria")
+            )
+            sub_questions = _coerce_strings(
+                node.get("sub_questions") or node.get("objectives")
+            )
+            affinity = _coerce_affinity(
+                node.get("affinity") or node.get("tool_affinity")
+            )
+            metadata_field = node.get("metadata")
+            task_metadata = (
+                dict(metadata_field) if isinstance(metadata_field, Mapping) else {}
+            )
+            explanation_field = node.get("explanation")
+            explanation = (
+                explanation_field.strip()
+                if isinstance(explanation_field, str) and explanation_field.strip()
+                else None
+            )
             tasks.append(
                 TaskNode(
-                    id=str(node.get("id", "")),
-                    question=str(node.get("question", "")),
-                    tools=[str(tool) for tool in node.get("tools", []) or []],
-                    depends_on=[
-                        str(dep) for dep in node.get("depends_on", []) or []
-                    ],
-                    criteria=[
-                        str(criterion) for criterion in node.get("criteria", []) or []
-                    ],
-                    affinity={
-                        str(tool): float(value)
-                        for tool, value in (node.get("affinity") or {}).items()
-                        if _is_number(value)
-                    },
-                    metadata={**(node.get("metadata") or {})},
-                    sub_questions=[
-                        str(sub) for sub in node.get("sub_questions", []) or []
-                    ]
-                    or None,
-                    explanation=(
-                        str(node.get("explanation"))
-                        if node.get("explanation") is not None
-                        else None
-                    ),
+                    id=task_id,
+                    question=question,
+                    tools=tools,
+                    depends_on=depends_on,
+                    criteria=criteria,
+                    affinity=affinity,
+                    metadata=task_metadata,
+                    sub_questions=sub_questions or None,
+                    explanation=explanation,
                 )
             )
 
@@ -211,7 +235,134 @@ class TaskGraph:
         else:
             metadata = {}
 
-        return cls(tasks=tasks, edges=edges, metadata=metadata)
+        objectives = _coerce_strings(payload.get("objectives"))
+        exit_criteria = _coerce_strings(payload.get("exit_criteria"))
+        explanation_value = payload.get("explanation")
+        explanation = (
+            explanation_value.strip()
+            if isinstance(explanation_value, str) and explanation_value.strip()
+            else None
+        )
+
+        return cls(
+            tasks=tasks,
+            edges=edges,
+            metadata=metadata,
+            objectives=objectives,
+            exit_criteria=exit_criteria,
+            explanation=explanation,
+        )
+
+    @classmethod
+    def from_planner_output(cls, payload: Any) -> "TaskGraph":
+        """Hydrate a ``TaskGraph`` from planner output."""
+
+        if isinstance(payload, TaskGraph):
+            return payload
+        if isinstance(payload, str):
+            stripped = payload.strip()
+            if not stripped:
+                raise ValueError("planner output is empty")
+            try:
+                parsed = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                fence = re.search(
+                    r"```(?:json)?\s*(.*?)```",
+                    stripped,
+                    flags=re.IGNORECASE | re.DOTALL,
+                )
+                if fence:
+                    return cls.from_planner_output(fence.group(1))
+                raise ValueError("planner output is not valid JSON") from exc
+            return cls.from_planner_output(parsed)
+        if isinstance(payload, Mapping):
+            return cls.from_mapping(payload)
+        if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
+            return cls.from_mapping({"tasks": list(payload)})
+        raise TypeError(
+            "planner output must be a mapping, sequence, TaskGraph, or JSON string"
+        )
+
+
+def _coerce_strings(value: Any, *, split_pattern: str = r",|;|/|\n") -> List[str]:
+    """Return a list of trimmed strings from ``value``."""
+
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        return [
+            segment.strip()
+            for segment in re.split(split_pattern, value)
+            if segment.strip()
+        ]
+    return []
+
+
+def _coerce_tools(value: Any) -> List[str]:
+    """Return tool identifiers from planner payloads."""
+
+    if isinstance(value, Mapping):
+        return [str(name).strip() for name in value.keys() if str(name).strip()]
+    return _coerce_strings(value, split_pattern=r",|;|/|\n|\band\b")
+
+
+def _parse_affinity_token(token: str) -> tuple[str, float] | None:
+    """Parse a ``tool:score`` or ``tool score`` token into a tuple."""
+
+    stripped = token.strip()
+    for delimiter in (":", "=", " "):
+        if delimiter in stripped:
+            tool, score = stripped.split(delimiter, 1)
+            tool_name = tool.strip()
+            score_text = score.strip()
+            if tool_name and _is_number(score_text):
+                return tool_name, float(score_text)
+    return None
+
+
+def _coerce_affinity(value: Any) -> Dict[str, float]:
+    """Return a numeric affinity mapping from planner payloads."""
+
+    if isinstance(value, Mapping):
+        return prune_affinity(value)
+
+    cleaned: Dict[str, float] = {}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        for entry in value:
+            if isinstance(entry, Mapping):
+                cleaned.update(prune_affinity(entry))
+            elif (
+                isinstance(entry, Sequence)
+                and not isinstance(entry, (str, bytes))
+                and len(entry) == 2
+            ):
+                tool, score = entry
+                if _is_number(score):
+                    cleaned[str(tool).strip()] = float(score)
+            elif isinstance(entry, str):
+                parsed = _parse_affinity_token(entry)
+                if parsed is not None:
+                    tool, score = parsed
+                    cleaned[tool] = score
+        return cleaned
+
+    if isinstance(value, str):
+        for token in re.split(r",|;|/|\n", value):
+            parsed = _parse_affinity_token(token)
+            if parsed is not None:
+                tool, score = parsed
+                cleaned[tool] = score
+    return cleaned
+
+
+def _extract_question(node: Mapping[str, Any]) -> str:
+    """Return the canonical question text for a task node."""
+
+    for key in ("question", "goal", "description", "prompt", "task"):
+        value = node.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
 
 
 def _is_number(value: Any) -> bool:

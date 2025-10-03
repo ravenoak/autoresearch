@@ -57,29 +57,42 @@ class PlannerPromptBuilder:
                         "properties": {
                             "id": {"type": "string"},
                             "question": {"type": "string"},
+                            "sub_questions": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
                             "objectives": {
                                 "type": "array",
                                 "items": {"type": "string"},
+                                "description": "Alias for sub_questions.",
                             },
                             "tools": {
                                 "type": "array",
                                 "items": {"type": "string"},
                             },
-                            "tool_affinity": {
+                            "affinity": {
                                 "type": "object",
                                 "additionalProperties": {
                                     "type": "number",
                                 },
+                                "description": "Tool affinity scores in [0,1].",
                             },
                             "depends_on": {
                                 "type": "array",
                                 "items": {"type": "string"},
                             },
+                            "criteria": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Exit criteria for the task.",
+                            },
                             "exit_criteria": {
                                 "type": "array",
                                 "items": {"type": "string"},
+                                "description": "Alias for criteria.",
                             },
                             "explanation": {"type": "string"},
+                            "metadata": {"type": "object"},
                         },
                     },
                 },
@@ -117,9 +130,9 @@ class PlannerPromptBuilder:
             notes = dedent(
                 """
                 You must respond with JSON that validates against the schema below.
-                - Populate ``objectives`` with decomposed questions for each task.
-                - Store numeric tool scores in ``tool_affinity`` with values in ``[0, 1]``.
-                - Provide concrete "exit_criteria" that confirm completion.
+                - Populate ``sub_questions`` with decomposed prompts for each task.
+                - Store numeric tool scores in ``affinity`` with values in ``[0, 1]``.
+                - Provide concrete ``criteria`` that confirm completion.
                 - Summarise rationale for the task in "explanation".
                 - Avoid prose outside the JSON object.
                 """
@@ -510,7 +523,22 @@ class PlannerAgent(Agent):
             metadata_source = metadata_obj if isinstance(metadata_obj, Mapping) else {}
             edges = self._normalise_edges(edges_source, tasks, warnings)
             metadata = dict(metadata_source)
-            return TaskGraph(tasks=tasks, edges=edges, metadata=metadata)
+            objectives = self._extract_sequence(payload.get("objectives"))
+            exit_criteria = self._extract_sequence(payload.get("exit_criteria"))
+            explanation_value = payload.get("explanation")
+            explanation = (
+                explanation_value.strip()
+                if isinstance(explanation_value, str) and explanation_value.strip()
+                else None
+            )
+            return TaskGraph(
+                tasks=tasks,
+                edges=edges,
+                metadata=metadata,
+                objectives=objectives,
+                exit_criteria=exit_criteria,
+                explanation=explanation,
+            )
 
         if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
             seq_items = list(payload)
