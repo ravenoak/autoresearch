@@ -5,19 +5,19 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **October 3, 2025 at 14:52 UTC** the strict typing gate remains green:
-`uv run mypy --strict src tests` completes without diagnostics across
-application and test modules. The new preflight plan captures the follow-on
-telemetry work needed to keep AUTO mode and planner upgrades measurable.
-【4b1e56†L1-L2】【F:docs/v0.1.0a1_preflight_plan.md†L1-L113】
+As of **October 3, 2025 at 22:37 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` again reported “Success: no issues found in
+787 source files”, confirming the repository-wide strict baseline holds.
+【d70b9a†L1-L2】
 
-The pytest suite is still red. A repository-wide `uv run --extra test pytest`
-execution surfaces failures in reverification defaults, storage backup
-rotation, search cache determinism, API parsing exports, FastMCP constructor
-shims, and cache-backed query preservation. These regressions block fresh
-coverage evidence and must be resolved before the 92.4 % statement gate can be
-revalidated.
-【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
+The pytest suite is still red. The latest `uv run --extra test pytest`
+execution finished with 26 failures and five errors spanning reverification
+defaults, backup scheduler rotation, search cache determinism, API parsing
+exports, FastMCP constructor shims, orchestrator error handling, planner
+metadata, storage contracts, and environment metadata checks. These
+regressions block fresh coverage evidence and must be resolved before the
+92.4 % statement gate can be revalidated.
+【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
 
 The alpha release issue, roadmap, and task progress log now point to the
 preflight plan for a consistent summary of the recovery path. TestPyPI remains
@@ -29,17 +29,28 @@ restored.
 
 - [ ] Ship **PR-A** – normalize FactChecker defaults and update
   reverification fixtures so the reverification unit test suite passes
-  again.
+  while preserving opt-out coverage.
 - [ ] Ship **PR-B** – repair backup scheduler restart semantics and rotation
-  policy to satisfy `tests/unit/storage/test_backup_scheduler.py`.
+  policy to satisfy `tests/unit/storage/test_backup_scheduler.py` without
+  introducing timing flakiness.
 - [ ] Ship **PR-C** – restore search cache determinism and stub behaviour so
   cache-related unit tests stop over-fetching and preserve query text.
-- [ ] Ship **PR-D** – expose `autoresearch.api.parse`, fix FastMCP adapter
+- [ ] Ship **PR-D** – expose `autoresearch.api.parse`, align FastMCP adapter
   construction, and unblock the API and MCP handshake suites.
-- [ ] After PR-A through PR-D land, capture a fresh coverage run (PR-G) and
+- [ ] Ship **PR-E** – normalise orchestrator error claim payloads and
+  parallel timeout messaging so error-handling suites regain mapping-based
+  claims.
+- [ ] Ship **PR-F** – stabilise storage initialisation and migration
+  contracts to satisfy incremental update and DuckDB migration tests.
+- [ ] Ship **PR-G** – provide planner metadata adapters and refreshed
+  docstrings so planner metadata and documentation hygiene suites pass.
+- [ ] Ship **PR-H** – supply environment metadata fixtures and telemetry
+  guards for the `check_env_warnings` and `formattemplate_metrics` tests.
+- [ ] Ship **PR-I** – rerun `task coverage` after PR-A through PR-H land and
   update release documentation with the new evidence.
-- [ ] Track AUTO telemetry and planner prompt upgrades (PR-E and PR-F) once the
-  suite is green to keep orchestration improvements measurable.
+- [ ] Ship **PR-J** – add AUTO mode telemetry once the suite is green.
+- [ ] Ship **PR-K** – layer dependency-aware planner prompts with Socratic
+  self-checks building on PR-J outputs.
 - [ ] Complete the
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones with the refreshed coverage data and updated documentation set.

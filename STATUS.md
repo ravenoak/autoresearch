@@ -19,6 +19,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 3, 2025
+- `uv run mypy --strict src tests` succeeded again at **22:37 UTC**,
+  reporting “Success: no issues found in 787 source files” and confirming
+  the strict gate remains green while we triage the pytest regressions.
+  【d70b9a†L1-L2】
+- `uv run --extra test pytest` at **22:37 UTC** finished with 26 failures
+  and five errors across reverification defaults, backup scheduling,
+  cache determinism, FastMCP adapters, orchestrator error handling,
+  planner metadata, storage migrations, and environment metadata checks.
+  【ce87c2†L81-L116】
 - Documented the v0.1.0a1 preflight readiness plan, capturing strict
   typing success, current pytest failures, and the PR slices required to
   restore coverage.
