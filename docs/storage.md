@@ -15,7 +15,27 @@ The storage component consists of several key classes:
 - **StorageConfig** - Configuration for the storage system
 - **StorageError** - Error hierarchy for storage-related errors
 
-The relationships between these classes and their external dependencies are documented in `docs/diagrams/storage.puml`.
+The relationships between these classes and their external dependencies are
+documented in `docs/diagrams/storage.puml`.
+
+## Backup Guarantees
+
+The backup subsystem protects on-disk state with deterministic retention rules
+and atomic scheduler updates:
+
+- **Immediate execution** - Scheduling a cadence triggers an instant
+  backup so fresh data reaches durable storage before the next interval.
+- **Atomic timer replacement** - Reconfiguring the cadence cancels the
+  active timer and installs the new interval under a shared lock,
+  preventing overlapping timers from dispatching duplicate jobs.
+- **Deterministic rotation** - The rotation policy sorts backups by
+  timestamp and path, removes entries that exceed either the retention
+  window or the `max_backups` budget, and deletes files in that stable
+  order so repeated runs yield consistent survivors.
+- **Graceful cancellation** - Cancelling the scheduler increments an
+  internal generation counter. Late callbacks that observe an outdated
+  generation exit without scheduling new timers, ensuring shutdown races
+  do not spawn extra backups.
 
 ## Storage Flow
 

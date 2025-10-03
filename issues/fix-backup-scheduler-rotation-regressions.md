@@ -20,5 +20,13 @@ backups piled up and coverage blocked.
   flakiness.
 - Release documentation notes the restored behaviour.
 
+## Progress
+- Scheduler now replaces timers atomically using a generation guard that stops
+  cancelled callbacks from re-arming new timers.
+- Rotation policy deletes expired backups by timestamp and path order so the
+  surviving set is deterministic.
+- Documentation outlines the immediate execution guarantee and the graceful
+  shutdown semantics added to the scheduler.
+
 ## Status
-Open
+In Review

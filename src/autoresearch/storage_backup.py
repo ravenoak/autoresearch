@@ -415,31 +415,32 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
         config: Backup configuration with rotation policy settings
     """
     try:
-        backups = _list_backups(backup_dir)
+        backups = sorted(
+            _list_backups(backup_dir),
+            key=lambda info: (info.timestamp, info.path),
+            reverse=True,
+        )
 
-        # Skip if no backups or only one backup
         if len(backups) <= 1:
             return
 
-        # Calculate cutoff date for retention_days
-        cutoff_date = datetime.now() - timedelta(days=config.retention_days)
-
-        # Mark backups for deletion
-        to_delete = []
-
-        # Apply max_backups policy (keep the newest ones)
-        if config.max_backups > 0 and len(backups) > config.max_backups:
-            to_delete.extend(backups[config.max_backups :])
-
-        # Apply retention_days policy
+        expired_paths: set[str] = set()
         if config.retention_days > 0:
-            for backup in backups:
-                if backup.timestamp < cutoff_date and backup not in to_delete:
-                    to_delete.append(backup)
+            cutoff_date = datetime.now() - timedelta(days=config.retention_days)
+            expired_paths.update(
+                backup.path for backup in backups if backup.timestamp < cutoff_date
+            )
 
-        # Delete marked backups
-        for backup in to_delete:
-            if os.path.exists(backup.path):
+        retained_backups = [
+            backup for backup in backups if backup.path not in expired_paths
+        ]
+
+        if config.max_backups > 0 and len(retained_backups) > config.max_backups:
+            for backup in retained_backups[config.max_backups :]:
+                expired_paths.add(backup.path)
+
+        for backup in backups:
+            if backup.path in expired_paths and os.path.exists(backup.path):
                 if backup.compressed:
                     os.remove(backup.path)
                 else:
@@ -459,6 +460,7 @@ class BackupScheduler:
         self._timer: threading.Timer | None = None
         self._running: bool = False
         self._lock = threading.RLock()
+        self._generation: int = 0
 
     def schedule(
         self,
@@ -482,12 +484,14 @@ class BackupScheduler:
             retention_days: Maximum age of backups in days
         """
         with self._lock:
-            if self._running:
-                self.stop()
+            if self._timer is not None:
+                self._timer.cancel()
+                self._timer = None
 
             self._running = True
+            self._generation += 1
+            generation = self._generation
 
-            # Create backup config
             config = BackupConfig(
                 backup_dir=backup_dir,
                 compress=compress,
@@ -495,10 +499,22 @@ class BackupScheduler:
                 retention_days=retention_days,
             )
 
-            # Define the backup function
             interval_seconds = float(interval_hours) * 3600.0
 
-            def do_backup() -> None:
+            def queue_next(gen: int = generation) -> None:
+                with self._lock:
+                    if self._running and self._generation == gen:
+                        self._timer = _start_timer(interval_seconds, run_backup)
+                    elif self._generation == gen:
+                        self._timer = None
+
+            def run_backup(gen: int = generation) -> None:
+                with self._lock:
+                    should_run = self._running and self._generation == gen
+
+                if not should_run:
+                    return
+
                 try:
                     _create_backup(
                         backup_dir=backup_dir,
@@ -510,20 +526,18 @@ class BackupScheduler:
                 except Exception as e:
                     log.error(f"Scheduled backup failed: {e}")
                 finally:
-                    # Schedule next backup if still running
-                    with self._lock:
-                        if self._running:
-                            self._timer = _start_timer(interval_seconds, do_backup)
+                    queue_next(gen)
 
-            # Start the first backup
-            self._timer = _start_timer(0.0, do_backup)
+            log_message = f"Scheduled backups every {interval_hours} hours to {backup_dir}"
 
-            log.info(f"Scheduled backups every {interval_hours} hours to {backup_dir}")
+        run_backup()
+        log.info(log_message)
 
     def stop(self) -> None:
         """Stop scheduled backups."""
         with self._lock:
             self._running = False
+            self._generation += 1
             if self._timer:
                 self._timer.cancel()
                 self._timer = None
