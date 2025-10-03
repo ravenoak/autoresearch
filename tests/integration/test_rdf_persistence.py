@@ -58,6 +58,7 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
             rdf_path=str(tmp_path / "nested" / "rdf_store"),
         )
     )
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 
@@ -92,6 +93,7 @@ def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 
@@ -113,6 +115,7 @@ def test_oxrdflib_missing_plugin(tmp_path, monkeypatch):
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 
@@ -140,6 +143,7 @@ def test_memory_backend_initializes(tmp_path, monkeypatch):
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 

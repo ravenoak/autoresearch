@@ -16,7 +16,6 @@ from autoresearch.distributed.broker import (
 )
 from tests.integration._orchestrator_stubs import (
     AgentDouble,
-    BrokerQueueStub,
     PersistClaimCall,
     patch_agent_factory_get,
     patch_storage_persist,
@@ -192,7 +191,7 @@ def stub_storage_persist(
 def stub_storage_queue(
     monkeypatch: pytest.MonkeyPatch,
 ) -> TypedFixture[QueuePatcher]:
-    """Return a helper that injects a :class:`BrokerQueueStub` instance."""
+    """Return a helper that injects a storage broker queue stub."""
 
     def _apply(
         queue: StorageBrokerQueueProtocol | None = None,
