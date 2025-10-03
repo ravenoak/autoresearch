@@ -5,66 +5,44 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **October 2, 2025** the strict gate finally runs clean: the
-**23:57 UTC** `uv run mypy --strict src tests` sweep completes without
-regressions, replacing the 2,114-error backlog captured on October 1. Phase 2
-planner work may resume once follow-on suites confirm the strict gate remains
-green, so we continue to reference the passing log directly in the planner
-deliverables below. The coverage harness still leans on the late-September
-92.4 % run while we decide whether to refresh optional-extra telemetry alongside
-the strict uplift, and TestPyPI remains deferred until the alpha directive
-lifts. The prior October 1 logs stay archived below for comparison as we confirm
-downstream sweeps absorb the stricter typing contract.
-【F:baseline/logs/mypy-strict-20251002T235732Z.log†L1-L1】
-【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
-【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
-【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
+As of **October 3, 2025 at 14:52 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` completes without diagnostics across
+application and test modules. The new preflight plan captures the follow-on
+telemetry work needed to keep AUTO mode and planner upgrades measurable.
+【4b1e56†L1-L2】【F:docs/v0.1.0a1_preflight_plan.md†L1-L113】
 
-As of **September 30, 2025**, Autoresearch still targets an **0.1.0a1** preview
-on **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-The strict gate is red again: the **14:55 UTC** `task verify` sweep reaches
-`mypy --strict` before surfacing 118 untyped fixtures and the
-`EvaluationSummary` constructor regression that now expects planner depth and
-routing metrics. Coverage evidence from the 18:19 UTC run still records a
-92.4 % statement rate, yet the harness must absorb the new signature before the
-gate can turn green again. TestPyPI remains on hold until publish rights open,
-and the alpha gate tracks the failing strict log alongside the earlier
-successful release sweep for context.
-【F:baseline/logs/task-verify-20250930T145541Z.log†L1-L120】
-【F:baseline/logs/task-verify-20250930T145541Z.log†L2606-L2617】
-【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
-【F:docs/release_plan.md†L18-L85】
+The pytest suite is still red. A repository-wide `uv run --extra test pytest`
+execution surfaces failures in reverification defaults, storage backup
+rotation, search cache determinism, API parsing exports, FastMCP constructor
+shims, and cache-backed query preservation. These regressions block fresh
+coverage evidence and must be resolved before the 92.4 % statement gate can be
+revalidated.
+【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
 
-XPASS cleanup and the Phase 1 Deep Research objectives are complete: the unit
-suite no longer reports XPASS cases after archiving
-[retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md),
-and the adaptive gate rollout now publishes audit telemetry through the same
-Task CLI paths validated in the September 30 sweeps.
-Phase 1 remains documented with the completion note in the deep research plan.
-【F:docs/release_plan.md†L214-L233】【F:docs/deep_research_upgrade_plan.md†L19-L36】
-
-The remaining alpha checklist items focus on the TestPyPI dry run and release
-sign-off once the publish directive lifts. `docs/release_plan.md` tracks the
-open TestPyPI item alongside the archived XPASS and heuristics proof tickets so
-the alpha gate stays transparent.
-【F:docs/release_plan.md†L200-L236】
+The alpha release issue, roadmap, and task progress log now point to the
+preflight plan for a consistent summary of the recovery path. TestPyPI remains
+deferred per the existing directive until the suite and coverage runs are
+restored.
+【F:issues/prepare-first-alpha-release.md†L1-L80】
 
 ### Immediate Follow-ups
 
-- [x] Retire the six XPASS cases documented in
-  [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
-  so the unit suite fails fast on regressions.
-- [x] Clear the strict typing backlog captured in
-  `baseline/logs/task-verify-20250930T145541Z.log` and update the evaluation
-  harness for the expanded `EvaluationSummary` signature before resuming
-  Phase 2 delivery. Follow-on sweeps will guard the green strict gate while the
-  planner team restarts Phase 2 milestones.
+- [ ] Ship **PR-A** – normalize FactChecker defaults and update
+  reverification fixtures so the reverification unit test suite passes
+  again.
+- [ ] Ship **PR-B** – repair backup scheduler restart semantics and rotation
+  policy to satisfy `tests/unit/storage/test_backup_scheduler.py`.
+- [ ] Ship **PR-C** – restore search cache determinism and stub behaviour so
+  cache-related unit tests stop over-fetching and preserve query text.
+- [ ] Ship **PR-D** – expose `autoresearch.api.parse`, fix FastMCP adapter
+  construction, and unblock the API and MCP handshake suites.
+- [ ] After PR-A through PR-D land, capture a fresh coverage run (PR-G) and
+  update release documentation with the new evidence.
+- [ ] Track AUTO telemetry and planner prompt upgrades (PR-E and PR-F) once the
+  suite is green to keep orchestration improvements measurable.
 - [ ] Complete the
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
-  milestones while keeping optional-extra coverage sweeps synchronized with
-  `TASK_PROGRESS.md`.
-- [x] Execute Phase 1 of the Deep Research program under
-  [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md).
+  milestones with the refreshed coverage data and updated documentation set.
 
 ## Deep Research Enhancement Program
 
