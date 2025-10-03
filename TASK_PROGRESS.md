@@ -1,11 +1,17 @@
-As of **2025-10-03 at 14:52 UTC** the strict typing gate remains green while the
-pytest suite is red. `uv run mypy --strict src tests` finishes without
-diagnostics, but `uv run --extra test pytest` still fails across
-reverification defaults, backup scheduling, search cache determinism, API
-parsing exports, and FastMCP shims. The new preflight plan captures the
-remediation path and splits the work into review-sized PRs so release
-preparation can continue once the suite is green again.
-【4b1e56†L1-L2】【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
+As of **2025-10-03 at 22:37 UTC** the strict typing gate is still green and
+the pytest suite remains red. `uv run mypy --strict src tests` reported
+“Success: no issues found in 787 source files”, confirming the strict
+baseline remains stable, while `uv run --extra test pytest` finished with 26
+failures and five errors across FactChecker defaults, backup scheduling,
+search cache determinism, FastMCP adapters, orchestrator error handling,
+planner metadata, storage contracts, and environment metadata checks.
+【d70b9a†L1-L2】【ce87c2†L81-L116】
+
+The refreshed [v0.1.0a1 preflight readiness plan](docs/v0.1.0a1_preflight_plan.md)
+now breaks the regression clusters into PR-A through PR-H with dialectical
+assessments, then sequences telemetry and planner enhancements as PR-I
+through PR-K once the suite is green.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L239】
 
 As of **2025-10-03** the deterministic storage resident-floor documentation is
 published at `docs/storage_resident_floor.md`, closing the alpha checklist note

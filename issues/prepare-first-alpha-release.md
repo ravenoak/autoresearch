@@ -1,14 +1,19 @@
 # Prepare first alpha release
 
 ## Context
-As of **October 3, 2025 at 14:52 UTC** the strict typing gate is green but the
-pytest suite remains red. `uv run mypy --strict src tests` finishes without
-findings, while `uv run --extra test pytest` fails across reverification
-configuration, backup scheduling, search caching, API parsing, and FastMCP
-handshake fixtures. The [v0.1.0a1 preflight readiness plan](../docs/v0.1.0a1_preflight_plan.md)
-summarises the remediation work and maps it to review-sized PRs so we can refresh
-coverage evidence and restart the release pipeline.
-【4b1e56†L1-L2】【7be155†L104-L262】
+As of **October 3, 2025 at 22:37 UTC** the strict typing gate remains green but
+the pytest suite is still red. `uv run mypy --strict src tests` again reported
+“Success: no issues found in 787 source files”, while
+`uv run --extra test pytest` finished with 26 failures and five errors spanning
+FactChecker defaults, backup scheduling, search cache determinism, API parsing
+exports, FastMCP handshake fixtures, orchestrator error handling, planner
+metadata, storage contracts, and environment metadata checks. The
+[v0.1.0a1 preflight readiness plan](../docs/v0.1.0a1_preflight_plan.md) now
+captures these regression clusters as PR-A through PR-H and sequences telemetry
+and planner enhancements as PR-I through PR-K once the suite is green, keeping
+each change review-sized so we can refresh coverage evidence and restart the
+release pipeline.
+【d70b9a†L1-L2】【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L1-L239】
 
 TestPyPI dry runs remain paused by default. Once PR-A through PR-D in the
 preflight plan land and the suite is green, we will capture fresh verify and
@@ -16,10 +21,10 @@ coverage runs before re-enabling the publish stage.
 【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
 
 ## Tasks
-- [ ] Ship PR-A through PR-D from the preflight plan to restore a green
-  pytest suite.
-- [ ] Capture fresh verify and coverage logs once the suite passes and
-  update release documentation.
+- [ ] Ship PR-A through PR-H from the refreshed preflight plan to restore a
+  green pytest suite.
+- [ ] Capture fresh verify and coverage logs once the suite passes and update
+  release documentation.
 - [ ] Re-enable the TestPyPI dry run and document the result after the
   gates are green.
 - [ ] Run the release sign-off review with updated evidence and record
