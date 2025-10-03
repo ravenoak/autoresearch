@@ -11,3 +11,4 @@ Feature: AUTO reasoning integrates planner, scout gate, and verification
     And the auto mode audit badges should include "supported" and "needs_review"
     And the planner task graph snapshot should include verification goals
     And the AUTO metrics should record scout samples and agreement
+    And the AUTO metrics should include planner depth and routing deltas

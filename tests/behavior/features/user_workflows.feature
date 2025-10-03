@@ -25,3 +25,11 @@ Feature: User workflows
     When I derive layered UX guidance
     Then the layered payload exposes claim toggles
     And Socratic prompts include claim follow-ups
+
+  Scenario: AUTO reasoning workflow surfaces planner and routing telemetry
+    Given loops is set to 2 in configuration
+    And reasoning mode is "auto"
+    And the planner proposes verification tasks
+    When I run the AUTO reasoning CLI for query "workflow auto telemetry rehearsal"
+    Then the CLI scout gate decision should escalate to debate
+    And the AUTO metrics should include planner depth and routing deltas

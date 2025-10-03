@@ -15,6 +15,7 @@ import pytest
 from autoresearch.config.models import ConfigModel
 from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
 from autoresearch.evaluation.harness import RoutingStrategyComparison
+from autoresearch.evaluation.summary import RoutingMetrics
 from autoresearch.models import QueryResponse
 from tests.unit.typing_helpers import build_summary_fixture
 
@@ -96,13 +97,13 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
     assert summary.gate_debate_rate is None
     assert summary.gate_exit_rate is None
     assert summary.gated_example_ratio == 0.0
-    assert summary.avg_planner_depth is None
-    assert summary.avg_routing_delta is None
-    assert summary.avg_routing_decisions is None
-    assert summary.total_routing_delta is None
+    assert summary.planner.avg_depth is None
+    assert summary.routing.avg_delta is None
+    assert summary.routing.avg_decisions is None
+    assert summary.routing.total_delta is None
     assert summary.example_csv is None
     assert summary.summary_csv is None
-    assert summary.routing_strategy is None
+    assert summary.routing.strategy is None
 
 
 def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) -> None:
@@ -195,11 +196,11 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.gate_debate_rate == pytest.approx(0.5)
     assert summary.gate_exit_rate == pytest.approx(0.5)
     assert summary.gated_example_ratio == pytest.approx(1.0)
-    assert summary.avg_planner_depth == pytest.approx(3.0)
-    assert summary.avg_routing_delta == pytest.approx(5.5)
-    assert summary.total_routing_delta == pytest.approx(11.0)
-    assert summary.avg_routing_decisions == pytest.approx(1.5)
-    assert summary.routing_strategy == "balanced"
+    assert summary.planner.avg_depth == pytest.approx(3.0)
+    assert summary.routing.avg_delta == pytest.approx(5.5)
+    assert summary.routing.total_delta == pytest.approx(11.0)
+    assert summary.routing.avg_decisions == pytest.approx(1.5)
+    assert summary.routing.strategy == "balanced"
     assert summary.duckdb_path == tmp_harness.duckdb_path
     assert summary.example_parquet and summary.example_parquet.exists()
     assert summary.summary_parquet and summary.summary_parquet.exists()
@@ -276,24 +277,29 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert gate_debate_rate == pytest.approx(summary.gate_debate_rate)
     assert avg_cycles_completed == pytest.approx(summary.avg_cycles_completed)
     assert gated_ratio == pytest.approx(summary.gated_example_ratio)
-    assert avg_depth == pytest.approx(summary.avg_planner_depth)
-    assert avg_routing == pytest.approx(summary.avg_routing_delta)
-    assert total_routing == pytest.approx(summary.total_routing_delta)
-    assert avg_routing_decisions == pytest.approx(summary.avg_routing_decisions)
+    assert avg_depth == pytest.approx(summary.planner.avg_depth)
+    assert avg_routing == pytest.approx(summary.routing.avg_delta)
+    assert total_routing == pytest.approx(summary.routing.total_delta)
+    assert avg_routing_decisions == pytest.approx(summary.routing.avg_decisions)
     assert summary_strategy == "balanced"
 
 
 def test_compare_routing_strategies(base: EvaluationSummary) -> None:
     """Comparisons report deltas between baseline and variant strategies."""
 
+    variant_routing = RoutingMetrics(
+        avg_delta=base.routing.avg_delta,
+        total_delta=8.0,
+        avg_decisions=base.routing.avg_decisions,
+        strategy="aggressive",
+    )
     variant: EvaluationSummary = replace(
         base,
         run_id="variant",
         accuracy=0.6,
-        total_routing_delta=8.0,
         avg_latency_seconds=0.9,
         avg_tokens_total=14.0,
-        routing_strategy="aggressive",
+        routing=variant_routing,
     )
 
     comparisons: list[RoutingStrategyComparison] = (

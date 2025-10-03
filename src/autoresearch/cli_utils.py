@@ -320,14 +320,14 @@ def _format_tokens(summary: "EvaluationSummary") -> str:
 def _format_planner_depth(summary: "EvaluationSummary") -> str:
     """Format planner depth statistics for display."""
 
-    return _format_optional(summary.avg_planner_depth, precision=1)
+    return _format_optional(summary.planner.avg_depth, precision=1)
 
 
 def _format_routing(summary: "EvaluationSummary") -> str:
     """Format routing delta metrics as ``avg/total``."""
 
-    avg = _format_optional(summary.avg_routing_delta)
-    total = _format_optional(summary.total_routing_delta)
+    avg = _format_optional(summary.routing.avg_delta)
+    total = _format_optional(summary.routing.total_delta)
     if avg == "—" and total == "—":
         base = "—"
     elif avg == "—":
@@ -337,7 +337,7 @@ def _format_routing(summary: "EvaluationSummary") -> str:
     else:
         base = f"{avg}/{total}"
 
-    decision_avg = _format_optional(summary.avg_routing_decisions, precision=1)
+    decision_avg = _format_optional(summary.routing.avg_decisions, precision=1)
     if decision_avg == "—":
         return base
     if base == "—":

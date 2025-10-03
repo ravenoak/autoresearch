@@ -385,11 +385,13 @@ function run_prdv_cycle(state, harness):
         completed_at=telemetry.completed,
         total_examples=telemetry.total_examples,
         config_signature=telemetry.config_signature,
-        avg_planner_depth=telemetry.planner.avg_depth,
-        avg_routing_delta=telemetry.routing.avg_delta,
-        total_routing_delta=telemetry.routing.total_delta,
-        avg_routing_decisions=telemetry.routing.avg_decisions,
-        routing_strategy=telemetry.routing.strategy,
+        planner=PlannerMetrics(avg_depth=telemetry.planner.avg_depth),
+        routing=RoutingMetrics(
+            avg_delta=telemetry.routing.avg_delta,
+            total_delta=telemetry.routing.total_delta,
+            avg_decisions=telemetry.routing.avg_decisions,
+            strategy=telemetry.routing.strategy,
+        ),
         example_csv=telemetry.artifacts.example_csv,
         summary_csv=telemetry.artifacts.summary_csv,
     )

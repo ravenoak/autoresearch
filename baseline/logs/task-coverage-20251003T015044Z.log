@@ -1,0 +1,170 @@
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: langsmith-0.4.31, httpx-0.35.0, hypothesis-6.140.2, bdd-8.1.0, cov-7.0.0, benchmark-5.1.0, anyio-4.11.0
+collecting ... collected 1085 items / 25 deselected / 1060 selected
+
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_storage_defaults PASSED                                                     [  0%]
+tests/unit/config/test_loader_types.py::test_minimum_resident_nodes_default_without_warning PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/config/test_loader_types.py::test_config_model_deep_copy_preserves_storage_settings PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  1%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_decodes_prometheus_payload PASSED                     [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_coerces_bytearray PASSED                              [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_memoryview PASSED                             [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_replaces_invalid_bytes PASSED                         [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_failure PASSED                                [  2%]
+tests/unit/orchestration/test_answer_audit.py::test_answer_auditor_hedges_unsupported_claims PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  2%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  3%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_respects_force_debate_override PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_flags_coverage_gap_and_confidence PASSED                   [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_applies_graph_thresholds PASSED                            [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_summary_uses_typed_floats PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_build_skips_empty_payload PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_ingestion_saved_payload_is_sanitized PASSED           [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  3%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  4%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_returns_direct_answer_when_gate_exits PASSED     [  4%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops PASSED [  4%]
+tests/unit/orchestration/test_package_exports.py::test_agent_factory_export PASSED                                       [  4%]
+tests/unit/orchestration/test_package_exports.py::test_agent_registry_export PASSED                                      [  4%]
+tests/unit/orchestration/test_package_exports.py::test_orchestrator_export PASSED                                        [  4%]
+tests/unit/orchestration/test_package_exports.py::test_storage_manager_export PASSED                                     [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout PASSED                  [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail PASSED                           [  4%]
+tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant PASSED                          [  4%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_cloudpickle_serialization_preserves_fields PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_clone_produces_independent_copies PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_model_copy_deep_clone_separates_mutable_data PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_update_refreshes_snapshots PASSED       [  5%]
+tests/unit/orchestration/test_state_registry.py::test_register_and_clone_preserve_lock_and_metadata_types PASSED         [  5%]
+tests/unit/orchestration/test_state_registry.py::test_config_model_deep_copy_with_embedded_lock PASSED                   [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_replaces_snapshot_and_preserves_lock_integrity PASSED       [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_creates_snapshot_when_missing_identifier PASSED             [  5%]
+tests/unit/orchestration/test_state_registry.py::test_registry_round_trip_rehydrates_state_with_fresh_lock PASSED        [  5%]
+tests/unit/orchestration/test_task_coordinator.py::test_task_coordinator_schedules_dependencies PASSED                   [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_adapter_kwarg PASSED                                     [  5%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_mutation_hooks_restores_original PASSED                  [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_without_adapter_hooks PASSED                                  [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_raises_for_non_mapping_result PASSED                          [  6%]
+tests/unit/orchestration/test_token_utils.py::test_type_guards_detect_adapter_features PASSED                            [  6%]
+tests/unit/orchestration/test_token_utils.py::test_is_agent_execution_result_guard PASSED                                [  6%]
+tests/unit/orchestration/test_utils_confidence.py::test_metrics_snapshot_parses_token_usage PASSED                       [  6%]
+tests/unit/orchestration/test_utils_confidence.py::test_confidence_adjusts_with_metrics_payload PASSED                   [  6%]
+tests/unit/orchestration/test_utils_confidence.py::test_graph_metrics_payload_is_sanitized PASSED                        [  6%]
+tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking PASSED                                   [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_query_expansion_converges PASSED                             [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_reset_instance_creates_new_singleton PASSED                  [  6%]
+tests/unit/search/test_query_expansion_convergence.py::test_extract_entities_with_spacy PASSED                           [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_build_topic_model_with_insufficient_docs PASSED              [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_imports_disabled PASSED                                  [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_import_sentence_transformers_success PASSED              [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_prefers_embed PASSED               [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_falls_back_to_encode PASSED        [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_sentence_transformer_fallback_cached PASSED           [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_backend_switches_without_reset PASSED       [  7%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_ranking_converges SKIPPED (CollectorRegistry duplication
+in test environment)                                                                                                     [  7%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_invalid_weights_raise SKIPPED (CollectorRegistry
+duplication in test environment)                                                                                         [  7%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_weighted_sum PASSED                                       [  8%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_requires_convex_weights PASSED                            [  8%]
+tests/unit/search/test_ranking_formula.py::test_duckdb_scores_used_without_semantic PASSED                               [  8%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination PASSED                                 [  8%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weight_fallback PASSED                                      [  8%]
+tests/unit/search/test_session_retry.py::test_http_session_retries_and_reuse PASSED                                      [  8%]
+tests/unit/search/test_session_retry.py::test_http_session_recovery PASSED                                               [  8%]
+tests/unit/search/test_session_retry.py::test_http_session_adapter_failure PASSED                                        [  8%]
+tests/unit/search/test_simulate_rate_limit.py::test_default_backoff PASSED                                               [  8%]
+tests/unit/search/test_simulate_rate_limit.py::test_custom_backoff PASSED                                                [  8%]
+tests/unit/storage/test_backup_scheduler.py::test_scheduler_runs_backup_and_reschedules PASSED                           [  8%]
+tests/unit/storage/test_backup_scheduler.py::test_scheduler_restarts_existing_timer FAILED                               [  9%]
+
+=========================================================== FAILURES ===========================================================
+____________________________________________ test_scheduler_restarts_existing_timer ____________________________________________
+
+scheduler_environment = (<autoresearch.storage_backup.BackupScheduler object at 0x7f625fc71a90>, [<tests.unit.storage.test_backup_scheduler.sc...ir', 'db.duckdb', 'store.rdf', True, BackupConfig(backup_dir='dir', compress=True, max_backups=5, retention_days=30))])
+
+    def test_scheduler_restarts_existing_timer(
+        scheduler_environment: tuple[
+            BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
+        ],
+    ) -> None:
+        scheduler, timers, backups = scheduler_environment
+    
+        scheduler.schedule("dir", "db.duckdb", "store.rdf", interval_hours=1)
+        previous_timer = timers[-1]
+    
+        scheduler.schedule("dir", "db.duckdb", "store.rdf", interval_hours=2)
+    
+>       assert previous_timer.cancelled is True
+E       assert False is True
+E        +  where False = <tests.unit.storage.test_backup_scheduler.scheduler_environment.<locals>.DummyTimer object at 0x7f625fc72ba0>.cancelled
+
+/workspace/autoresearch/tests/unit/storage/test_backup_scheduler.py:112: AssertionError
+----------------------------------------------------- Captured stderr call -----------------------------------------------------
+{"text": "2025-10-03 01:51:54.004 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Scheduled backups every 1 hours to dir\", \"timestamp\": \"2025-10-03T01:51:54.004006Z\"}\n", "record": {"elapsed": {"repr": "0:00:57.797019", "seconds": 57.797019}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Scheduled backups every 1 hours to dir\", \"timestamp\": \"2025-10-03T01:51:54.004006Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5731, "name": "MainProcess"}, "thread": {"id": 140061204601728, "name": "MainThread"}, "time": {"repr": "2025-10-03 01:51:54.004392+00:00", "timestamp": 1759456314.004392}}}
+{"text": "2025-10-03 01:51:54.005 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Stopped scheduled backups\", \"timestamp\": \"2025-10-03T01:51:54.004912Z\"}\n", "record": {"elapsed": {"repr": "0:00:57.797700", "seconds": 57.7977}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Stopped scheduled backups\", \"timestamp\": \"2025-10-03T01:51:54.004912Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5731, "name": "MainProcess"}, "thread": {"id": 140061204601728, "name": "MainThread"}, "time": {"repr": "2025-10-03 01:51:54.005073+00:00", "timestamp": 1759456314.005073}}}
+{"text": "2025-10-03 01:51:54.005 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Scheduled backups every 2 hours to dir\", \"timestamp\": \"2025-10-03T01:51:54.005480Z\"}\n", "record": {"elapsed": {"repr": "0:00:57.798256", "seconds": 57.798256}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Scheduled backups every 2 hours to dir\", \"timestamp\": \"2025-10-03T01:51:54.005480Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5731, "name": "MainProcess"}, "thread": {"id": 140061204601728, "name": "MainThread"}, "time": {"repr": "2025-10-03 01:51:54.005629+00:00", "timestamp": 1759456314.005629}}}
+------------------------------------------------------ Captured log call -------------------------------------------------------
+INFO     autoresearch.storage_backup:storage_backup.py:521 {"event": "Scheduled backups every 1 hours to dir", "timestamp": "2025-10-03T01:51:54.004006Z"}
+INFO     autoresearch.storage_backup:storage_backup.py:530 {"event": "Stopped scheduled backups", "timestamp": "2025-10-03T01:51:54.004912Z"}
+INFO     autoresearch.storage_backup:storage_backup.py:521 {"event": "Scheduled backups every 2 hours to dir", "timestamp": "2025-10-03T01:51:54.005480Z"}
+--------------------------------------------------- Captured stderr teardown ---------------------------------------------------
+{"text": "2025-10-03 01:51:54.035 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Stopped scheduled backups\", \"timestamp\": \"2025-10-03T01:51:54.035229Z\"}\n", "record": {"elapsed": {"repr": "0:00:57.828116", "seconds": 57.828116}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Stopped scheduled backups\", \"timestamp\": \"2025-10-03T01:51:54.035229Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5731, "name": "MainProcess"}, "thread": {"id": 140061204601728, "name": "MainThread"}, "time": {"repr": "2025-10-03 01:51:54.035489+00:00", "timestamp": 1759456314.035489}}}
+{"text": "2025-10-03 01:51:54.046 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:00:57.838659", "seconds": 57.838659}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5731, "name": "MainProcess"}, "thread": {"id": 140061204601728, "name": "MainThread"}, "time": {"repr": "2025-10-03 01:51:54.046032+00:00", "timestamp": 1759456314.046032}}}
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.storage_backup:storage_backup.py:530 {"event": "Stopped scheduled backups", "timestamp": "2025-10-03T01:51:54.035229Z"}
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+======================================================= warnings summary =======================================================
+tests/unit/test_main_config_commands.py:4
+  /workspace/autoresearch/tests/unit/test_main_config_commands.py:4: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+7.93s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+2.72s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+0.52s call     tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout
+0.39s call     tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking
+0.10s call     tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant
+0.05s call     tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+0.05s call     tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic
+0.05s call     tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail
+0.03s call     tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes
+0.02s setup    tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing
+=================================================== short test summary info ====================================================
+FAILED tests/unit/storage/test_backup_scheduler.py::test_scheduler_restarts_existing_timer - assert False is True
+ +  where False = <tests.unit.storage.test_backup_scheduler.scheduler_environment.<locals>.DummyTimer object at 0x7f625fc72ba0>.cancelled
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed, 93 passed, 2 skipped, 25 deselected, 1 warning in 33.61s ==============================

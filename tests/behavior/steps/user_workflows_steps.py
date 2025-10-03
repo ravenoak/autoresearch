@@ -12,6 +12,7 @@ from autoresearch.ui.provenance import (
 pytest_plugins = [
     "tests.behavior.steps.common_steps",
     "tests.behavior.steps.streamlit_gui_steps",
+    "tests.behavior.steps.reasoning_modes_auto_cli_cycle_steps",
 ]
 
 
@@ -43,6 +44,14 @@ def test_streamlit_ui_workflow() -> None:
 )
 def test_layered_ux_guidance() -> None:
     """Behavior scenario verifying layered UX guidance."""
+
+
+@scenario(
+    "../features/user_workflows.feature",
+    "AUTO reasoning workflow surfaces planner and routing telemetry",
+)
+def test_auto_workflow_telemetry() -> None:
+    """Ensure AUTO-mode workflows expose planner and routing telemetry."""
 
 
 @given("a layered depth payload with claim audits")

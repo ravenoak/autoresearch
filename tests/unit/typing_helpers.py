@@ -13,7 +13,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
-from autoresearch.evaluation.harness import EvaluationSummary
+from autoresearch.evaluation.summary import (
+    EvaluationSummary,
+    PlannerMetrics,
+    RoutingMetrics,
+)
 
 
 @dataclass(slots=True)
@@ -149,6 +153,14 @@ def build_summary_fixture(
 
     started = started_at or datetime.now(tz=timezone.utc)
     completed = completed_at or started
+    planner_metrics = PlannerMetrics(avg_depth=avg_planner_depth)
+    routing_metrics = RoutingMetrics(
+        avg_delta=avg_routing_delta,
+        total_delta=total_routing_delta,
+        avg_decisions=avg_routing_decisions,
+        strategy=routing_strategy,
+    )
+
     summary_kwargs: dict[str, Any] = {
         "dataset": dataset,
         "run_id": run_id,
@@ -167,11 +179,8 @@ def build_summary_fixture(
         "gate_debate_rate": gate_debate_rate,
         "gate_exit_rate": gate_exit_rate,
         "gated_example_ratio": gated_example_ratio,
-        "avg_planner_depth": avg_planner_depth,
-        "avg_routing_delta": avg_routing_delta,
-        "total_routing_delta": total_routing_delta,
-        "avg_routing_decisions": avg_routing_decisions,
-        "routing_strategy": routing_strategy,
+        "planner": planner_metrics,
+        "routing": routing_metrics,
         "duckdb_path": duckdb_path,
         "example_parquet": example_parquet,
         "summary_parquet": summary_parquet,
@@ -291,4 +300,3 @@ def make_llm_pool_config(size: int) -> LLMPoolConfig:
     """Construct an ``LLMPoolConfig`` exposing the configured pool size."""
 
     return LLMPoolConfig(llm_pool_size=size)
-

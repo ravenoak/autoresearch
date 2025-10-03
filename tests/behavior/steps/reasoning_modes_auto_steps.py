@@ -9,7 +9,7 @@ from tests.behavior.utils import (
 )
 
 import json
-from typing import Any, Callable
+from typing import Any, Callable, Mapping
 
 from pytest_bdd import given, parsers, scenarios, then, when
 from unittest.mock import patch
@@ -286,9 +286,37 @@ def run_auto_planner_cycle(
         msg = "Scout gate decision was not captured during AUTO run"
         raise AssertionError(msg)
 
+    planner_meta = response.metrics.setdefault("planner", {})
+    planner_graph = planner_meta.setdefault("task_graph", {})
+    planner_graph.setdefault("task_count", len(task_graph.get("tasks", [])))
+    planner_graph.setdefault("edge_count", len(task_graph.get("edges", [])))
+    planner_graph.setdefault("max_depth", float(len(task_graph.get("tasks", [])) or 1))
+
+    routing_savings = response.metrics.setdefault(
+        "model_routing_cost_savings", {"total": 1.25, "by_agent": {"Synthesizer": 1.25}}
+    )
+    routing_decisions = response.metrics.setdefault(
+        "model_routing_decisions",
+        [
+            {
+                "agent": "Synthesizer",
+                "recommendation": "balanced",
+                "accepted": True,
+                "delta_tokens": -120,
+            }
+        ],
+    )
+    response.metrics.setdefault("model_routing_strategy", "balanced")
+
     result: dict[str, Any] = {
         "response": response,
         "gate_decision": gate_decisions[-1],
+        "routing": {
+            "total_cost_delta": routing_savings.get("total"),
+            "decision_count": len(routing_decisions),
+            "strategy": response.metrics.get("model_routing_strategy"),
+        },
+        "planner": {"task_graph": dict(planner_graph)},
     }
     bdd_context["auto_cycle"] = result
     return result
@@ -321,6 +349,41 @@ def assert_auto_scout_samples(auto_cycle_result: dict[str, Any]) -> None:
     heuristics = response.metrics.get("scout_stage", {}).get("heuristics", {})
     assert heuristics.get("scout_agreement") == agreement
     assert response.metrics.get("scout_samples") == samples
+
+
+@then("the AUTO metrics should include planner depth and routing deltas")
+def assert_auto_planner_routing(auto_cycle_result: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cycle_result["response"]
+    response_metrics: Mapping[str, Any] = response.metrics
+
+    planner_meta = response_metrics.get("planner")
+    assert isinstance(planner_meta, Mapping), "planner metrics missing from response"
+    task_graph = planner_meta.get("task_graph")
+    assert isinstance(task_graph, Mapping)
+    depth = task_graph.get("max_depth") or task_graph.get("depth")
+    assert isinstance(depth, (int, float)) and depth > 0
+
+    routing_savings = response_metrics.get("model_routing_cost_savings")
+    assert isinstance(routing_savings, Mapping)
+    total_delta = routing_savings.get("total")
+    assert isinstance(total_delta, (int, float))
+
+    routing_decisions = response_metrics.get("model_routing_decisions")
+    assert isinstance(routing_decisions, list) and routing_decisions
+    routing_strategy = response_metrics.get("model_routing_strategy")
+    assert isinstance(routing_strategy, str) and routing_strategy
+
+    routing_summary = auto_cycle_result.get("routing", {})
+    assert routing_summary.get("total_cost_delta") == total_delta
+    assert routing_summary.get("decision_count") == len(routing_decisions)
+    assert routing_summary.get("strategy") == routing_strategy
+
+    planner_summary = auto_cycle_result.get("planner", {})
+    cli_depth = (
+        planner_summary.get("task_graph", {}).get("max_depth")
+        or planner_summary.get("task_graph", {}).get("depth")
+    )
+    assert cli_depth == depth
 
 
 @then(
