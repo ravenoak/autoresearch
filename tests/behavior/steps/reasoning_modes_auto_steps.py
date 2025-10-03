@@ -80,6 +80,25 @@ def planner_verification_tasks(bdd_context: BehaviorContext) -> None:
     }
 
 
+@given("the scout metadata includes adaptive search strategy signals")
+def configure_search_strategy_signals(bdd_context: BehaviorContext) -> None:
+    """Embed search strategy telemetry in the simulated scout metadata."""
+
+    bdd_context["search_strategy_extra"] = {
+        "search_strategy": {
+            "fetch_plan": {
+                "base_k": 2,
+                "attempts": [
+                    {"attempt": 1, "k": 2, "reason": "initial"},
+                    {"attempt": 2, "k": 4, "reason": "adaptive_increase"},
+                ],
+            },
+            "rewrites": [],
+        },
+        "search_self_critique": {"coverage_gap": 0.5},
+    }
+
+
 @when(
     parsers.parse('I run the auto planner cycle for query "{query}"'),
     target_fixture="auto_cycle_result",
@@ -116,6 +135,7 @@ def run_auto_planner_cycle(
                     {"support": 0.32, "conflict": 0.68},
                     {"support": 0.30, "conflict": 0.70},
                 ],
+                extra=bdd_context.get("search_strategy_extra"),
             )
             scout_claims = [
                 build_scout_claim(
@@ -384,6 +404,25 @@ def assert_auto_planner_routing(auto_cycle_result: dict[str, Any]) -> None:
         or planner_summary.get("task_graph", {}).get("depth")
     )
     assert cli_depth == depth
+
+
+@then("the auto planner cycle should surface search strategy telemetry")
+def assert_search_strategy_telemetry(auto_cycle_result: dict[str, Any]) -> None:
+    """Validate search strategy telemetry captured during AUTO mode."""
+
+    decision: ScoutGateDecision = auto_cycle_result["gate_decision"]
+    telemetry = decision.telemetry
+    strategy = telemetry.get("search_strategy")
+    critique = telemetry.get("search_self_critique")
+    assert strategy, "search strategy telemetry missing"
+    attempts = strategy.get("fetch_plan", {}).get("attempts", [])
+    assert attempts and attempts[-1]["k"] >= attempts[0]["k"]
+    assert critique and "coverage_gap" in critique
+
+    response: QueryResponse = auto_cycle_result["response"]
+    scout_stage = response.metrics.get("scout_stage", {})
+    assert scout_stage.get("search_strategy") == strategy
+    assert scout_stage.get("search_self_critique") == critique
 
 
 @then(

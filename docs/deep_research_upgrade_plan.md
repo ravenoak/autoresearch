@@ -102,6 +102,11 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
    - Surface contradiction checks to the scout gate through
      `SearchContext.get_contradiction_signal()` while exposing neighbour
      and path queries to agents for multi-hop reasoning.
+   - Extend `SearchContext` with on-demand query rewriting, adaptive fetch
+     planning, and search self-critique telemetry so retrieval gaps can close
+     before debate. These signals surface through `ScoutGateDecision.telemetry`
+     when `gate_capture_query_strategy` and
+     `gate_capture_self_critique` remain enabled.
    - Instrument `OrchestrationMetrics` with Prometheus-backed
      `graph_ingestion` telemetry (entity, relation, contradiction, neighbour,
      and latency aggregates) guarded by `search.context_aware` toggles so

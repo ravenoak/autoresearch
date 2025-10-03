@@ -147,6 +147,10 @@ repository without reprocessing unchanged commits.
 Queries against these local indexes leverage DuckDB vector search. Matches
 return the snippet, file path, and commit hash when applicable so every result
 is fully attributable.
+- When retrieval coverage is insufficient, on-demand query rewriting expands
+  the search focus using context entities and heuristics. Adaptive fetch
+  planning increases per-backend `k` until coverage gaps shrink. Configure
+  these behaviours with `[search.query_rewrite]` and `[search.adaptive_k]`.
 - Results from all backends are persisted via `storage.py` and inserted into the
   knowledge graph for later reasoning.
 
@@ -171,6 +175,10 @@ is fully attributable.
   totals, contradiction scores, sampled planner neighbors, and storage
   latency. Toggle the feed with `search.context_aware.enabled` and
   `search.context_aware.graph_pipeline_enabled`.
+- Adaptive search telemetry is exposed when `gate_capture_query_strategy` and
+  `gate_capture_self_critique` remain enabled. The gate decision payload and
+  `scout_stage` metrics include fetch plan attempts, query rewrites, and search
+  self-critique markers for auditability.
 
 ## 9. Adaptive Orchestration
 

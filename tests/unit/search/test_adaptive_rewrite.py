@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+from typing import List
+
+import pytest
+
+from autoresearch.config.models import (
+    AdaptiveKConfig,
+    ConfigModel,
+    ContextAwareSearchConfig,
+    QueryRewriteConfig,
+    SearchConfig,
+)
+from autoresearch.search.core import Search
+from autoresearch.search.context import SearchContext
+
+
+def _build_config(
+    *,
+    backends: List[str],
+    max_results: int,
+    rewrite_cfg: QueryRewriteConfig,
+    adaptive_cfg: AdaptiveKConfig,
+) -> ConfigModel:
+    base = ConfigModel()
+    search_cfg = SearchConfig(
+        backends=backends,
+        embedding_backends=[],
+        max_results_per_query=max_results,
+        hybrid_query=False,
+        use_semantic_similarity=False,
+        use_bm25=False,
+        use_source_credibility=False,
+        semantic_similarity_weight=1.0,
+        bm25_weight=0.0,
+        source_credibility_weight=0.0,
+        use_feedback=False,
+        feedback_weight=0.0,
+        context_aware=ContextAwareSearchConfig(enabled=False),
+        query_rewrite=rewrite_cfg,
+        adaptive_k=adaptive_cfg,
+    )
+    return base.model_copy(
+        update={
+            "search": search_cfg,
+            "gate_capture_query_strategy": True,
+            "gate_capture_self_critique": True,
+        }
+    )
+
+
+@pytest.fixture
+def isolated_search(monkeypatch):
+    """Return a fresh Search instance with storage side effects disabled."""
+
+    class _StorageStub:
+        @staticmethod
+        def has_vss() -> bool:
+            return False
+
+    monkeypatch.setattr(
+        "autoresearch.search.core.search_storage.persist_results",
+        lambda results: None,
+    )
+    monkeypatch.setattr("autoresearch.search.core.StorageManager", _StorageStub)
+    monkeypatch.setattr(
+        "autoresearch.search.core.SearchCache.get_cached_results",
+        lambda self, query, backend: None,
+    )
+    monkeypatch.setattr(
+        "autoresearch.search.core.SearchCache.cache_results",
+        lambda self, query, backend, results: None,
+    )
+    search = Search()
+    return search
+
+
+def test_external_lookup_triggers_query_rewrite(monkeypatch, isolated_search):
+    config = _build_config(
+        backends=["stub"],
+        max_results=2,
+        rewrite_cfg=QueryRewriteConfig(
+            enabled=True,
+            max_attempts=1,
+            min_results=2,
+            min_unique_sources=2,
+            coverage_gap_threshold=0.1,
+        ),
+        adaptive_cfg=AdaptiveKConfig(enabled=False),
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+
+    calls: list[tuple[str, int]] = []
+
+    def backend(query: str, max_results: int) -> list[dict[str, str]]:
+        calls.append((query, max_results))
+        if query == "alpha":
+            return [{"title": "alpha", "url": "1"}]
+        if query == "alpha rewrite":
+            return [
+                {"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)
+            ]
+        return []
+
+    isolated_search.backends = {"stub": backend}
+    monkeypatch.setattr(
+        SearchContext,
+        "suggest_rewrites",
+        lambda self, query, limit=3: [
+            {"query": "alpha rewrite", "reason": "test"}
+        ],
+    )
+
+    with SearchContext.temporary_instance():
+        results = isolated_search.external_lookup("alpha", max_results=2)
+        assert len(results) == 2
+        assert calls == [("alpha", 2), ("alpha rewrite", 2)]
+        strategy = SearchContext.get_instance().get_search_strategy()
+        rewrites = strategy.get("rewrites") or []
+        assert rewrites and rewrites[0]["to"] == "alpha rewrite"
+        attempts = strategy.get("fetch_plan", {}).get("attempts", [])
+        assert len(attempts) == 2
+        assert [entry["k"] for entry in attempts] == [2, 2]
+
+
+def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search):
+    config = _build_config(
+        backends=["stub"],
+        max_results=2,
+        rewrite_cfg=QueryRewriteConfig(enabled=False),
+        adaptive_cfg=AdaptiveKConfig(
+            enabled=True,
+            min_k=2,
+            max_k=4,
+            step=2,
+            coverage_gap_threshold=0.25,
+        ),
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+
+    calls: list[tuple[str, int]] = []
+
+    def backend(query: str, max_results: int) -> list[dict[str, str]]:
+        calls.append((query, max_results))
+        if max_results <= 2:
+            return [{"title": "alpha", "url": "1"}]
+        return [
+            {"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)
+        ]
+
+    isolated_search.backends = {"stub": backend}
+
+    with SearchContext.temporary_instance():
+        results = isolated_search.external_lookup("adaptive", max_results=2)
+        assert len(results) == 4
+        assert calls == [("adaptive", 2), ("adaptive", 4)]
+        strategy = SearchContext.get_instance().get_search_strategy()
+        attempts = strategy.get("fetch_plan", {}).get("attempts", [])
+        assert [entry["k"] for entry in attempts] == [2, 4]
+        rewrites = strategy.get("rewrites", [])
+        assert not rewrites
