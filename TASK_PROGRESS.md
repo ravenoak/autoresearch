@@ -1,9 +1,20 @@
-As of **2025-10-02** at 23:57 UTC `uv run mypy --strict src tests` finishes with
-no errors, clearing the 2,114-item backlog logged on October 1. Phase 2 planner
-execution can restart once `task verify` and `task coverage` reruns confirm the
-strict gate stays green alongside the established 92.4 % coverage record cited
-below.
-【F:baseline/logs/mypy-strict-20251002T235732Z.log†L1-L1】
+As of **2025-10-03** at 01:31 UTC `task mypy-strict` completes without
+diagnostics, keeping the automated strict gate green now that Task `check`,
+Task `verify`, and the CI workflow all invoke the target directly. TestPyPI dry
+runs remain opt-in because the new `run_testpypi_dry_run` workflow input
+defaults to false, holding the publish stage until reviewers re-enable it.
+【F:baseline/logs/mypy-strict-20251003T013152Z.log†L1-L1】【F:.github/workflows/ci.yml†L5-L104】
+
+As of **2025-10-03** at 01:32 UTC
+`uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"`
+still fails in the flake8 phase because behavior, integration, and storage
+tests retain unused imports, blank-line debt, and undefined helper references.
+The accompanying coverage sweep at 01:34 UTC stops when
+`test_scheduler_restarts_existing_timer` observes that its dummy timer never
+marks itself as cancelled, so `coverage.xml` remains unchanged while the
+regression stands.
+【F:baseline/logs/task-verify-20251003T013253Z.log†L1-L22】
+【F:baseline/logs/task-coverage-20251003T013422Z.log†L1-L40】
 
 As of **2025-09-30** at 18:19 UTC `uv run task coverage` finishes with the
 92.4 % statement rate after the QueryState registry clone switched to typed

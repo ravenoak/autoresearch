@@ -5,6 +5,11 @@ name: CI
 # via the CLI: `gh workflow run CI`.
 on:
   workflow_dispatch:
+    inputs:
+      run_testpypi_dry_run:
+        description: "Run TestPyPI dry run stage"
+        type: boolean
+        default: false
 
 jobs:
   check-env:
@@ -65,6 +70,8 @@ jobs:
         run: uv run python scripts/check_env.py
       - name: Audit spec files
         run: uv run task lint-specs
+      - name: Run strict mypy gate
+        run: uv run task mypy-strict
       - name: Run task check
         run: uv run task check
       - name: Unit tests with deprecations as errors
@@ -143,6 +150,7 @@ jobs:
   publish-dev-dry-run:
     needs: verify
     runs-on: ubuntu-latest
+    if: inputs.run_testpypi_dry_run == true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
