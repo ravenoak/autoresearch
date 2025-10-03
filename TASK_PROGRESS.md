@@ -5,6 +5,28 @@ runs remain opt-in because the new `run_testpypi_dry_run` workflow input
 defaults to false, holding the publish stage until reviewers re-enable it.
 【F:baseline/logs/mypy-strict-20251003T013152Z.log†L1-L1】【F:.github/workflows/ci.yml†L5-L104】
 
+As of **2025-10-03** the deterministic storage resident-floor documentation is
+published at `docs/storage_resident_floor.md`, closing the alpha checklist note
+about the two-node floor while the TestPyPI stage stays paused by default.
+【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
+
+PR5 reverification updates now extract stored claims, retry audits with
+structured attempt metadata, and persist outcomes via
+`StorageManager.persist_claim`. Behavior coverage confirms audit badges remain
+visible in response payloads, so the verification backlog centers on coverage
+debt rather than missing instrumentation.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+
+PR4 retrieval enhancements export GraphML and JSON artifacts with contradiction
+signals wired into `SearchContext` and `QueryState`, and unit tests lock the
+serialization path so downstream tools can rely on the new metadata.
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
+
 As of **2025-10-03** at 01:32 UTC
 `uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"`
 still fails in the flake8 phase because behavior, integration, and storage
@@ -32,9 +54,8 @@ work through fixture annotations.
 【F:src/autoresearch/search/core.py†L147-L199】
 【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
 
-The remaining alpha checklist items cover the storage documentation note, the
-deferred TestPyPI dry run, and the verification reruns captured in the release
-plan.
+The remaining alpha checklist items cover the deferred TestPyPI dry run and the
+verification reruns captured in the release plan.
 【F:docs/release_plan.md†L291-L372】
 
 # Autoresearch Project - Task Progress

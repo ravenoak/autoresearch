@@ -13,6 +13,17 @@ telemetry can rely on restored coverage while strict typing proceeds.
 【F:src/autoresearch/search/core.py†L147-L199】
 【F:tests/unit/search/test_query_expansion_convergence.py†L154-L206】
 
+Automated strict gating now runs through `task mypy-strict` in both the Task CLI
+and CI workflow, and the deterministic storage resident floor is documented for
+release reviewers while the TestPyPI stage remains paused. PR5 reverification
+and PR4 retrieval exports supply shared telemetry—verification badges,
+contradiction signals, and export flags—that the planner must consume once the
+typed harness clears.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+【F:docs/storage_resident_floor.md†L1-L23】
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:src/autoresearch/search/context.py†L618-L666】
+
 structured task graph that the coordinator can schedule deterministically while
 logging ReAct traces. We need richer prompts, tool affinity metadata, and
 telemetry hooks so decomposition quality and routing choices remain auditable.

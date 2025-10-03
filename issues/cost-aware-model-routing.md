@@ -6,6 +6,15 @@ latency and token spend without sacrificing accuracy. We need configurable
 budget policies, routing telemetry, and regression tests that demonstrate cost
 savings alongside quality guarantees.
 
+Automated strict gating and the documented storage resident floor keep release
+prerequisites visible while TestPyPI remains paused, and PR5/PR4 upgrades add
+verification telemetry plus session-graph exports that routing dashboards must
+integrate once coverage debt clears.
+【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
+【F:docs/storage_resident_floor.md†L1-L23】
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:src/autoresearch/search/context.py†L618-L666】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [evaluation-and-layered-ux-expansion](evaluation-and-layered-ux-expansion.md)

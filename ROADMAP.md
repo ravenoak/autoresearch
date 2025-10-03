@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 1, 2025**.
+[README](README.md). Last updated **October 3, 2025**.
 
 ## Deep Research enhancement program
 
@@ -28,13 +28,24 @@ repository:
 
 These tickets align with [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
 and the updated specification so release milestones can absorb the upgrades in
-measured increments.
+measured increments. Phase 1 now embeds PR5’s verification loop—claim extraction
+feeds retry counters and persistence telemetry—while PR4’s retrieval work
+persists GraphML/JSON exports with contradiction signals so the gate and planner
+share session metadata.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
 
 Phase 1 is now complete and documented across the release plan and deep research
-strategy. The **October 1, 2025** strict and coverage reruns confirm the gate is
-stable enough to resume Phase 2 planning once the typed `EvaluationSummary`
-fixtures and `_thread.RLock` registry clone are addressed, so the roadmap now
-tracks those prerequisites alongside the planner upgrades.
+strategy. The verification loop and retrieval exports above close the open PR5
+and PR4 deltas, and the **October 1, 2025** strict and coverage reruns confirm
+the gate is stable enough to resume Phase 2 planning once the typed
+`EvaluationSummary` fixtures and `_thread.RLock` registry clone are addressed,
+so the roadmap now tracks those prerequisites alongside the planner upgrades.
 【F:docs/deep_research_upgrade_plan.md†L27-L58】
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
@@ -83,8 +94,10 @@ The archived fixes record the resolved MkDocs warnings.
 【F:issues/archive/fix-testing-guidelines-gpu-link.md†L5-L34】
 【F:issues/archive/fix-release-plan-issue-links.md†L5-L28】
 `STATUS.md` and `TASK_PROGRESS.md` confirm `uv run --extra docs mkdocs build`
-completes without missing targets, leaving no outstanding MkDocs
-warnings.【F:STATUS.md†L69-L79】【F:TASK_PROGRESS.md†L19-L53】
+completes without missing targets, leaving no outstanding MkDocs warnings. The
+deterministic storage resident floor is now documented while the TestPyPI stage
+remains paused by default.
+【F:STATUS.md†L1-L59】【F:TASK_PROGRESS.md†L1-L24】【F:docs/storage_resident_floor.md†L1-L23】
 The release sequence therefore references the archived resource tracker,
 deprecation warning, coverage rerun, and documentation warning tickets while the
 alpha checklist monitors for regressions alongside the open alpha coordination

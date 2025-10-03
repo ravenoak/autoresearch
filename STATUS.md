@@ -19,6 +19,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 3, 2025
+- `task check` and `task verify` now invoke `task mypy-strict` before other
+  steps, giving the repository an automated strict gate on every local sweep.
+  The CI workflow triggers the same target and keeps the `run_testpypi_dry_run`
+  input defaulted to false so publish stays paused until we re-enable it.
+  【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
 - Manual CI dispatches now expose a `run_testpypi_dry_run` flag that defaults
   to false, keeping the TestPyPI dry run paused while the verify job runs
   `task mypy-strict` immediately after spec linting to surface strict typing
@@ -37,6 +42,26 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   that the captured `DummyTimer` never marks itself as cancelled, so
   `coverage.xml` remains unchanged until we address the scheduler regression.
   【F:baseline/logs/task-coverage-20251003T013422Z.log†L1-L40】
+- Documented the deterministic storage resident floor in
+  `docs/storage_resident_floor.md` and marked the alpha checklist item complete
+  so reviewers can cite the two-node default while the TestPyPI stage remains
+  paused.
+  【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
+- PR5 reverification captures claim extraction, retry counters, and persistence
+  telemetry through `StorageManager.persist_claim`, while behavior coverage
+  guards audit badge propagation so verification evidence now focuses on
+  coverage debt instead of missing instrumentation.
+  【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+  【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+  【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+- PR4 retrieval now persists GraphML and JSON artifacts with contradiction
+  signals so the gate and planner share session graph metadata; `SearchContext`
+  and `QueryState` expose export flags, and regression coverage locks the
+  serialization path.
+  【F:src/autoresearch/knowledge/graph.py†L113-L204】
+  【F:src/autoresearch/search/context.py†L618-L666】
+  【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+  【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
 
 ## October 2, 2025
 - `uv run mypy --strict src tests` completed at **23:57 UTC** with zero
