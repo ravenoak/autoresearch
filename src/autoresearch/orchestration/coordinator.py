@@ -79,6 +79,45 @@ class TaskCoordinator:
         nodes.sort(key=lambda node: node.ordering_key())
         return [self._tasks[node.id] for node in nodes if node.is_available()]
 
+    def schedule_next(
+        self, *, preferred_tool: str | None = None
+    ) -> dict[str, Any] | None:
+        """Return the next task to execute respecting affinity ordering."""
+
+        candidates: list[tuple[tuple[Any, ...], TaskGraphNode]] = []
+        for task_id in self._tasks:
+            if self._status.get(task_id) != TaskStatus.PENDING:
+                continue
+            node = self._build_graph_node(task_id)
+            ready_rank = 0 if node.ready else 1
+            affinity_score: float
+            coverage_rank = 0
+            if preferred_tool:
+                affinity_score = node.affinity.get(preferred_tool, 0.0)
+                coverage_rank = 0 if preferred_tool in node.affinity else 1
+                if coverage_rank == 1 and affinity_score == 0.0:
+                    affinity_score = node.max_affinity()
+            else:
+                affinity_score = node.max_affinity()
+            key = (
+                ready_rank,
+                coverage_rank,
+                -affinity_score,
+                node.dependency_depth,
+                len(node.pending_dependencies),
+                node.id,
+            )
+            candidates.append((key, node))
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda item: item[0])
+        for _, node in candidates:
+            if node.ready:
+                return self._tasks[node.id]
+        return None
+
     def _compute_dependency_depths(self) -> Dict[str, int]:
         """Compute dependency depth for each task id."""
 

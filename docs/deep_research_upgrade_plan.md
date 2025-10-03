@@ -205,6 +205,13 @@ accuracy.
   task node identifiers, tool affinity deltas, and downstream task unlock
   events in each log entry. Keep the signature stable by packing additions
   into the existing metadata dictionary.
+- **Planner telemetry contract:** Normalise planner output so
+  `PlannerPromptBuilder` requests `sub_questions`, `criteria`, and numeric
+  `affinity` fields. Route the structured JSON through
+  `TaskGraph.from_planner_output` so top-level objectives and exit criteria
+  survive orchestration. Persist telemetry snapshots via
+  `QueryState.set_task_graph`, including the new `planner.telemetry` React
+  log entry, to make the coordinator hand-off auditable.
 - **Testing impact:**
   - Update `tests/unit/orchestration/test_task_coordinator.py` to assert
     the new metadata keys and tie-breaker ordering.

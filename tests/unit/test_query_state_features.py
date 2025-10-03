@@ -138,6 +138,16 @@ def test_task_graph_telemetry_persists() -> None:
     assert telemetry["tasks"][0]["exit_criteria"] == ["Stakeholders aligned"]
     assert telemetry["tasks"][0]["explanation"] == "Clarifies success metrics"
 
+    telemetry_events = [
+        entry for entry in state.react_log if entry["event"] == "planner.telemetry"
+    ]
+    assert telemetry_events, "planner telemetry should be logged to the react log"
+    latest = telemetry_events[-1]["payload"]
+    assert latest["telemetry"]["tasks"][0]["exit_criteria"] == [
+        "Stakeholders aligned"
+    ]
+    assert latest["task_graph_stats"]["task_count"] == 1
+
     cloudpickle = pytest.importorskip("cloudpickle")
     restored = cloudpickle.loads(cloudpickle.dumps(state))
     assert restored.metadata["planner"]["telemetry"] == telemetry
