@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import threading
 from collections import Counter
 from collections.abc import Awaitable, Callable, MutableMapping, Sequence
@@ -39,7 +38,6 @@ class RateLimitExceeded(Exception):
 TRequest = TypeVar("TRequest", bound="RequestProtocol")
 P = ParamSpec("P")
 ResultT = TypeVar("ResultT")
-
 
 
 class RequestState(Protocol):
@@ -146,6 +144,8 @@ class ReceiveCallable(Protocol):
 
 class SendCallable(Protocol):
     def __call__(self, message: Message) -> Awaitable[None]: ...
+
+
 class ASGIApp(Protocol):
     def __call__(
         self, scope: Scope, receive: ReceiveCallable, send: SendCallable

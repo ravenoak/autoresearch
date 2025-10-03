@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import multiprocessing
+from multiprocessing.managers import ListProxy
 from types import SimpleNamespace
 from typing import Any, cast
 
-import multiprocessing
 import pytest
 
-from autoresearch.distributed import coordinator as dist_coordinator
 from autoresearch.config.models import ConfigModel
-from multiprocessing.managers import ListProxy
-
+from autoresearch.distributed import coordinator as dist_coordinator
 from autoresearch.distributed.broker import AgentResultMessage
 
 from tests.analysis.distributed_coordination_analysis import run
@@ -40,8 +39,6 @@ class RecordedEvent:
     def wait(self) -> bool:
         self.wait_calls += 1
         return True
-
-
 
 
 @pytest.fixture

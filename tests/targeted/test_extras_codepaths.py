@@ -26,6 +26,7 @@ from autoresearch.distributed.broker import (
     AgentResultMessage,
     BrokerMessage,
     MessageQueueProtocol,
+    RedisBroker,
     StorageBrokerQueueProtocol,
 )
 from tests.targeted.helpers.distributed import build_agent_result_message
@@ -175,7 +176,6 @@ def test_redis_broker_publish(monkeypatch: pytest.MonkeyPatch) -> None:
     import_or_skip("redis")
     import fakeredis
     import redis
-    from autoresearch.distributed.broker import RedisBroker, StorageBrokerQueueProtocol
 
     fake = fakeredis.FakeRedis()
 

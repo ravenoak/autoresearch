@@ -9,6 +9,7 @@ from autoresearch.streamlit_ui import apply_theme_settings
 
 def test_apply_theme_settings_dark(monkeypatch: pytest.MonkeyPatch) -> None:
     m = MagicMock()
+
     def apply_markdown(*_args: Any, **_kwargs: Any) -> None:
         m(*_args, **_kwargs)
 

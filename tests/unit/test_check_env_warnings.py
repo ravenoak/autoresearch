@@ -91,6 +91,7 @@ def test_main_reports_missing_metadata(
 ) -> None:
     monkeypatch.setattr(check_env, "EXTRA_REQUIREMENTS", {"fakepkg": "1.0"})
     dummy = check_env.CheckResult("ok", "1", "1")
+
     def _check_python() -> check_env.CheckResult:
         return dummy
 

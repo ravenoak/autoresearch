@@ -15,10 +15,29 @@ from autoresearch.storage_backup import (
 )
 
 
+class DummyTimer:
+    def __init__(self, interval: float, callback: Callable[[], None]) -> None:
+        self.interval = interval
+        self.callback = callback
+        self.started = False
+        self.cancelled = False
+        self.result: Any | None = None
+
+    def start(self) -> None:
+        self.started = True
+        if self.interval == 0.0:
+            self.result = self.callback()
+        else:
+            self.result = None
+
+    def cancel(self) -> None:
+        self.cancelled = True
+
+
 @pytest.fixture()
 def scheduler_environment(
     monkeypatch: pytest.MonkeyPatch,
-) -> tuple[BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]]:
+) -> tuple[BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]]:
     timers: list[DummyTimer] = []
     backups: list[tuple[str, str, str, bool, BackupConfig]] = []
 
@@ -42,24 +61,6 @@ def scheduler_environment(
 
     monkeypatch.setattr(storage_backup, "_create_backup", fake_create_backup)
 
-    class DummyTimer:
-        def __init__(self, interval: float, callback: Callable[[], None]) -> None:
-            self.interval = interval
-            self.callback = callback
-            self.started = False
-            self.cancelled = False
-            self.result: Any | None = None
-
-        def start(self) -> None:
-            self.started = True
-            if self.interval == 0.0:
-                self.result = self.callback()
-            else:
-                self.result = None
-
-        def cancel(self) -> None:
-            self.cancelled = True
-
     def fake_start_timer(interval: float, callback: Callable[[], None]) -> DummyTimer:
         timer = DummyTimer(interval, callback)
         timers.append(timer)
@@ -75,7 +76,7 @@ def scheduler_environment(
 
 def test_scheduler_runs_backup_and_reschedules(
     scheduler_environment: tuple[
-        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -99,7 +100,7 @@ def test_scheduler_runs_backup_and_reschedules(
 
 def test_scheduler_restarts_existing_timer(
     scheduler_environment: tuple[
-        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -116,7 +117,7 @@ def test_scheduler_restarts_existing_timer(
 
 def test_backup_manager_schedule_uses_resolved_scheduler(
     scheduler_environment: tuple[
-        BackupScheduler, list["DummyTimer"], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
     ],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
