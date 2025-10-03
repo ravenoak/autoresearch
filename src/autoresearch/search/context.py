@@ -649,6 +649,10 @@ class SearchContext:
         stored_weight = float(stage_meta.get("weight", -1.0)) if stage_meta else -1.0
         if not stage_meta or stored_weight != weight:
             summary = self.get_graph_summary()
+            if not summary:
+                summary = self.graph_pipeline.get_latest_summary()
+                if summary:
+                    self._graph_summary = dict(summary)
             if summary:
                 self._store_graph_metadata(summary)
                 stage_meta = self._graph_stage_metadata.get("contradictions", {})
@@ -1122,6 +1126,12 @@ class SearchContext:
                 "relation_count": relation_count_float,
             },
         }
+        exports_meta = summary.get("exports") if isinstance(summary, Mapping) else None
+        if isinstance(exports_meta, Mapping):
+            metadata["exports"] = {
+                "graphml": bool(exports_meta.get("graphml")),
+                "graph_json": bool(exports_meta.get("graph_json")),
+            }
         if neighbors:
             metadata["neighbors"] = neighbors
         return metadata

@@ -158,7 +158,7 @@ class ScoutGatePolicy:
             graph_similarity_details = dict(similarity_raw)
 
         search_strategy: dict[str, object] = {}
-        if getattr(self.config, "gate_capture_query_strategy", True):
+        if getattr(self.config, "gate_capture_query_strategy", True) and search_context is not None:
             try:
                 strategy_snapshot = search_context.get_search_strategy()
             except Exception:
@@ -167,7 +167,7 @@ class ScoutGatePolicy:
                 search_strategy = strategy_snapshot
 
         self_critique_markers: dict[str, object] = {}
-        if getattr(self.config, "gate_capture_self_critique", True):
+        if getattr(self.config, "gate_capture_self_critique", True) and search_context is not None:
             try:
                 markers_snapshot = search_context.get_self_critique_markers()
             except Exception:

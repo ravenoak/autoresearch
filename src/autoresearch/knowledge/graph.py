@@ -17,6 +17,7 @@ import threading
 import time
 from types import MethodType, SimpleNamespace
 from typing import Any, Callable, Mapping, Sequence
+from uuid import uuid4
 
 import networkx as nx
 
@@ -140,6 +141,7 @@ class GraphExtractionSummary:
     relation_count: int
     contradictions: list[GraphContradiction]
     multi_hop_paths: list[list[str]]
+    exports: dict[str, Any] = field(default_factory=dict)
     provenance: list[dict[str, Any]] = field(default_factory=list)
     storage_latency: dict[str, float] = field(default_factory=dict)
     query: str = ""
@@ -172,6 +174,7 @@ class GraphExtractionSummary:
             "relation_count": self.relation_count,
             "contradictions": [c.to_dict() for c in self.contradictions],
             "multi_hop_paths": [list(path) for path in self.multi_hop_paths],
+            "exports": dict(self.exports),
             "provenance": [dict(record) for record in self.provenance],
             "storage_latency": dict(self.storage_latency),
             "sources": self.sources,
@@ -322,6 +325,13 @@ class SessionGraphPipeline:
             kg_graph = None
         summary.contradictions = self._detect_contradictions(kg_graph)
         summary.multi_hop_paths = self._derive_multi_hop_paths(kg_graph)
+
+        artifacts = self.export_artifacts()
+        summary.exports = {
+            "graphml": bool((artifacts.get("graphml") or "").strip()),
+            "graph_json": bool((artifacts.get("graph_json") or "").strip()),
+        }
+        self._persist_exports(manager, query=query, summary=summary, artifacts=artifacts)
 
         self._store_summary(summary)
         return summary
@@ -785,6 +795,55 @@ class SessionGraphPipeline:
             "duckdb_seconds": duckdb_latency,
             "rdf_seconds": rdf_latency,
         }
+
+    def _persist_exports(
+        self,
+        manager: Any | None,
+        *,
+        query: str,
+        summary: GraphExtractionSummary,
+        artifacts: Mapping[str, Any],
+    ) -> None:
+        """Persist GraphML and JSON exports as claims for provenance."""
+
+        if manager is None or not hasattr(manager, "persist_claim"):
+            return
+
+        graphml = str(artifacts.get("graphml") or "")
+        graph_json = str(artifacts.get("graph_json") or "")
+        if not graphml and not graph_json:
+            return
+
+        claim_id = f"kg-export:{uuid4()}"
+        payload = {
+            "id": claim_id,
+            "type": "knowledge_graph_export",
+            "content": f"Knowledge graph export for query: {query}",
+            "attributes": {
+                "graphml": graphml,
+                "graph_json": graph_json,
+                "entity_count": summary.entity_count,
+                "relation_count": summary.relation_count,
+                "contradiction_score": summary.contradiction_score,
+            },
+            "metadata": {
+                "query": query,
+                "timestamp": summary.timestamp,
+            },
+        }
+        try:
+            manager.persist_claim(payload, partial_update=False)
+        except Exception:  # pragma: no cover - storage failures logged upstream
+            log.debug("Failed to persist knowledge graph export claim", exc_info=True)
+            return
+
+        summary.provenance.append(
+            {
+                "type": "knowledge_graph_export",
+                "claim_id": claim_id,
+                "formats": [fmt for fmt, value in artifacts.items() if value],
+            }
+        )
 
 
 __all__ = [

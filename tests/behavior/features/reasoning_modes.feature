@@ -13,3 +13,11 @@ Feature: Basic reasoning modes
       | direct      |
       | dialectical |
 
+  Scenario: audit badges propagate to response payloads
+    When a reasoning mode "dialectical" is chosen
+    And an audit badge "supported" is produced
+    And an audit badge "needs_review" is produced
+    And the response payload is assembled
+    Then the response payload lists the audit badge "supported"
+    And the response payload lists the audit badge "needs_review"
+

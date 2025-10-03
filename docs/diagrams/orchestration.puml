@@ -146,6 +146,7 @@ note right of Orchestrator
         ii. _execute_agent_with_token_counting() executes agent with token counting
         iii. _handle_agent_completion() processes result
         iv. _persist_claims() stores claims
+        v. run_reverification() extracts claims, retries audits, and persists updates
   3. State is synthesized into QueryResponse
 end note
 

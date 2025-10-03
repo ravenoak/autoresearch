@@ -1139,7 +1139,13 @@ class QueryState(BaseModel):
             entity_count = int(graph_summary.get("entity_count", 0) or 0)
             relation_count = int(graph_summary.get("relation_count", 0) or 0)
             has_graph = bool(entity_count or relation_count)
-            if has_graph:
+            exports_meta = graph_summary.get("exports") if isinstance(graph_summary, Mapping) else None
+            if isinstance(exports_meta, Mapping):
+                knowledge_graph_meta["exports"] = {
+                    "graphml": bool(exports_meta.get("graphml")),
+                    "graph_json": bool(exports_meta.get("graph_json")),
+                }
+            elif has_graph:
                 knowledge_graph_meta["exports"] = {"graphml": True, "graph_json": True}
             metrics["knowledge_graph"] = knowledge_graph_meta
 

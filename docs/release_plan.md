@@ -26,6 +26,33 @@ evidence, the 92.4 % run from September 30 remains the authoritative record f
 release sign-off.
 【F:baseline/logs/mypy-strict-20251002T235732Z.log†L1-L1】
 
+Reverification telemetry now seeds cached states by extracting declarative
+claims from stored answers, retries the fact checker until audits stabilise,
+and persists verification results through `StorageManager.persist_claim`. The
+`reverify` metadata namespace records extraction counts, attempt counters,
+status tallies, and persistence outcomes so operators can trace every pass, and
+the new unit suite exercises extraction and retry behaviour end to end.
+【F:src/autoresearch/orchestration/reverify.py†L73-L197】
+【F:tests/unit/orchestration/test_reverify.py†L1-L80】
+
+SessionGraphPipeline now exports GraphML and JSON artefacts as structured
+claims, marks export availability in the ingestion summary, and updates the
+search context’s contradiction signal when a cached summary is missing. The
+summary metadata surfaces the new export flags so `QueryState.synthesize`
+propagates them to response metrics, and dedicated tests guard the export
+persistency path.
+【F:src/autoresearch/knowledge/graph.py†L113-L204】
+【F:src/autoresearch/search/context.py†L618-L666】
+【F:src/autoresearch/orchestration/state.py†L1120-L1135】
+【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
+
+Behaviour coverage under the `@reasoning_modes` tag now asserts that audit
+badges captured during orchestration propagate to response payloads, ensuring
+the telemetry remains visible to downstream clients even as reverification
+controls expand.
+【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
+【F:tests/behavior/steps/reasoning_modes_steps.py†L1-L40】
+
 The **September 30, 2025 at 18:19 UTC** coverage rerun restored the 92.4 %
 gate after replacing the registry clone with typed deep copies that rehydrate
 locks. New regression tests cover register, update, and round-trip paths so
@@ -95,16 +122,20 @@ final-answer audit documentation now halts in the existing
 settle into the registry. On **September 30, 2025 at 15:15 UTC** we patched the
 `A2AMessage` schema to accept the SDK's concrete messages and added
 `test_a2a_message_accepts_sdk_message` so a regression test guards the fix.
-【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】【F:src/autoresearch/a2a_interface.py†L66-L77】
-【F:src/autoresearch/a2a_interface.py†L269-L275】【F:tests/unit/test_a2a_interface.py†L82-L90】
+【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
+【F:src/autoresearch/a2a_interface.py†L66-L77】
+【F:src/autoresearch/a2a_interface.py†L269-L275】
+【F:tests/unit/test_a2a_interface.py†L82-L90】
 The dedicated unit run confirms a real SDK envelope now validates, while the
 behavior suite no longer surfaces the prior Pydantic failure and instead stops
 on pre-existing orchestration and storage prerequisites.
-【cfb7bf†L1-L2】【ab7ebf†L1-L13】
+【cfb7bf†L1-L2】
+【ab7ebf†L1-L13】
 The full coverage sweep still stalls while attempting to install GPU extras in
 this environment, so we retain the earlier **14:30 UTC** coverage log as the
 latest complete evidence until the extras sync can succeed.
-【583440†L1-L29】【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+【583440†L1-L29】
+【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
 The **September 30, 2025 at 14:55 UTC** verify sweep still clears
 `QueryState.model_copy`, yet the same log captures the untyped test backlog and
@@ -120,8 +151,10 @@ end-to-end. `task verify` and `task coverage` captured the recalibrated scout
 gate telemetry, CLI path helper checks, and the 92.4 % coverage rate, while the
 packaging stage produced fresh 0.1.0a1 wheels and sdists. The updated alpha
 ticket now links the verify, coverage, and build logs for traceability.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
-【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】
+【F:issues/prepare-first-alpha-release.md†L1-L34】
 
 Reviewers auditing the current verify gate should inspect
 `baseline/logs/task-verify-20250929T173615Z.log`, which advances through
