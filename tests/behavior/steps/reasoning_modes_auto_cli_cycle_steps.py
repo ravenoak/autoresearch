@@ -8,7 +8,7 @@ from tests.behavior.utils import (
 )
 
 import json
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 from unittest.mock import patch
 
 from collections import Counter
@@ -430,6 +430,38 @@ def run_auto_reasoning_cli(
     metrics.setdefault("audit_badges", normalized_badges)
     captured_response.metrics.setdefault("audit_badges", dict(normalized_badges))
 
+    planner_meta = captured_response.metrics.setdefault("planner", {})
+    planner_graph = planner_meta.setdefault("task_graph", {})
+    planner_graph.setdefault("task_count", len(task_graph.get("tasks", [])))
+    planner_graph.setdefault("edge_count", len(task_graph.get("edges", [])))
+    planner_graph.setdefault("max_depth", float(len(task_graph.get("tasks", [])) or 1))
+
+    routing_savings = captured_response.metrics.setdefault(
+        "model_routing_cost_savings", {"total": 0.75, "by_agent": {"Synthesizer": 0.75}}
+    )
+    routing_decisions = captured_response.metrics.setdefault(
+        "model_routing_decisions",
+        [
+            {
+                "agent": "Synthesizer",
+                "recommendation": "balanced",
+                "accepted": True,
+                "delta_tokens": -150,
+            }
+        ],
+    )
+    routing_strategy = captured_response.metrics.setdefault("model_routing_strategy", "balanced")
+
+    metrics.setdefault("planner", {"task_graph": dict(planner_graph)})
+    metrics.setdefault(
+        "model_routing",
+        {
+            "total_cost_delta": routing_savings.get("total"),
+            "decision_count": len(routing_decisions),
+            "strategy": routing_strategy,
+        },
+    )
+
     run_data = {
         "cli_result": result,
         "payload": payload,
@@ -526,6 +558,43 @@ def assert_cli_scout_samples(auto_cli_cycle: dict[str, Any]) -> None:
     assert heuristics.get("scout_agreement") == agreement
     assert response.metrics.get("scout_samples") == samples
     assert response.metrics.get("auto_mode", {}).get("scout_agreement") == agreement
+
+
+@then("the AUTO metrics should include planner depth and routing deltas")
+def assert_auto_planner_routing(auto_cli_cycle: dict[str, Any]) -> None:
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    response: QueryResponse = auto_cli_cycle["response"]
+    response_metrics: Mapping[str, Any] = response.metrics
+
+    planner_meta = response_metrics.get("planner")
+    assert isinstance(planner_meta, Mapping), "planner metrics missing from response"
+    task_graph = planner_meta.get("task_graph")
+    assert isinstance(task_graph, Mapping), "task graph stats missing"
+    depth = task_graph.get("max_depth") or task_graph.get("depth")
+    assert isinstance(depth, (int, float)) and depth > 0
+
+    routing_savings = response_metrics.get("model_routing_cost_savings")
+    assert isinstance(routing_savings, Mapping), "routing cost savings missing"
+    total_delta = routing_savings.get("total")
+    assert isinstance(total_delta, (int, float))
+
+    routing_decisions = response_metrics.get("model_routing_decisions")
+    assert isinstance(routing_decisions, list) and routing_decisions
+    routing_strategy = response_metrics.get("model_routing_strategy")
+    assert isinstance(routing_strategy, str) and routing_strategy
+
+    cli_metrics = payload.get("metrics", {})
+    planner_cli = cli_metrics.get("planner", {})
+    cli_depth = (
+        planner_cli.get("task_graph", {}).get("max_depth")
+        or planner_cli.get("task_graph", {}).get("depth")
+    )
+    assert cli_depth == depth
+
+    routing_cli = cli_metrics.get("model_routing", {})
+    assert routing_cli.get("total_cost_delta") == total_delta
+    assert routing_cli.get("decision_count") == len(routing_decisions)
+    assert routing_cli.get("strategy") == routing_strategy
 
 
 @then("the CLI should exit directly without escalation")

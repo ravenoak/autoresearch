@@ -1,0 +1,123 @@
+3.45.4
+Verifying extras: analysis, dev-minimal, distributed, git, llm, nlp, parsers, test, ui, vss
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+GitPython 3.1.45
+a2a-sdk 0.3.7
+black 25.9.0
+dspy-ai 3.0.3
+duckdb 1.3.2
+duckdb-extension-vss 1.3.2
+fakeredis 2.31.3
+fastembed 0.7.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.2
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+pillow 11.3.0
+polars 1.33.1
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+ray 2.49.2
+redis 6.4.0
+responses 0.25.8
+spacy 3.8.7
+streamlit 1.50.0
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20250822
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+src/autoresearch/evaluation/harness.py:57:1: E402 module level import not at top of file
+src/autoresearch/evaluation/summary.py:68:1: W391 blank line at end of file
+tests/analysis/test_agents_sim.py:3:1: F811 redefinition of unused 'cast' from line 1
+tests/analysis/test_distributed_coordination.py:47:1: E303 too many blank lines (4)
+tests/behavior/conftest.py:59:1: E305 expected 2 blank lines after class or function definition, found 1
+tests/behavior/context.py:319:1: W391 blank line at end of file
+tests/behavior/steps/agent_messages_steps.py:15:1: F401 'autoresearch.orchestration.orchestrator.Orchestrator' imported but unused
+tests/behavior/steps/backup_cli_steps.py:180:1: W391 blank line at end of file
+tests/behavior/steps/capabilities_cli_steps.py:42:1: W391 blank line at end of file
+tests/behavior/steps/cli_options_steps.py:18:1: F401 '.common_steps.app_running' imported but unused
+tests/behavior/steps/cli_options_steps.py:18:1: F401 '.common_steps.app_running_with_default' imported but unused
+tests/behavior/steps/cli_options_steps.py:18:1: F401 '.common_steps.application_running' imported but unused
+tests/behavior/steps/config_cli_steps.py:162:1: W391 blank line at end of file
+tests/behavior/steps/distributed_execution_steps.py:24:1: F811 redefinition of unused 'BehaviorContext' from line 5
+tests/behavior/steps/error_recovery_redis_steps.py:4:1: F811 redefinition of unused 'pytest' from line 1
+tests/behavior/steps/error_recovery_workflow_steps.py:23:1: E305 expected 2 blank lines after class or function definition, found 1
+tests/behavior/steps/gui_cli_steps.py:107:1: W391 blank line at end of file
+tests/behavior/steps/interactive_monitor_steps.py:15:1: F401 '.common_steps.app_running' imported but unused
+tests/behavior/steps/interactive_monitor_steps.py:15:1: F401 '.common_steps.app_running_with_default' imported but unused
+tests/behavior/steps/interactive_monitor_steps.py:15:1: F401 '.common_steps.application_running' imported but unused
+tests/behavior/steps/interface_test_cli_steps.py:158:1: W391 blank line at end of file
+tests/behavior/steps/monitor_cli_steps.py:188:1: W391 blank line at end of file
+tests/behavior/steps/orchestration_system_steps.py:4:1: F401 'typing.Callable' imported but unused
+tests/behavior/steps/parallel_group_merging_steps.py:15:1: E302 expected 2 blank lines, found 0
+tests/behavior/steps/query_interface_steps.py:17:1: F401 '.common_steps.app_running' imported but unused
+tests/behavior/steps/query_interface_steps.py:17:1: F401 '.common_steps.app_running_with_default' imported but unused
+tests/behavior/steps/query_interface_steps.py:17:1: F401 '.common_steps.application_running' imported but unused
+tests/behavior/steps/reasoning_mode_cli_steps.py:3:1: F401 'typing.Any' imported but unused
+tests/behavior/steps/search_cli_steps.py:80:1: W391 blank line at end of file
+tests/behavior/steps/sparql_cli_steps.py:82:1: W391 blank line at end of file
+tests/behavior/steps/streamlit_gui_steps.py:10:1: F401 'pytest_bdd.parsers' imported but unused
+tests/behavior/steps/streamlit_gui_steps.py:23:1: F401 '.common_steps.app_running' imported but unused
+tests/behavior/steps/streamlit_gui_steps.py:23:1: F401 '.common_steps.app_running_with_default' imported but unused
+tests/behavior/steps/streamlit_gui_steps.py:23:1: F401 '.common_steps.application_running' imported but unused
+tests/behavior/steps/visualize_metrics_cli_steps.py:42:1: W391 blank line at end of file
+tests/benchmark/test_token_memory.py:18:1: E305 expected 2 blank lines after class or function definition, found 1
+tests/fixtures/protocols.py:74:1: W391 blank line at end of file
+tests/integration/__init__.py:51:9: E731 do not assign a lambda expression, use a def
+tests/integration/__init__.py:53:9: E731 do not assign a lambda expression, use a def
+tests/integration/conftest.py:17:1: F401 'tests.integration._orchestrator_stubs.BrokerQueueStub' imported but unused
+tests/integration/test_cli_http.py:15:1: F401 'autoresearch.orchestration.orchestrator.Orchestrator' imported but unused
+tests/integration/test_cli_progress.py:63:5: F841 local variable 'cfg' is assigned to but never used
+tests/integration/test_distributed_process_storage.py:73:1: E305 expected 2 blank lines after class or function definition, found 0
+tests/integration/test_orchestrator_search_storage.py:203:1: W293 blank line contains whitespace
+tests/integration/test_query_performance.py:3:1: F404 from __future__ imports must occur at the beginning of the file
+tests/integration/test_query_performance.py:5:1: F811 redefinition of unused 'time' from line 1
+tests/integration/test_query_performance.py:6:1: F811 redefinition of unused 'contextmanager' from line 2
+tests/integration/test_query_performance_benchmark.py:7:1: F404 from __future__ imports must occur at the beginning of the file
+tests/integration/test_query_performance_benchmark.py:10:1: F811 redefinition of unused 'json' from line 2
+tests/integration/test_query_performance_benchmark.py:11:1: F811 redefinition of unused 'Path' from line 3
+tests/integration/test_query_performance_benchmark.py:14:1: F811 redefinition of unused 'pytest' from line 5
+tests/integration/test_query_performance_benchmark.py:120:1: W293 blank line contains whitespace
+tests/integration/test_query_with_reasoning.py:5:1: F811 redefinition of unused 'rdflib' from line 1
+tests/integration/test_ranking_formula_consistency.py:5:1: F811 redefinition of unused 'patch' from line 1
+tests/integration/test_rdf_persistence.py:61:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_rdf_persistence.py:95:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_rdf_persistence.py:116:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_rdf_persistence.py:143:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_redis_broker.py:27:26: W291 trailing whitespace
+tests/integration/test_redis_broker.py:64:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_search_duckdb_semantic_merge.py:25:1: E302 expected 2 blank lines, found 0
+tests/integration/test_search_score_normalization.py:18:1: E302 expected 2 blank lines, found 0
+tests/integration/test_semantic_similarity.py:2:1: F811 redefinition of unused 'importlib' from line 1
+tests/integration/test_semantic_similarity.py:38:1: E302 expected 2 blank lines, found 0
+tests/integration/test_simple_orchestration.py:7:1: F401 'autoresearch.agents.registry.AgentFactory' imported but unused
+tests/integration/test_storage_baseline.py:22:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_storage_baseline.py:68:5: E301 expected 1 blank line, found 0
+tests/integration/test_storage_concurrency.py:22:1: W293 blank line contains whitespace
+tests/integration/test_storage_eviction.py:21:1: W293 blank line contains whitespace
+tests/stubs/slowapi.py:5:1: F401 'inspect' imported but unused
+tests/stubs/slowapi.py:45:1: E303 too many blank lines (3)
+tests/stubs/slowapi.py:149:1: E302 expected 2 blank lines, found 0
+tests/targeted/test_extras_codepaths.py:25:1: F401 'autoresearch.distributed.broker.StorageBrokerQueueProtocol' imported but unused
+tests/targeted/test_extras_codepaths.py:178:5: F811 redefinition of unused 'StorageBrokerQueueProtocol' from line 25
+tests/unit/storage/test_backup_scheduler.py:21:34: F821 undefined name 'DummyTimer'
+tests/unit/storage/test_backup_scheduler.py:78:31: F821 undefined name 'DummyTimer'
+tests/unit/storage/test_backup_scheduler.py:102:31: F821 undefined name 'DummyTimer'
+tests/unit/storage/test_backup_scheduler.py:119:31: F821 undefined name 'DummyTimer'
+tests/unit/test_cache.py:210:5: E301 expected 1 blank line, found 0
+tests/unit/test_check_env_warnings.py:94:5: E301 expected 1 blank line, found 0
+tests/unit/test_search.py:361:1: W293 blank line contains whitespace
+tests/unit/test_streamlit_ui_helpers.py:12:5: E306 expected 1 blank line before a nested definition, found 0
+tests/unit/typing_helpers.py:303:1: W391 blank line at end of file

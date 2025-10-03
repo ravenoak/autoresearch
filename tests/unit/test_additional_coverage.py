@@ -9,7 +9,7 @@ import pytest
 
 from autoresearch import cli_utils, search
 from autoresearch.cli_utils import format_success, render_evaluation_summary
-from autoresearch.evaluation.harness import EvaluationSummary
+from autoresearch.evaluation.summary import EvaluationSummary
 from autoresearch.llm import pool as llm_pool
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager

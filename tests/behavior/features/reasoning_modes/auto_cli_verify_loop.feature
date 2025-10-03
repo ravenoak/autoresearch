@@ -11,6 +11,7 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     And the CLI audit badges should include "supported" and "needs_review"
     And the CLI output should record verification loop metrics
     And the AUTO metrics should record scout samples and agreement
+    And the AUTO metrics should include planner depth and routing deltas
 
   Scenario: AUTO mode completes the configured PRDV verification loops
     When I run the AUTO reasoning CLI for query "prdv verification rehearsal"

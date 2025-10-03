@@ -18,6 +18,7 @@ from duckdb import DuckDBPyConnection
 from ..config.models import ConfigModel
 from ..models import QueryResponse
 from .datasets import EvaluationExample, available_datasets, load_examples
+from .summary import EvaluationSummary, PlannerMetrics, RoutingMetrics
 
 log = logging.getLogger(__name__)
 
@@ -52,44 +53,6 @@ class ExampleResult:
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
     metadata: Mapping[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class EvaluationSummary:
-    """Aggregated metrics for a benchmark run.
-
-    Captures accuracy, citation coverage, contradiction rate, latency, token
-    usage, and loop/gating telemetry so longitudinal analyses can surface
-    regressions in control flow policies.
-    """
-
-    dataset: str
-    run_id: str
-    started_at: datetime
-    completed_at: datetime
-    total_examples: int
-    config_signature: str
-    accuracy: Optional[float] = None
-    citation_coverage: Optional[float] = None
-    contradiction_rate: Optional[float] = None
-    avg_latency_seconds: Optional[float] = None
-    avg_tokens_input: Optional[float] = None
-    avg_tokens_output: Optional[float] = None
-    avg_tokens_total: Optional[float] = None
-    avg_cycles_completed: Optional[float] = None
-    gate_debate_rate: Optional[float] = None
-    gate_exit_rate: Optional[float] = None
-    gated_example_ratio: Optional[float] = None
-    avg_planner_depth: Optional[float] = None
-    avg_routing_delta: Optional[float] = None
-    total_routing_delta: Optional[float] = None
-    avg_routing_decisions: Optional[float] = None
-    routing_strategy: Optional[str] = None
-    duckdb_path: Optional[Path] = field(default=None)
-    example_parquet: Optional[Path] = field(default=None)
-    summary_parquet: Optional[Path] = field(default=None)
-    example_csv: Optional[Path] = field(default=None)
-    summary_csv: Optional[Path] = field(default=None)
 
 
 @dataclass
@@ -354,6 +317,14 @@ class EvaluationHarness:
         summary_csv: Optional[Path] = None
 
         needs_persistence = store_duckdb or store_parquet
+        planner_metrics = PlannerMetrics(avg_depth=avg_planner_depth)
+        routing_metrics = RoutingMetrics(
+            avg_delta=avg_routing_delta,
+            total_delta=total_routing_delta,
+            avg_decisions=avg_routing_decisions,
+            strategy=routing_strategy,
+        )
+
         if needs_persistence:
             self._ensure_duckdb_schema()
             self._persist_examples(run_id, config_signature, results)
@@ -374,11 +345,8 @@ class EvaluationHarness:
                 gate_debate_rate,
                 gate_exit_rate,
                 gated_example_ratio,
-                avg_planner_depth,
-                avg_routing_delta,
-                total_routing_delta,
-                avg_routing_decisions,
-                routing_strategy,
+                planner_metrics,
+                routing_metrics,
                 config_signature,
             )
         if store_parquet:
@@ -409,11 +377,8 @@ class EvaluationHarness:
             gate_debate_rate=gate_debate_rate,
             gate_exit_rate=gate_exit_rate,
             gated_example_ratio=gated_example_ratio,
-            avg_planner_depth=avg_planner_depth,
-            avg_routing_delta=avg_routing_delta,
-            total_routing_delta=total_routing_delta,
-            avg_routing_decisions=avg_routing_decisions,
-            routing_strategy=routing_strategy,
+            planner=planner_metrics,
+            routing=routing_metrics,
             duckdb_path=self.duckdb_path if store_duckdb else None,
             example_parquet=example_parquet,
             summary_parquet=summary_parquet,
@@ -600,11 +565,8 @@ class EvaluationHarness:
         gate_debate_rate: Optional[float],
         gate_exit_rate: Optional[float],
         gated_example_ratio: Optional[float],
-        avg_planner_depth: Optional[float],
-        avg_routing_delta: Optional[float],
-        total_routing_delta: Optional[float],
-        avg_routing_decisions: Optional[float],
-        routing_strategy: Optional[str],
+        planner_metrics: PlannerMetrics,
+        routing_metrics: RoutingMetrics,
         config_signature: str,
     ) -> None:
         insert_sql = (
@@ -631,11 +593,11 @@ class EvaluationHarness:
                     gate_debate_rate,
                     gate_exit_rate,
                     gated_example_ratio,
-                    avg_planner_depth,
-                    avg_routing_delta,
-                    total_routing_delta,
-                    avg_routing_decisions,
-                    routing_strategy,
+                    planner_metrics.avg_depth,
+                    routing_metrics.avg_delta,
+                    routing_metrics.total_delta,
+                    routing_metrics.avg_decisions,
+                    routing_metrics.strategy,
                     config_signature,
                 ),
             )
@@ -728,13 +690,13 @@ class EvaluationHarness:
             comparisons.append(
                 RoutingStrategyComparison(
                     dataset=variant.dataset,
-                    baseline_strategy=base.routing_strategy
+                    baseline_strategy=base.routing.strategy
                     or base.config_signature,
-                    variant_strategy=variant.routing_strategy
+                    variant_strategy=variant.routing.strategy
                     or variant.config_signature,
                     accuracy_delta=_delta(base.accuracy, variant.accuracy),
                     routing_delta_diff=_delta(
-                        base.total_routing_delta, variant.total_routing_delta
+                        base.routing.total_delta, variant.routing.total_delta
                     ),
                     latency_delta=_delta(
                         base.avg_latency_seconds, variant.avg_latency_seconds
