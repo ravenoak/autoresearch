@@ -103,6 +103,7 @@ class TaskGraphNode:
     tools: List[str] = field(default_factory=list)
     criteria: List[str] = field(default_factory=list)
     explanation: str | None = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def max_affinity(self) -> float:
         """Return the maximum affinity score across known tools."""
@@ -138,6 +139,7 @@ class TaskGraphNode:
             "criteria": list(self.criteria),
             "explanation": self.explanation,
             "max_affinity": self.max_affinity(),
+            "metadata": dict(self.metadata),
         }
 
 

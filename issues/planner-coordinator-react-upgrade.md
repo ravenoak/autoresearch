@@ -51,6 +51,8 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
   **14:55 UTC** `task verify` failures clear.
 - [x] Update `docs/pseudocode.md` with the PRDV verification loop and expanded
   `EvaluationSummary` fields to align planner telemetry with verification docs.
+- [x] Normalise planner metadata into result payloads and coordinator traces so
+  `task_metadata` mirrors planner hints without bespoke adapters.
 - [ ] Resume implementation after the **October 1, 2025** strict and coverage
   sweeps confirm the `_thread.RLock` clone and typed `EvaluationSummary`
   fixtures are green again.

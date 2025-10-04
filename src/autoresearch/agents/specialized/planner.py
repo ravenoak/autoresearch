@@ -303,7 +303,8 @@ class PlannerAgent(Agent):
         if getattr(config, "enable_feedback", False):
             feedback = self.format_feedback(state) or None
         graph_context: Mapping[str, Any] | None = None
-        context_cfg = getattr(config.search, "context_aware", None)
+        search_cfg = getattr(config, "search", None)
+        context_cfg = getattr(search_cfg, "context_aware", None)
         if getattr(context_cfg, "planner_graph_conditioning", False):
             try:
                 search_context = SearchContext.get_instance()
@@ -381,15 +382,13 @@ class PlannerAgent(Agent):
 
         # Create and return the result
         claim = self.create_claim(research_plan, "research_plan")
+        result_metadata = self._planner_result_metadata_adapter(
+            task_graph_payload,
+            planner_meta,
+        )
         result = self.create_result(
             claims=[claim],
-            metadata={
-                "phase": DialoguePhase.PLANNING,
-                "task_graph": {
-                    "tasks": len(task_graph_payload.get("tasks", [])),
-                    "edges": len(task_graph_payload.get("edges", [])),
-                },
-            },
+            metadata=result_metadata,
             results={
                 "research_plan": research_plan,
                 "task_graph": task_graph_payload,
@@ -431,6 +430,59 @@ class PlannerAgent(Agent):
         if isinstance(edges, Sequence) and len(edges) >= task_count:
             confidence += 0.05
         return max(0.2, min(0.95, confidence))
+
+    def _planner_result_metadata_adapter(
+        self,
+        task_graph_payload: Mapping[str, Any],
+        planner_meta: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Assemble planner metadata for the agent result payload."""
+
+        task_count = len(task_graph_payload.get("tasks", []))
+        edge_count = len(task_graph_payload.get("edges", []))
+        graph_section: dict[str, Any] = {
+            "tasks": task_count,
+            "edges": edge_count,
+        }
+
+        metadata_holder: list[dict[str, Any]] = []
+        graph_metadata = self._normalise_metadata(
+            task_graph_payload.get("metadata"),
+            metadata_holder,
+            scope="graph",
+        )
+        if graph_metadata:
+            graph_section["metadata"] = graph_metadata
+
+        objectives = self._extract_sequence(task_graph_payload.get("objectives"))
+        if objectives:
+            graph_section["objectives"] = objectives
+        exit_criteria = self._extract_sequence(task_graph_payload.get("exit_criteria"))
+        if exit_criteria:
+            graph_section["exit_criteria"] = exit_criteria
+        explanation = task_graph_payload.get("explanation")
+        if isinstance(explanation, str) and explanation.strip():
+            graph_section["explanation"] = explanation.strip()
+
+        planner_section: dict[str, Any] = {}
+        if isinstance(planner_meta, Mapping):
+            telemetry = planner_meta.get("telemetry")
+            if isinstance(telemetry, Mapping):
+                planner_section["telemetry"] = dict(telemetry)
+            notes = planner_meta.get("notes")
+            if isinstance(notes, str) and notes.strip():
+                planner_section["notes"] = notes.strip()
+            version = planner_meta.get("version")
+            if isinstance(version, (int, float, str)):
+                planner_section["version"] = version
+
+        metadata_payload: dict[str, Any] = {
+            "phase": DialoguePhase.PLANNING,
+            "task_graph": graph_section,
+        }
+        if planner_section:
+            metadata_payload["planner"] = planner_section
+        return metadata_payload
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Best executed at the beginning of the research process."""
@@ -520,9 +572,12 @@ class PlannerAgent(Agent):
                 if isinstance(edges_obj, Sequence) and not isinstance(edges_obj, (str, bytes))
                 else []
             )
-            metadata_source = metadata_obj if isinstance(metadata_obj, Mapping) else {}
+            metadata = self._normalise_metadata(
+                metadata_obj,
+                warnings,
+                scope="graph",
+            )
             edges = self._normalise_edges(edges_source, tasks, warnings)
-            metadata = dict(metadata_source)
             objectives = self._extract_sequence(payload.get("objectives"))
             exit_criteria = self._extract_sequence(payload.get("exit_criteria"))
             explanation_value = payload.get("explanation")
@@ -624,21 +679,13 @@ class PlannerAgent(Agent):
                 task_id=task_id,
                 task_index=index,
             )
-            metadata_payload = task.get("metadata")
-            if isinstance(metadata_payload, Mapping):
-                metadata = dict(metadata_payload)
-            else:
-                if metadata_payload not in (None, {}):
-                    warnings.append(
-                        self._planner_warning(
-                            "planner.metadata_invalid",
-                            "Task metadata payload must be a mapping.",
-                            task_id=task_id,
-                            task_index=index,
-                            detail={"metadata": metadata_payload},
-                        )
-                    )
-                metadata = {}
+            metadata = self._normalise_metadata(
+                task.get("metadata"),
+                warnings,
+                scope="task",
+                task_id=task_id,
+                task_index=index,
+            )
             explanation_value = task.get("explanation")
             if isinstance(explanation_value, str):
                 explanation = explanation_value.strip() or None
@@ -678,6 +725,53 @@ class PlannerAgent(Agent):
             explanation=explanation,
         )
         return node
+
+    def _normalise_metadata(
+        self,
+        metadata: Any,
+        warnings: List[dict[str, Any]],
+        *,
+        scope: str,
+        task_id: str | None = None,
+        task_index: int | None = None,
+    ) -> dict[str, Any]:
+        """Coerce planner metadata payloads into JSON-serialisable dicts."""
+
+        if metadata is None:
+            return {}
+        if not isinstance(metadata, Mapping):
+            if metadata not in ({}, []):
+                warnings.append(
+                    self._planner_warning(
+                        "planner.metadata_invalid",
+                        "Metadata payload must be a mapping.",
+                        task_id=task_id,
+                        task_index=task_index,
+                        detail={"metadata": metadata, "scope": scope},
+                    )
+                )
+            return {}
+
+        cleaned: dict[str, Any] = {}
+        for key, value in metadata.items():
+            str_key = str(key)
+            cleaned[str_key] = self._normalise_metadata_value(value)
+        return cleaned
+
+    def _normalise_metadata_value(self, value: Any) -> Any:
+        """Recursively normalise metadata values."""
+
+        if isinstance(value, Mapping):
+            return {
+                str(k): self._normalise_metadata_value(v)
+                for k, v in value.items()
+                if v is not None
+            }
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [self._normalise_metadata_value(item) for item in value]
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        return str(value)
 
     def _extract_question(self, task: Mapping[str, Any]) -> str:
         for key in ("question", "goal", "prompt", "description", "task"):

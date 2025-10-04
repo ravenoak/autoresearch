@@ -9,13 +9,18 @@ while retaining thread safety and reproducible telemetry.
   `PlannerPromptBuilder` instructs the LLM to emit JSON including
   `objectives`, `tool_affinity`, `exit_criteria`, and `explanation` for each
   task. These fields are mapped onto the runtime `TaskNode` data structure.
+- Planner metadata (for example `metadata.version`, `metadata.notes`, and
+  planner-specified tags) is normalised into JSON-safe dictionaries. The
+  metadata is surfaced through `result.metadata['task_graph']` so downstream
+  services can reason about planner intent without re-parsing the raw plan.
 - `QueryState.set_task_graph` captures planner telemetry, aggregating the
   objectives, exit criteria, and per-task affinity/explanation data. The
   telemetry is serialisation-safe and restored with the state.
 - `TaskCoordinator` converts planner payloads into `TaskGraphNode` snapshots.
   Nodes sort by readiness, affinity, dependency depth, then identifier. Every
   ReAct step records the scheduler snapshot so downstream tools can replay the
-  decision trail.
+  decision trail. Coordinator telemetry now echoes `task_metadata` alongside
+  scheduler candidates to preserve planner hints such as priority or budgets.
 - Planner and coordinator metadata flow into the `react_log`, agent results,
   and behaviour scenarios for observability.
 
