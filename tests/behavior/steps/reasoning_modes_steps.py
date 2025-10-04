@@ -1,9 +1,13 @@
-from pytest_bdd import scenarios, when, then, parsers
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from autoresearch.orchestration import ReasoningMode
 from tests.behavior.context import BehaviorContext
+from tests.helpers import ConfigModelStub, make_config_model
 
-pytest_plugins = ["tests.behavior.steps.common_steps"]
+pytest_plugins = [
+    "tests.behavior.steps.common_steps",
+    "tests.behavior.steps.reasoning_modes_auto_steps",
+]
 
 scenarios("../features/reasoning_modes.feature")
 
@@ -37,3 +41,13 @@ def assert_badge_present(bdd_context: BehaviorContext, badge: str) -> None:
     audit = metrics.get("audit", {})
     badges = audit.get("badges", [])
     assert badge in badges
+
+
+@given("loops is set to 2 in configuration", target_fixture="config")
+def configure_default_loops() -> ConfigModelStub:
+    """Provide a deterministic AUTO-mode configuration for telemetry scenarios."""
+
+    config = make_config_model(loops=2)
+    config.agents = ["Synthesizer", "Contrarian", "FactChecker"]
+    config.reasoning_mode = ReasoningMode.AUTO
+    return config

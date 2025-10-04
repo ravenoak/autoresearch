@@ -517,6 +517,9 @@ class OrchestrationMetrics:
         self.routing_override_requests: list[RoutingOverrideRequest] = []
         self.routing_strategy: str | None = None
         self.graph_ingestions: list[dict[str, Any]] = []
+        self.gate_coverage_ratios: list[float] = []
+        self.gate_agreement_stats: list[dict[str, Any]] = []
+        self.gate_decision_outcomes: list[str] = []
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -650,6 +653,32 @@ class OrchestrationMetrics:
             "contradiction_samples": decision.telemetry.get("contradiction_samples"),
             "graph": decision.telemetry.get("graph"),
         }
+        coverage_ratio = decision.telemetry.get("coverage_ratio")
+        if isinstance(coverage_ratio, (int, float)):
+            ratio_value = float(max(0.0, min(1.0, coverage_ratio)))
+            event["coverage_ratio"] = ratio_value
+            self.gate_coverage_ratios.append(ratio_value)
+        agreement_meta = decision.telemetry.get("scout_agreement")
+        if isinstance(agreement_meta, Mapping):
+            stats = {str(key): value for key, value in agreement_meta.items()}
+            score = stats.get("score")
+            if not isinstance(score, (int, float)):
+                fallback = stats.get("mean")
+                if isinstance(fallback, (int, float)):
+                    stats["score"] = float(fallback)
+                else:
+                    stats["score"] = 0.0
+            else:
+                stats["score"] = float(score)
+            event["scout_agreement"] = dict(stats)
+            self.gate_agreement_stats.append(dict(stats))
+        outcome = decision.telemetry.get("decision_outcome")
+        if isinstance(outcome, str) and outcome:
+            normalized_outcome = outcome
+        else:
+            normalized_outcome = "debate" if decision.should_debate else "scout_exit"
+        event["decision_outcome"] = normalized_outcome
+        self.gate_decision_outcomes.append(normalized_outcome)
         graph_meta = event.get("graph")
         if isinstance(graph_meta, Mapping) and graph_meta:
             self.record_graph_build(graph_meta)

@@ -414,12 +414,50 @@ def assert_search_strategy_telemetry(auto_cycle_result: dict[str, Any]) -> None:
     telemetry = decision.telemetry
     strategy = telemetry.get("search_strategy")
     critique = telemetry.get("search_self_critique")
+    assert isinstance(strategy, Mapping)
+    assert isinstance(critique, Mapping)
     assert strategy, "search strategy telemetry missing"
     attempts = strategy.get("fetch_plan", {}).get("attempts", [])
     assert attempts and attempts[-1]["k"] >= attempts[0]["k"]
     assert critique and "coverage_gap" in critique
 
+
+@then("the AUTO gate telemetry should include coverage ratios and outcomes")
+def assert_auto_gate_telemetry(auto_cycle_result: dict[str, Any]) -> None:
+    """Ensure gate telemetry exposes coverage ratios, agreement, and outcomes."""
+
+    decision: ScoutGateDecision = auto_cycle_result["gate_decision"]
     response: QueryResponse = auto_cycle_result["response"]
+
+    telemetry = decision.telemetry
+    coverage_ratio = telemetry.get("coverage_ratio")
+    assert isinstance(coverage_ratio, (int, float))
+    assert 0.0 <= float(coverage_ratio) <= 1.0
+
+    agreement_meta = telemetry.get("scout_agreement")
+    assert isinstance(agreement_meta, Mapping)
+    score = agreement_meta.get("score")
+    assert isinstance(score, (int, float))
+
+    outcome = telemetry.get("decision_outcome")
+    assert outcome in {"debate", "scout_exit"}
+
+    strategy = telemetry.get("search_strategy")
+    critique = telemetry.get("search_self_critique")
+
+    gate_snapshot = response.metrics.get("scout_gate", {})
+    assert isinstance(gate_snapshot, Mapping)
+    gate_telemetry = gate_snapshot.get("telemetry", {})
+    assert isinstance(gate_telemetry, Mapping)
+    assert gate_telemetry.get("coverage_ratio") == float(coverage_ratio)
+    assert gate_telemetry.get("decision_outcome") == outcome
+
+    gate_agreement = gate_telemetry.get("scout_agreement", {})
+    assert isinstance(gate_agreement, Mapping)
+    gate_score = gate_agreement.get("score")
+    assert isinstance(gate_score, (int, float))
+    assert float(gate_score) == float(score)
+
     scout_stage = response.metrics.get("scout_stage", {})
     assert scout_stage.get("search_strategy") == strategy
     assert scout_stage.get("search_self_critique") == critique

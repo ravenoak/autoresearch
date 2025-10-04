@@ -452,7 +452,19 @@ def run_auto_reasoning_cli(
     )
     routing_strategy = captured_response.metrics.setdefault("model_routing_strategy", "balanced")
 
-    metrics.setdefault("planner", {"task_graph": dict(planner_graph)})
+    planner_section = metrics.setdefault("planner", {})
+    planner_task_graph_cli = planner_section.setdefault("task_graph", {})
+    for key in ("task_count", "edge_count", "max_depth"):
+        value = planner_graph.get(key)
+        if value is not None and key not in planner_task_graph_cli:
+            planner_task_graph_cli[key] = value
+    if (
+        "updated_at" in planner_graph
+        and "updated_at" not in planner_task_graph_cli
+    ):
+        planner_task_graph_cli["updated_at"] = planner_graph["updated_at"]
+    if "telemetry" in planner_meta and "telemetry" not in planner_section:
+        planner_section["telemetry"] = dict(planner_meta["telemetry"])
     metrics.setdefault(
         "model_routing",
         {
