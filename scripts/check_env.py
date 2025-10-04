@@ -105,6 +105,41 @@ def _silenced_metadata(pkg: str) -> bool:
     return pkg.lower() in SILENT_METADATA_PKGS or pkg.lower().startswith("types-")
 
 
+def _env_metadata_key(pkg: str) -> str:
+    """Return the environment variable key storing a package version."""
+
+    sanitized = re.sub(r"[^A-Z0-9]+", "_", pkg.upper())
+    return f"AUTORESEARCH_{sanitized}_VERSION"
+
+
+def _metadata_from_env(pkg: str) -> str | None:
+    """Return a version string from environment metadata if available."""
+
+    key = _env_metadata_key(pkg)
+    value = os.environ.get(key)
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+ENV_METADATA_PROVIDERS: tuple[Callable[[str], str | None], ...] = (_metadata_from_env,)
+
+
+def _resolve_missing_metadata(pkg: str) -> str | None:
+    """Return a provider supplied version for ``pkg`` when metadata is absent."""
+
+    for provider in ENV_METADATA_PROVIDERS:
+        try:
+            version = provider(pkg)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Metadata provider failed for %s", pkg, exc_info=exc)
+            continue
+        if version:
+            return str(version)
+    return None
+
+
 @dataclass
 class CheckResult:
     name: str
@@ -183,6 +218,10 @@ def check_package(pkg: str) -> CheckResult | None:
     try:
         current = metadata.version(pkg)
     except metadata.PackageNotFoundError:
+        version = _resolve_missing_metadata(pkg)
+        if version is not None:
+            logger.info("Using environment metadata for %s: %s", pkg, version)
+            return CheckResult(pkg, version, REQUIREMENTS[pkg])
         if _silenced_metadata(pkg):
             logger.info("No package metadata found for %s; skipping", pkg)
             return None

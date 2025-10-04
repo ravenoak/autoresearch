@@ -23,13 +23,24 @@ from ..output_format import OutputFormatter
 from ..resource_monitor import ResourceMonitor
 from .node_health import NodeHealthMonitor
 from .system_monitor import SystemMonitor
+from .telemetry import (
+    AUDIT_TELEMETRY_FIELDS,
+    build_audit_telemetry,
+    normalize_audit_payload,
+)
 
 monitor_app = typer.Typer(help="Monitoring utilities")
 
 _loader = ConfigLoader()
 _system_monitor: SystemMonitor | None = None
 
-__all__ = ["SystemMonitor", "NodeHealthMonitor"]
+__all__ = [
+    "SystemMonitor",
+    "NodeHealthMonitor",
+    "AUDIT_TELEMETRY_FIELDS",
+    "build_audit_telemetry",
+    "normalize_audit_payload",
+]
 log = get_logger(__name__)
 
 

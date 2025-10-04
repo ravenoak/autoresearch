@@ -1,31 +1,42 @@
+from __future__ import annotations
+
 from queue import Queue
 from unittest.mock import MagicMock
 
-from autoresearch import search as search_module
+import autoresearch.search as search_module
+from autoresearch.monitor import (
+    AUDIT_TELEMETRY_FIELDS,
+    build_audit_telemetry,
+    normalize_audit_payload,
+)
 from autoresearch.orchestration import execution as exec_mod
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
+from autoresearch.output_format import FormatTemplate
 from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
-from autoresearch.output_format import FormatTemplate
 
 from .typing_helpers import make_runtime_config, make_search_config
 
 
 def test_log_sources(monkeypatch):
-    msgs = []
-    monkeypatch.setattr(exec_mod, "log", MagicMock())
-    exec_mod.log.info = lambda msg, **k: msgs.append(msg)
+    mock_log = MagicMock()
+    monkeypatch.setattr(exec_mod, "log", mock_log)
     OrchestrationUtils.log_sources("A", {"sources": [{"title": "T"}]})
-    assert any("provided 1 sources" in m for m in msgs)
+    info_call = mock_log.info.call_args
+    assert info_call is not None
+    message = info_call.args[0]
+    assert "provided 1 sources" in message
+    assert info_call.kwargs.get("extra", {}).get("source_count") == 1
 
 
 def test_log_sources_missing(monkeypatch):
-    msgs = []
-    monkeypatch.setattr(exec_mod, "log", MagicMock())
-    exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
+    mock_log = MagicMock()
+    monkeypatch.setattr(exec_mod, "log", mock_log)
     OrchestrationUtils.log_sources("A", {})
-    assert any("provided no sources" in m for m in msgs)
+    warning_call = mock_log.warning.call_args
+    assert warning_call is not None
+    assert "provided no sources" in warning_call.args[0]
 
 
 def test_persist_claims(monkeypatch):
@@ -38,12 +49,12 @@ def test_persist_claims(monkeypatch):
 
 def test_persist_claims_invalid(monkeypatch):
     monkeypatch.setattr(StorageManager, "persist_claim", lambda c: None)
-    msgs = []
-    monkeypatch.setattr(exec_mod, "log", MagicMock())
-    exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
+    mock_log = MagicMock()
+    monkeypatch.setattr(exec_mod, "log", mock_log)
     result = {"claims": ["bad", {"foo": 1}]}
     OrchestrationUtils.persist_claims("A", result, StorageManager)
-    assert any("Skipping invalid claim format" in m for m in msgs)
+    warnings = [call.args[0] for call in mock_log.warning.call_args_list]
+    assert any("Skipping invalid claim format" in msg for msg in warnings)
 
 
 def test_ndcg_perfect():
@@ -82,5 +93,73 @@ def test_connection_context_manager_single():
 
 def test_formattemplate_metrics():
     tpl = FormatTemplate(name="m", template="Tokens: ${metric_tokens}")
-    resp = type("R", (), {"answer": "a", "citations": [], "reasoning": [], "metrics": {"tokens": 5}})()
+    resp = type(
+        "R",
+        (),
+        {
+            "answer": "a",
+            "citations": [],
+            "reasoning": [],
+            "metrics": {"tokens": 5},
+            "claim_audits": [],
+            "notes": {},
+        },
+    )()
     assert tpl.render(resp) == "Tokens: 5"
+
+
+def test_normalize_audit_payload_includes_expected_fields() -> None:
+    payload = normalize_audit_payload(
+        {
+            "audit_id": 42,
+            "claim_id": 123,
+            "status": "verified",
+            "entailment_score": "0.75",
+            "entailment_variance": "0.1",
+            "instability_flag": "true",
+            "sample_size": "5",
+            "sources": [{"id": "s1"}, "skip"],
+            "provenance": {"retrieval": ["doc"]},
+            "notes": 99,
+            "created_at": "1700000000.5",
+        }
+    )
+    assert set(payload) == set(AUDIT_TELEMETRY_FIELDS)
+    assert payload["claim_id"] == "123"
+    assert payload["status"] == "verified"
+    assert payload["entailment_score"] == 0.75
+    assert payload["entailment_variance"] == 0.1
+    assert payload["instability_flag"] is True
+    assert payload["sample_size"] == 5
+    assert payload["sources"] == [{"id": "s1"}]
+    assert payload["provenance"] == {"retrieval": ["doc"]}
+    assert payload["notes"] == "99"
+    assert isinstance(payload["created_at"], float)
+
+
+def test_build_audit_telemetry_summarises_audits() -> None:
+    audits = [
+        {
+            "audit_id": "a1",
+            "claim_id": "c1",
+            "status": "verified",
+            "instability_flag": False,
+            "sources": [],
+            "provenance": {},
+        },
+        {
+            "audit_id": "a2",
+            "claim_id": "c2",
+            "status": "needs_review",
+            "instability_flag": True,
+            "sources": [],
+            "provenance": {},
+        },
+        "not-a-mapping",
+    ]
+    snapshot = build_audit_telemetry(audits)
+    assert snapshot["audit_records"] == 2
+    assert snapshot["flagged_records"] == 1
+    assert snapshot["status_counts"] == {"verified": 1, "needs_review": 1}
+    assert snapshot["claim_ids"] == ["c1", "c2"]
+    assert all(set(entry) == set(AUDIT_TELEMETRY_FIELDS) for entry in snapshot["audits"])
