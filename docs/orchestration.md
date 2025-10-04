@@ -26,3 +26,20 @@ while retaining thread safety and reproducible telemetry.
 - **Answer:** We inspect the telemetry snapshots. Ready tasks bubble to the top
   of each `scheduler.candidates` list, and coordinator decisions persist across
   serialisation, confirming the readiness-first ordering.
+
+## Error handling
+
+- `_handle_agent_error` now emits diagnostic claims with a `debug` mapping that
+  captures the agent name, error class, recovery category, and the selected
+  recovery strategy. The orchestrator appends the same payload to
+  `state.metadata['errors']` so response metrics expose `telemetry.claim_debug`
+  for downstream dashboards.
+- Recovery strategies (`retry_with_backoff`, `fallback_agent`, and
+  `fail_gracefully`) stamp `recovery_suggestion` metadata and update claims with
+  `type="diagnostic"` and `subtype` matching the error category. Downstream
+  synthesizers can therefore separate user-facing messages from troubleshooting
+  breadcrumbs.
+- Parallel execution injects identical diagnostic claims for failures and
+  timeouts. Each claim lists the affected agent group, the event (`error` or
+  `timeout`), and timeout thresholds when applicable, making fleet health
+  reviews consistent across sequential and parallel flows.
