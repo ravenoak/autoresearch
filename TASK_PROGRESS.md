@@ -1,3 +1,13 @@
+As of **2025-10-04 at 05:34 UTC** the strict gate remains green: `uv run mypy
+--strict src tests` reported "Success: no issues found in 790 source files",
+so we can focus on shrinking the failing pytest surface before rerunning the
+full verify sweep.【c2f747†L1-L2】 At **05:31 UTC** `uv run --extra test
+pytest` reaches the search stub regression immediately; the legacy and VSS
+paths both miss the expected `add_calls` telemetry and the fallback query text
+still reflects the templated prompt, confirming PR-C must repair backend
+instrumentation before other failures can be measured.【81b49d†L25-L155】
+【81b49d†L156-L204】
+
 As of **2025-10-04 at 01:57 UTC** the verify gate remains red: flake8 still
 flags unused imports, blank-line drift, and trailing whitespace across
 Search, behavior, integration, and storage suites during
@@ -27,7 +37,7 @@ The refreshed [v0.1.0a1 preflight readiness plan](docs/v0.1.0a1_preflight_plan.m
 now breaks the regression clusters into PR-A through PR-H with dialectical
 assessments, then sequences telemetry and planner enhancements as PR-I
 through PR-K once the suite is green.
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L239】
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
 
 As of **2025-10-03** the deterministic storage resident-floor documentation is
 published at `docs/storage_resident_floor.md`, closing the alpha checklist note

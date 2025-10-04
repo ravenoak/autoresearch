@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 3, 2025**.
+[README](README.md). Last updated **October 4, 2025**.
 
 ## Deep Research enhancement program
 
@@ -53,13 +53,18 @@ instrumenting AUTO mode—before Phase 2 planner upgrades resume.
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. As of **October 3, 2025 at 14:52 UTC** the strict
-typing gate is green but the pytest suite is red: `uv run mypy --strict src
-tests` completes successfully, while `uv run --extra test pytest` still fails
-across reverification defaults, backup scheduling, search cache determinism,
-API parsing exports, and FastMCP shims. The new preflight readiness plan keeps
-the remediation path visible across documentation and issues.
-【4b1e56†L1-L2】【7be155†L104-L262】【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
+across project documentation. As of **October 4, 2025 at 05:34 UTC** the
+strict typing gate remains green:
+`uv run mypy --strict src tests` reported “Success: no issues found in 790
+source files”. Minutes earlier, `uv run --extra test pytest` at **05:31 UTC**
+failed in the search stub suite—the legacy and VSS-enabled flows miss the
+expected `add_calls` telemetry and the fallback bundle echoes the templated
+prompt—so the release sweep still depends on PR-C landing first. The broader
+October 3 diagnostic run with 26 failures remains the reference for other
+regression clusters, and the refreshed preflight readiness plan keeps the
+remediation path visible across documentation and issues.
+【c2f747†L1-L2】【81b49d†L25-L155】【81b49d†L156-L204】
+【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
 
 The deterministic storage resident-floor documentation remains published and
 linked from the release plan, keeping the TestPyPI stage paused until coverage

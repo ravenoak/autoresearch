@@ -7,22 +7,29 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 4, 2025 at 01:57 UTC** the strict typing gate remains green,
-yet the release sweep still stalls earlier in the dialectical pipeline. The
-fresh `uv run task verify EXTRAS="nlp ui vss git distributed analysis llm
-parsers"` attempt fails in flake8, which reports unused imports, excess blank
-lines, and trailing whitespace across Search, behavior, integration, and
-storage suites.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
-Minutes later `uv run task coverage EXTRAS="nlp ui vss git distributed
-analysis llm parsers"` stops when the legacy branch of
+As of **October 4, 2025 at 05:34 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` reports “Success: no issues found in 790
+source files”, so we can focus on clearing the remaining pytest regressions
+before rerunning the full release sweep.【c2f747†L1-L2】 A fresh
+`uv run --extra test pytest` sample at **05:31 UTC** fails immediately in the
+search stub suite: both the legacy and VSS-enabled paths miss the expected
+`add_calls` telemetry and the fallback bundle preserves the templated query,
+confirming PR-C must repair backend instrumentation first.
+【81b49d†L25-L155】【81b49d†L156-L204】 The broader release sweep still stalls
+earlier in the dialectical pipeline. The
+`uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"`
+attempt fails in flake8, which reports unused imports, excess blank lines, and
+trailing whitespace across Search, behavior, integration, and storage suites.
+【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】 Minutes later
+`uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm
+parsers"` stops when the legacy branch of
 `tests/unit/test_core_modules_additional.py::test_search_stub_backend` no
 longer records the expected instance `add_calls`, keeping coverage frozen at
-the prior 92.4 % baseline.
-【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+the prior 92.4 % baseline.【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
 The preflight plan still sequences remediation through PR-A to PR-H, and the
 alpha issue plus task log now point to the new evidence while TestPyPI stays
 paused pending lint and search instrumentation fixes.
-【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
+【F:docs/v0.1.0a1_preflight_plan.md†L9-L323】
 【F:issues/prepare-first-alpha-release.md†L1-L32】
 
 ### Immediate Follow-ups

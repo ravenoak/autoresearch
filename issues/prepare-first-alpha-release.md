@@ -1,8 +1,19 @@
 # Prepare first alpha release
 
 ## Context
-As of **October 4, 2025 at 01:57 UTC** the strict typing gate remains green,
-yet the release sweep still fails earlier. `uv run task verify
+As of **October 4, 2025 at 05:34 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` again reported “Success: no issues found in
+790 source files”, so we can focus on the remaining pytest regressions before
+rerunning the full release sweep.【c2f747†L1-L2】 A targeted `uv run --extra
+test pytest` sample at **05:31 UTC** fails immediately in
+`tests/unit/test_core_modules_additional.py::test_search_stub_backend` for the
+legacy and VSS-enabled paths; the stub no longer records the expected
+`add_calls` telemetry and the fallback bundle echoes the templated query.
+These findings narrow PR-C while the broader 26-failure set from October 3
+continues to guide the follow-on PRs.【81b49d†L25-L155】【81b49d†L156-L204】
+【ce87c2†L81-L116】
+
+The release sweep still fails earlier. `uv run task verify
 EXTRAS="nlp ui vss git distributed analysis llm parsers"` halts in flake8
 because Search core imports, behavior fixtures, and storage tests retain
 unused symbols and whitespace debt, and the follow-up `uv run task coverage
@@ -15,7 +26,7 @@ still sequences remediation through PR-A to PR-H, keeping each change review
 sized so we can refresh coverage evidence and restart the release pipeline.
 【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
 【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
-【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
 
 TestPyPI dry runs remain paused; we will capture fresh verify and coverage logs
 after the lint and search instrumentation regressions clear before re-enabling
