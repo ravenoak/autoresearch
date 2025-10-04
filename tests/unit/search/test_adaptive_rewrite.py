@@ -21,6 +21,8 @@ def _build_config(
     max_results: int,
     rewrite_cfg: QueryRewriteConfig,
     adaptive_cfg: AdaptiveKConfig,
+    capture_strategy: bool = True,
+    capture_critique: bool = True,
 ) -> ConfigModel:
     base = ConfigModel()
     search_cfg = SearchConfig(
@@ -43,8 +45,8 @@ def _build_config(
     return base.model_copy(
         update={
             "search": search_cfg,
-            "gate_capture_query_strategy": True,
-            "gate_capture_self_critique": True,
+            "gate_capture_query_strategy": capture_strategy,
+            "gate_capture_self_critique": capture_critique,
         }
     )
 
@@ -89,6 +91,7 @@ def test_external_lookup_triggers_query_rewrite(monkeypatch, isolated_search):
         adaptive_cfg=AdaptiveKConfig(enabled=False),
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
 
     calls: list[tuple[str, int]] = []
 
@@ -121,6 +124,8 @@ def test_external_lookup_triggers_query_rewrite(monkeypatch, isolated_search):
         attempts = strategy.get("fetch_plan", {}).get("attempts", [])
         assert len(attempts) == 2
         assert [entry["k"] for entry in attempts] == [2, 2]
+        markers = SearchContext.get_instance().get_self_critique_markers()
+        assert markers.get("coverage_gap", 0.0) > 0.0
 
 
 def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search):
@@ -137,6 +142,7 @@ def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search
         ),
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
 
     calls: list[tuple[str, int]] = []
 
@@ -159,3 +165,61 @@ def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search
         assert [entry["k"] for entry in attempts] == [2, 4]
         rewrites = strategy.get("rewrites", [])
         assert not rewrites
+
+
+def test_query_strategy_markers_disabled(monkeypatch, isolated_search):
+    config = _build_config(
+        backends=["stub"],
+        max_results=2,
+        rewrite_cfg=QueryRewriteConfig(
+            enabled=True,
+            max_attempts=1,
+            min_results=2,
+            min_unique_sources=2,
+            coverage_gap_threshold=0.1,
+        ),
+        adaptive_cfg=AdaptiveKConfig(enabled=False),
+        capture_strategy=False,
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
+
+    def backend(query: str, max_results: int) -> list[dict[str, str]]:
+        return [{"title": "alpha", "url": "1"}]
+
+    isolated_search.backends = {"stub": backend}
+
+    with SearchContext.temporary_instance():
+        results = isolated_search.external_lookup("alpha", max_results=2)
+        assert results
+        strategy = SearchContext.get_instance().get_search_strategy()
+        assert strategy == {}
+
+
+def test_self_critique_markers_disabled(monkeypatch, isolated_search):
+    config = _build_config(
+        backends=["stub"],
+        max_results=2,
+        rewrite_cfg=QueryRewriteConfig(
+            enabled=True,
+            max_attempts=1,
+            min_results=2,
+            min_unique_sources=2,
+            coverage_gap_threshold=0.1,
+        ),
+        adaptive_cfg=AdaptiveKConfig(enabled=False),
+        capture_critique=False,
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
+
+    def backend(query: str, max_results: int) -> list[dict[str, str]]:
+        return [{"title": "alpha", "url": "1"}]
+
+    isolated_search.backends = {"stub": backend}
+
+    with SearchContext.temporary_instance():
+        results = isolated_search.external_lookup("alpha", max_results=2)
+        assert results
+        markers = SearchContext.get_instance().get_self_critique_markers()
+        assert markers == {}

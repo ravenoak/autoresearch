@@ -64,6 +64,30 @@ deterministic placeholder results under the `__fallback__` namespace. The
 placeholder URLs encode the query and rank so repeated failures remain
 reproducible and visible in cache diagnostics.
 
+## Adaptive fetch and self-critique tuning
+
+Adaptive fetch expands the maximum number of results when coverage is low.
+Tune the behaviour under `[search.adaptive_k]`:
+
+```toml
+[search.adaptive_k]
+enabled = true
+min_k = 5
+max_k = 15
+step = 5
+coverage_gap_threshold = 0.35
+```
+
+The planner records every attempt and the reason (`initial`,
+`followup`, `adaptive_increase`, or `rewrite_*`) when
+`gate_capture_query_strategy = true`. Disable the gate to minimise telemetry
+storage when adaptive diagnostics are unnecessary.
+
+Self-critique markers summarise coverage gaps, empty backends, and no-result
+scenarios. They flow through scout telemetry and gate payloads while
+`gate_capture_self_critique = true`. Toggle the flag to suppress markers when
+deployments must avoid retaining critique metadata.
+
 ## Benchmarking
 
 To guard against regressions, run `uv run pytest`

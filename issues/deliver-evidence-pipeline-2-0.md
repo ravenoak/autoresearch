@@ -28,6 +28,12 @@ and downstream exports stay lossless.
 【F:tests/unit/test_orchestrator_errors.py†L1-L360】
 【F:docs/orchestration.md†L1-L120】
 
+Adaptive fetch telemetry and critique markers now respect the
+`gate_capture_query_strategy` and `gate_capture_self_critique` toggles so
+evidence audits can mute strategy diagnostics when operators opt out of storing
+that metadata.
+【F:src/autoresearch/search/context.py†L310-L424】【F:docs/search_backends.md†L65-L96】
+
 PR5 reverification now extracts stored claims, retries audits with structured
 attempt metadata, and persists outcomes through `StorageManager.persist_claim`,
 while behavior coverage keeps audit badges visible in response payloads. PR4
