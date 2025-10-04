@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 from . import routing
+from .auth_middleware import AuthMiddleware as _AuthMiddleware
+from .errors import handle_rate_limit as _handle_rate_limit
 from .middleware import (
     SLOWAPI_STUB,
+    FallbackRateLimitMiddleware as _FallbackRateLimitMiddleware,
+    RateLimitMiddleware as _RateLimitMiddleware,
 )
 from .middleware import Limiter as _Limiter
 from .middleware import RateLimitExceeded as _RateLimitExceeded
 from .middleware import (
     dynamic_limit,
     get_remote_address,
+    parse as _parse,
 )
 from .models import (
     AsyncQueryResponseV1,
@@ -19,6 +24,7 @@ from .models import (
     QueryRequestV1,
     QueryResponseV1,
 )
+from .streaming import query_stream_endpoint
 from .utils import (
     RequestLogger,
     create_request_logger,
@@ -35,6 +41,11 @@ limiter = routing.limiter
 query_endpoint = routing.query_endpoint
 RateLimitExceeded = _RateLimitExceeded
 Limiter = _Limiter
+parse = _parse
+FallbackRateLimitMiddleware = _FallbackRateLimitMiddleware
+RateLimitMiddleware = _RateLimitMiddleware
+AuthMiddleware = _AuthMiddleware
+handle_rate_limit = _handle_rate_limit
 
 __all__ = [
     "app",
@@ -48,6 +59,7 @@ __all__ = [
     "RateLimitExceeded",
     "Limiter",
     "query_endpoint",
+    "query_stream_endpoint",
     "QueryRequestV1",
     "QueryResponseV1",
     "BatchQueryRequestV1",
@@ -58,4 +70,9 @@ __all__ = [
     "get_request_logger",
     "RequestLogger",
     "reset_request_log",
+    "parse",
+    "FallbackRateLimitMiddleware",
+    "RateLimitMiddleware",
+    "AuthMiddleware",
+    "handle_rate_limit",
 ]

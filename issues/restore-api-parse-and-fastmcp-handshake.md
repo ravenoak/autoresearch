@@ -19,4 +19,16 @@
 - Documentation or release notes summarise the API and handshake changes.
 
 ## Status
-Open
+Closed
+
+## Resolution
+- Restored the `autoresearch.api` surface by re-exporting rate-limit helpers,
+  middleware, and the `parse` utility for compatibility with existing
+  integrations.
+- Updated FastMCP adapters to emit and accept `QueryRequestV1` and
+  `QueryResponseV1` payloads, including structured error telemetry for Socratic
+  recovery prompts.
+- Added unit tests that assert success and failure flows for both the REST API
+  and FastMCP handshake while exercising Socratic diagnostics.
+- Documented the consolidated Python exports in `docs/api.md` so downstream
+  clients can rely on the public surface without spelunking submodules.

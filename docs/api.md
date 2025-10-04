@@ -11,6 +11,27 @@ Once the server is running you can interact with the endpoints described below.
 For details on orchestrator state transitions and the API contract see
 [orchestrator_state.md](orchestrator_state.md).
 
+## Python module surface
+
+The :mod:`autoresearch.api` package re-exports the most frequently used
+entry points so callers can bootstrap servers, rate limiting, and telemetry
+from a single import. The exported symbols include:
+
+- ``app`` and ``create_app`` for integrating with ASGI servers.
+- ``query_endpoint`` and ``query_stream_endpoint`` for synchronous and
+  streaming execution.
+- ``QueryRequestV1``, ``QueryResponseV1``, and the batch plus async variants
+  for schema-aware clients.
+- ``dynamic_limit`` and ``parse`` for converting rate-limit strings alongside
+  ``Limiter`` and ``RateLimitExceeded``.
+- ``FallbackRateLimitMiddleware`` and ``RateLimitMiddleware`` for SlowAPI and
+  stubbed deployments, plus ``AuthMiddleware`` and ``handle_rate_limit``.
+- ``create_request_logger``, ``get_request_logger``, ``reset_request_log``, and
+  ``RequestLogger`` to introspect throttling metrics.
+
+These exports mirror the public REST contract so API consumers and MCP
+adapters stay aligned without reaching into submodules.
+
 Requests and responses are versioned. Include `"version": "1"` in request
 bodies; responses echo the same field to signal the contract in use. The
 `QueryRequestV1` and `QueryResponseV1` models live in
