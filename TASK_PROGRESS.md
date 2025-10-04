@@ -1,3 +1,17 @@
+As of **2025-10-05 at 03:28 UTC** the verify and coverage sweeps are green.
+`uv run task verify` now completes end-to-end with `[verify][lint] flake8 passed`
+and strict mypy reporting “Success: no issues found in 790 source files” while
+`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback` passes,
+closing the last PR-C regression. The paired coverage run lands at the
+92.4 % statement rate and regenerates `coverage.xml`, so TestPyPI reactivation
+is the next gate. Previously, the October 4 logs captured the placeholder URL
+failure; those references remain below for historical context but are now
+superseded as of the October 5 evidence.
+【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
+【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
+【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
+
 As of **2025-10-04 at 05:34 UTC** the strict gate remains green: `uv run mypy
 --strict src tests` reported "Success: no issues found in 790 source files",
 so we can focus on shrinking the failing pytest surface before rerunning the
