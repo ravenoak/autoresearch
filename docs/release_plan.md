@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 4, 2025** and
+`2025-05-18`). This schedule was last updated on **October 5, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -18,26 +18,24 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The strict typing gate remains green, and the latest release sweeps now reach
-the coverage stage. At **2025-10-04 14:44 UTC** `uv run task verify
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` prints
-`[verify][lint] flake8 passed`, completes strict mypy, and shows both legacy and
-VSS parameterisations of `tests/unit/test_core_modules_additional.py::
-test_search_stub_backend` succeeding. The run fails later when
-`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback` returns an
-empty placeholder URL, isolating the remaining PR-C work.
-【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
-Minutes later `uv run task coverage EXTRAS="nlp ui vss git distributed analysis
-llm parsers"` halts on the identical fallback assertion, so coverage evidence
-remains anchored to the prior 92.4 % run until the deterministic URL fix lands.
-【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
-The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) therefore
-tracks the fallback repair as the final PR-C step before re-running coverage.
-【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
+The strict typing gate remains green, and the latest release sweeps now finish
+cleanly. At **2025-10-05 03:15 UTC** `uv run task verify` records
+`[verify][lint] flake8 passed`, strict mypy success, and
+`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
+passing, closing PR-C’s deterministic fallback regression and confirming the
+lint sweep is complete.【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
+The matching **03:28 UTC** `uv run task coverage` sweep lands at 92.4 %
+coverage, documents the same fallback assertion passing, and refreshes
+`coverage.xml` for release auditors.
+【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
+The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now treats
+PR-C as complete and elevates TestPyPI reactivation as the next gate.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L314】
 
-TestPyPI remains paused; the release plan and alpha ticket cite the new logs and
-will resume the dry run only after the fallback regression clears.
-【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】【F:issues/prepare-first-alpha-release.md†L1-L39】
+With verify and coverage green, TestPyPI reactivation becomes the remaining
+blocker for the release sweep; the alpha ticket tracks the reactivation work
+using the fresh logs as evidence.【F:docs/v0.1.0a1_preflight_plan.md†L1-L314】
+【F:issues/prepare-first-alpha-release.md†L1-L39】
 
 
 ## Milestones
@@ -137,9 +135,11 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
   resume once verify and coverage pass.
   【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
-- [ ] Dry-run publish to TestPyPI remains on hold per the release plan until
-  the verify and coverage regressions are cleared and the directive to skip the
-  publish stage is lifted.
+- [ ] Dry-run publish to TestPyPI is now the next gate; re-enable the dry run
+  once packaging telemetry is audited against the fresh verify and coverage
+  evidence.
+  【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
+  【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
   【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L7-L10】
 - [x] Archived
   [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],

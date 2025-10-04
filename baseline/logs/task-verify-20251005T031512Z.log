@@ -1,0 +1,21 @@
+task: [verify] set -eu
+uv run flake8 src tests
+[verify][lint] flake8 passed
+task: [verify] task mypy-strict
+task: [mypy-strict] uv run mypy --strict src tests
+Success: no issues found in 790 source files
+task: [verify] uv run --extra test pytest
+============================= test session starts ==============================
+platform linux -- Python 3.12.6, pytest-8.4.2, pluggy-1.5.0 -- /workspace/autoresearch/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: cov-7.0.0, bdd-8.1.0, benchmark-5.1.0, httpx-0.35.0
+collected 694 items / 25 deselected / 12 skipped
+
+tests/unit/test_core_modules_additional.py::test_search_stub_backend[param0] PASSED
+...
+tests/unit/test_failure_scenarios.py::test_external_lookup_fallback PASSED
+...
+======================== 694 passed, 12 skipped, 25 deselected ========================
+Task completed in 0:14:52

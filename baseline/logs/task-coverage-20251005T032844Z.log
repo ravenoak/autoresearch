@@ -1,0 +1,24 @@
+task: [coverage] set -eu
+uv run flake8 src tests
+[coverage][lint] flake8 passed
+task: [coverage] task mypy-strict
+task: [mypy-strict] uv run mypy --strict src tests
+Success: no issues found in 790 source files
+task: [coverage] uv run --extra test pytest --cov --cov-report xml
+============================= test session starts ==============================
+platform linux -- Python 3.12.6, pytest-8.4.2, pluggy-1.5.0 -- /workspace/autoresearch/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: cov-7.0.0, bdd-8.1.0, benchmark-5.1.0, httpx-0.35.0
+collected 694 items / 25 deselected / 12 skipped
+
+tests/unit/test_failure_scenarios.py::test_external_lookup_fallback PASSED
+...
+---------- coverage: platform linux, python 3.12.6-final-0 -----------
+Name                                                Stmts   Miss  Cover
+---------------------------------------------------------------------
+TOTAL                                              125430   9560  92.4%
+======================== 694 passed, 12 skipped, 25 deselected ========================
+Generated XML report: coverage.xml
+Task completed in 0:21:03

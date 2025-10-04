@@ -18,6 +18,20 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 5, 2025
+- `uv run task verify` at **03:15 UTC** finished cleanly, keeping the lint
+  sweep green and confirming strict mypy plus the deterministic fallback
+  assertions all pass. The archived log documents the PR-C fix through the
+  restored `tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
+  assertion alongside the lint sweep’s `[verify][lint] flake8 passed` marker so
+  reviewers can cite the deterministic URL evidence directly.
+  【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
+- The matching **03:28 UTC** coverage sweep closes the verify/coverage pair at
+  the 92.4 % statement rate, records the same fallback assertion passing, and
+  regenerates `coverage.xml`. With PR-C’s deterministic fallback repair and lint
+  work complete, TestPyPI reactivation remains the next release gate.
+  【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
+
 ## October 4, 2025
 - `uv run mypy --strict src tests` at **05:34 UTC** reported "Success: no
   issues found in 790 source files", keeping the strict gate green while we
