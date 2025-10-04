@@ -32,7 +32,9 @@ completing the evidence trail alongside the earlier failing runs.
 
 TestPyPI dry runs remain paused; with the fallback fix validated we will
 re-enable the publish stage before the next release sign-off once the
-downstream gates close.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
+downstream gates close, with the follow-up tracked in
+[reactivate-testpypi-dry-run](reactivate-testpypi-dry-run.md).
+【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
 ## Tasks
 - [x] Finish PR-C by restoring the deterministic fallback URL so the
@@ -46,7 +48,8 @@ downstream gates close.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
   release documentation (`baseline/logs/task-verify-20251005T031512Z.log`,
   `baseline/logs/task-coverage-20251005T032844Z.log`).
 - [ ] Re-run the TestPyPI dry run after enabling the publish flag and archive
-  the resulting log for the release dossier.
+  the resulting log for the release dossier (tracked in
+  [reactivate-testpypi-dry-run](reactivate-testpypi-dry-run.md)).
 - [ ] Schedule the release sign-off review with the approvers, outlining
   agenda and required evidence in this ticket.
 - [ ] Run the release sign-off review with updated evidence and record
