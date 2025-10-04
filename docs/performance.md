@@ -25,6 +25,16 @@ remain zero.
 Running `autoresearch monitor resources` will therefore include ``GPU %`` and
 ``GPU MB`` columns when supported.
 
+## Truthfulness evaluation harness stubs
+
+Draft configuration files in `scripts/evaluate/` will declare shared knobs for
+TruthfulQA, FEVER, and HotpotQA benchmarks so performance runs align with the
+testing playbook. The stubs pin dataset slices, batch sizes, and output layer
+defaults, ensuring layered UX controls (baseline, audit, narrative) stay
+consistent between CLI invocations and automated schedules. When the harness
+automation lands, point monitoring comparisons at the generated artifact
+directories recorded in each stub.
+
 ## Budget-Aware Model Routing
 
 The orchestration layer records per-agent token and latency samples so the
