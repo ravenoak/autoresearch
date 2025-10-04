@@ -5,36 +5,34 @@ As of **October 4, 2025 at 05:34 UTC** the strict typing gate remains green:
 `uv run mypy --strict src tests` again reported “Success: no issues found in
 790 source files”, so we can focus on the remaining pytest regressions before
 rerunning the full release sweep.【c2f747†L1-L2】 A targeted `uv run --extra
-test pytest` sample at **05:31 UTC** fails immediately in
-`tests/unit/test_core_modules_additional.py::test_search_stub_backend` for the
-legacy and VSS-enabled paths; the stub no longer records the expected
-`add_calls` telemetry and the fallback bundle echoes the templated query.
-These findings narrow PR-C while the broader 26-failure set from October 3
-continues to guide the follow-on PRs.【81b49d†L25-L155】【81b49d†L156-L204】
+test pytest` sample at **05:31 UTC** still reproduces the legacy search stub
+fallback drift and guides the PR-C scope.【81b49d†L25-L155】【81b49d†L156-L204】
 【ce87c2†L81-L116】
 
-The release sweep still fails earlier. `uv run task verify
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` halts in flake8
-because Search core imports, behavior fixtures, and storage tests retain
-unused symbols and whitespace debt, and the follow-up `uv run task coverage
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` run stops when the
-legacy path in `tests/unit/test_core_modules_additional.py::
-test_search_stub_backend` no longer records the expected instance
-`add_calls`. The
-[v0.1.0a1 preflight readiness plan](../docs/v0.1.0a1_preflight_plan.md)
-still sequences remediation through PR-A to PR-H, keeping each change review
-sized so we can refresh coverage evidence and restart the release pipeline.
-【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
-【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
+The follow-up release sweeps confirm the lint sweep landed and that PR-C’s
+instrumentation work is in place. At **14:44 UTC** `uv run task verify
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` prints
+`[verify][lint] flake8 passed`, clears strict mypy, and shows both legacy and
+VSS parameterisations of
+`tests/unit/test_core_modules_additional.py::test_search_stub_backend`
+passing before `tests/unit/test_failure_scenarios.py::
+test_external_lookup_fallback` fails with an empty placeholder URL.
+【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+The paired coverage sweep at **14:45 UTC** stops on the same assertion, so the
+preflight plan now treats the deterministic fallback URL as the last PR-C step
+before coverage can refresh.
+【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
-TestPyPI dry runs remain paused; we will capture fresh verify and coverage logs
-after the lint and search instrumentation regressions clear before re-enabling
-the publish stage.【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
+TestPyPI dry runs remain paused; once the fallback fix lands we will capture
+fresh verify and coverage logs and re-enable the publish stage before the next
+release sign-off.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
 ## Tasks
-- [ ] Ship PR-A through PR-H from the refreshed preflight plan to restore a
-  green pytest suite.
+- [ ] Finish PR-C by restoring the deterministic fallback URL so the
+  remaining search failure clears.
+- [x] Confirm the lint sweep landed via the latest `task verify` run.
+- [ ] Ship PR-A, PR-B, and PR-D through PR-H from the refreshed preflight
+  plan to restore a green pytest suite.
 - [ ] Capture fresh verify and coverage logs once the suite passes and update
   release documentation.
 - [ ] Re-enable the TestPyPI dry run and document the result after the

@@ -18,26 +18,26 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The strict typing gate remains green, but the latest release sweeps still
-stall earlier. At **2025-10-04 01:56 UTC** `uv run task verify
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` fails in flake8
-because Search core imports, behavior fixtures, and storage tests retain
-unused symbols and whitespace debt. Minutes later `uv run task coverage
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` stops when the
-legacy branch of `tests/unit/test_core_modules_additional.py::
-test_search_stub_backend` no longer records the expected instance
-`add_calls`, keeping coverage frozen at the previous 92.4 % evidence. The
-[v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) still sequences
-lint and search instrumentation repairs through PR-A to PR-H before coverage
-can refresh.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
-【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
-【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
+The strict typing gate remains green, and the latest release sweeps now reach
+the coverage stage. At **2025-10-04 14:44 UTC** `uv run task verify
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` prints
+`[verify][lint] flake8 passed`, completes strict mypy, and shows both legacy and
+VSS parameterisations of `tests/unit/test_core_modules_additional.py::
+test_search_stub_backend` succeeding. The run fails later when
+`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback` returns an
+empty placeholder URL, isolating the remaining PR-C work.
+【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+Minutes later `uv run task coverage EXTRAS="nlp ui vss git distributed analysis
+llm parsers"` halts on the identical fallback assertion, so coverage evidence
+remains anchored to the prior 92.4 % run until the deterministic URL fix lands.
+【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
+The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) therefore
+tracks the fallback repair as the final PR-C step before re-running coverage.
+【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
-TestPyPI remains paused by default; the release plan and alpha ticket now cite
-the October 4 verify and coverage logs and will resume the dry run only after
-the lint and legacy search regressions clear.
-【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
-【F:issues/prepare-first-alpha-release.md†L1-L32】
+TestPyPI remains paused; the release plan and alpha ticket cite the new logs and
+will resume the dry run only after the fallback regression clears.
+【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】【F:issues/prepare-first-alpha-release.md†L1-L39】
 
 
 ## Milestones
