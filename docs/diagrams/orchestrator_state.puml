@@ -2,11 +2,15 @@
 skinparam dpi 150
 skinparam monochrome true
 
+title PRDV Loop State Machine
+
 [*] --> Idle
-Idle --> Preparing : start()
-Preparing --> Running : launch()
-Running --> Complete : finish()
-Running --> Error : fail()
+Idle --> Planning : start()
+Planning --> Researching : planner_complete
+Researching --> Debating : evidence_conflict
+Researching --> Validating : evidence_sufficient
+Debating --> Validating : consensus_reached
+Validating --> Complete : criteria_met
+Validating --> Researching : needs_more_evidence
 Complete --> [*]
-Error --> [*]
 @enduml

@@ -198,8 +198,27 @@ def simulate_prdv_planner_flow() -> PlannerTelemetryContext:
     payload["explanation"] = "Ensure telemetry demonstrates readiness ordering"
     plan_task["tool_affinity"] = plan_task.get("affinity", {})
     plan_task["objectives"] = plan_task.get("sub_questions", [])
+    plan_task["dependency_depth"] = 0
+    plan_task["socratic_checks"] = [
+        "What would invalidate the planning outline?",
+        "How can the scope slip unnoticed?",
+    ]
     research_task["tool_affinity"] = research_task.get("affinity", {})
     research_task["exit_criteria"] = research_task.get("criteria", [])
+    research_task["dependency_depth"] = 1
+    research_task["dependency_rationale"] = "Requires plan approval before research."
+    research_task["self_check"] = {
+        "risks": ["Could critical sources contradict each other?"],
+        "tests": "Cross-compare retrieval snippets",
+    }
+    payload["dependency_overview"] = [
+        {
+            "task": "research",
+            "depends_on": ["plan"],
+            "depth": 1,
+            "rationale": "Research cannot start without the plan",
+        }
+    ]
     warnings: list[dict[str, Any]] = state.set_task_graph(payload)
     state.record_planner_trace(
         prompt="Plan the PRDV cycle",
@@ -256,6 +275,8 @@ def assert_prdv_telemetry_snapshot(prdv_context: PlannerTelemetryContext) -> Non
     assert telemetry["objectives"] == ["Deliver planner-coordinator telemetry"]
     assert telemetry["exit_criteria"] == ["All phases recorded"]
     assert telemetry["tasks"], "Planner tasks should be tracked"
+    assert telemetry["tasks"][0]["socratic_checks"], "Socratic checks should persist"
+    assert telemetry["dependency_overview"][0]["depth"] == 1
     coordinator_meta = state.metadata["coordinator"]
     assert coordinator_meta["decisions"], "Coordinator decisions should persist"
     last_decision = coordinator_meta["decisions"][-1]

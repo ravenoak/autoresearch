@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import heapq
 import time
+import re
 from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
@@ -31,24 +32,36 @@ class TaskCoordinator:
         self._tasks: Dict[str, dict[str, Any]] = {
             task["id"]: dict(task) for task in tasks_payload if isinstance(task, Mapping)
         }
-        for task in self._tasks.values():
+        self._provided_depth: Dict[str, int] = {}
+        for task_id, task in self._tasks.items():
             metadata_payload = task.get("metadata")
             task["metadata"] = self._adapt_metadata(metadata_payload)
+            depth_value = self._coerce_depth(task.get("dependency_depth"))
+            if depth_value is not None:
+                self._provided_depth[task_id] = depth_value
         self._status: Dict[str, TaskStatus] = {
             task_id: TaskStatus.PENDING for task_id in self._tasks
         }
         self._step_counter: Dict[str, int] = {task_id: 0 for task_id in self._tasks}
         self._dependency_cache: Dict[str, List[str]] = {
-            task_id: list(task.get("depends_on", [])) for task_id, task in self._tasks.items()
+            task_id: [
+                dep
+                for dep in self._coerce_dependency_list(task.get("depends_on"))
+                if dep in self._tasks
+            ]
+            for task_id, task in self._tasks.items()
         }
         self._dependents: Dict[str, List[str]] = {}
         for task_id, dependencies in self._dependency_cache.items():
             for dependency in dependencies:
                 self._dependents.setdefault(dependency, []).append(task_id)
         self._dependency_depth: Dict[str, int] = self._compute_dependency_depths()
+        for task_id, provided_depth in self._provided_depth.items():
+            baseline = self._dependency_depth.get(task_id, 0)
+            self._dependency_depth[task_id] = max(baseline, provided_depth)
         self._affinity_map: Dict[str, Dict[str, float]] = {}
         for task_id, task in self._tasks.items():
-            affinity_payload = task.get("affinity")
+            affinity_payload = task.get("affinity") or task.get("tool_affinity")
             if isinstance(affinity_payload, Mapping):
                 self._affinity_map[task_id] = {
                     str(tool): float(score)
@@ -344,11 +357,19 @@ class TaskCoordinator:
         metadata = (
             dict(metadata_payload) if isinstance(metadata_payload, Mapping) else {}
         )
+        provided_depth = self._coerce_depth(task.get("dependency_depth"))
+        dependency_depth = (
+            provided_depth if provided_depth is not None else self._dependency_depth.get(task_id, 0)
+        )
+        socratic_checks = self._coerce_socratic_checks(
+            task.get("socratic_checks") or task.get("self_check")
+        )
+        dependency_rationale = self._coerce_text(task.get("dependency_rationale"))
         return TaskGraphNode(
             id=task_id,
             question=str(task.get("question", "")),
             ready=ready,
-            dependency_depth=self._dependency_depth.get(task_id, 0),
+            dependency_depth=dependency_depth,
             pending_dependencies=pending_deps,
             affinity=affinity,
             status=status,
@@ -356,6 +377,8 @@ class TaskCoordinator:
             criteria=criteria,
             explanation=explanation,
             metadata=metadata,
+            socratic_checks=socratic_checks,
+            dependency_rationale=dependency_rationale,
         )
 
     def _scheduler_snapshot(self, focus_task: str) -> Dict[str, Any]:
@@ -388,6 +411,68 @@ class TaskCoordinator:
             return str(value)
 
         return {str(key): adapt_value(val) for key, val in metadata.items()}
+
+    @staticmethod
+    def _coerce_dependency_list(value: Any) -> List[str]:
+        """Return a stable list of dependency identifiers."""
+
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            return [segment.strip() for segment in re.split(r",|;|/|\n", value) if segment.strip()]
+        if value is None:
+            return []
+        return [str(value).strip()] if str(value).strip() else []
+
+    @staticmethod
+    def _coerce_depth(value: Any) -> int | None:
+        """Return a non-negative integer depth when available."""
+
+        if value is None:
+            return None
+        try:
+            depth = int(value)
+        except (TypeError, ValueError):
+            return None
+        return depth if depth >= 0 else None
+
+    @staticmethod
+    def _coerce_text(value: Any) -> str | None:
+        """Return a trimmed string when ``value`` is textual."""
+
+        if isinstance(value, str):
+            trimmed = value.strip()
+            return trimmed or None
+        if value is None:
+            return None
+        return str(value).strip() or None
+
+    @classmethod
+    def _coerce_socratic_checks(cls, value: Any) -> List[str]:
+        """Flatten Socratic self-check payloads into string prompts."""
+
+        if isinstance(value, Mapping):
+            collected: list[str] = []
+            for key, item in value.items():
+                prefix = str(key).strip()
+                for prompt in cls._coerce_socratic_checks(item):
+                    if prefix and not prompt.lower().startswith(prefix.lower()):
+                        collected.append(f"{prefix}: {prompt}")
+                    else:
+                        collected.append(prompt)
+            return collected
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            flattened: list[str] = []
+            for item in value:
+                flattened.extend(cls._coerce_socratic_checks(item))
+            return flattened
+        if isinstance(value, str):
+            parts = [segment.strip() for segment in re.split(r"\n|;|\|", value)]
+            return [segment for segment in parts if segment]
+        if value is None:
+            return []
+        text = str(value).strip()
+        return [text] if text else []
 
     def replay_traces(self, task_id: Optional[str] = None) -> List[dict[str, Any]]:
         """Return captured traces for optional replay."""

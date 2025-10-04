@@ -1,153 +1,63 @@
 @startuml
-title Orchestration Component
+skinparam monochrome true
+skinparam dpi 150
+title PRDV Orchestration Overview
 
-package "Orchestration" {
-  class Orchestrator {
-    + {static} run_query(query, config, callbacks, agent_factory, storage_manager): QueryResponse
-    + {static} run_parallel_query(query, config, agent_groups): QueryResponse
-    - {static} _parse_config(config): Dict
+package "Planning" {
+  class PlannerPromptBuilder {
+    +build(): str
+    -base_prompt: str
+    -dependency_overview: List
+    -socratic_checks: List
   }
 
-  class OrchestrationUtils {
-    + {static} get_agent(agent_name, agent_factory): Agent
-    + {static} check_agent_can_execute(agent, agent_name, state, config): bool
-    + {static} log_agent_execution(agent_name, state, loop): void
-    + {static} call_agent_start_callback(agent_name, state, callbacks): void
-    + {static} execute_agent_with_token_counting(agent, agent_name, state, config, metrics): Dict
-    + {static} handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop): void
-    + {static} log_sources(agent_name, result): void
-    + {static} persist_claims(agent_name, result, storage_manager): void
-    + {static} handle_agent_error(agent_name, e, state, metrics): void
-    + {static} execute_agent(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop): void
-    + {static} execute_cycle(loop, loops, agents, primus_index, max_errors, state, config, metrics, callbacks, agent_factory, storage_manager, tracer): int
-    + {static} execute_with_adapter(agent, state, config, adapter): Dict
-    + {static} rotate_list(items, start_idx): List
-    + {static} capture_token_usage(agent_name, metrics, config): Iterator
-    + {static} categorize_error(exc): str
-    + {static} apply_recovery_strategy(agent, category, exc, state): Dict
-    + {static} apply_adaptive_token_budget(config, query): void
-    + {static} get_memory_usage(): float
-    + {static} calculate_result_confidence(result): float
-  }
-
-  class QueryState {
-    + query: str
-    + cycle: int
-    + primus_index: int
-    + results: Dict
-    + metadata: Dict
-    + error_count: int
-    + update(result): void
-    + add_error(error_info): void
-    + synthesize(): QueryResponse
-  }
-
-  class OrchestrationMetrics {
-    + start_cycle(): void
-    + end_cycle(): void
-    + record_agent_timing(agent_name, duration): void
-    + record_token_usage(agent_name, tokens): void
-    + record_error(agent_name): void
-    + get_summary(): Dict
-  }
-
-  enum ReasoningMode {
-    DIRECT
-    DIALECTICAL
-    CHAIN_OF_THOUGHT
-  }
-
-  class ChainOfThoughtStrategy {
-    + run_query(query, config, agent_factory): QueryResponse
-  }
-  class RayExecutor {
-    + run_query(query, callbacks): QueryResponse
+  class TaskGraph {
+    +from_planner_output(payload)
+    +tasks: List[TaskNode]
+    +metadata: Dict
+    +dependency_overview: List
   }
 }
 
-package "Agents" {
-  interface Agent {
-    + execute(state, config): Dict
-    + can_execute(state, config): bool
+package "Execution" {
+  class TaskCoordinator {
+    +schedule_next(preferred_tool)
+    +record_react_step(...)
+    -_provided_depth: Dict
+    -_affinity_map: Dict
   }
 
-  class AgentFactory {
-    + {static} get(agent_name): Agent
-  }
-}
-
-package "Storage" {
-  class StorageManager {
-    + persist_claim(claim): void
-  }
-
-  class KGReasoning {
-    + run_ontology_reasoner(store, engine): None
+  class PRDVLoop {
+    +plan()
+    +research()
+    +debate()
+    +validate()
   }
 }
 
-package "Models" {
-  class QueryResponse {
-    + answer: str
-    + citations: List
-    + reasoning: List
-    + metrics: Dict
-  }
-
-  class Visualization {
-    + save_knowledge_graph(result, path): None
-  }
+class QueryState {
+  +set_task_graph(graph)
+  +metadata: Dict
+  +react_traces: List
 }
 
-package "LLM" {
-  class TokenCountingAdapter {
-    + generate(prompt, model, temperature): str
-  }
-}
+PlannerPromptBuilder --> TaskGraph : emits JSON
+TaskGraph --> QueryState : normalised
+QueryState --> TaskCoordinator : hydrates nodes
+TaskCoordinator --> PRDVLoop : schedules phases
+PRDVLoop --> QueryState : records telemetry
 
-package "Errors" {
-  class OrchestrationError
-  class AgentError
-  class NotFoundError
-  class TimeoutError
-}
+note right of PlannerPromptBuilder
+  Emits dependency_overview and
+  socratic_checks to stress-test
+  each task before execution.
+end note
 
-' Relationships
-Orchestrator --> QueryState: creates and updates
-Orchestrator --> OrchestrationMetrics: records metrics
-Orchestrator --> ReasoningMode: uses
-Orchestrator --> ChainOfThoughtStrategy: delegates to
-Orchestrator --> Agent: executes
-Orchestrator --> AgentFactory: gets agents from
-Orchestrator --> StorageManager: persists claims
-StorageManager --> KGReasoning: run_ontology_reasoner
-Orchestrator --> KGReasoning: run_reasoner
-Orchestrator --> QueryResponse: returns
-Orchestrator --> TokenCountingAdapter: uses for token counting
-Orchestrator --> Visualization: visualize_results
-Orchestrator --> OrchestrationError: throws
-Orchestrator --> AgentError: throws
-Orchestrator --> NotFoundError: throws
-Orchestrator --> TimeoutError: throws
-RayExecutor --> QueryState: maintains state
-RayExecutor --> AgentFactory: gets agents from
-RayExecutor --> Agent: executes
-
-QueryState --> QueryResponse: synthesizes
-
-' Execution flow
-note right of Orchestrator
-  Execution Flow:
-  1. run_query() parses config and initializes state
-  2. For each loop:
-     a. _execute_cycle() rotates agents and executes them
-     b. For each agent:
-        i. _execute_agent() gets agent and checks if it can execute
-        ii. _execute_agent_with_token_counting() executes agent with token counting
-        iii. _handle_agent_completion() processes result
-        iv. _persist_claims() stores claims
-        v. run_reverification() extracts claims, retries audits, and persists updates
-  3. State is synthesized into QueryResponse
+note right of TaskCoordinator
+  Combines planner-provided
+  dependency_depth with live
+  readiness checks and tool
+  affinity preferences.
 end note
 
 @enduml

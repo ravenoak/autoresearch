@@ -29,6 +29,9 @@ class TaskNodePayload(TypedDict, total=False):
     metadata: Dict[str, Any]
     sub_questions: List[str]
     explanation: str
+    dependency_depth: int
+    dependency_rationale: str
+    socratic_checks: List[str]
 
 
 class TaskGraphPayload(TypedDict, total=False):
@@ -69,6 +72,9 @@ class TaskNode:
     metadata: Dict[str, Any] = field(default_factory=dict)
     sub_questions: List[str] | None = None
     explanation: str | None = None
+    dependency_depth: int | None = None
+    dependency_rationale: str | None = None
+    socratic_checks: List[str] = field(default_factory=list)
 
     def to_payload(self) -> TaskNodePayload:
         """Convert the node into a serialisable payload."""
@@ -86,6 +92,12 @@ class TaskNode:
             payload["sub_questions"] = list(self.sub_questions)
         if self.explanation:
             payload["explanation"] = self.explanation
+        if self.dependency_depth is not None:
+            payload["dependency_depth"] = int(self.dependency_depth)
+        if self.dependency_rationale:
+            payload["dependency_rationale"] = self.dependency_rationale
+        if self.socratic_checks:
+            payload["socratic_checks"] = list(self.socratic_checks)
         return payload
 
 
@@ -104,6 +116,8 @@ class TaskGraphNode:
     criteria: List[str] = field(default_factory=list)
     explanation: str | None = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    socratic_checks: List[str] = field(default_factory=list)
+    dependency_rationale: str | None = None
 
     def max_affinity(self) -> float:
         """Return the maximum affinity score across known tools."""
@@ -140,6 +154,8 @@ class TaskGraphNode:
             "explanation": self.explanation,
             "max_affinity": self.max_affinity(),
             "metadata": dict(self.metadata),
+            "socratic_checks": list(self.socratic_checks),
+            "dependency_rationale": self.dependency_rationale,
         }
 
 
@@ -195,6 +211,16 @@ class TaskGraph:
             affinity = _coerce_affinity(
                 node.get("affinity") or node.get("tool_affinity")
             )
+            raw_depth = node.get("dependency_depth")
+            if raw_depth is None:
+                raw_depth = node.get("depth")
+            dependency_depth = _coerce_int(raw_depth)
+            dependency_rationale = _coerce_text(
+                node.get("dependency_rationale") or node.get("dependency_note")
+            )
+            socratic_checks = _coerce_socratic_checks(
+                node.get("socratic_checks") or node.get("self_check")
+            )
             metadata_field = node.get("metadata")
             task_metadata = (
                 dict(metadata_field) if isinstance(metadata_field, Mapping) else {}
@@ -216,6 +242,9 @@ class TaskGraph:
                     metadata=task_metadata,
                     sub_questions=sub_questions or None,
                     explanation=explanation,
+                    dependency_depth=dependency_depth,
+                    dependency_rationale=dependency_rationale,
+                    socratic_checks=socratic_checks,
                 )
             )
 
@@ -236,6 +265,13 @@ class TaskGraph:
             metadata = dict(metadata_payload)
         else:
             metadata = {}
+
+        dependency_overview = _coerce_dependency_overview(
+            payload.get("dependency_overview")
+            or metadata.get("dependency_overview")
+        )
+        if dependency_overview:
+            metadata["dependency_overview"] = dependency_overview
 
         objectives = _coerce_strings(payload.get("objectives"))
         exit_criteria = _coerce_strings(payload.get("exit_criteria"))
@@ -306,6 +342,100 @@ def _coerce_tools(value: Any) -> List[str]:
     if isinstance(value, Mapping):
         return [str(name).strip() for name in value.keys() if str(name).strip()]
     return _coerce_strings(value, split_pattern=r",|;|/|\n|\band\b")
+
+
+def _coerce_int(value: Any) -> int | None:
+    """Return a non-negative integer if ``value`` can be coerced."""
+
+    if value is None:
+        return None
+    try:
+        integer = int(value)
+    except (TypeError, ValueError):
+        return None
+    if integer < 0:
+        return None
+    return integer
+
+
+def _coerce_text(value: Any) -> str | None:
+    """Return a trimmed string if ``value`` is text-like."""
+
+    if isinstance(value, str):
+        trimmed = value.strip()
+        return trimmed or None
+    if value is None:
+        return None
+    return str(value).strip() or None
+
+
+def _coerce_socratic_checks(value: Any) -> List[str]:
+    """Return Socratic self-check prompts from planner payloads."""
+
+    if isinstance(value, Mapping):
+        collected: List[str] = []
+        for key, item in value.items():
+            prefix = str(key).strip()
+            nested_prompts = _coerce_socratic_checks(item)
+            for prompt in nested_prompts:
+                if prefix and not prompt.lower().startswith(prefix.lower()):
+                    collected.append(f"{prefix}: {prompt}")
+                else:
+                    collected.append(prompt)
+        return collected
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        flattened: List[str] = []
+        for item in value:
+            flattened.extend(_coerce_socratic_checks(item))
+        return flattened
+    if isinstance(value, str):
+        parts = [segment.strip() for segment in re.split(r"\n|;|\|", value)]
+        return [segment for segment in parts if segment]
+    if value is None:
+        return []
+    text = str(value).strip()
+    return [text] if text else []
+
+
+def _coerce_dependency_overview(value: Any) -> List[Dict[str, Any]]:
+    """Return a sanitised dependency overview payload."""
+
+    if value is None:
+        return []
+    entries: List[Dict[str, Any]] = []
+    items: Iterable[Any]
+    if isinstance(value, Mapping):
+        items = [value]
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        items = value
+    else:
+        return []
+    for item in items:
+        if not isinstance(item, Mapping):
+            continue
+        task_id = _coerce_text(item.get("task") or item.get("id"))
+        depends_on = _coerce_strings(item.get("depends_on"))
+        depth_value = item.get("depth")
+        if depth_value is None:
+            depth_value = item.get("dependency_depth")
+        depth = _coerce_int(depth_value)
+        rationale = _coerce_text(
+            item.get("rationale")
+            or item.get("dependency_rationale")
+            or item.get("note")
+        )
+        entry: Dict[str, Any] = {}
+        if task_id:
+            entry["task"] = task_id
+        if depends_on:
+            entry["depends_on"] = depends_on
+        if depth is not None:
+            entry["depth"] = depth
+        if rationale:
+            entry["rationale"] = rationale
+        if entry:
+            entries.append(entry)
+    return entries
 
 
 def _parse_affinity_token(token: str) -> tuple[str, float] | None:
