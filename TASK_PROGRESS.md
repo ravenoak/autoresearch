@@ -8,21 +8,22 @@ still reflects the templated prompt, confirming PR-C must repair backend
 instrumentation before other failures can be measured.【81b49d†L25-L155】
 【81b49d†L156-L204】
 
-As of **2025-10-04 at 01:57 UTC** the verify gate remains red: flake8 still
-flags unused imports, blank-line drift, and trailing whitespace across
-Search, behavior, integration, and storage suites during
-`uv run task verify EXTRAS="nlp ui vss git distributed analysis llm
-parsers"`.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
-The paired coverage run fails moments later when
-`tests/unit/test_core_modules_additional.py::test_search_stub_backend`
-detects that the legacy lookup path no longer records the expected
-instance `add_calls`, so the telemetry parity assertion trips before
-`coverage.xml` can update.
-【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
-The release plan and alpha ticket capture the pause on TestPyPI and link
-the fresh logs for auditability while we triage the lint and search
-instrumentation regressions.【F:docs/release_plan.md†L1-L64】
-【F:issues/prepare-first-alpha-release.md†L1-L32】
+As of **2025-10-04 at 14:44 UTC** the verify gate remains red, but the
+lint sweep has landed: `uv run task verify EXTRAS="nlp ui vss git
+distributed analysis llm parsers"` now prints `[verify][lint] flake8
+passed`, strict mypy completes, and both legacy and VSS parameterisations
+of `tests/unit/test_core_modules_additional.py::test_search_stub_backend`
+pass. The run instead stops when
+`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
+observes an empty placeholder URL, confirming PR-C’s instrumentation fix
+and isolating the remaining fallback regression.
+【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+The paired coverage sweep at **14:45 UTC** fails on the identical
+assertion, so coverage evidence still points to the prior 92.4 % run
+until the deterministic URL fix lands.【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
+The release plan and alpha ticket cite the new logs and keep TestPyPI on
+hold until the fallback regression clears.
+【F:docs/release_plan.md†L1-L69】【F:issues/prepare-first-alpha-release.md†L1-L39】
 
 As of **2025-10-03 at 22:37 UTC** the strict typing gate is still green and
 the pytest suite remains red. `uv run mypy --strict src tests` reported

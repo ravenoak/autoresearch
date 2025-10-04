@@ -1,0 +1,782 @@
+task: [verify] set -eu
+extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
+export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  $(printf ' --extra %s' $extras) \
+  
+
+Resolved 328 packages in 6ms
+Downloading ray (66.9MiB)
+Downloading pydeck (6.6MiB)
+Downloading marisa-trie (1.2MiB)
+Downloading srsly (1.1MiB)
+Downloading pandas (11.4MiB)
+Downloading spacy (32.4MiB)
+Downloading polars (37.9MiB)
+Downloading blis (11.1MiB)
+Downloading language-data (5.1MiB)
+Downloading pyarrow (40.8MiB)
+Downloading pillow (6.3MiB)
+Downloading hf-xet (3.0MiB)
+Downloading tokenizers (3.1MiB)
+Downloading sympy (6.0MiB)
+Downloading streamlit (9.6MiB)
+Downloading thinc (4.1MiB)
+Downloading litellm (8.7MiB)
+Downloading onnxruntime (16.5MiB)
+Downloading duckdb-extension-vss (15.7MiB)
+ Downloading marisa-trie
+   Building madoka==0.7.1
+ Downloading srsly
+ Downloading hf-xet
+ Downloading tokenizers
+ Downloading pydeck
+ Downloading thinc
+ Downloading pillow
+ Downloading blis
+ Downloading duckdb-extension-vss
+ Downloading streamlit
+ Downloading onnxruntime
+ Downloading language-data
+ Downloading litellm
+ Downloading polars
+ Downloading sympy
+ Downloading pandas
+ Downloading pyarrow
+ Downloading spacy
+ Downloading ray
+      Built madoka==0.7.1
+Prepared 70 packages in 21.51s
+Installed 70 packages in 164ms
+ + alembic==1.16.5
+ + altair==5.5.0
+ + asyncer==0.0.8
+ + backoff==2.2.1
+ + blinker==1.9.0
+ + blis==1.3.0
+ + catalogue==2.0.10
+ + cloudpathlib==0.22.0
+ + cloudpickle==3.1.1
+ + coloredlogs==15.0.1
+ + colorlog==6.9.0
+ + confection==0.1.5
+ + cymem==2.0.11
+ + diskcache==5.6.3
+ + dspy==3.0.3
+ + dspy-ai==3.0.3
+ + duckdb-extension-vss==1.3.2
+ + fastembed==0.7.3
+ + fastuuid==0.13.5
+ + filelock==3.19.1
+ + flatbuffers==25.9.23
+ + fsspec==2025.9.0
+ + gepa==0.0.7
+ + gitdb==4.0.12
+ + gitpython==3.1.45
+ + hf-xet==1.1.10
+ + huggingface-hub==0.35.1
+ + humanfriendly==10.0
+ + jinja2==3.1.6
+ + joblib==1.5.2
+ + json-repair==0.51.0
+ + langcodes==3.5.0
+ + language-data==1.3.0
+ + litellm==1.77.4
+ + madoka==0.7.1
+ + magicattr==0.1.6
+ + marisa-trie==1.3.1
+ + mmh3==5.2.0
+ + mpmath==1.3.0
+ + msgpack==1.1.1
+ + murmurhash==1.0.13
+ + narwhals==2.5.0
+ + onnxruntime==1.23.0
+ + optuna==4.5.0
+ + pandas==2.3.2
+ + pillow==11.3.0
+ + polars==1.33.1
+ + pondpond==1.4.1
+ + preshed==3.0.10
+ + py-rust-stemmers==0.1.5
+ + pyarrow==21.0.0
+ + pydeck==0.9.1
+ + pytz==2025.2
+ + ray==2.49.2
+ + smart-open==7.3.1
+ + smmap==5.0.2
+ + spacy==3.8.7
+ + spacy-legacy==3.0.12
+ + spacy-loggers==1.0.5
+ + srsly==2.5.1
+ + streamlit==1.50.0
+ + sympy==1.14.0
+ + thinc==8.3.6
+ + tokenizers==0.22.1
+ + toml==0.10.2
+ + tornado==6.5.2
+ + tzdata==2025.2
+ + wasabi==1.1.3
+ + watchdog==6.0.0
+ + weasel==0.4.1
+task: [verify] task check-env EXTRAS="dev-minimal test nlp ui vss git distributed analysis llm parsers"
+task: [check-env] task --version
+3.45.4
+task: [check-env] uv run python scripts/check_env.py
+Verifying extras: analysis, dev-minimal, distributed, git, llm, nlp, parsers, test, ui, vss
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+GitPython 3.1.45
+a2a-sdk 0.3.7
+black 25.9.0
+dspy-ai 3.0.3
+duckdb 1.3.2
+duckdb-extension-vss 1.3.2
+fakeredis 2.31.3
+fastembed 0.7.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.2
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+pillow 11.3.0
+polars 1.33.1
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+ray 2.49.2
+redis 6.4.0
+responses 0.25.8
+spacy 3.8.7
+streamlit 1.50.0
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20250822
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+task: [verify] set -eu
+uv run flake8 src tests
+echo "[verify][lint] flake8 passed"
+
+[verify][lint] flake8 passed
+task: [verify] task mypy-strict
+task: [mypy-strict] uv run mypy --strict src tests
+Success: no issues found in 790 source files
+task: [verify] echo "[verify][mypy] strict suite passed"
+[verify][mypy] strict suite passed
+task: [verify] task lint-specs
+task: [lint-specs] uv run python scripts/lint_specs.py
+task: [verify] echo "[verify][lint] spec lint passed"
+[verify][lint] spec lint passed
+task: [verify] task check-release-metadata
+task: [check-release-metadata] uv run python scripts/check_release_metadata.py
+Release metadata aligned: version=0.1.0a1, date=Unreleased
+task: [verify] uv run python scripts/check_spec_tests.py
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+   --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers \
+  
+
+Resolved 328 packages in 6ms
+Audited 246 packages in 0.41ms
+task: [coverage] echo "[coverage] erasing previous data"
+[coverage] erasing previous data
+task: [coverage] uv run coverage erase
+task: [coverage] echo "[coverage] running unit tests"
+[coverage] running unit tests
+task: [coverage] uv run pytest -vv --maxfail=1 --durations=10 -x tests/unit -m 'not slow' \
+  --cov=src --cov-report=term-missing --cov-append
+
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: langsmith-0.4.31, hypothesis-6.140.2, anyio-4.11.0, httpx-0.35.0, cov-7.0.0, benchmark-5.1.0, bdd-8.1.0
+collecting ... collected 1109 items / 25 deselected / 1084 selected
+
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_storage_defaults PASSED                                                     [  0%]
+tests/unit/config/test_loader_types.py::test_minimum_resident_nodes_default_without_warning PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/config/test_loader_types.py::test_config_model_deep_copy_preserves_storage_settings PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  1%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_decodes_prometheus_payload PASSED                     [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_coerces_bytearray PASSED                              [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_memoryview PASSED                             [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_replaces_invalid_bytes PASSED                         [  2%]
+tests/unit/monitor/test_metrics_endpoint.py::test_metrics_endpoint_handles_failure PASSED                                [  2%]
+tests/unit/orchestration/test_answer_audit.py::test_answer_auditor_hedges_unsupported_claims PASSED                      [  2%]
+tests/unit/orchestration/test_auto_mode.py::test_auto_mode_returns_direct_answer_when_gate_exits PASSED                  [  2%]
+tests/unit/orchestration/test_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops PASSED           [  2%]
+tests/unit/orchestration/test_auto_mode.py::test_metrics_record_gate_decision_telemetry PASSED                           [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  2%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  3%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  3%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  3%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_respects_force_debate_override PASSED                      [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_flags_coverage_gap_and_confidence PASSED                   [  3%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_applies_graph_thresholds PASSED                            [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_summary_uses_typed_floats PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_build_skips_empty_payload PASSED                      [  3%]
+tests/unit/orchestration/test_metrics_graph_summary.py::test_graph_ingestion_saved_payload_is_sanitized PASSED           [  3%]
+tests/unit/orchestration/test_model_routing.py::test_routing_records_constraints_without_switching PASSED                [  4%]
+tests/unit/orchestration/test_model_routing.py::test_summary_reports_agent_constraints PASSED                            [  4%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  4%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  4%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  4%]
+tests/unit/orchestration/test_package_exports.py::test_agent_factory_export PASSED                                       [  4%]
+tests/unit/orchestration/test_package_exports.py::test_agent_registry_export PASSED                                      [  4%]
+tests/unit/orchestration/test_package_exports.py::test_orchestrator_export PASSED                                        [  4%]
+tests/unit/orchestration/test_package_exports.py::test_storage_manager_export PASSED                                     [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout PASSED                  [  4%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail PASSED                           [  4%]
+tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant PASSED                          [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_cloudpickle_serialization_preserves_fields PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_clone_produces_independent_copies PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_model_copy_deep_clone_separates_mutable_data PASSED [  5%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_registry_update_refreshes_snapshots PASSED       [  5%]
+tests/unit/orchestration/test_reverify.py::test_reverify_extracts_claims_and_retries PASSED                              [  5%]
+tests/unit/orchestration/test_reverify.py::test_reverify_supplies_fact_checker_defaults PASSED                           [  5%]
+tests/unit/orchestration/test_reverify.py::test_reverify_respects_fact_checker_opt_out PASSED                            [  5%]
+tests/unit/orchestration/test_state_registry.py::test_register_and_clone_preserve_lock_and_metadata_types PASSED         [  5%]
+tests/unit/orchestration/test_state_registry.py::test_config_model_deep_copy_with_embedded_lock PASSED                   [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_replaces_snapshot_and_preserves_lock_integrity PASSED       [  5%]
+tests/unit/orchestration/test_state_registry.py::test_update_creates_snapshot_when_missing_identifier PASSED             [  6%]
+tests/unit/orchestration/test_state_registry.py::test_registry_round_trip_rehydrates_state_with_fresh_lock PASSED        [  6%]
+tests/unit/orchestration/test_task_coordinator.py::test_task_coordinator_schedules_dependencies PASSED                   [  6%]
+tests/unit/orchestration/test_task_coordinator.py::test_schedule_next_applies_tie_breakers PASSED                        [  6%]
+tests/unit/orchestration/test_task_graph_enhancements.py::test_task_graph_from_planner_output_preserves_dependency_metadata PASSED [  6%]
+tests/unit/orchestration/test_task_graph_enhancements.py::test_query_state_normalises_socratic_checks_and_overview PASSED [  6%]
+tests/unit/orchestration/test_task_graph_enhancements.py::test_task_coordinator_uses_depth_and_affinity PASSED           [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_adapter_kwarg PASSED                                     [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_mutation_hooks_restores_original PASSED                  [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_without_adapter_hooks PASSED                                  [  6%]
+tests/unit/orchestration/test_token_utils.py::test_execute_raises_for_non_mapping_result PASSED                          [  7%]
+tests/unit/orchestration/test_token_utils.py::test_type_guards_detect_adapter_features PASSED                            [  7%]
+tests/unit/orchestration/test_token_utils.py::test_is_agent_execution_result_guard PASSED                                [  7%]
+tests/unit/orchestration/test_utils_confidence.py::test_metrics_snapshot_parses_token_usage PASSED                       [  7%]
+tests/unit/orchestration/test_utils_confidence.py::test_confidence_adjusts_with_metrics_payload PASSED                   [  7%]
+tests/unit/orchestration/test_utils_confidence.py::test_graph_metrics_payload_is_sanitized PASSED                        [  7%]
+tests/unit/search/test_adaptive_rewrite.py::test_external_lookup_triggers_query_rewrite PASSED                           [  7%]
+tests/unit/search/test_adaptive_rewrite.py::test_external_lookup_adaptive_k_increases_fetch PASSED                       [  7%]
+tests/unit/search/test_adaptive_rewrite.py::test_query_strategy_markers_disabled PASSED                                  [  7%]
+tests/unit/search/test_adaptive_rewrite.py::test_self_critique_markers_disabled PASSED                                   [  7%]
+tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking PASSED                                   [  7%]
+tests/unit/search/test_query_expansion_convergence.py::test_query_expansion_converges PASSED                             [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_reset_instance_creates_new_singleton PASSED                  [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_extract_entities_with_spacy PASSED                           [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_build_topic_model_with_insufficient_docs PASSED              [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_imports_disabled PASSED                                  [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_import_sentence_transformers_success PASSED              [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_prefers_embed PASSED               [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_protocol_falls_back_to_encode PASSED        [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_sentence_transformer_fallback_cached PASSED           [  8%]
+tests/unit/search/test_query_expansion_convergence.py::test_search_embedding_backend_switches_without_reset PASSED       [  8%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_ranking_converges SKIPPED (CollectorRegistry duplication
+in test environment)                                                                                                     [  8%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_invalid_weights_raise SKIPPED (CollectorRegistry
+duplication in test environment)                                                                                         [  9%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_weighted_sum PASSED                                       [  9%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_requires_convex_weights PASSED                            [  9%]
+tests/unit/search/test_ranking_formula.py::test_duckdb_scores_used_without_semantic PASSED                               [  9%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination PASSED                                 [  9%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weight_fallback PASSED                                      [  9%]
+tests/unit/search/test_session_retry.py::test_http_session_retries_and_reuse PASSED                                      [  9%]
+tests/unit/search/test_session_retry.py::test_http_session_recovery PASSED                                               [  9%]
+tests/unit/search/test_session_retry.py::test_http_session_adapter_failure PASSED                                        [  9%]
+tests/unit/search/test_simulate_rate_limit.py::test_default_backoff PASSED                                               [  9%]
+tests/unit/search/test_simulate_rate_limit.py::test_custom_backoff PASSED                                                [  9%]
+tests/unit/storage/test_backup_scheduler.py::test_scheduler_runs_backup_and_reschedules PASSED                           [ 10%]
+tests/unit/storage/test_backup_scheduler.py::test_scheduler_restarts_existing_timer PASSED                               [ 10%]
+tests/unit/storage/test_backup_scheduler.py::test_scheduler_prevents_cancelled_timer_from_rescheduling PASSED            [ 10%]
+tests/unit/storage/test_backup_scheduler.py::test_backup_manager_schedule_uses_resolved_scheduler PASSED                 [ 10%]
+tests/unit/storage/test_backup_scheduler.py::test_rotation_policy_removes_excess_and_stale_backups PASSED                [ 10%]
+tests/unit/storage/test_claim_audit_persistence.py::test_persist_claim_audit_payload_updates_backends PASSED             [ 10%]
+tests/unit/storage/test_knowledge_graph.py::test_ingest_persists_exports_and_updates_summary PASSED                      [ 10%]
+tests/unit/storage/test_protocols.py::test_to_json_dict_returns_copy PASSED                                              [ 10%]
+tests/unit/storage/test_protocols.py::test_init_rdf_store_supports_protocol PASSED                                       [ 10%]
+tests/unit/test_a2a_concurrency_sim.py::test_simulation_counts PASSED                                                    [ 10%]
+tests/unit/test_a2a_interface.py::test_a2a_message_accepts_sdk_message PASSED                                            [ 10%]
+tests/unit/test_a2a_interface.py::test_runtime_requirements_raise PASSED                                                 [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_init PASSED                                                     [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_start PASSED                                                    [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_stop PASSED                                                     [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query PASSED                                             [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_capabilities PASSED                          [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_config PASSED                                [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_set_config PASSED                                [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_unknown PASSED                                   [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_info PASSED                                              [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent PASSED                                  [ 11%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_init PASSED                                                        [ 12%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_query_agent PASSED                                                 [ 12%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_capabilities PASSED                                      [ 12%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_config PASSED                                            [ 12%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_set_agent_config PASSED                                            [ 12%]
+tests/unit/test_a2a_interface.py::test_get_a2a_client PASSED                                                             [ 12%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_available PASSED                                           [ 12%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_not_available PASSED                                       [ 12%]
+tests/unit/test_a2a_interface.py::test_handle_query_exception PASSED                                                     [ 12%]
+tests/unit/test_a2a_interface.py::test_handle_set_config_invalid PASSED                                                  [ 12%]
+tests/unit/test_a2a_interface.py::test_dispatch_simulation_invariants PASSED                                             [ 13%]
+tests/unit/test_a2a_interface.py::test_simulation_event_order PASSED                                                     [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_init PASSED                                                [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent PASSED                                         [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_capabilities PASSED                              [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_config PASSED                                    [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_set_agent_config PASSED                                    [ 13%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent_error PASSED                                   [ 13%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_success PASSED                                                      [ 13%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_timeout PASSED                                                      [ 13%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_recovery PASSED                                                     [ 13%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_server_failure PASSED                                               [ 14%]
+tests/unit/test_additional_algorithm_docs.py::test_algorithm_docs_exist PASSED                                           [ 14%]
+tests/unit/test_additional_coverage.py::test_log_release_tokens_invalid_json PASSED                                      [ 14%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_transitions PASSED                                          [ 14%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_recovery PASSED                                             [ 14%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_success_decrements PASSED                                   [ 14%]
+tests/unit/test_additional_coverage.py::test_http_session_reuse_and_close PASSED                                         [ 14%]
+tests/unit/test_additional_coverage.py::test_llm_pool_session_reuse PASSED                                               [ 14%]
+tests/unit/test_additional_coverage.py::test_llm_pool_adapter_failure PASSED                                             [ 14%]
+tests/unit/test_additional_coverage.py::test_set_get_delegate PASSED                                                     [ 14%]
+tests/unit/test_additional_coverage.py::test_pop_low_score_missing_confidence PASSED                                     [ 14%]
+tests/unit/test_additional_coverage.py::test_output_formatter_invalid PASSED                                             [ 15%]
+tests/unit/test_additional_coverage.py::test_streamlit_metrics PASSED                                                    [ 15%]
+tests/unit/test_additional_coverage.py::test_render_evaluation_summary_joins_artifacts PASSED                            [ 15%]
+tests/unit/test_additional_coverage.py::test_render_evaluation_summary_formats_planner_and_routing PASSED                [ 15%]
+tests/unit/test_additional_coverage.py::test_format_percentage_variants PASSED                                           [ 15%]
+tests/unit/test_additional_coverage.py::test_cli_utils_format_helpers_importable PASSED                                  [ 15%]
+tests/unit/test_advanced_agents.py::test_domain_specialist_execute PASSED                                                [ 15%]
+tests/unit/test_advanced_agents.py::test_domain_specialist_can_execute PASSED                                            [ 15%]
+tests/unit/test_advanced_agents.py::test_moderator_execute PASSED                                                        [ 15%]
+tests/unit/test_advanced_agents.py::test_moderator_can_execute PASSED                                                    [ 15%]
+tests/unit/test_advanced_agents.py::test_user_agent_execute PASSED                                                       [ 15%]
+tests/unit/test_advanced_agents.py::test_user_agent_can_execute PASSED                                                   [ 16%]
+tests/unit/test_advanced_agents.py::test_planner_metadata PASSED                                                         [ 16%]
+tests/unit/test_agent_communication.py::test_message_exchange_and_feedback PASSED                                        [ 16%]
+tests/unit/test_agent_communication.py::test_coalition_management_in_state PASSED                                        [ 16%]
+tests/unit/test_agent_communication.py::test_agent_registry_coalitions PASSED                                            [ 16%]
+tests/unit/test_agent_communication.py::test_orchestrator_handles_coalitions PASSED                                      [ 16%]
+tests/unit/test_agent_communication.py::test_message_protocols PASSED                                                    [ 16%]
+tests/unit/test_agent_registry.py::test_register_and_get_cached_instance PASSED                                          [ 16%]
+tests/unit/test_agent_registry.py::test_get_unknown_agent_raises PASSED                                                  [ 16%]
+tests/unit/test_agent_registry.py::test_reset_instances PASSED                                                           [ 16%]
+tests/unit/test_agents_dialectical.py::test_fact_checker_audit_provenance PASSED                                         [ 16%]
+tests/unit/test_agents_dialectical.py::test_synthesizer_support_audit_provenance PASSED                                  [ 17%]
+tests/unit/test_agents_llm.py::test_synthesizer_with_injected_adapter PASSED                                             [ 17%]
+tests/unit/test_agents_llm.py::test_contrarian_with_injected_adapter PASSED                                              [ 17%]
+tests/unit/test_agents_llm.py::test_fact_checker_with_injected_adapter PASSED                                            [ 17%]
+tests/unit/test_agents_llm.py::test_agent_factory_with_injected_adapter PASSED                                           [ 17%]
+tests/unit/test_agents_llm.py::test_synthesizer_dynamic PASSED                                                           [ 17%]
+tests/unit/test_agents_llm.py::test_contrarian_dynamic PASSED                                                            [ 17%]
+tests/unit/test_agents_llm.py::test_fact_checker_sources PASSED                                                          [ 17%]
+tests/unit/test_algorithm_docs.py::test_algorithm_docs_exist PASSED                                                      [ 17%]
+tests/unit/test_algorithm_docs.py::test_core_docstrings_reference_docs PASSED                                            [ 17%]
+tests/unit/test_api.py::test_dynamic_limit PASSED                                                                        [ 17%]
+tests/unit/test_api.py::test_api_key_roles PASSED                                                                        [ 18%]
+tests/unit/test_api.py::test_batch_query_invalid_page PASSED                                                             [ 18%]
+tests/unit/test_api.py::test_fallback_no_limit PASSED                                                                    [ 18%]
+tests/unit/test_api.py::test_fallback_multiple_ips PASSED                                                                [ 18%]
+tests/unit/test_api.py::test_request_log_thread_safety PASSED                                                            [ 18%]
+tests/unit/test_api.py::test_query_failure_includes_socratic_reasoning PASSED                                            [ 18%]
+tests/unit/test_api_auth_deps.py::test_require_permission_allows PASSED                                                  [ 18%]
+tests/unit/test_api_auth_deps.py::test_require_permission_auth_missing PASSED                                            [ 18%]
+tests/unit/test_api_auth_deps.py::test_require_permission_forbidden PASSED                                               [ 18%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_valid_key PASSED                                               [ 18%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_invalid_key PASSED                                             [ 19%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key PASSED                                             [ 19%]
+tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token PASSED                                               [ 19%]
+tests/unit/test_api_auth_middleware.py::test_dispatch_valid_token PASSED                                                 [ 19%]
+tests/unit/test_api_error_handling.py::test_query_endpoint_runtime_error PASSED                                          [ 19%]
+tests/unit/test_api_error_handling.py::test_query_endpoint_invalid_response PASSED                                       [ 19%]
+tests/unit/test_api_error_handling.py::test_simulate_api_auth_error_rates PASSED                                         [ 19%]
+tests/unit/test_api_errors.py::test_handle_rate_limit_response PASSED                                                    [ 19%]
+tests/unit/test_api_errors.py::test_handle_rate_limit_text PASSED                                                        [ 19%]
+tests/unit/test_api_imports.py::test_no_unused_imports PASSED                                                            [ 19%]
+tests/unit/test_api_lifespan.py::test_lifespan_startup_shutdown PASSED                                                   [ 19%]
+tests/unit/test_api_rate_limit.py::test_initial_burst_and_refill PASSED                                                  [ 20%]
+tests/unit/test_api_rate_limit.py::test_partial_refill PASSED                                                            [ 20%]
+tests/unit/test_api_rate_limit.py::test_clock_drift PASSED                                                               [ 20%]
+tests/unit/test_api_rate_limit.py::test_invalid_parameters PASSED                                                        [ 20%]
+tests/unit/test_api_token_utils.py::test_generate_bearer_token_unique PASSED                                             [ 20%]
+tests/unit/test_api_token_utils.py::test_verify_bearer_token PASSED                                                      [ 20%]
+tests/unit/test_backup_manager.py::test_create_and_restore_backup PASSED                                                 [ 20%]
+tests/unit/test_backup_manager.py::test_backup_scheduler_start_stop PASSED                                               [ 20%]
+tests/unit/test_bm25_scoring.py::test_calculate_bm25_scores_real_documents PASSED                                        [ 20%]
+tests/unit/test_budgeting.py::test_apply_adaptive_token_budget_paths PASSED                                              [ 20%]
+tests/unit/test_budgeting_module.py::test_budget_scaled_by_loops_and_capped PASSED                                       [ 20%]
+tests/unit/test_budgeting_module.py::test_budget_increased_when_too_low PASSED                                           [ 21%]
+tests/unit/test_budgeting_module.py::test_budget_unchanged_when_within_bounds PASSED                                     [ 21%]
+tests/unit/test_budgeting_module.py::test_budget_noop_when_missing PASSED                                                [ 21%]
+tests/unit/test_cache.py::test_search_uses_cache PASSED                                                                  [ 21%]
+tests/unit/test_cache.py::test_cache_lifecycle PASSED                                                                    [ 21%]
+tests/unit/test_cache.py::test_setup_thread_safe PASSED                                                                  [ 21%]
+tests/unit/test_cache.py::test_cache_is_backend_specific PASSED                                                          [ 21%]
+tests/unit/test_cache.py::test_cache_is_backend_specific_without_embeddings PASSED                                       [ 21%]
+tests/unit/test_cache.py::test_cache_key_normalizes_queries PASSED                                                       [ 21%]
+tests/unit/test_cache.py::test_cache_key_respects_embedding_flags PASSED                                                 [ 21%]
+tests/unit/test_cache.py::test_context_aware_query_expansion_uses_cache PASSED                                           [ 21%]
+tests/unit/test_cache_deepcopy.py::test_cache_results_are_deepcopied PASSED                                              [ 22%]
+tests/unit/test_cache_deepcopy.py::test_get_cache_returns_singleton PASSED                                               [ 22%]
+tests/unit/test_cache_extra.py::test_get_db_after_teardown PASSED                                                        [ 22%]
+tests/unit/test_check_env_warnings.py::test_missing_package_metadata_raises PASSED                                       [ 22%]
+tests/unit/test_check_env_warnings.py::test_missing_pytest_bdd_raises PASSED                                             [ 22%]
+tests/unit/test_check_env_warnings.py::test_missing_go_task_raises PASSED                                                [ 22%]
+tests/unit/test_check_env_warnings.py::test_missing_uv_raises_version_error PASSED                                       [ 22%]
+tests/unit/test_check_env_warnings.py::test_task_command_failure PASSED                                                  [ 22%]
+tests/unit/test_check_env_warnings.py::test_main_reports_missing_metadata PASSED                                         [ 22%]
+tests/unit/test_check_env_warnings.py::test_env_metadata_provider PASSED                                                 [ 22%]
+tests/unit/test_circuit_breaker_module.py::test_state_transitions PASSED                                                 [ 22%]
+tests/unit/test_circuit_breaker_module.py::test_recovery PASSED                                                          [ 23%]
+tests/unit/test_cli_backup_extra.py::test_format_size_units PASSED                                                       [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_error PASSED                                                     [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_missing_tables PASSED                                            [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_success PASSED                                                   [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_restore_cancelled PASSED                                                [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_restore_error PASSED                                                    [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_list_no_backups PASSED                                                  [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_list_success PASSED                                                     [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_recover_invalid_timestamp PASSED                                        [ 23%]
+tests/unit/test_cli_backup_extra.py::test_backup_recover_error PASSED                                                    [ 23%]
+tests/unit/test_cli_help.py::test_cli_help_no_ansi PASSED                                                                [ 24%]
+tests/unit/test_cli_help.py::test_search_help_includes_interactive PASSED                                                [ 24%]
+tests/unit/test_cli_help.py::test_search_help_includes_visualize PASSED                                                  [ 24%]
+tests/unit/test_cli_help.py::test_search_loops_option PASSED                                                             [ 24%]
+tests/unit/test_cli_help.py::test_search_help_includes_ontology_flags PASSED                                             [ 24%]
+tests/unit/test_cli_help.py::test_visualize_help_includes_layout PASSED                                                  [ 24%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_basic PASSED                                                  [ 24%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_default_threshold PASSED                                      [ 24%]
+tests/unit/test_cli_helpers.py::test_parse_agent_groups_parses_nested_lists PASSED                                       [ 24%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_respects_threshold PASSED                                     [ 24%]
+tests/unit/test_cli_helpers.py::test_parse_agent_groups_discards_empty_groups PASSED                                     [ 25%]
+tests/unit/test_cli_helpers.py::test_require_api_key_missing_header PASSED                                               [ 25%]
+tests/unit/test_cli_helpers.py::test_require_api_key_accepts_present_header PASSED                                       [ 25%]
+tests/unit/test_cli_helpers.py::test_report_missing_tables_sorts_and_prints PASSED                                       [ 25%]
+tests/unit/test_cli_helpers.py::test_report_missing_tables_uses_console PASSED                                           [ 25%]
+tests/unit/test_cli_helpers.py::test_handle_command_not_found_suggests_similar PASSED                                    [ 25%]
+tests/unit/test_cli_helpers.py::test_install_help_text_in_readme PASSED                                                  [ 25%]
+tests/unit/test_cli_utils.py::test_attach_cli_hooks_exposes_attributes PASSED                                            [ 25%]
+tests/unit/test_cli_utils_extra.py::test_print_error_suggestion PASSED                                                   [ 25%]
+tests/unit/test_cli_utils_extra.py::test_verbosity_roundtrip PASSED                                                      [ 25%]
+tests/unit/test_cli_utils_extra.py::test_set_verbosity_sets_env PASSED                                                   [ 25%]
+tests/unit/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[quiet] PASSED                              [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[normal] PASSED                             [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[verbose] PASSED                            [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_error_suppressed_when_threshold_higher PASSED                             [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_warning_respects_minimum[quiet-False] PASSED                              [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_warning_respects_minimum[normal-True] PASSED                              [ 26%]
+tests/unit/test_cli_utils_extra.py::test_print_warning_respects_minimum[verbose-True] PASSED                             [ 26%]
+tests/unit/test_cli_utils_extra.py::test_ascii_and_table_empty PASSED                                                    [ 26%]
+tests/unit/test_cli_utils_extra.py::test_format_functions PASSED                                                         [ 26%]
+tests/unit/test_cli_visualize.py::test_ascii_bar_graph_basic PASSED                                                      [ 26%]
+tests/unit/test_cli_visualize.py::test_summary_table_render PASSED                                                       [ 26%]
+tests/unit/test_cli_visualize.py::test_search_visualize_option PASSED                                                    [ 27%]
+tests/unit/test_coalition_execution.py::test_coalition_agents_run_together PASSED                                        [ 27%]
+tests/unit/test_coalition_execution.py::test_configmodel_from_dict_allows_coalitions PASSED                              [ 27%]
+tests/unit/test_config_env_file.py::test_config_spec_exists PASSED                                                       [ 27%]
+tests/unit/test_config_env_file.py::test_env_file_parsing PASSED                                                         [ 27%]
+tests/unit/test_config_errors.py::test_config_spec_exists PASSED                                                         [ 27%]
+tests/unit/test_config_errors.py::test_load_config_file_error PASSED                                                     [ 27%]
+tests/unit/test_config_errors.py::test_notify_observers_error PASSED                                                     [ 27%]
+tests/unit/test_config_errors.py::test_watch_config_files_error PASSED                                                   [ 27%]
+tests/unit/test_config_errors.py::test_watch_config_reload_error PASSED                                                  [ 27%]
+tests/unit/test_config_errors.py::test_reset_instance_error PASSED                                                       [ 27%]
+tests/unit/test_config_hot_reload_sim.py::test_config_hot_reload_sim PASSED                                              [ 28%]
+tests/unit/test_config_hot_reload_sim.py::test_invalid_update_logged PASSED                                              [ 28%]
+tests/unit/test_config_loader_defaults.py::test_config_spec_exists PASSED                                                [ 28%]
+tests/unit/test_config_loader_defaults.py::test_invalid_env_falls_back_to_defaults PASSED                                [ 28%]
+tests/unit/test_config_loader_defaults.py::test_validate_without_config_file PASSED                                      [ 28%]
+tests/unit/test_config_profiles.py::test_config_spec_exists PASSED                                                       [ 28%]
+tests/unit/test_config_profiles.py::test_config_profiles_default PASSED                                                  [ 28%]
+tests/unit/test_config_profiles.py::test_config_profiles_switch PASSED                                                   [ 28%]
+tests/unit/test_config_profiles.py::test_config_profiles_invalid PASSED                                                  [ 28%]
+tests/unit/test_config_profiles.py::test_config_profiles_merge PASSED                                                    [ 28%]
+tests/unit/test_config_reload.py::test_config_spec_exists PASSED                                                         [ 28%]
+tests/unit/test_config_reload.py::test_config_reload_on_change PASSED                                                    [ 29%]
+tests/unit/test_config_utils.py::test_config_spec_exists PASSED                                                          [ 29%]
+tests/unit/test_config_utils.py::test_module_docstring_mentions_spec PASSED                                              [ 29%]
+tests/unit/test_config_utils.py::test_apply_preset_returns_configuration PASSED                                          [ 29%]
+tests/unit/test_config_utils.py::test_apply_preset_unknown_name PASSED                                                   [ 29%]
+tests/unit/test_config_utils.py::test_validate_config_success PASSED                                                     [ 29%]
+tests/unit/test_config_utils.py::test_validate_config_failure PASSED                                                     [ 29%]
+tests/unit/test_config_validation_errors.py::test_config_spec_exists PASSED                                              [ 29%]
+tests/unit/test_config_validation_errors.py::test_invalid_rdf_backend PASSED                                             [ 29%]
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one PASSED                                         [ 29%]
+tests/unit/test_config_validation_errors.py::test_default_config_loads_without_error PASSED                              [ 29%]
+tests/unit/test_config_validators_additional.py::test_config_spec_exists PASSED                                          [ 30%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct0] PASSED                        [ 30%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct1] PASSED                        [ 30%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_invalid PASSED                                      [ 30%]
+tests/unit/test_config_validators_additional.py::test_token_budget_valid[None] PASSED                                    [ 30%]
+tests/unit/test_config_validators_additional.py::test_token_budget_valid[10] PASSED                                      [ 30%]
+tests/unit/test_config_validators_additional.py::test_token_budget_invalid[0] PASSED                                     [ 30%]
+tests/unit/test_config_validators_additional.py::test_token_budget_invalid[-5] PASSED                                    [ 30%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[LRU] PASSED                                  [ 30%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[score] PASSED                                [ 30%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[hybrid] PASSED                               [ 30%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[priority] PASSED                             [ 31%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[adaptive] PASSED                             [ 31%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_invalid PASSED                                     [ 31%]
+tests/unit/test_config_watcher_cleanup.py::test_config_spec_exists PASSED                                                [ 31%]
+tests/unit/test_config_watcher_cleanup.py::test_cli_watcher_cleanup PASSED                                               [ 31%]
+tests/unit/test_config_watcher_cleanup.py::test_api_watcher_cleanup PASSED                                               [ 31%]
+tests/unit/test_config_watcher_cleanup.py::test_cli_watcher_cleanup_error PASSED                                         [ 31%]
+tests/unit/test_config_watcher_cleanup.py::test_api_watcher_cleanup_error PASSED                                         [ 31%]
+tests/unit/test_core_modules_additional.py::test_orchestrator_parse_config_basic PASSED                                  [ 31%]
+tests/unit/test_core_modules_additional.py::test_search_stub_backend[legacy] PASSED                                      [ 31%]
+tests/unit/test_core_modules_additional.py::test_search_stub_backend[vss-enabled] PASSED                                 [ 32%]
+tests/unit/test_core_modules_additional.py::test_search_stub_backend_return_handles_fallback PASSED                      [ 32%]
+tests/unit/test_core_modules_additional.py::test_planner_execute PASSED                                                  [ 32%]
+tests/unit/test_core_modules_additional.py::test_storage_setup_teardown PASSED                                           [ 32%]
+tests/unit/test_core_modules_additional.py::test_storage_setup_without_kuzu PASSED                                       [ 32%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_enabled PASSED                                                  [ 32%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_disabled PASSED                                                 [ 32%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_polars_missing PASSED                                           [ 32%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_reload_without_polars PASSED                                    [ 32%]
+tests/unit/test_data_analysis_polars.py::test_metrics_dataframe_summary PASSED                                           [ 32%]
+tests/unit/test_distributed.py::test_get_message_broker_invalid PASSED                                                   [ 32%]
+tests/unit/test_distributed.py::test_publish_claim_inmemory SKIPPED (multiprocessing Manager unsupported in this
+environment)                                                                                                             [ 33%]
+tests/unit/test_distributed_broker.py::test_get_message_broker_memory SKIPPED (multiprocessing Manager unsupported in
+this environment)                                                                                                        [ 33%]
+tests/unit/test_distributed_broker.py::test_get_message_broker_invalid PASSED                                            [ 33%]
+tests/unit/test_distributed_broker.py::test_redis_broker_requires_dependency PASSED                                      [ 33%]
+tests/unit/test_distributed_broker.py::test_ray_broker_publish PASSED                                                    [ 33%]
+tests/unit/test_distributed_broker_import_error.py::test_redis_broker_missing_dependency PASSED                          [ 33%]
+tests/unit/test_distributed_coordination_benchmark.py::test_benchmark_scales SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 33%]
+tests/unit/test_distributed_coordination_benchmark.py::test_benchmark_survives_worker_crash SKIPPED (multiprocessing
+Manager unsupported in this environment)                                                                                 [ 33%]
+tests/unit/test_distributed_coordination_props.py::test_leader_is_minimum PASSED                                         [ 33%]
+tests/unit/test_distributed_coordination_props.py::test_message_ordering_preserved SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 33%]
+tests/unit/test_distributed_executors.py::test_execute_agent_process_records_queue PASSED                                [ 33%]
+tests/unit/test_distributed_executors.py::test_execute_agent_remote SKIPPED (Real Ray clusters require package-level
+agent registration; serialization is covered by test_query_state_ray_round_trip.)                                        [ 34%]
+tests/unit/test_distributed_executors.py::test_ray_executor_cycle_callback SKIPPED (RayExecutor callback test relies on
+the local stub runtime.)                                                                                                 [ 34%]
+tests/unit/test_distributed_executors.py::test_process_executor_uses_local_queue PASSED                                  [ 34%]
+tests/unit/test_distributed_executors.py::test_query_state_cloudpickle_round_trip PASSED                                 [ 34%]
+tests/unit/test_distributed_executors.py::test_query_state_ray_round_trip PASSED                                         [ 34%]
+tests/unit/test_distributed_executors.py::test_publish_claim_enqueues_typed_message PASSED                               [ 34%]
+tests/unit/test_distributed_extra.py::test_get_message_broker_default SKIPPED (multiprocessing Manager unsupported in
+this environment)                                                                                                        [ 34%]
+tests/unit/test_distributed_extra.py::test_redis_queue_roundtrip SKIPPED (multiprocessing Manager unsupported in this
+environment)                                                                                                             [ 34%]
+tests/unit/test_distributed_perf_compare.py::test_compare_matches_theory_within_tolerance PASSED                         [ 34%]
+tests/unit/test_distributed_perf_sim_script.py::test_latency_decreases_with_workers PASSED                               [ 34%]
+tests/unit/test_distributed_perf_sim_script.py::test_cli_execution PASSED                                                [ 34%]
+tests/unit/test_distributed_perf_sim_script.py::test_cli_requires_arguments PASSED                                       [ 35%]
+tests/unit/test_distributed_redis.py::test_get_message_broker_redis_roundtrip PASSED                                     [ 35%]
+tests/unit/test_distributed_redis.py::test_get_message_broker_redis_missing PASSED                                       [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback PASSED                           [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_creates_stub_when_offline PASSED                  [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_offline_without_duckdb PASSED                     [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_fallback_path PASSED                              [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_offline_fallback_skips_samefile_copy PASSED                          [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_setup_sh_ignores_smoke_failure_with_stub PASSED                      [ 35%]
+tests/unit/test_download_duckdb_extensions.py::test_load_offline_env_sets_vector_extension_path PASSED                   [ 35%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_init PASSED                                    [ 35%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_default_path PASSED                 [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_custom_path PASSED                  [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_connection_error PASSED             [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_table_creation_failure PASSED            [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_missing_extension_continues PASSED       [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_create_tables PASSED                           [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version PASSED               [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version PASSED                      [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version_no_version PASSED           [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_update_schema_version PASSED                   [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_run_migrations PASSED                          [ 36%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_true PASSED                            [ 37%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_false PASSED                           [ 37%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_close PASSED                                   [ 37%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_clear PASSED                                   [ 37%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_concurrent_setup_is_idempotent PASSED                        [ 37%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_initialize_schema_version_failure PASSED                     [ 37%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_persist_claims_concurrent PASSED                             [ 37%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index PASSED      [ 37%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_extension_not_loaded PASSED [ 37%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_error PASSED [ 37%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim PASSED          [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_minimal PASSED  [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_error PASSED    [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search PASSED          [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_vss_not_available PASSED [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_error PASSED    [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection PASSED         [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection_not_initialized PASSED [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_full_replace PASSED [ 38%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_partial PASSED   [ 38%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_succeeds_on_first_try PASSED                                  [ 38%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_retries_until_success PASSED                                  [ 39%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_raises_after_max_retries PASSED                               [ 39%]
+tests/unit/test_error_utils_additional.py::test_error_info_to_dict_and_str PASSED                                        [ 39%]
+tests/unit/test_error_utils_additional.py::test_formatters PASSED                                                        [ 39%]
+tests/unit/test_error_utils_additional.py::test_timeout_sets_warning PASSED                                              [ 39%]
+tests/unit/test_error_utils_additional.py::test_redacted_context_preserved PASSED                                        [ 39%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc0-Check your configuration file] PASSED                [ 39%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc1-API key] PASSED                                      [ 39%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc2-5] PASSED                                            [ 39%]
+tests/unit/test_errors.py::test_error_hierarchy PASSED                                                                   [ 39%]
+tests/unit/test_errors.py::test_error_messages PASSED                                                                    [ 39%]
+tests/unit/test_errors.py::test_error_with_cause PASSED                                                                  [ 40%]
+tests/unit/test_errors.py::test_timeout_error PASSED                                                                     [ 40%]
+tests/unit/test_errors.py::test_not_found_error PASSED                                                                   [ 40%]
+tests/unit/test_eviction.py::test_ram_eviction_skips_without_metrics PASSED                                              [ 40%]
+tests/unit/test_eviction.py::test_ram_eviction PASSED                                                                    [ 40%]
+tests/unit/test_eviction.py::test_score_eviction PASSED                                                                  [ 40%]
+tests/unit/test_eviction.py::test_lru_eviction_order PASSED                                                              [ 40%]
+tests/unit/test_eviction.py::test_lru_eviction_sequence PASSED                                                           [ 40%]
+tests/unit/test_eviction.py::test_lru_eviction_with_vss_two_passes PASSED                                                [ 40%]
+tests/unit/test_eviction.py::test_lru_eviction_with_vss_fallback_preserves_survivors PASSED                              [ 40%]
+tests/unit/test_eviction.py::test_lru_eviction_respects_minimum_survivors PASSED                                         [ 40%]
+tests/unit/test_eviction.py::test_deterministic_override_clamped_to_minimum PASSED                                       [ 41%]
+tests/unit/test_eviction.py::test_initialize_storage_in_memory PASSED                                                    [ 41%]
+tests/unit/test_eviction.py::test_initialize_storage_file_path PASSED                                                    [ 41%]
+tests/unit/test_examples_package.py::test_sample_configuration PASSED                                                    [ 41%]
+tests/unit/test_extras_markers.py::test_nlp_marker PASSED                                                                [ 41%]
+tests/unit/test_extras_markers.py::test_ui_marker PASSED                                                                 [ 41%]
+tests/unit/test_extras_markers.py::test_vss_marker PASSED                                                                [ 41%]
+tests/unit/test_extras_markers.py::test_git_marker PASSED                                                                [ 41%]
+tests/unit/test_extras_markers.py::test_distributed_marker PASSED                                                        [ 41%]
+tests/unit/test_extras_markers.py::test_analysis_marker PASSED                                                           [ 41%]
+tests/unit/test_extras_markers.py::test_llm_marker PASSED                                                                [ 41%]
+tests/unit/test_extras_markers.py::test_parsers_marker PASSED                                                            [ 42%]
+tests/unit/test_extras_markers.py::test_gpu_marker PASSED                                                                [ 42%]
+tests/unit/test_failure_paths.py::test_prompt_registry_unknown PASSED                                                    [ 42%]
+tests/unit/test_failure_paths.py::test_prompt_render_missing_variable PASSED                                             [ 42%]
+tests/unit/test_failure_paths.py::test_check_agent_can_execute_false PASSED                                              [ 42%]
+tests/unit/test_failure_paths.py::test_external_lookup_unknown_backend PASSED                                            [ 42%]
+tests/unit/test_failure_paths.py::test_vector_search_vss_unavailable PASSED                                              [ 42%]
+tests/unit/test_failure_paths.py::test_query_endpoint_validation_error PASSED                                            [ 42%]
+tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure PASSED                                        [ 42%]
+tests/unit/test_failure_scenarios.py::test_external_lookup_unknown_backend PASSED                                        [ 42%]
+tests/unit/test_failure_scenarios.py::test_external_lookup_fallback FAILED                                               [ 42%]
+
+=========================================================== FAILURES ===========================================================
+________________________________________________ test_external_lookup_fallback _________________________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc3e8f468d0>
+
+    def test_external_lookup_fallback(monkeypatch):
+        cfg = _make_cfg([])
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        results = Search.external_lookup("q", max_results=2)
+        assert len(results) == 2
+        assert results[0]["title"] == "Result 1 for q"
+        encoded = quote_plus("q")
+>       assert results[0]["url"] == f"https://example.invalid/search?q={encoded}&rank=1", (
+            "If fallback URLs drift, how would we detect nondeterministic cache placeholders?"
+        )
+E       AssertionError: If fallback URLs drift, how would we detect nondeterministic cache placeholders?
+E       assert '' == 'https://example.invalid/search?q=q&rank=1'
+E         
+E         - https://example.invalid/search?q=q&rank=1
+
+/workspace/autoresearch/tests/unit/test_failure_scenarios.py:68: AssertionError
+---------------------------------------------------- Captured stderr setup -----------------------------------------------------
+{"text": "2025-10-04 14:44:23.327 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:01:17.708624", "seconds": 77.708624}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.327271+00:00", "timestamp": 1759589063.327271}}}
+------------------------------------------------------ Captured log setup ------------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+----------------------------------------------------- Captured stderr call -----------------------------------------------------
+{"text": "2025-10-04 14:44:23.340 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:01:17.722069", "seconds": 77.722069}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.340716+00:00", "timestamp": 1759589063.340716}}}
+{"text": "2025-10-04 14:44:23.359 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"VSS extension loaded successfully\", \"timestamp\": \"2025-10-04T14:44:23.359300Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.740879", "seconds": 77.740879}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"VSS extension loaded successfully\", \"timestamp\": \"2025-10-04T14:44:23.359300Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.359526+00:00", "timestamp": 1759589063.359526}}}
+{"text": "2025-10-04 14:44:23.374 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initializing schema version to 1\", \"timestamp\": \"2025-10-04T14:44:23.373902Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.755652", "seconds": 77.755652}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initializing schema version to 1\", \"timestamp\": \"2025-10-04T14:44:23.373902Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.374299+00:00", "timestamp": 1759589063.374299}}}
+{"text": "2025-10-04 14:44:23.378 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Current schema version: 1, latest version: 4\", \"timestamp\": \"2025-10-04T14:44:23.378308Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.759889", "seconds": 77.759889}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Current schema version: 1, latest version: 4\", \"timestamp\": \"2025-10-04T14:44:23.378308Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.378536+00:00", "timestamp": 1759589063.378536}}}
+{"text": "2025-10-04 14:44:23.379 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Running migrations from version 1 to 4\", \"timestamp\": \"2025-10-04T14:44:23.378898Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.760391", "seconds": 77.760391}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Running migrations from version 1 to 4\", \"timestamp\": \"2025-10-04T14:44:23.378898Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.379038+00:00", "timestamp": 1759589063.379038}}}
+{"text": "2025-10-04 14:44:23.410 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Updated schema version to 4\", \"timestamp\": \"2025-10-04T14:44:23.410528Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.792121", "seconds": 77.792121}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Updated schema version to 4\", \"timestamp\": \"2025-10-04T14:44:23.410528Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.410768+00:00", "timestamp": 1759589063.410768}}}
+{"text": "2025-10-04 14:44:23.411 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Enabling experimental persistence for HNSW indexes\", \"timestamp\": \"2025-10-04T14:44:23.411176Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.792651", "seconds": 77.792651}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Enabling experimental persistence for HNSW indexes\", \"timestamp\": \"2025-10-04T14:44:23.411176Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.411298+00:00", "timestamp": 1759589063.411298}}}
+{"text": "2025-10-04 14:44:23.412 | ERROR    | autoresearch.logging_utils:emit:113 - {\"event\": \"Failed to create HNSW index: Catalog Error: Setting with name \\\"hnsw_enable_experimental_persistence\\\" is not in the catalog, but it exists in the vss extension.\\n\\nPlease try installing and loading the vss extension:\\nINSTALL vss;\\nLOAD vss;\\n\\n\", \"timestamp\": \"2025-10-04T14:44:23.412146Z\"}\n", "record": {"elapsed": {"repr": "0:01:17.793653", "seconds": 77.793653}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "❌", "name": "ERROR", "no": 40}, "line": 113, "message": "{\"event\": \"Failed to create HNSW index: Catalog Error: Setting with name \\\"hnsw_enable_experimental_persistence\\\" is not in the catalog, but it exists in the vss extension.\\n\\nPlease try installing and loading the vss extension:\\nINSTALL vss;\\nLOAD vss;\\n\\n\", \"timestamp\": \"2025-10-04T14:44:23.412146Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.412300+00:00", "timestamp": 1759589063.4123}}}
+{"text": "2025-10-04 14:44:23.666 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.666238Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.047896", "seconds": 78.047896}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.666238Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.666543+00:00", "timestamp": 1759589063.666543}}}
+{"text": "2025-10-04 14:44:23.667 | WARNING  | autoresearch.logging_utils:emit:113 - {\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.667000Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.048479", "seconds": 78.048479}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.667000Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.667126+00:00", "timestamp": 1759589063.667126}}}
+{"text": "2025-10-04 14:44:23.670 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.670091Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.051602", "seconds": 78.051602}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.670091Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.670249+00:00", "timestamp": 1759589063.670249}}}
+{"text": "2025-10-04 14:44:23.675 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.675298Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.056780", "seconds": 78.05678}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.675298Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.675427+00:00", "timestamp": 1759589063.675427}}}
+{"text": "2025-10-04 14:44:23.675 | WARNING  | autoresearch.logging_utils:emit:113 - {\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.675738Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.057192", "seconds": 78.057192}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.675738Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.675839+00:00", "timestamp": 1759589063.675839}}}
+{"text": "2025-10-04 14:44:23.677 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.677141Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.058611", "seconds": 78.058611}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.677141Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.677258+00:00", "timestamp": 1759589063.677258}}}
+{"text": "2025-10-04 14:44:23.680 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.679938Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.061407", "seconds": 78.061407}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.679938Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.680054+00:00", "timestamp": 1759589063.680054}}}
+{"text": "2025-10-04 14:44:23.680 | WARNING  | autoresearch.logging_utils:emit:113 - {\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.680291Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.061726", "seconds": 78.061726}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "⚠️", "name": "WARNING", "no": 30}, "line": 113, "message": "{\"event\": \"No search backends configured; using deterministic fallback placeholders\", \"timestamp\": \"2025-10-04T14:44:23.680291Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.680373+00:00", "timestamp": 1759589063.680373}}}
+{"text": "2025-10-04 14:44:23.681 | INFO     | autoresearch.logging_utils:emit:113 - {\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.681563Z\"}\n", "record": {"elapsed": {"repr": "0:01:18.063032", "seconds": 78.063032}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "{\"event\": \"Initialized fastembed model\", \"timestamp\": \"2025-10-04T14:44:23.681563Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4916, "name": "MainProcess"}, "thread": {"id": 140482002627456, "name": "MainThread"}, "time": {"repr": "2025-10-04 14:44:23.681679+00:00", "timestamp": 1759589063.681679}}}
+------------------------------------------------------ Captured log call -------------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+INFO     autoresearch.storage_backends:storage_backends.py:221 {"event": "VSS extension loaded successfully", "timestamp": "2025-10-04T14:44:23.359300Z"}
+INFO     autoresearch.storage_utils:storage_utils.py:41 {"event": "Initializing schema version to 1", "timestamp": "2025-10-04T14:44:23.373902Z"}
+INFO     autoresearch.storage_backends:storage_backends.py:415 {"event": "Current schema version: 1, latest version: 4", "timestamp": "2025-10-04T14:44:23.378308Z"}
+INFO     autoresearch.storage_backends:storage_backends.py:419 {"event": "Running migrations from version 1 to 4", "timestamp": "2025-10-04T14:44:23.378898Z"}
+INFO     autoresearch.storage_backends:storage_backends.py:395 {"event": "Updated schema version to 4", "timestamp": "2025-10-04T14:44:23.410528Z"}
+INFO     autoresearch.storage_backends:storage_backends.py:524 {"event": "Enabling experimental persistence for HNSW indexes", "timestamp": "2025-10-04T14:44:23.411176Z"}
+ERROR    autoresearch.storage_backends:storage_backends.py:597 {"event": "Failed to create HNSW index: Catalog Error: Setting with name \"hnsw_enable_experimental_persistence\" is not in the catalog, but it exists in the vss extension.\n\nPlease try installing and loading the vss extension:\nINSTALL vss;\nLOAD vss;\n\n", "timestamp": "2025-10-04T14:44:23.412146Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.666238Z"}
+WARNING  autoresearch.search.core:core.py:2167 {"event": "No search backends configured; using deterministic fallback placeholders", "timestamp": "2025-10-04T14:44:23.667000Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.670091Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.675298Z"}
+WARNING  autoresearch.search.core:core.py:2167 {"event": "No search backends configured; using deterministic fallback placeholders", "timestamp": "2025-10-04T14:44:23.675738Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.677141Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.679938Z"}
+WARNING  autoresearch.search.core:core.py:2167 {"event": "No search backends configured; using deterministic fallback placeholders", "timestamp": "2025-10-04T14:44:23.680291Z"}
+INFO     autoresearch.search.core:core.py:876 {"event": "Initialized fastembed model", "timestamp": "2025-10-04T14:44:23.681563Z"}
+======================================================= warnings summary =======================================================
+tests/unit/test_main_config_commands.py:4
+  /workspace/autoresearch/tests/unit/test_main_config_commands.py:4: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/networkx/readwrite/json_graph/node_link.py:145: FutureWarning: 
+  The default value will be `edges="edges" in NetworkX 3.6.
+  
+  To make this warning go away, explicitly set the edges kwarg, e.g.:
+  
+    nx.node_link_data(G, edges="links") to preserve current behavior, or
+    nx.node_link_data(G, edges="edges") for forward compatibility.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+8.64s call     tests/unit/test_distributed_executors.py::test_query_state_ray_round_trip
+7.54s call     tests/unit/test_eviction.py::test_deterministic_override_clamped_to_minimum
+4.71s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+1.77s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+1.72s call     tests/unit/test_eviction.py::test_lru_eviction_order
+0.97s teardown tests/unit/test_errors.py::test_error_messages
+0.90s call     tests/unit/test_cache.py::test_search_uses_cache
+0.79s call     tests/unit/test_cache.py::test_cache_is_backend_specific_without_embeddings
+0.78s setup    tests/unit/test_eviction.py::test_lru_eviction_sequence
+0.66s call     tests/unit/test_config_watcher_cleanup.py::test_api_watcher_cleanup_error
+=================================================== short test summary info ====================================================
+FAILED tests/unit/test_failure_scenarios.py::test_external_lookup_fallback - AssertionError: If fallback URLs drift, how would we detect nondeterministic cache placeholders?
+assert '' == 'https://example.invalid/search?q=q&rank=1'
+  
+  - https://example.invalid/search?q=q&rank=1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================= 1 failed, 454 passed, 11 skipped, 25 deselected, 2 warnings in 63.51s (0:01:03) ========================
+task: Failed to run task "verify": exit status 1

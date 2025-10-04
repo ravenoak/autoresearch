@@ -27,21 +27,25 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   search stub regression: the legacy and VSS-enabled flows never record the
   expected `add_calls`, and the fallback query preserves the templated text
   instead of the caller input. The log pinpoints PR-C scope before the run was
-  interrupted for faster triage.【81b49d†L25-L155】【81b49d†L156-L204】
-- The 2025-10-04 verify sweep with all non-GPU extras still fails
-  during flake8; Search core imports, behavior fixtures, and storage
-  tests carry unused symbols and whitespace debt documented in the new
-  baseline log.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
-- The matching coverage run stops on the legacy search stub regression:
-  the instrumentation never records the expected instance add-calls, so
-  `test_search_stub_backend` fails while confirming vector search parity.
-  The log preserves the dialectical trace alongside the slowest durations
-  for follow-up analysis.
-  【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+  interrupted for faster triage, and the latest verify sweep confirms the
+  instrumentation half of that work is now green while the fallback URL still
+  needs attention.【81b49d†L25-L155】【81b49d†L156-L204】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+- The 2025-10-04 verify sweep with all non-GPU extras now clears flake8
+  and strict mypy, confirming the lint sweep landed. Both
+  `tests/unit/test_core_modules_additional.py::test_search_stub_backend`
+  parameterisations pass, yet the run still fails when
+  `tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
+  observes an empty placeholder URL instead of the deterministic
+  `example.invalid` link.
+  【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
+- The matching coverage run with the same extras stops on the identical
+  fallback assertion, so coverage remains anchored to the prior 92.4 %
+  evidence until the deterministic URL fix lands.
+  【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
 - `docs/release_plan.md` and the alpha issue now reiterate that TestPyPI
-  remains paused until the lint and legacy search regressions clear, and
-  they cite the latest logs for traceability.【F:docs/release_plan.md†L1-L64】
-  【F:issues/prepare-first-alpha-release.md†L1-L32】
+  stays paused until the fallback regression clears and cite the fresh
+  verify and coverage logs for traceability.
+  【F:docs/release_plan.md†L1-L69】【F:issues/prepare-first-alpha-release.md†L1-L39】
 
 ## October 3, 2025
 - `uv run mypy --strict src tests` succeeded again at **22:37 UTC**,
