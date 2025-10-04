@@ -1,70 +1,54 @@
 # Prepare first alpha release
 
 ## Context
-As of **October 4, 2025 at 05:34 UTC** the strict typing gate remains green:
-`uv run mypy --strict src tests` again reported “Success: no issues found in
-790 source files”, so we can focus on the remaining pytest regressions before
-rerunning the full release sweep.【c2f747†L1-L2】 A targeted `uv run --extra
-test pytest` sample at **05:31 UTC** still reproduces the legacy search stub
-fallback drift and guides the PR-C scope.【81b49d†L25-L155】【81b49d†L156-L204】
-【ce87c2†L81-L116】
-
-The follow-up release sweeps confirm the lint sweep landed and that PR-C’s
-instrumentation work is in place. At **14:44 UTC** `uv run task verify
-EXTRAS="nlp ui vss git distributed analysis llm parsers"` prints
-`[verify][lint] flake8 passed`, clears strict mypy, and shows both legacy and
-VSS parameterisations of
-`tests/unit/test_core_modules_additional.py::test_search_stub_backend`
-passing before `tests/unit/test_failure_scenarios.py::
-test_external_lookup_fallback` fails with an empty placeholder URL.
-【F:baseline/logs/task-verify-20251004T144057Z.log†L167-L169】【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
-The paired coverage sweep at **14:45 UTC** stops on the same assertion, so the
-preflight plan now treats the deterministic fallback URL as the last PR-C step
-before coverage can refresh.
-【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
-
-A fresh verify/coverage sweep at **03:15 UTC/03:28 UTC on October 5, 2025** now
-runs clean end-to-end, confirming the fallback fix and locking in the 92.4 %
-coverage floor that unblocks the release gates. The updated artifacts live in
-[`baseline/logs/task-verify-20251005T031512Z.log`](../baseline/logs/task-verify-20251005T031512Z.log)
-and [`baseline/logs/task-coverage-20251005T032844Z.log`](../baseline/logs/task-coverage-20251005T032844Z.log),
-completing the evidence trail alongside the earlier failing runs.
-
-TestPyPI dry runs remain paused; with the fallback fix validated we will
-re-enable the publish stage before the next release sign-off once the
-downstream gates close, with the follow-up tracked in
-[reactivate-testpypi-dry-run](reactivate-testpypi-dry-run.md).
-【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
+As of **October 4, 2025 at 21:04 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` reports “Success: no issues found in 790
+source files”, so the alpha push can continue to rely on strict mode while we
+repair the failing pytest surface.【a78415†L1-L2】 The latest
+`uv run --extra test pytest` sweep finishes with ten failures across search
+stubs, cache determinism, orchestrator telemetry, reasoning answers, and
+output formatting fidelity, resetting the release critical path around these
+clusters.【53776f†L1-L60】 Targeted property tests highlight how
+`OutputFormatter` drops control characters and collapses whitespace, while
+search cache tests show backend calls firing despite cached results, further
+pinning down the regression scope.【5f96a8†L12-L36】【e865e9†L1-L58】 Focused
+reasoning tests confirm warning banners now mutate the final answer, and the
+DuckDuckGo stub diverges from the mocked payload, keeping behaviour coverage
+red until the new PR slices land.【cf191d†L27-L46】【34ebc5†L1-L76】 TestPyPI dry
+runs stay paused per the improvement plan; we will revisit once the suite is
+green.
 
 ## Tasks
-- [x] Finish PR-C by restoring the deterministic fallback URL so the
-  remaining search failure clears (validated via
-  `baseline/logs/task-verify-20251005T031512Z.log`).
-- [x] Confirm the lint sweep landed via the latest `task verify` run
-  (`baseline/logs/task-verify-20251005T031512Z.log`).
-- [ ] Ship PR-A, PR-B, and PR-D through PR-H from the refreshed preflight
-  plan to restore a green pytest suite.
-- [x] Capture fresh verify and coverage logs once the suite passes and update
-  release documentation (`baseline/logs/task-verify-20251005T031512Z.log`,
-  `baseline/logs/task-coverage-20251005T032844Z.log`).
-- [ ] Re-run the TestPyPI dry run after enabling the publish flag and archive
-  the resulting log for the release dossier (tracked in
-  [reactivate-testpypi-dry-run](reactivate-testpypi-dry-run.md)).
-- [ ] Schedule the release sign-off review with the approvers, outlining
-  agenda and required evidence in this ticket.
-- [ ] Run the release sign-off review with updated evidence and record
-  the outcome here.
+- [ ] Land **PR-S1** – restore deterministic search stubs, hybrid ranking
+  signatures, and local file fallbacks in line with the updated preflight
+  plan.【F:docs/v0.1.0a1_preflight_plan.md†L38-L92】
+- [ ] Land **PR-S2** – add namespace-aware cache key helpers plus regression
+  coverage so cached queries avoid repeated backend calls.
+- [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
+  characters and whitespace across JSON and markdown outputs.
+- [ ] Land **PR-R1** – relocate reasoning warning banners into structured
+  telemetry and update behaviour coverage to assert clean answers.
+- [ ] Land **PR-P1** – normalise parallel reasoning merges and recalibrate
+  scheduler benchmarks against recorded baselines.
+- [ ] Capture fresh verify and coverage logs once the above PRs merge and
+  update the release dossier.
+- [ ] Schedule and run the release sign-off review after the suite and
+  coverage gates return to green.
 
 
 ## Dependencies
-- [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
-- [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)
+- [coordinate-deep-research-enhancement-initiative]
+  (coordinate-deep-research-enhancement-initiative.md)
+- [adaptive-gate-and-claim-audit-rollout]
+  (adaptive-gate-and-claim-audit-rollout.md)
 - [deliver-evidence-pipeline-2-0](deliver-evidence-pipeline-2-0.md)
 - [planner-coordinator-react-upgrade](planner-coordinator-react-upgrade.md)
 - [session-graph-rag-integration](session-graph-rag-integration.md)
 - [evaluation-and-layered-ux-expansion](evaluation-and-layered-ux-expansion.md)
-- [roll-out-layered-ux-and-model-routing](roll-out-layered-ux-and-model-routing.md)
-- [build-truthfulness-evaluation-harness](build-truthfulness-evaluation-harness.md)
+- [roll-out-layered-ux-and-model-routing]
+  (roll-out-layered-ux-and-model-routing.md)
+- [build-truthfulness-evaluation-harness]
+  (build-truthfulness-evaluation-harness.md)
 - [cost-aware-model-routing](cost-aware-model-routing.md)
 
 ## Acceptance Criteria

@@ -679,7 +679,7 @@ class hybridmethod(Generic[T_co, P, R]):
             get_instance = cast(Callable[[], T_co], getattr(objtype, "get_instance"))
 
             @functools.wraps(self.func)
-            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def class_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 instance = get_instance()
                 stack = _HYBRID_CALL_STACK.get(())
                 frame = _HybridFrame("class", method_name, owner_name)
@@ -689,12 +689,12 @@ class hybridmethod(Generic[T_co, P, R]):
                 finally:
                     _HYBRID_CALL_STACK.reset(token)
 
-            return wrapper
+            return class_wrapper
 
         bound = cast(Callable[P, R], self.func.__get__(obj, objtype))
 
         @functools.wraps(bound)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        def instance_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             stack = _HYBRID_CALL_STACK.get(())
             owner = owner_name or type(obj).__qualname__
             frame = _HybridFrame("instance", method_name, owner)
@@ -704,7 +704,7 @@ class hybridmethod(Generic[T_co, P, R]):
             finally:
                 _HYBRID_CALL_STACK.reset(token)
 
-        return wrapper
+        return instance_wrapper
 
 
 @dataclass(frozen=True)
