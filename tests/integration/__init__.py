@@ -27,7 +27,11 @@ def configure_api_defaults(
     permissions = cfg.api.role_permissions.setdefault("anonymous", [])
     if "query" not in permissions:
         permissions.append("query")
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    def load_config_override(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_override)
     return cfg
 
 

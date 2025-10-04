@@ -18,7 +18,7 @@ def test_concurrent_eviction(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         ram_budget_mb=1,
         graph_eviction_policy="lru",
     )
-    
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 

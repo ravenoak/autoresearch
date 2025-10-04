@@ -38,13 +38,12 @@ def test_try_import_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     import_or_skip("spacy")
     from autoresearch.search import context
 
-    monkeypatch.setattr(
-        context,
-        "get_config",
-        lambda: SimpleNamespace(
+    def get_config_override() -> SimpleNamespace:
+        return SimpleNamespace(
             search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        ),
-    )
+        )
+
+    monkeypatch.setattr(context, "get_config", get_config_override)
     assert context._try_import_spacy()
 
 
@@ -57,13 +56,12 @@ def test_try_import_bertopic(monkeypatch: pytest.MonkeyPatch) -> None:
         pytest.skip(str(exc))
     from autoresearch.search import context
 
-    monkeypatch.setattr(
-        context,
-        "get_config",
-        lambda: SimpleNamespace(
+    def get_config_override() -> SimpleNamespace:
+        return SimpleNamespace(
             search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        ),
-    )
+        )
+
+    monkeypatch.setattr(context, "get_config", get_config_override)
     if not context._try_import_bertopic():
         pytest.skip("BERTopic import failed")
 
@@ -74,13 +72,12 @@ def test_try_import_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> No
     import_or_skip("fastembed")
     from autoresearch.search import context
 
-    monkeypatch.setattr(
-        context,
-        "get_config",
-        lambda: SimpleNamespace(
+    def get_config_override() -> SimpleNamespace:
+        return SimpleNamespace(
             search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        ),
-    )
+        )
+
+    monkeypatch.setattr(context, "get_config", get_config_override)
     assert context._try_import_sentence_transformers()
 
 
@@ -113,10 +110,11 @@ def test_apply_accessibility_settings_high_contrast(
     from autoresearch import streamlit_ui
 
     calls: list[str] = []
-    fake_st = SimpleNamespace(
-        markdown=lambda markup, **_: calls.append(markup),
-        session_state={},
-    )
+
+    def record_markup(markup: str, **_: object) -> None:
+        calls.append(markup)
+
+    fake_st = SimpleNamespace(markdown=record_markup, session_state={})
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
 
     streamlit_ui.apply_accessibility_settings()
@@ -141,12 +139,12 @@ def test_vss_extension_loader(monkeypatch: pytest.MonkeyPatch) -> None:
 
             return Result()
 
-    monkeypatch.setattr(
-        "autoresearch.extensions.ConfigLoader",
-        lambda: SimpleNamespace(
+    def config_loader_factory() -> SimpleNamespace:
+        return SimpleNamespace(
             config=SimpleNamespace(storage=SimpleNamespace(vector_extension_path=None))
-        ),
-    )
+        )
+
+    monkeypatch.setattr("autoresearch.extensions.ConfigLoader", config_loader_factory)
     assert VSSExtensionLoader.load_extension(DummyConn())
 
 
@@ -165,7 +163,11 @@ def test_local_git_backend(monkeypatch: pytest.MonkeyPatch) -> None:
             local_file=SimpleNamespace(file_types=["py"]),
         )
     )
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+    def get_config_override() -> SimpleNamespace:
+        return cfg
+
+    monkeypatch.setattr("autoresearch.search.core.get_config", get_config_override)
     results = _local_git_backend("def", max_results=1)
     assert results
 

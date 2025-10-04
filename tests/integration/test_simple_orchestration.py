@@ -4,7 +4,6 @@ from typing import Any
 
 import pytest
 
-from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
@@ -54,7 +53,11 @@ def test_orchestrator_run_query(monkeypatch: pytest.MonkeyPatch) -> None:
     patch_agent_factory_get(monkeypatch, [synthesizer])
 
     cfg = ConfigModel(agents=["Synthesizer"], loops=1)
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    def load_config_override(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_override)
     ConfigLoader()._config = None
 
     response = Orchestrator().run_query("q", cfg)

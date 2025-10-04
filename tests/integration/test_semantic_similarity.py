@@ -1,5 +1,4 @@
 import importlib
-import importlib
 import sys
 import types
 from typing import Any, Mapping, Sequence
@@ -25,8 +24,8 @@ def test_semantic_similarity_uses_fastembed(
             return [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
 
     dummy_module = types.ModuleType("fastembed")
-    setattr(dummy_module, "OnnxTextEmbedding", lambda: DummyFastEmbed())
-    setattr(dummy_module, "TextEmbedding", lambda: DummyFastEmbed())
+    setattr(dummy_module, "OnnxTextEmbedding", DummyFastEmbed)
+    setattr(dummy_module, "TextEmbedding", DummyFastEmbed)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_module)
 
     search = core.Search()
@@ -35,6 +34,8 @@ def test_semantic_similarity_uses_fastembed(
     assert scores == [1.0, 0.5]
     assert core.SENTENCE_TRANSFORMERS_AVAILABLE
     assert isinstance(search.get_sentence_transformer(), DummyFastEmbed)
+
+
 def test_semantic_similarity_legacy_fastembed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -49,7 +50,7 @@ def test_semantic_similarity_legacy_fastembed(
             return [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
 
     dummy_module = types.ModuleType("fastembed")
-    setattr(dummy_module, "TextEmbedding", lambda: DummyFastEmbed())
+    setattr(dummy_module, "TextEmbedding", DummyFastEmbed)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_module)
 
     search = core.Search()

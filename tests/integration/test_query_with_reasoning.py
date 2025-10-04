@@ -2,7 +2,6 @@ import rdflib
 from pathlib import Path
 
 import pytest
-import rdflib
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
@@ -15,7 +14,11 @@ def _configure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf"))
     )
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    def load_config_override(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_override)
     ConfigLoader()._config = None
 
 

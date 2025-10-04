@@ -200,7 +200,7 @@ def test_orchestrator_persists_across_queries(monkeypatch: pytest.MonkeyPatch) -
             {"title": f"{q}-Doc2", "url": f"{q}-u2"},
         ],
     )
-    
+
     def _capture_claim(claim: JSONDict) -> None:
         stored.append(claim)
 

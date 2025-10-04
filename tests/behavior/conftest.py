@@ -55,6 +55,7 @@ class StorageErrorHandler:
             bdd_context[context_key] = str(exc)
             return None
 
+
 # Load fixtures and step implementations so their fixtures are available
 pytest_plugins = (
     "pytest_bdd",

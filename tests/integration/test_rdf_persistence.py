@@ -24,6 +24,15 @@ from autoresearch.storage import StorageContext, StorageManager
 from autoresearch.storage_typing import JSONDict
 
 
+def _stub_config_loader(
+    monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel
+) -> None:
+    def load_config_stub(_: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+
+
 @pytest.fixture(autouse=True)
 def cleanup_rdf_store() -> Iterator[None]:
     """Clean up the RDF store after each test.
@@ -59,10 +68,7 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
         )
     )
 
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader.new_for_tests()
     import autoresearch.storage as storage_module
 
@@ -94,10 +100,7 @@ def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
         )
     )
 
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader.new_for_tests()
 
     StorageManager.teardown(remove_db=True)
@@ -116,10 +119,7 @@ def test_oxrdflib_missing_plugin(tmp_path, monkeypatch):
         )
     )
 
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader.new_for_tests()
 
     def fake_find_spec(name: str) -> ModuleSpec | None:
@@ -144,10 +144,7 @@ def test_memory_backend_initializes(tmp_path, monkeypatch):
         )
     )
 
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader.new_for_tests()
 
     StorageManager.teardown(remove_db=True)

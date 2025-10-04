@@ -14,7 +14,13 @@ SearchResults = Sequence[Mapping[str, object]]
 def _config(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(search=SearchConfig())
     ConfigLoader.reset_instance()
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    def load_config_override(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_override)
+
+
 def test_rank_results_normalizes_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     """Scores are scaled to the unit interval."""
     _config(monkeypatch)

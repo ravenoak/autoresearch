@@ -13,6 +13,8 @@ from autoresearch.storage_typing import JSONDict
 
 pytestmark = pytest.mark.slow
 
+AgentFactoryClass = getattr(orchestrator_module, "AgentFactory")
+
 
 class ClaimAgent:
     def __init__(self, name: str, pids: list[int]):
@@ -70,4 +72,3 @@ def test_process_storage_with_executor(
         StorageManager.context = StorageContext()
 
     assert [row[0] for row in rows] == ["A", "B"]
-AgentFactoryClass = getattr(orchestrator_module, "AgentFactory")

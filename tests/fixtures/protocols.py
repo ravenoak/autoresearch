@@ -71,4 +71,3 @@ class ExtraProbe:
             if self.validator is not None and not self.validator(module):
                 return False
         return True
-

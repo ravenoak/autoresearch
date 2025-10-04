@@ -322,4 +322,3 @@ class StreamlitComponentMocks:
 
     expander: MagicMock | None = None
     """Optional mock for :func:`streamlit.expander`."""
-
