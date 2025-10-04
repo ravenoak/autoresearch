@@ -48,6 +48,30 @@ groups or add `gpu` packages.
 - Record any remaining unavoidable warnings here, along with a link to the
   upstream tracker or mitigation plan.
 
+### Known warnings from task coverage 2025-10-04T18:35:37Z
+
+The full-extras `task coverage` run captured in
+`baseline/logs/task-coverage-20251004T183537Z.log` surfaced three warnings that
+completed successfully but require ongoing tracking.
+
+- **DeprecationWarning**: `tests/unit/test_main_config_commands.py` still imports
+  `Traversable` from `importlib.abc`. Switch to
+  [`importlib.resources.abc.Traversable`](
+  https://docs.python.org/3/library/importlib.html#importlib.resources.abc.Traversable)
+  when Python 3.13 becomes our minimum so Python 3.14 stops emitting the
+  warning. 【F:baseline/logs/task-coverage-20251004T183537Z.log†L1475-L1484】
+- **FutureWarning**: NetworkX will change the default `edges` keyword used by
+  `json_graph.node_link_data`. Update the knowledge-graph export helper to pass
+  `edges="edges"` once we bump NetworkX, following the
+  [node-link data guidance](
+  https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html).
+  【F:baseline/logs/task-coverage-20251004T183537Z.log†L1480-L1488】
+- **RuntimeWarning**: `tests/unit/test_kg_reasoning.py::test_run_ontology_reasoner_reload_without_owlrl`
+  deliberately reloads `autoresearch.kg_reasoning` without `owlrl` so the
+  fallback path warns that ontology reasoning is skipped. Keep installing
+  [`owlrl`](https://rdflib.github.io/OWL-RL/) during release runs so production
+  workloads retain full reasoning. 【F:baseline/logs/task-coverage-20251004T183537Z.log†L1490-L1492】
+
 ## Multiprocessing cleanup
 
 Python's `multiprocessing` registers OS resources for queues and pools. When
