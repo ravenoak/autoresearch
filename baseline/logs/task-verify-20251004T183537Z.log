@@ -1,0 +1,65 @@
+[UTC:20251004T183537Z] task verify with extras nlp ui vss git distributed analysis llm parsers
+task: [verify] set -eu
+extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
+export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  $(printf ' --extra %s' $extras) \
+  
+
+Resolved 328 packages in 4ms
+Audited 246 packages in 0.34ms
+task: [verify] task check-env EXTRAS="dev-minimal test nlp ui vss git distributed analysis llm parsers"
+task: [check-env] task --version
+3.45.4
+task: [check-env] uv run python scripts/check_env.py
+Verifying extras: analysis, dev-minimal, distributed, git, llm, nlp, parsers, test, ui, vss
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+GitPython 3.1.45
+a2a-sdk 0.3.7
+black 25.9.0
+dspy-ai 3.0.3
+duckdb 1.3.2
+duckdb-extension-vss 1.3.2
+fakeredis 2.31.3
+fastembed 0.7.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.2
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+pillow 11.3.0
+polars 1.33.1
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+ray 2.49.2
+redis 6.4.0
+responses 0.25.8
+spacy 3.8.7
+streamlit 1.50.0
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20250822
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+task: [verify] set -eu
+uv run flake8 src tests
+echo "[verify][lint] flake8 passed"
+
+[verify][lint] flake8 passed
+task: [verify] task mypy-strict
+task: [mypy-strict] uv run mypy --strict src tests
+src/autoresearch/search/core.py:696: error: Name "wrapper" already defined on line 681  [no-redef]
+Found 1 error in 1 file (checked 790 source files)
+task: Failed to run task "mypy-strict": exit status 1
+task: Failed to run task "verify": exit status 201
