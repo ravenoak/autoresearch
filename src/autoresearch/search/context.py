@@ -310,7 +310,30 @@ class SearchContext:
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to initialize spaCy NLP model: {e}")
 
+    @staticmethod
+    def _is_query_strategy_capture_enabled() -> bool:
+        """Return ``True`` when adaptive strategy telemetry should be stored."""
+
+        try:
+            cfg = get_config()
+        except Exception:  # pragma: no cover - defensive
+            return True
+        return bool(getattr(cfg, "gate_capture_query_strategy", True))
+
+    @staticmethod
+    def _is_self_critique_capture_enabled() -> bool:
+        """Return ``True`` when self-critique markers should be persisted."""
+
+        try:
+            cfg = get_config()
+        except Exception:  # pragma: no cover - defensive
+            return True
+        return bool(getattr(cfg, "gate_capture_self_critique", True))
+
     def _ensure_search_strategy_locked(self) -> dict[str, Any]:
+        if not self._is_query_strategy_capture_enabled():
+            self._search_strategy = {}
+            return self._search_strategy
         if not self._search_strategy:
             self._search_strategy = {
                 "rewrites": [],
@@ -323,11 +346,14 @@ class SearchContext:
         """Clear adaptive search bookkeeping for the next query."""
 
         with self._scout_lock:
-            self._search_strategy = {
-                "rewrites": [],
-                "fetch_plan": {"base_k": None, "attempts": []},
-                "self_critique": {},
-            }
+            if not self._is_query_strategy_capture_enabled():
+                self._search_strategy = {}
+            else:
+                self._search_strategy = {
+                    "rewrites": [],
+                    "fetch_plan": {"base_k": None, "attempts": []},
+                    "self_critique": {},
+                }
 
     def record_fetch_plan(
         self,
@@ -339,6 +365,9 @@ class SearchContext:
         metrics: Mapping[str, Any] | None = None,
     ) -> None:
         """Persist adaptive fetch telemetry for the active query."""
+
+        if not self._is_query_strategy_capture_enabled():
+            return
 
         with self._scout_lock:
             strategy = self._ensure_search_strategy_locked()
@@ -367,6 +396,9 @@ class SearchContext:
     ) -> None:
         """Record a rewrite applied during adaptive search."""
 
+        if not self._is_query_strategy_capture_enabled():
+            return
+
         with self._scout_lock:
             strategy = self._ensure_search_strategy_locked()
             rewrites = strategy.setdefault("rewrites", [])
@@ -382,6 +414,9 @@ class SearchContext:
     def register_self_critique_marker(self, key: str, value: Any) -> None:
         """Store a self-critique marker surfaced by adaptive search."""
 
+        if not self._is_self_critique_capture_enabled():
+            return
+
         with self._scout_lock:
             strategy = self._ensure_search_strategy_locked()
             markers = strategy.setdefault("self_critique", {})
@@ -389,6 +424,9 @@ class SearchContext:
 
     def get_search_strategy(self) -> dict[str, Any]:
         """Return a sanitized snapshot of adaptive search telemetry."""
+
+        if not self._is_query_strategy_capture_enabled():
+            return {}
 
         with self._scout_lock:
             strategy = copy.deepcopy(self._ensure_search_strategy_locked())
@@ -418,6 +456,9 @@ class SearchContext:
 
     def get_self_critique_markers(self) -> dict[str, Any]:
         """Return recorded self-critique markers for the latest query."""
+
+        if not self._is_self_critique_capture_enabled():
+            return {}
 
         strategy = self.get_search_strategy()
         markers = strategy.get("self_critique") if strategy else None
@@ -609,14 +650,15 @@ class SearchContext:
             "backend_counts": backend_counts,
         }
 
-        if total_results == 0:
-            self.register_self_critique_marker("no_results", True)
-        if coverage_gap > 0.0:
-            self.register_self_critique_marker("coverage_gap", coverage_gap)
-        if backend_counts:
-            empty = [name for name, count in backend_counts.items() if count == 0]
-            if empty:
-                self.register_self_critique_marker("empty_backends", empty)
+        if self._is_self_critique_capture_enabled():
+            if total_results == 0:
+                self.register_self_critique_marker("no_results", True)
+            if coverage_gap > 0.0:
+                self.register_self_critique_marker("coverage_gap", coverage_gap)
+            if backend_counts:
+                empty = [name for name, count in backend_counts.items() if count == 0]
+                if empty:
+                    self.register_self_critique_marker("empty_backends", empty)
 
         return metrics
 

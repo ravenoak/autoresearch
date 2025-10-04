@@ -128,6 +128,8 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
      before debate. These signals surface through `ScoutGateDecision.telemetry`
      when `gate_capture_query_strategy` and
      `gate_capture_self_critique` remain enabled.
+     Operators can now tune both gates independently so adaptive attempts and
+     critique markers are only persisted when the deployment requires them.
    - Instrument `OrchestrationMetrics` with Prometheus-backed
      `graph_ingestion` telemetry (entity, relation, contradiction, neighbour,
      and latency aggregates) guarded by `search.context_aware` toggles so
