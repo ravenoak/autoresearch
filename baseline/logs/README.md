@@ -18,6 +18,20 @@ The wrapper streams output to the terminal while archiving it under
 underlying `task verify:warnings` invocation, so CI will still fail if warnings
 cause the run to abort.
 
+## Log naming convention
+
+- Use a UTC timestamp in the `YYYYMMDDTHHMMSSZ` format for every captured log.
+- Reuse the same shell variable when building filenames so downstream tooling
+  can swap in other task prefixes without rewriting the timestamp logic:
+
+  ```sh
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  log_path="baseline/logs/task-coverage-${timestamp}.log"
+  ```
+
+  The Task automation for `verify:warnings:log` follows this pattern; adopt the
+  same `timestamp` variable when authoring new log collectors.
+
 ## Interpreting the archived logs
 
 - Each log preserves ordering across stdout and stderr, making it safe to diff
