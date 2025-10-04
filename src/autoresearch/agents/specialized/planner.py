@@ -81,6 +81,19 @@ class PlannerPromptBuilder:
                                 "type": "array",
                                 "items": {"type": "string"},
                             },
+                            "dependency_depth": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": (
+                                    "Planner-estimated depth relative to root tasks."
+                                ),
+                            },
+                            "dependency_rationale": {
+                                "type": "string",
+                                "description": (
+                                    "Short justification for declared dependencies."
+                                ),
+                            },
                             "criteria": {
                                 "type": "array",
                                 "items": {"type": "string"},
@@ -92,6 +105,19 @@ class PlannerPromptBuilder:
                                 "description": "Alias for criteria.",
                             },
                             "explanation": {"type": "string"},
+                            "socratic_checks": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": (
+                                    "Self-question prompts that stress-test assumptions."
+                                ),
+                            },
+                            "self_check": {
+                                "type": "object",
+                                "description": (
+                                    "Alias for socratic_checks when structured."
+                                ),
+                            },
                             "metadata": {"type": "object"},
                         },
                     },
@@ -116,7 +142,43 @@ class PlannerPromptBuilder:
                     "properties": {
                         "version": {"type": "integer"},
                         "notes": {"type": "string"},
+                        "dependency_overview": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "task": {"type": "string"},
+                                    "depends_on": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                    "depth": {"type": "integer", "minimum": 0},
+                                    "rationale": {"type": "string"},
+                                },
+                            },
+                            "description": (
+                                "Explicit dependency depth summary for coordinator telemetry."
+                            ),
+                        },
                     },
+                },
+                "dependency_overview": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "task": {"type": "string"},
+                            "depends_on": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "depth": {"type": "integer", "minimum": 0},
+                            "rationale": {"type": "string"},
+                        },
+                    },
+                    "description": (
+                        "Planner-declared dependency depths mirrored in metadata.dependency_overview."
+                    ),
                 },
             },
         }
@@ -130,10 +192,14 @@ class PlannerPromptBuilder:
             notes = dedent(
                 """
                 You must respond with JSON that validates against the schema below.
+                - Derive dependency depth per task and mirror it in "dependency_overview".
                 - Populate ``sub_questions`` with decomposed prompts for each task.
                 - Store numeric tool scores in ``affinity`` with values in ``[0, 1]``.
                 - Provide concrete ``criteria`` that confirm completion.
                 - Summarise rationale for the task in "explanation".
+                - Add at least two "socratic_checks" that challenge risky assumptions.
+                - Use "dependency_rationale" to explain why predecessors are required.
+                - Before finalising, double-check the graph consistency against your plan.
                 - Avoid prose outside the JSON object.
                 """
             ).strip()

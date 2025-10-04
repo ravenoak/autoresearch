@@ -1,12 +1,13 @@
 # Planner coordinator react upgrade
 
 ## Context
-Phase 2 of the deep research program promotes the planner output into a
-Phase 2 now depends on the registry clone fix that deep-copies QueryState
-snapshots with typed memo support and on the semantic fallback guard that
-keeps coverage green when fastembed is absent. The regression suites cover
-register/update/round-trip flows plus the encode fallback, so planner
-telemetry can rely on restored coverage while strict typing proceeds.
+Phase 2 of the deep research program promotes the planner output into a typed
+task graph that captures dependency depth and Socratic self-check prompts. The
+registry clone fix that deep-copies QueryState snapshots with typed memo support
+and the semantic fallback guard that keeps coverage green when fastembed is
+absent both landed earlier. The regression suites cover register/update/round-
+trip flows plus the encode fallback, so planner telemetry can rely on restored
+coverage while strict typing proceeds.
 【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
 【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
 【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
@@ -34,16 +35,18 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
 
 ## Acceptance Criteria
 - Planner prompt templates request objectives, tool affinity scores, exit
-  criteria, and rationale, emitting structured data the coordinator can ingest
-  without additional parsing.
-- TaskCoordinator honors tool affinity scores, enforces dependency ordering, and
-  records routing decisions plus ReAct steps with task identifiers.
+  criteria, dependency depth, and Socratic self-check prompts, emitting
+  structured data the coordinator can ingest without additional parsing.
+- TaskCoordinator honors tool affinity scores, planner-provided dependency
+  depth, and records routing decisions plus ReAct steps with task identifiers
+  and dependency rationale.
 - QueryState persists the canonical task graph and exposes planner/coordinator
   telemetry for replay.
 - Unit, integration, and behavior tests cover planner output normalization,
   scheduler tie-breakers, and ReAct log persistence.
-- Documentation updates in `docs/orchestration.md` and `docs/pseudocode.md`
-  explain the new data structures and replay workflow.
+- Documentation updates in `docs/orchestration.md`, `docs/pseudocode.md`, and
+  refreshed diagrams explain the PRDV flow, dependency depth, and replay
+  workflow.
 
 ## Checklist
 - [x] Capture the strict typing prerequisite for Phase 2 in
@@ -53,7 +56,7 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
   `EvaluationSummary` fields to align planner telemetry with verification docs.
 - [x] Normalise planner metadata into result payloads and coordinator traces so
   `task_metadata` mirrors planner hints without bespoke adapters.
-- [ ] Resume implementation after the **October 1, 2025** strict and coverage
+- [x] Resume implementation after the **October 1, 2025** strict and coverage
   sweeps confirm the `_thread.RLock` clone and typed `EvaluationSummary`
   fixtures are green again.
   【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】

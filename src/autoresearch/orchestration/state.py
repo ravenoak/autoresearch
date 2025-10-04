@@ -2,7 +2,7 @@
 
 import re
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
@@ -821,6 +821,27 @@ class QueryState(BaseModel):
                         detail={"affinity": affinity_raw},
                     )
                 )
+            depth_value = task.get("dependency_depth")
+            if depth_value is None:
+                depth_value = task.get("depth")
+            dependency_depth = self._coerce_optional_int(
+                depth_value,
+                field="dependency_depth",
+                task_id=task_id,
+                warnings=warnings,
+            )
+            dependency_rationale = self._coerce_optional_text(
+                task.get("dependency_rationale") or task.get("dependency_note"),
+                field="dependency_rationale",
+                task_id=task_id,
+                warnings=warnings,
+            )
+            socratic_checks = self._coerce_socratic_checks(
+                task.get("socratic_checks") or task.get("self_check"),
+                field="socratic_checks",
+                task_id=task_id,
+                warnings=warnings,
+            )
             metadata_payload = task.get("metadata")
             if isinstance(metadata_payload, Mapping):
                 metadata = dict(metadata_payload)
@@ -854,6 +875,12 @@ class QueryState(BaseModel):
                 normalized_task["sub_questions"] = sub_questions
             if explanation:
                 normalized_task["explanation"] = explanation
+            if dependency_depth is not None:
+                normalized_task["dependency_depth"] = dependency_depth
+            if dependency_rationale:
+                normalized_task["dependency_rationale"] = dependency_rationale
+            if socratic_checks:
+                normalized_task["socratic_checks"] = socratic_checks
             normalized_tasks.append(normalized_task)
 
         valid_ids = {task["id"] for task in normalized_tasks}
@@ -909,6 +936,12 @@ class QueryState(BaseModel):
 
         metadata_copy = dict(metadata_obj)
         metadata_copy.setdefault("version", 1)
+        dependency_overview = self._coerce_dependency_overview(
+            payload.get("dependency_overview") or metadata_copy.get("dependency_overview"),
+            warnings=warnings,
+        )
+        if dependency_overview:
+            metadata_copy["dependency_overview"] = dependency_overview
 
         return {
             "tasks": normalized_tasks,
@@ -946,6 +979,208 @@ class QueryState(BaseModel):
             )
         )
         return [str(value)]
+
+    def _coerce_optional_int(
+        self,
+        value: Any,
+        *,
+        field: str,
+        task_id: str,
+        warnings: list[dict[str, Any]],
+    ) -> int | None:
+        """Coerce ``value`` into a non-negative integer when possible."""
+
+        if value is None:
+            return None
+        try:
+            integer = int(value)
+        except (TypeError, ValueError):
+            warnings.append(
+                self._task_graph_warning(
+                    "state.integer_cast_failed",
+                    f"Could not parse {field} as integer.",
+                    task_id=task_id,
+                    detail={"value": value},
+                )
+            )
+            return None
+        if integer < 0:
+            warnings.append(
+                self._task_graph_warning(
+                    "state.integer_negative",
+                    f"{field} must be non-negative.",
+                    task_id=task_id,
+                    detail={"value": value},
+                )
+            )
+            return None
+        return integer
+
+    def _coerce_optional_text(
+        self,
+        value: Any,
+        *,
+        field: str,
+        task_id: str,
+        warnings: list[dict[str, Any]],
+    ) -> str | None:
+        """Return trimmed text or ``None`` if unavailable."""
+
+        if value is None:
+            return None
+        if isinstance(value, str):
+            trimmed = value.strip()
+            return trimmed or None
+        try:
+            text = str(value).strip()
+        except Exception:  # pragma: no cover - defensive
+            warnings.append(
+                self._task_graph_warning(
+                    "state.text_cast_failed",
+                    f"Could not cast {field} to text.",
+                    task_id=task_id,
+                )
+            )
+            return None
+        if not text:
+            return None
+        warnings.append(
+            self._task_graph_warning(
+                "state.coerced_text",
+                f"Coerced {field} into string form.",
+                task_id=task_id,
+                detail={"value": value},
+            )
+        )
+        return text
+
+    def _coerce_socratic_checks(
+        self,
+        value: Any,
+        *,
+        task_id: str,
+        field: str,
+        warnings: list[dict[str, Any]],
+    ) -> list[str]:
+        """Normalise Socratic self-check prompts into strings."""
+
+        if isinstance(value, Mapping):
+            collected: list[str] = []
+            for key, item in value.items():
+                prefix = str(key).strip()
+                nested = self._coerce_socratic_checks(
+                    item,
+                    task_id=task_id,
+                    field=f"{field}.{prefix}" if prefix else field,
+                    warnings=warnings,
+                )
+                for prompt in nested:
+                    if prefix and not prompt.lower().startswith(prefix.lower()):
+                        collected.append(f"{prefix}: {prompt}")
+                    else:
+                        collected.append(prompt)
+            return collected
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            flattened: list[str] = []
+            for item in value:
+                flattened.extend(
+                    self._coerce_socratic_checks(
+                        item,
+                        task_id=task_id,
+                        field=field,
+                        warnings=warnings,
+                    )
+                )
+            return flattened
+        if isinstance(value, str):
+            parts = [segment.strip() for segment in re.split(r"\n|;|\|", value)]
+            return [segment for segment in parts if segment]
+        if value is None:
+            return []
+        coerced = str(value).strip()
+        if coerced:
+            warnings.append(
+                self._task_graph_warning(
+                    "state.coerced_socratic",
+                    "Coerced Socratic check into string form.",
+                    task_id=task_id,
+                    detail={"value": value},
+                )
+            )
+            return [coerced]
+        return []
+
+    def _coerce_dependency_overview(
+        self,
+        value: Any,
+        *,
+        warnings: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Normalise dependency overview metadata."""
+
+        if value is None:
+            return []
+        items: Iterable[Any]
+        if isinstance(value, Mapping):
+            items = [value]
+        elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            items = value
+        else:
+            warnings.append(
+                self._task_graph_warning(
+                    "state.dependency_overview_invalid",
+                    "Dependency overview must be a mapping or sequence.",
+                    detail={"value": value},
+                )
+            )
+            return []
+        overview: list[dict[str, Any]] = []
+        for entry in items:
+            if not isinstance(entry, Mapping):
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.dependency_overview_entry_invalid",
+                        "Dependency overview entries must be mappings.",
+                        detail={"entry": entry},
+                    )
+                )
+                continue
+            task_id = entry.get("task") or entry.get("id")
+            sanitized: dict[str, Any] = {}
+            if task_id is not None:
+                sanitized["task"] = str(task_id)
+            depends_on = self._coerce_general_sequence(entry.get("depends_on"))
+            if depends_on:
+                sanitized["depends_on"] = depends_on
+            depth_value = entry.get("depth")
+            if depth_value is None:
+                depth_value = entry.get("dependency_depth")
+            depth = None
+            if depth_value is not None:
+                depth = self._coerce_optional_int(
+                    depth_value,
+                    field="dependency_overview.depth",
+                    task_id=str(task_id or "overview"),
+                    warnings=warnings,
+                )
+            if depth is not None:
+                sanitized["depth"] = depth
+            rationale = entry.get("rationale")
+            if rationale is None:
+                rationale = entry.get("dependency_rationale")
+            rationale_text = None
+            if rationale is not None:
+                rationale_text = self._coerce_optional_text(
+                    rationale,
+                    field="dependency_overview.rationale",
+                    task_id=str(task_id or "overview"),
+                    warnings=warnings,
+                )
+            if rationale_text:
+                sanitized["rationale"] = rationale_text
+            if sanitized:
+                overview.append(sanitized)
+        return overview
 
     def _task_graph_warning(
         self,
@@ -997,6 +1232,15 @@ class QueryState(BaseModel):
         for task in normalized.get("tasks", []):
             if not isinstance(task, Mapping):
                 continue
+            socratic_checks = task.get("socratic_checks")
+            if isinstance(socratic_checks, Sequence) and not isinstance(
+                socratic_checks, (str, bytes)
+            ):
+                socratic_list = [
+                    str(item).strip() for item in socratic_checks if str(item).strip()
+                ]
+            else:
+                socratic_list = []
             tasks_snapshot.append(
                 {
                     "id": str(task.get("id")),
@@ -1004,6 +1248,9 @@ class QueryState(BaseModel):
                     "tool_affinity": dict(task.get("affinity", {})),
                     "exit_criteria": list(task.get("criteria", [])),
                     "explanation": task.get("explanation"),
+                    "dependency_depth": task.get("dependency_depth"),
+                    "dependency_rationale": task.get("dependency_rationale"),
+                    "socratic_checks": socratic_list,
                 }
             )
 
@@ -1015,6 +1262,13 @@ class QueryState(BaseModel):
         explanation = top_level.get("explanation")
         if explanation:
             telemetry["explanation"] = explanation
+        metadata = normalized.get("metadata")
+        if isinstance(metadata, Mapping):
+            dependency_overview = metadata.get("dependency_overview")
+            if isinstance(dependency_overview, Sequence) and not isinstance(
+                dependency_overview, (str, bytes)
+            ):
+                telemetry["dependency_overview"] = list(dependency_overview)
         return telemetry
 
     def _coerce_general_sequence(self, value: Any) -> list[str]:
