@@ -516,6 +516,8 @@ class OrchestrationMetrics:
         self.routing_decisions: list[RoutingDecision] = []
         self.routing_override_requests: list[RoutingOverrideRequest] = []
         self.routing_strategy: str | None = None
+        self.routing_agent_constraints: dict[str, dict[str, float | None]] = {}
+        self.routing_agent_recommendations: dict[str, str | None] = {}
         self.graph_ingestions: list[dict[str, Any]] = []
         self.gate_coverage_ratios: list[float] = []
         self.gate_agreement_stats: list[dict[str, Any]] = []
@@ -1016,6 +1018,11 @@ class OrchestrationMetrics:
                 override.to_dict() for override in self.routing_override_requests
             ],
             "model_routing_strategy": self.routing_strategy,
+            "model_routing_agent_constraints": {
+                agent: dict(constraints)
+                for agent, constraints in self.routing_agent_constraints.items()
+            },
+            "model_routing_recommendations": dict(self.routing_agent_recommendations),
             "graph_ingestion": graph_summary_payload or {},
         }
 
@@ -1056,7 +1063,7 @@ class OrchestrationMetrics:
         config: "ConfigModel",
         state: "QueryState | None" = None,
     ) -> str | None:
-        """Update ``config`` with a budget-aware model recommendation."""
+        """Return a budget-aware model recommendation without mutating ``config``."""
 
         routing_cfg = getattr(config, "model_routing", None)
         if (
@@ -1129,31 +1136,29 @@ class OrchestrationMetrics:
             "strategy": directives.strategy_name,
             "token_share": token_share,
             "budget_tokens": agent_budget_tokens,
+            "latency_slo_ms": latency_slo,
+            "latency_cap_ms": decision.latency_cap_ms,
+            "applied": False,
         }
         if directives.override is not None:
             metadata["override"] = directives.override.to_dict()
         decision = replace(decision, metadata=metadata)
         self.routing_decisions.append(decision)
 
+        constraints: dict[str, float | None] = {
+            "token_share": token_share,
+            "budget_tokens": agent_budget_tokens,
+            "latency_slo_ms": latency_slo,
+            "latency_cap_ms": decision.latency_cap_ms,
+        }
+        self.routing_agent_constraints[agent_name] = constraints
+        self.routing_agent_recommendations[agent_name] = decision.selected_model
+
+        log_payload = decision.as_log_extra()
+        log_payload["applied"] = False
+        log.info("Evaluated budget-aware model routing", extra=log_payload)
+
         selected = decision.selected_model
-        if not selected:
-            return None
-
-        from ..config.models import AgentConfig  # Local import to avoid cycles
-
-        agent_cfg_obj = agent_cfg or config.agent_config.setdefault(
-            agent_name, AgentConfig()
-        )
-        previous_value = agent_cfg_obj.model
-        agent_cfg_obj.model = selected
-
-        if previous_value != selected:
-            log.info("Applied budget-aware model routing", extra=decision.as_log_extra())
-        else:
-            log.debug(
-                "Routing retained existing model", extra=decision.as_log_extra()
-            )
-
         return selected
 
     # ------------------------------------------------------------------
@@ -1213,6 +1218,10 @@ class OrchestrationMetrics:
             "overrides": summary.get("model_routing_overrides", []),
             "agent_latency_p95_ms": summary.get("agent_latency_p95_ms", {}),
             "agent_avg_tokens": summary.get("agent_avg_tokens", {}),
+            "agent_constraints": summary.get("model_routing_agent_constraints", {}),
+            "agent_recommendations": summary.get(
+                "model_routing_recommendations", {}
+            ),
         }
         if path is None:
             path = Path(

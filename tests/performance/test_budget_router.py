@@ -64,6 +64,7 @@ def test_budget_router_prefers_cost_efficient_model_when_budget_constrained() ->
         preferred_models=["premium", "efficient"],
         token_share=0.5,
         latency_slo_ms=1200.0,
+        model="premium",
     )
 
     metrics = OrchestrationMetrics()
@@ -73,7 +74,12 @@ def test_budget_router_prefers_cost_efficient_model_when_budget_constrained() ->
     selected = metrics.apply_model_routing("Synthesizer", config)
 
     assert selected == "efficient"
-    assert config.agent_config["Synthesizer"].model == "efficient"
+    assert config.agent_config["Synthesizer"].model == "premium"
+    assert metrics.routing_agent_recommendations["Synthesizer"] == "efficient"
+    assert (
+        metrics.routing_decisions[-1].metadata is not None
+        and metrics.routing_decisions[-1].metadata.get("applied") is False
+    )
 
 
 def test_budget_router_retains_preferred_model_when_within_budget() -> None:
@@ -84,6 +90,7 @@ def test_budget_router_retains_preferred_model_when_within_budget() -> None:
         preferred_models=["premium", "efficient"],
         token_share=0.5,
         latency_slo_ms=1200.0,
+        model="premium",
     )
 
     metrics = OrchestrationMetrics()
@@ -94,6 +101,7 @@ def test_budget_router_retains_preferred_model_when_within_budget() -> None:
 
     assert selected == "premium"
     assert config.agent_config["Contrarian"].model == "premium"
+    assert metrics.routing_agent_recommendations["Contrarian"] == "premium"
 
 
 def test_metrics_summary_reports_cost_and_latency() -> None:
@@ -104,6 +112,7 @@ def test_metrics_summary_reports_cost_and_latency() -> None:
         preferred_models=["premium", "efficient"],
         token_share=0.5,
         latency_slo_ms=1200.0,
+        model="premium",
     )
 
     metrics = OrchestrationMetrics()
@@ -118,6 +127,8 @@ def test_metrics_summary_reports_cost_and_latency() -> None:
     avg_tokens = summary["agent_avg_tokens"]["Synthesizer"]
     decisions = summary["model_routing_decisions"]
     savings = summary["model_routing_cost_savings"]
+    constraints = summary["model_routing_agent_constraints"]["Synthesizer"]
+    recommendations = summary["model_routing_recommendations"]
 
     assert latency_ms >= 900.0
     assert avg_tokens >= 2600.0
@@ -126,6 +137,10 @@ def test_metrics_summary_reports_cost_and_latency() -> None:
     assert summary["model_routing_strategy"] == "cost_saver"
     assert decisions[-1]["metadata"]["strategy"] == "cost_saver"
     assert "token_share" in decisions[-1]["metadata"]
+    assert decisions[-1]["metadata"]["applied"] is False
+    assert constraints["budget_tokens"] >= 2000.0
+    assert constraints["latency_slo_ms"] == 1200.0
+    assert recommendations["Synthesizer"] == "efficient"
 
 
 def test_gate_confidence_escalation_registers_override() -> None:

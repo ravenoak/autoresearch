@@ -6,6 +6,11 @@ latency and token spend without sacrificing accuracy. We need configurable
 budget policies, routing telemetry, and regression tests that demonstrate cost
 savings alongside quality guarantees.
 
+Observation-mode telemetry now records per-agent token budgets, latency caps,
+and recommended models without mutating the active configuration. Dashboards
+consume the JSONL feed produced by `OrchestrationMetrics` so we can validate
+the heuristics before permitting automatic model changes.
+
 Automated strict gating and the documented storage resident floor keep release
 prerequisites visible while TestPyPI remains paused, and PR5/PR4 upgrades add
 verification telemetry plus session-graph exports that routing dashboards must

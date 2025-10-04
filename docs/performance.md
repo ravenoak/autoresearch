@@ -36,11 +36,13 @@ violating service-level objectives. The router consults:
 - model profiles that describe per-1K token pricing and latency targets.
 
 When an agent consumes more than 80% of its allocated share of the global token
-budget, the router downgrades to a cheaper profile that still satisfies the
+budget, the router recommends a cheaper profile that still satisfies the
 agent's latency SLO. Every evaluation emits a `Budget router evaluated` log
-record with the rolling token averages, percentile latency, and projected cost
-delta so operators can audit the savings. When the orchestrator applies the
-recommendation it emits an `Applied budget-aware model routing` event.
+record with the rolling token averages, percentile latency, projected cost
+delta, and the calculated budget window for the agent. The orchestrator now
+logs the recommendation via `Evaluated budget-aware model routing` without
+switching models yet; the `applied: false` flag signals that routing remains in
+observation mode until the dashboards confirm the new targets.
 
 ## Telemetry Dashboards
 
@@ -60,6 +62,11 @@ plot the following series to track performance regressions:
   forced more capable models into the debate.
 - `model_routing_strategy`: the active routing profile (for example,
   `balanced`, `cost_saver`, or `premium`) recorded with each run.
+- `model_routing_agent_constraints`: per-agent budget shares and latency
+  ceilings captured during routing evaluation so operators can audit SLO
+  coverage.
+- `model_routing_recommendations`: the models suggested for each agent while
+  routing operates in observation-only mode.
 
 These signals make it easy to confirm that cost savings materialise without
 raising the latency envelope for latency-sensitive agents.
