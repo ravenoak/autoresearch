@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from autoresearch.api import create_app, dynamic_limit
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.errors import AgentError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 
@@ -148,3 +149,32 @@ def test_request_log_thread_safety(monkeypatch: pytest.MonkeyPatch) -> None:
     missing = api_mod.get_request_logger(app).get("2")
     assert isinstance(missing, int)
     assert missing == 0
+
+
+def test_query_failure_includes_socratic_reasoning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cfg, app = _setup(monkeypatch)
+
+    def fail(*_args: object, **_kwargs: object) -> QueryResponse:
+        raise AgentError("boom", context={"agent": "SocraticSynthesizer"})
+
+    monkeypatch.setattr(Orchestrator, "run_query", fail)
+
+    client = TestClient(app)
+    response = client.post("/query", json={"query": "q"})
+
+    assert response.status_code == 200, (
+        "Socratic check: Did the API gracefully recover from orchestrator failures?"
+    )
+    payload = response.json()
+
+    assert payload["answer"].startswith("Error:"), (
+        "Socratic check: Did the API signal the orchestrator error to callers?"
+    )
+    assert any("Suggestion" in step for step in payload["reasoning"]), (
+        "Socratic check: Did the API provide actionable recovery prompts?"
+    )
+    assert "error_details" in payload["metrics"], (
+        "Socratic check: Are diagnostics preserved for subsequent investigation?"
+    )
