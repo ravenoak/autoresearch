@@ -149,17 +149,19 @@ class SynthesizerAgent:
 
 class OutputFormatter:
     function format(result, format_type):
+        layers = config.output.layers or ["baseline"]
+        layered = LayeredFormatter.apply(result, layers)
         if format_type == "json":
-            print(JSON.stringify(result))
+            print(JSON.stringify(layered))
         else:
             print("# Answer")
-            print(result.answer)
+            print(layered.answer)
             print("## Citations")
-            print_list(result.citations)
+            print_list(layered.citations)
             print("## Reasoning")
-            print_list(result.reasoning)
+            print_list(layered.reasoning)
             print("## Metrics")
-            print_metrics(result.metrics)
+            print_metrics(layered.metrics)
 ```
 
 ## 6a. Answer Auditing, Re-Verification & Hedging (state.py)

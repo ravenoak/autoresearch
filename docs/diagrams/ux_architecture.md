@@ -44,6 +44,10 @@ graph TD
     GUI --> ProgressIndicators
 ```
 
+Layered output controls (baseline, audit, narrative) will anchor to the Output
+Formatting node across each interface so UX surfaces expose consistent toggles
+once the evaluation harness ships the shared configuration stubs.
+
 ## CLI Interface Components
 
 ```mermaid

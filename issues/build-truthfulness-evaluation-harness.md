@@ -22,5 +22,23 @@ for longitudinal review.
 - STATUS.md summarizes benchmark outcomes after each scheduled run.
 - Documentation covers setup, dataset licensing, and interpretation guidance.
 
+## Tasks
+- [ ] Draft layered output configuration stubs in `scripts/evaluate/` covering
+  TruthfulQA, FEVER, and HotpotQA defaults (datasets, retries, artifact roots).
+- [ ] Extend the evaluation CLI and Taskfile shims to consume the stubs so
+  automation reads consistent layered UX modes and output directories.
+- [ ] Wire telemetry exports into the harness to capture per-layer accuracy,
+  latency, and token deltas for STATUS.md rollups and dashboard syncs.
+- [ ] Add documentation callouts in `docs/testing_guidelines.md`,
+  `docs/performance.md`, and `docs/diagrams/ux_architecture.md` explaining how
+  layered transcripts will surface in each interface.
+
+## Follow-on PRs
+- [ ] Schedule PR to implement the automation pipeline once
+  `prepare-first-alpha-release` and other release blockers flip to `Closed` so
+  the harness lands after the current milestone ships.
+- [ ] Schedule PR to expose layered transcript toggles in the CLI, Streamlit,
+  and MCP adapters immediately after the automation pipeline merges.
+
 ## Status
 Open

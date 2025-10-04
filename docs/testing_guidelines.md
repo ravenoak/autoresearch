@@ -20,6 +20,11 @@ For environment setup instructions see [installation](installation.md).
 - Always respect dataset licensing when extending the subsets; cite the
   original papers (Lin et al., 2021; Thorne et al., 2018; Yang et al., 2018)
   when publishing benchmark results.
+- Configuration stubs will live in `scripts/evaluate/` to keep dataset
+  schedules, retry budgets, and artifact locations in sync across runners.
+- Each stub will expose layered output controls (baseline, audit, narrative)
+  that align with the layered UX roadmap so CI, nightly, and exploratory runs
+  can opt into richer transcripts without diverging from shared defaults.
 
 Tests may require optional dependencies. Markers such as `requires_nlp` or
 `requires_parsers` map to extras with the same names. `task install` syncs the
