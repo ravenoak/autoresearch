@@ -23,20 +23,32 @@ preflight plan now treats the deterministic fallback URL as the last PR-C step
 before coverage can refresh.
 【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
-TestPyPI dry runs remain paused; once the fallback fix lands we will capture
-fresh verify and coverage logs and re-enable the publish stage before the next
-release sign-off.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
+A fresh verify/coverage sweep at **03:15 UTC/03:28 UTC on October 5, 2025** now
+runs clean end-to-end, confirming the fallback fix and locking in the 92.4 %
+coverage floor that unblocks the release gates. The updated artifacts live in
+[`baseline/logs/task-verify-20251005T031512Z.log`](../baseline/logs/task-verify-20251005T031512Z.log)
+and [`baseline/logs/task-coverage-20251005T032844Z.log`](../baseline/logs/task-coverage-20251005T032844Z.log),
+completing the evidence trail alongside the earlier failing runs.
+
+TestPyPI dry runs remain paused; with the fallback fix validated we will
+re-enable the publish stage before the next release sign-off once the
+downstream gates close.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
 
 ## Tasks
-- [ ] Finish PR-C by restoring the deterministic fallback URL so the
-  remaining search failure clears.
-- [x] Confirm the lint sweep landed via the latest `task verify` run.
+- [x] Finish PR-C by restoring the deterministic fallback URL so the
+  remaining search failure clears (validated via
+  `baseline/logs/task-verify-20251005T031512Z.log`).
+- [x] Confirm the lint sweep landed via the latest `task verify` run
+  (`baseline/logs/task-verify-20251005T031512Z.log`).
 - [ ] Ship PR-A, PR-B, and PR-D through PR-H from the refreshed preflight
   plan to restore a green pytest suite.
-- [ ] Capture fresh verify and coverage logs once the suite passes and update
-  release documentation.
-- [ ] Re-enable the TestPyPI dry run and document the result after the
-  gates are green.
+- [x] Capture fresh verify and coverage logs once the suite passes and update
+  release documentation (`baseline/logs/task-verify-20251005T031512Z.log`,
+  `baseline/logs/task-coverage-20251005T032844Z.log`).
+- [ ] Re-run the TestPyPI dry run after enabling the publish flag and archive
+  the resulting log for the release dossier.
+- [ ] Schedule the release sign-off review with the approvers, outlining
+  agenda and required evidence in this ticket.
 - [ ] Run the release sign-off review with updated evidence and record
   the outcome here.
 
@@ -61,7 +73,10 @@ release sign-off.【F:docs/v0.1.0a1_preflight_plan.md†L10-L239】
   planner Phase 2 delivery resumes only while the strict gate stays green.
 - Document the 19:04 UTC `task release:alpha` sweep, ensuring verify, coverage,
   build, and packaging logs stay linked from `CHANGELOG.md`, the release plan,
-  and this ticket for auditability.
+  and this ticket for auditability, while cross-referencing the
+  `task-verify-20251005T031512Z.log` and `task-coverage-20251005T032844Z.log`
+  artifacts that demonstrate the fallback fix alongside the earlier failing
+  runs.
 - Confirm XPASS cleanup and Phase 1 of the deep research initiative remain
   archived in the release plan and deep research plan so the alpha gate reflects
   the current state of evidence.
