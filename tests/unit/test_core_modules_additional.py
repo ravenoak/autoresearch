@@ -3,6 +3,7 @@ import types
 from collections import defaultdict
 from typing import Any
 from unittest.mock import MagicMock
+from urllib.parse import quote_plus
 
 import pytest
 
@@ -12,7 +13,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import ExternalLookupResult, Search
-from autoresearch.search.core import hybridmethod
+from autoresearch.search.core import capture_hybrid_call_context, hybridmethod
 from autoresearch.storage import StorageManager
 
 
@@ -30,7 +31,7 @@ def _stubbed_search_environment(monkeypatch, request):
     embedding_binding_stack: list[str] = []
     lookup_binding_stack: list[str] = []
     compute_calls: list[tuple[str, str]] = []
-    add_calls: list[str] = []
+    add_calls: list[dict[str, Any]] = []
     rank_calls: list[str] = []
     storage_calls: list[str] = []
     cache_probes: list[dict[str, Any]] = []
@@ -177,7 +178,17 @@ def _stubbed_search_environment(monkeypatch, request):
             """Maintain dual binding compatibility for add_embeddings."""
 
             target = _resolve_subject(subject)
-            add_calls.append("instance" if target is search_instance else "other")
+            binding = "instance" if target is search_instance else "other"
+            context = capture_hybrid_call_context()
+            add_calls.append(
+                {
+                    "phase": phase,
+                    "binding": binding,
+                    "hybrid_binding": context.get("binding"),
+                    "caller_binding": context.get("caller_binding"),
+                    "stage": context.get("stage"),
+                }
+            )
 
         def _stub_rank_results(subject, query, result_docs, query_embedding=None):
             """Track rank_results invocations while returning passthrough docs."""
@@ -448,7 +459,23 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert compute_counts == expected_compute
 
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
-    assert env.add_calls == ["instance", "instance"]
+    expected_add_calls = [
+        {
+            "phase": "search-instance",
+            "binding": "instance",
+            "hybrid_binding": "instance",
+            "caller_binding": "instance",
+            "stage": "retrieval",
+        },
+        {
+            "phase": "search-class",
+            "binding": "instance",
+            "hybrid_binding": "instance",
+            "caller_binding": "class",
+            "stage": "retrieval",
+        },
+    ]
+    assert env.add_calls == expected_add_calls
     assert all(call == "instance" for call in env.rank_calls)
     assert len(env.rank_calls) >= 2
     assert all(call == "instance" for call in env.storage_calls)
@@ -461,6 +488,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
 def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment):
     env = _stubbed_search_environment
     env.install_backend([])
+    env.set_phase("search-class")
 
     bundle = Search.external_lookup("missing", max_results=2, return_handles=True)
 
@@ -469,11 +497,23 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     assert list(bundle) == bundle.results
     assert len(bundle.results) == 2
     assert all(result["title"].startswith("Result") for result in bundle.results)
-    assert all(result["url"] == "" for result in bundle.results)
+    encoded = quote_plus("missing")
+    assert [result["url"] for result in bundle.results] == [
+        f"https://example.invalid/search?q={encoded}&rank=1",
+        f"https://example.invalid/search?q={encoded}&rank=2",
+    ]
     assert bundle.cache is env.search_instance.cache
     assert bundle.by_backend == {}
     assert env.backend_calls == [("missing", 2, False)]
-    assert env.add_calls == ["instance"]
+    assert env.add_calls == [
+        {
+            "phase": "search-class",
+            "binding": "instance",
+            "hybrid_binding": "instance",
+            "caller_binding": "class",
+            "stage": "fallback",
+        }
+    ]
 
 
 def test_planner_execute(monkeypatch):
