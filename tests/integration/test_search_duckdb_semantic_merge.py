@@ -21,7 +21,13 @@ def _config(monkeypatch: pytest.MonkeyPatch) -> None:
         )
     )
     ConfigLoader.reset_instance()
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    def load_config_override(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_override)
+
+
 def test_semantic_scores_ignore_zero_vectors(monkeypatch: pytest.MonkeyPatch) -> None:
     _config(monkeypatch)
     results: list[Mapping[str, object]] = [

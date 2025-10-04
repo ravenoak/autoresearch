@@ -39,7 +39,7 @@ import re
 import shutil
 import subprocess
 import warnings
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -1878,7 +1878,6 @@ class Search:
 
         return queries
 
-
     @hybridmethod
     def external_lookup(
         self,
@@ -2383,7 +2382,6 @@ class Search:
             )
 
             return bundle if return_handles else bundle.results
-
 
 
 def get_search() -> Search:

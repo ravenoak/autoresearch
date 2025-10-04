@@ -24,7 +24,7 @@ pytestmark = [
 
 def _make_agent_result_message(
     *,
-    agent: str = "agent", 
+    agent: str = "agent",
     result: dict[str, Any] | None = None,
     pid: int = 1234,
 ) -> AgentResultMessage:
@@ -61,6 +61,7 @@ def test_redis_broker_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     import redis
 
     dummy = DummyRedis()
+
     def _from_url(url: str) -> DummyRedis:
         return dummy
 

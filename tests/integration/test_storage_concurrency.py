@@ -19,7 +19,7 @@ def _setup(
         ram_budget_mb=ram_budget,
         graph_eviction_policy="lru",
     )
-    
+
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 

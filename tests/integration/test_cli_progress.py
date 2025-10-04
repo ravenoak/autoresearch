@@ -60,7 +60,7 @@ def test_cli_progress_and_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
         progress_instances.append(progress)
         return progress
 
-    cfg = configure_api_defaults(monkeypatch, loops=2)
+    configure_api_defaults(monkeypatch, loops=2)
     monkeypatch.setattr("autoresearch.main.Progress", progress_factory)
 
     prompts: list[str] = []

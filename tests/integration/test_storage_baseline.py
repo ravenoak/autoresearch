@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from _pytest.monkeypatch import MonkeyPatch
@@ -12,6 +10,13 @@ from autoresearch.storage import StorageContext, StorageManager, StorageState
 from autoresearch.storage_typing import JSONDict
 
 
+def _stub_config_loader(monkeypatch: MonkeyPatch, cfg: ConfigModel) -> None:
+    def load_config_stub(_: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+
+
 def test_ram_budget_respects_baseline(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     """Eviction uses memory delta from setup baseline."""
     cfg: ConfigModel = ConfigModel(
@@ -19,10 +24,7 @@ def test_ram_budget_respects_baseline(tmp_path: Path, monkeypatch: MonkeyPatch) 
         ram_budget_mb=1,
         graph_eviction_policy="lru",
     )
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader()._config = None
 
     # Simulate high baseline memory before setup
@@ -65,10 +67,7 @@ def test_eviction_respects_baseline_without_reasoner(
         ram_budget_mb=1,
         graph_eviction_policy="lru",
     )
-    def load_config_stub(_: ConfigLoader) -> ConfigModel:
-        return cfg
-
-    monkeypatch.setattr(ConfigLoader, "load_config", load_config_stub)
+    _stub_config_loader(monkeypatch, cfg)
     ConfigLoader()._config = None
 
     # Establish baseline memory before setup

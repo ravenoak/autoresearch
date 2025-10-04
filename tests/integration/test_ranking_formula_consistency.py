@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from typing import Mapping, Sequence
 
 from unittest.mock import patch
@@ -21,9 +19,18 @@ def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> Non
     )
     cfg = ConfigModel.model_construct(search=search_cfg)
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+    def get_config_override() -> ConfigModel:
+        return cfg
+
+    monkeypatch.setattr("autoresearch.search.core.get_config", get_config_override)
 
     bm25: list[float] = [0.7, 0.2]
+
+    def _bm25_scores(
+        _: str, __: Sequence[Mapping[str, object]]
+    ) -> list[float]:  # pragma: no cover - deterministic stub
+        return bm25
     semantic: list[float] = [0.4, 0.9]
     cred: list[float] = [0.5, 0.1]
     docs: list[Mapping[str, object]] = [
@@ -32,9 +39,7 @@ def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> Non
     ]
 
     with (
-        patch.object(
-            Search, "calculate_bm25_scores", staticmethod(lambda q, results: bm25)
-        ),
+        patch.object(Search, "calculate_bm25_scores", staticmethod(_bm25_scores)),
         patch.object(
             Search, "calculate_semantic_similarity", return_value=semantic
         ),
