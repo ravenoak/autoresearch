@@ -1,24 +1,25 @@
 # Prepare first alpha release
 
 ## Context
-As of **October 3, 2025 at 22:37 UTC** the strict typing gate remains green but
-the pytest suite is still red. `uv run mypy --strict src tests` again reported
-“Success: no issues found in 787 source files”, while
-`uv run --extra test pytest` finished with 26 failures and five errors spanning
-FactChecker defaults, backup scheduling, search cache determinism, API parsing
-exports, FastMCP handshake fixtures, orchestrator error handling, planner
-metadata, storage contracts, and environment metadata checks. The
-[v0.1.0a1 preflight readiness plan](../docs/v0.1.0a1_preflight_plan.md) now
-captures these regression clusters as PR-A through PR-H and sequences telemetry
-and planner enhancements as PR-I through PR-K once the suite is green, keeping
-each change review-sized so we can refresh coverage evidence and restart the
-release pipeline.
-【d70b9a†L1-L2】【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L1-L239】
+As of **October 4, 2025 at 01:57 UTC** the strict typing gate remains green,
+yet the release sweep still fails earlier. `uv run task verify
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` halts in flake8
+because Search core imports, behavior fixtures, and storage tests retain
+unused symbols and whitespace debt, and the follow-up `uv run task coverage
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` run stops when the
+legacy path in `tests/unit/test_core_modules_additional.py::
+test_search_stub_backend` no longer records the expected instance
+`add_calls`. The
+[v0.1.0a1 preflight readiness plan](../docs/v0.1.0a1_preflight_plan.md)
+still sequences remediation through PR-A to PR-H, keeping each change review
+sized so we can refresh coverage evidence and restart the release pipeline.
+【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
+【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
 
-TestPyPI dry runs remain paused by default. Once PR-A through PR-D in the
-preflight plan land and the suite is green, we will capture fresh verify and
-coverage runs before re-enabling the publish stage.
-【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
+TestPyPI dry runs remain paused; we will capture fresh verify and coverage logs
+after the lint and search instrumentation regressions clear before re-enabling
+the publish stage.【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
 
 ## Tasks
 - [ ] Ship PR-A through PR-H from the refreshed preflight plan to restore a

@@ -109,6 +109,13 @@ class SearchExecutor:
         return merge_sources(sources)
 ```
 
+The search stubs keep instrumentation counters for every embedding lookup,
+backend invocation, and storage add so regression tests can compare legacy
+and vector-enabled flows without diffing raw documents. These counters feed
+the parity assertions in `tests/unit/test_core_modules_additional.py`, which
+expect instance `add_calls` and lookup bindings to match across phases.
+【F:tests/unit/test_core_modules_additional.py†L363-L441】
+
 ## 5. Graph Persistence & Eviction (storage.py)
 ```
 class StorageManager:

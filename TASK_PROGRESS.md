@@ -1,3 +1,19 @@
+As of **2025-10-04 at 01:57 UTC** the verify gate remains red: flake8 still
+flags unused imports, blank-line drift, and trailing whitespace across
+Search, behavior, integration, and storage suites during
+`uv run task verify EXTRAS="nlp ui vss git distributed analysis llm
+parsers"`.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
+The paired coverage run fails moments later when
+`tests/unit/test_core_modules_additional.py::test_search_stub_backend`
+detects that the legacy lookup path no longer records the expected
+instance `add_calls`, so the telemetry parity assertion trips before
+`coverage.xml` can update.
+【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+The release plan and alpha ticket capture the pause on TestPyPI and link
+the fresh logs for auditability while we triage the lint and search
+instrumentation regressions.【F:docs/release_plan.md†L1-L64】
+【F:issues/prepare-first-alpha-release.md†L1-L32】
+
 As of **2025-10-03 at 22:37 UTC** the strict typing gate is still green and
 the pytest suite remains red. `uv run mypy --strict src tests` reported
 “Success: no issues found in 787 source files”, confirming the strict
