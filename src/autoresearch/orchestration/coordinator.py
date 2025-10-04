@@ -5,7 +5,7 @@ from __future__ import annotations
 import heapq
 import time
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 from .phases import DialoguePhase
 from .state import QueryState
@@ -31,6 +31,9 @@ class TaskCoordinator:
         self._tasks: Dict[str, dict[str, Any]] = {
             task["id"]: dict(task) for task in tasks_payload if isinstance(task, Mapping)
         }
+        for task in self._tasks.values():
+            metadata_payload = task.get("metadata")
+            task["metadata"] = self._adapt_metadata(metadata_payload)
         self._status: Dict[str, TaskStatus] = {
             task_id: TaskStatus.PENDING for task_id in self._tasks
         }
@@ -277,6 +280,9 @@ class TaskCoordinator:
         metadata_payload.setdefault(
             "task_depth", self._dependency_depth.get(task_id, 0)
         )
+        task_metadata = self._tasks.get(task_id, {}).get("metadata", {})
+        if task_metadata:
+            metadata_payload.setdefault("task_metadata", dict(task_metadata))
         metadata_payload["scheduler"] = self._scheduler_snapshot(task_id)
 
         trace_entry = {
@@ -300,6 +306,7 @@ class TaskCoordinator:
                 "step": self._step_counter[task_id],
                 "timestamp": trace_entry["timestamp"],
                 "scheduler": metadata_payload["scheduler"],
+                "task_metadata": dict(task_metadata) if task_metadata else {},
             }
         )
         return trace_entry
@@ -333,6 +340,10 @@ class TaskCoordinator:
             if isinstance(explanation_value, str) and explanation_value.strip()
             else None
         )
+        metadata_payload = task.get("metadata")
+        metadata = (
+            dict(metadata_payload) if isinstance(metadata_payload, Mapping) else {}
+        )
         return TaskGraphNode(
             id=task_id,
             question=str(task.get("question", "")),
@@ -344,6 +355,7 @@ class TaskCoordinator:
             tools=tools,
             criteria=criteria,
             explanation=explanation,
+            metadata=metadata,
         )
 
     def _scheduler_snapshot(self, focus_task: str) -> Dict[str, Any]:
@@ -356,6 +368,26 @@ class TaskCoordinator:
             "selected": focus.to_snapshot(),
             "candidates": [node.to_snapshot() for node in candidates],
         }
+
+    @staticmethod
+    def _adapt_metadata(metadata: Any) -> dict[str, Any]:
+        """Coerce planner-provided metadata into JSON-friendly mappings."""
+
+        if not isinstance(metadata, Mapping):
+            return {}
+
+        def adapt_value(value: Any) -> Any:
+            if isinstance(value, Mapping):
+                return {
+                    str(k): adapt_value(v) for k, v in value.items() if v is not None
+                }
+            if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+                return [adapt_value(item) for item in value]
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                return value
+            return str(value)
+
+        return {str(key): adapt_value(val) for key, val in metadata.items()}
 
     def replay_traces(self, task_id: Optional[str] = None) -> List[dict[str, Any]]:
         """Return captured traces for optional replay."""

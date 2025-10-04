@@ -1,11 +1,8 @@
-"""This module provides data models for Autoresearch.
+"""Autoresearch data models.
 
-See ``docs/algorithms/models.md`` for validation, hot reload, and schema
-guarantees.
-
-It contains Pydantic models that define the structure of data used throughout
-the application, particularly for query requests, responses, and related data
-structures.
+This module defines the Pydantic types that structure requests and responses
+shared across the orchestration stack. See ``docs/algorithms/models.md`` for
+the canonical schema definitions, hot-reload behaviour, and validation rules.
 """
 
 from enum import Enum
@@ -15,13 +12,12 @@ from pydantic import BaseModel, Field
 
 
 class ReasoningMode(str, Enum):
-    """
-    Enumeration of available reasoning modes.
+    """Enumeration of available reasoning modes.
 
     Attributes:
-        DIRECT: Uses only the Synthesizer agent
-        DIALECTICAL: Rotates through agents in a thesis→antithesis→synthesis cycle
-        CHAIN_OF_THOUGHT: Loops the Synthesizer agent
+        DIRECT: Execute with the Synthesizer agent alone.
+        DIALECTICAL: Rotate through thesis→antithesis→synthesis roles.
+        CHAIN_OF_THOUGHT: Loop the Synthesizer agent for iterative reasoning.
     """
 
     DIRECT = "direct"
@@ -30,17 +26,14 @@ class ReasoningMode(str, Enum):
 
 
 class QueryRequest(BaseModel):
-    """
-    Represents a query request to the Autoresearch system.
-
-    This class defines the standard format for requests sent to the orchestration system.
-    It includes the query string and optional configuration parameters.
+    """Represent a query request delivered to the orchestration system.
 
     Attributes:
-        query (str): The natural language query to process.
-        reasoning_mode (Optional[ReasoningMode]): The reasoning mode to use for this query.
-        loops (Optional[int]): The number of reasoning loops to perform.
-        llm_backend (Optional[str]): The LLM backend to use for this query.
+        query: Natural-language question to investigate.
+        reasoning_mode: Optional reasoning strategy for the session.
+        loops: Optional number of reasoning loops to perform.
+        llm_backend: Optional large language model backend override.
+        webhook_url: Optional HTTP endpoint for asynchronous callbacks.
     """
 
     query: str = Field(..., description="The natural language query to process")
@@ -61,27 +54,25 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    """Structured response returned by the orchestration system.
+    """Represents a structured response returned by the orchestration system.
 
-    The response captures the synthesized answer along with traceability
-    artefacts that downstream clients can audit. Claim verification metadata
-    is represented by the ``claim_audits`` field which mirrors the
-    :class:`~autoresearch.storage.ClaimAuditRecord` payload structure.
+    The response captures the synthesized answer alongside audit trails that
+    clients can interrogate for provenance.
 
     Attributes:
-        query: The original query that produced this response, if available.
-        answer: The final answer synthesized by the agent cohort.
-        citations: References surfaced during retrieval.
+        query: Original query that initiated the session, when available.
+        answer: Final answer synthesized by the agent cohort.
+        citations: Retrieval references associated with the answer.
         reasoning: Ordered reasoning steps exchanged between agents.
-        metrics: Execution metrics describing latency, token usage, etc.
-        claim_audits: Verification metadata for each evaluated claim. Each
-            entry mirrors :class:`~autoresearch.storage.ClaimAuditRecord` and
-            includes ``claim_id``, ``status``, ``entailment_score``,
-            ``entailment_variance``, ``instability_flag``, ``sample_size``,
-            ``sources``, ``notes``, ``created_at``, and a structured
-            ``provenance`` mapping. The provenance namespaces (``retrieval``,
-            ``backoff``, ``evidence``) preserve query variants, retry counters,
-            and stable evidence identifiers for downstream traceability.
+        metrics: Execution metrics such as latency and token usage.
+        claim_audits: Verification metadata mirroring
+            :class:`~autoresearch.storage.ClaimAuditRecord` entries, including
+            per-claim provenance namespaces (``retrieval``, ``backoff``, and
+            ``evidence``) plus audit statistics.
+        task_graph: Optional planner output describing sub-questions and tool
+            routing metadata.
+        react_traces: Sequenced ReAct traces captured during execution.
+        state_id: Optional identifier for retrieving the QueryState snapshot.
     """
 
     query: Optional[str] = Field(
