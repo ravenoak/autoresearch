@@ -639,8 +639,10 @@ def setup(
         if backend_ready and ctx.config_fingerprint != fingerprint:
             _reset_context(ctx)
 
-        ctx.graph = nx.DiGraph()
-        ctx.kg_graph = nx.MultiDiGraph()
+        if ctx.graph is None:
+            ctx.graph = nx.DiGraph()
+        if ctx.kg_graph is None:
+            ctx.kg_graph = nx.MultiDiGraph()
 
         # Initialize DuckDB backend with graceful fallback when VSS is missing
         ctx.db_backend = DuckDBStorageBackend()
@@ -706,14 +708,19 @@ def initialize_storage(
         )
         if not backend_ready:
             setup(db_path, ctx, st)
+            backend = ctx.db_backend
 
-        backend = ctx.db_backend
         if backend is None:
             raise StorageError("DuckDB backend not initialized")
 
         # Always run table creation to guard against missing schema components.
         backend.get_connection()
         backend._create_tables(skip_migrations=True)
+
+        if ctx.graph is None:
+            ctx.graph = nx.DiGraph()
+        if ctx.kg_graph is None:
+            ctx.kg_graph = nx.MultiDiGraph()
 
     return ctx
 

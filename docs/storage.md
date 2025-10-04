@@ -48,6 +48,15 @@ and atomic scheduler updates:
 See the storage specification in the inspirational documents for
 persistence guarantees.
 
+## Initialization Contract
+
+- `setup()` provisions new connections but reuses the in-memory graph state
+  when the active configuration fingerprint is unchanged.
+- `initialize_storage()` guarantees that `StorageContext.graph` and
+  `StorageContext.kg_graph` exist while calling `_create_tables` with
+  `skip_migrations=True`, so repeated bootstrap passes neither recreate the
+  graphs nor rerun DuckDB migrations.
+
 ## Schema Versioning
 
 DuckDB tracks migrations in a `metadata` table. During `setup()` the backend
