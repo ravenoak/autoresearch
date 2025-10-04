@@ -23,6 +23,10 @@ verification telemetry alongside planner conditioning.
 【F:src/autoresearch/knowledge/graph.py†L113-L204】
 【F:src/autoresearch/orchestration/reverify.py†L73-L197】
 
+Bootstrap now reuses knowledge-graph instances and skips DuckDB migrations on
+subsequent `initialize_storage` calls, ensuring session graphs load without
+resetting intermediate state during planner warmups.
+
 surface contradictions for the gate policy. We need to extract entities and
 relations from evidence, maintain lightweight graph storage, and expose graph
 artifacts plus contradiction signals to the orchestrator.

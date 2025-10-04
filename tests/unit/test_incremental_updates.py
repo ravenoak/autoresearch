@@ -1,15 +1,48 @@
 from __future__ import annotations
 
+import pytest
 from pytest import MonkeyPatch
 from unittest.mock import MagicMock, patch
 
-from autoresearch.storage import StorageManager
+from autoresearch.storage import (
+    StorageContext,
+    StorageManager,
+    StorageState,
+    initialize_storage,
+)
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 
 
 def _basic_config() -> ConfigModel:
     return ConfigModel(storage=StorageConfig(), ram_budget_mb=0)
+
+
+@pytest.fixture(autouse=True)
+def _deterministic_bootstrap_guard() -> None:
+    """Ensure storage bootstrap reuses state and skips migrations."""
+
+    context = StorageContext()
+    state = StorageState(context=context)
+    backend = MagicMock()
+    backend.get_connection.return_value = object()
+    backend._create_tables = MagicMock()
+    context.db_backend = backend
+    context.rdf_store = MagicMock()
+
+    initialize_storage(context=context, state=state)
+    graph_first = context.graph
+    kg_first = context.kg_graph
+
+    assert graph_first is not None
+    assert kg_first is not None
+    backend._create_tables.assert_called_once_with(skip_migrations=True)
+
+    backend._create_tables.reset_mock()
+    initialize_storage(context=context, state=state)
+    assert context.graph is graph_first
+    assert context.kg_graph is kg_first
+    backend._create_tables.assert_called_once_with(skip_migrations=True)
 
 
 def test_refresh_vector_index_calls_backend(monkeypatch: MonkeyPatch) -> None:

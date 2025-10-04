@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock, call
 
 import duckdb
 
+from autoresearch.storage import StorageContext, StorageState, initialize_storage
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
 from autoresearch.config.loader import ConfigLoader
@@ -24,6 +25,33 @@ def reset_config_loader():
         mock_loader.return_value.config = mock_cfg
         yield
     ConfigLoader.reset_instance()
+
+
+@pytest.fixture(autouse=True)
+def deterministic_bootstrap_contract() -> None:
+    """Validate that storage bootstrap is idempotent for tests."""
+
+    context = StorageContext()
+    state = StorageState(context=context)
+    backend = MagicMock()
+    backend.get_connection.return_value = object()
+    backend._create_tables = MagicMock()
+    context.db_backend = backend
+    context.rdf_store = MagicMock()
+
+    initialize_storage(context=context, state=state)
+    graph_first = context.graph
+    kg_first = context.kg_graph
+
+    assert graph_first is not None
+    assert kg_first is not None
+    backend._create_tables.assert_called_once_with(skip_migrations=True)
+
+    backend._create_tables.reset_mock()
+    initialize_storage(context=context, state=state)
+    assert context.graph is graph_first
+    assert context.kg_graph is kg_first
+    backend._create_tables.assert_called_once_with(skip_migrations=True)
 
 
 class TestDuckDBStorageBackend:
@@ -267,23 +295,18 @@ class TestDuckDBStorageBackend:
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_run_migrations(self, mock_connect):
-        """Test running migrations."""
-        # Mock the connection
+        """No migration runs when schema already matches the latest version."""
+
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the get_schema_version method to return version 1
-        with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=1):
-            # Mock the update_schema_version method
+        with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=4):
             with patch.object(DuckDBStorageBackend, "update_schema_version") as mock_update_version:
-                # Setup the backend
                 backend = DuckDBStorageBackend()
                 backend.setup(db_path=":memory:")
 
-                # Call the _run_migrations method directly
                 backend._run_migrations()
 
-                # Verify that the update_schema_version method was not called (no migrations needed)
                 mock_update_version.assert_not_called()
 
     @patch("autoresearch.storage_backends.duckdb.connect")
