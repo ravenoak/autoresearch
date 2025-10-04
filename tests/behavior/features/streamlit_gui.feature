@@ -28,6 +28,11 @@ Feature: Streamlit GUI Features
     And the nodes should be color-coded by type
 
   @requires_ui
+  Scenario: Knowledge graph exports toggle prepares downloads
+    When I run a query that generates a knowledge graph with exports enabled
+    Then graph export downloads should be prepared
+
+  @requires_ui
   Scenario: Configuration Editor Interface
     When I navigate to the configuration section
     Then I should see a form with configuration options

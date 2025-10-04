@@ -31,6 +31,12 @@ surface contradictions for the gate policy. We need to extract entities and
 relations from evidence, maintain lightweight graph storage, and expose graph
 artifacts plus contradiction signals to the orchestrator.
 
+Storage now attaches contradiction and provenance highlight lists to the
+ingestion summary so planner prompts, API responses, and the Streamlit UI can
+surface safeguards without recomputing the graph. Behaviour coverage exercises
+the "Enable graph exports" toggle to ensure the provenance summary is kept in
+sync with generated download payloads.
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [planner-coordinator-react-upgrade](planner-coordinator-react-upgrade.md)

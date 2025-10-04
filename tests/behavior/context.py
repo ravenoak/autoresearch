@@ -311,6 +311,12 @@ class StreamlitComponentMocks:
     success: MagicMock
     """Mock for :func:`streamlit.success`."""
 
+    toggle: MagicMock
+    """Mock for :func:`streamlit.toggle`."""
+
+    checkbox: MagicMock
+    """Fallback mock for :func:`streamlit.checkbox`."""
+
     sidebar: MagicMock | None = None
     """Optional mock for :mod:`streamlit.sidebar` utilities."""
 

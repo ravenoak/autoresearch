@@ -63,7 +63,11 @@ def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyP
     snippets = [
         {
             "title": "Accuracy report",
-            "snippet": "Autoresearch is headquartered in Paris while the EU capital is Brussels.",
+            "snippet": (
+                "Autoresearch was born in Paris. "
+                "Autoresearch was born in Berlin. "
+                "Autoresearch collaborated with Graph Systems."
+            ),
             "url": "https://example.com/report",
         }
     ]
@@ -81,3 +85,10 @@ def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyP
     provenance_entry = summary.provenance[-1]
     assert provenance_entry["claim_id"] == claim_payload["id"]
     assert "graphml" in provenance_entry["formats"]
+    assert summary.highlights["contradictions"], "Contradiction highlights should surface"
+    contradiction_line = summary.highlights["contradictions"][0]
+    assert "Autoresearch" in contradiction_line
+    assert "born_in" in contradiction_line
+    provenance_highlights = summary.highlights.get("provenance")
+    assert provenance_highlights, "Provenance highlights should summarise records"
+    assert "https://example.com/report" in provenance_highlights[0]
