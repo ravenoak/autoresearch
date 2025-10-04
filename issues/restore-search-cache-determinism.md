@@ -17,6 +17,9 @@ backend calls unexpectedly and mutate query text.
   string.
 - All cache-related unit tests pass without monkeypatch workarounds.
 - Telemetry or documentation explains the restored cache semantics.
+- Cache keys include backend identity, normalized queries, and embedding flags.
+- Fallback placeholders expose deterministic URLs under the `__fallback__`
+  namespace.
 
 ## Status
 Open
