@@ -1,4 +1,5 @@
 import sys
+from urllib.parse import quote_plus
 
 import pytest
 import requests
@@ -63,6 +64,17 @@ def test_external_lookup_fallback(monkeypatch):
     results = Search.external_lookup("q", max_results=2)
     assert len(results) == 2
     assert results[0]["title"] == "Result 1 for q"
+    encoded = quote_plus("q")
+    assert results[0]["url"] == f"https://example.invalid/search?q={encoded}&rank=1", (
+        "If fallback URLs drift, how would we detect nondeterministic cache placeholders?"
+    )
+    assert results[0]["backend"] == "__fallback__", (
+        "When the fallback backend label changes, who will warn us about cache coverage gaps?"
+    )
+    repeat = Search.external_lookup("q", max_results=2)
+    assert repeat == results, (
+        "If deterministic placeholders vanish, what signal would alert us to fallback regressions?"
+    )
 
 
 def test_get_message_broker_invalid():

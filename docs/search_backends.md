@@ -52,6 +52,18 @@ Changes to the `[search]` section are applied at runtime. The configuration
 watcher updates active search backends and weights without restarting
 services.
 
+## Cache determinism
+
+Search caching relies on a composite key that combines the backend name, the
+normalized query text, and the embedding-related switches (hybrid queries,
+semantic similarity, and the configured embedding backends). This contract
+avoids stale hits when embedding options change during a session.
+
+When every configured backend fails, the fallback backend publishes
+deterministic placeholder results under the `__fallback__` namespace. The
+placeholder URLs encode the query and rank so repeated failures remain
+reproducible and visible in cache diagnostics.
+
 ## Benchmarking
 
 To guard against regressions, run `uv run pytest`

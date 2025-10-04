@@ -58,6 +58,8 @@ def test_search_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
         # Disable context-aware search to avoid issues with SearchContext
         cfg.search.context_aware.enabled = False
         cfg.search.use_semantic_similarity = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
 
         def _get_config() -> ConfigModel:
             return cfg
@@ -149,10 +151,14 @@ def test_cache_is_backend_specific(monkeypatch: pytest.MonkeyPatch) -> None:
         cfg1.search.backends = ["b1"]
         cfg1.search.context_aware.enabled = False
         cfg1.search.use_semantic_similarity = False
+        cfg1.search.query_rewrite.enabled = False
+        cfg1.search.adaptive_k.enabled = False
         cfg2 = ConfigModel.model_construct(loops=1)
         cfg2.search.backends = ["b2"]
         cfg2.search.context_aware.enabled = False
         cfg2.search.use_semantic_similarity = False
+        cfg2.search.query_rewrite.enabled = False
+        cfg2.search.adaptive_k.enabled = False
 
         def _get_cfg1() -> ConfigModel:
             return cfg1
@@ -234,11 +240,15 @@ def test_cache_is_backend_specific_without_embeddings(
         cfg1.search.backends = ["b1"]
         cfg1.search.context_aware.enabled = False
         cfg1.search.use_semantic_similarity = False
+        cfg1.search.query_rewrite.enabled = False
+        cfg1.search.adaptive_k.enabled = False
 
         cfg2 = ConfigModel.model_construct(loops=1)
         cfg2.search.backends = ["b2"]
         cfg2.search.context_aware.enabled = False
         cfg2.search.use_semantic_similarity = False
+        cfg2.search.query_rewrite.enabled = False
+        cfg2.search.adaptive_k.enabled = False
 
         def _get_cfg1() -> ConfigModel:
             return cfg1
@@ -261,6 +271,103 @@ def test_cache_is_backend_specific_without_embeddings(
         monkeypatch.setattr("autoresearch.search.core.get_config", _get_cfg1)
         assert s.external_lookup("python") == results1
         assert calls == {"b1": 1, "b2": 1}
+
+
+def test_cache_key_normalizes_queries(monkeypatch: pytest.MonkeyPatch) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(
+        Search,
+        "get_sentence_transformer",
+        staticmethod(lambda: None),
+    )
+
+    calls: Dict[str, int] = {"count": 0}
+
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        calls["count"] += 1
+        return [
+            {
+                "title": "normalized",
+                "url": "https://example.com",
+            }
+        ]
+
+    with search.temporary_state() as s:
+        s.backends = {"dummy": backend}
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["dummy"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.use_semantic_similarity = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        first = s.external_lookup("  Python  ")
+        second = s.external_lookup("python")
+        assert calls["count"] == 1, (
+            "If cache keys ignore normalization, how will repeated queries avoid redundant fetches?"
+        )
+        assert second == first, (
+            "When normalized forms diverge, what stops the cache from fragmenting identical intents?"
+        )
+
+
+def test_cache_key_respects_embedding_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(
+        Search,
+        "get_sentence_transformer",
+        staticmethod(lambda: None),
+    )
+
+    calls: Dict[str, int] = {"count": 0}
+
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        calls["count"] += 1
+        return [{"title": "embedding", "url": "https://example.com"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"dummy": backend}
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["dummy"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.use_semantic_similarity = True
+        cfg.search.embedding_backends = []
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        s.external_lookup("python")
+        assert calls["count"] == 1
+
+        cfg.search.use_semantic_similarity = False
+        result = s.external_lookup("python")
+        assert calls["count"] == 2, (
+            "If embedding toggles share cache keys, how would we detect stale similarity mixes?"
+        )
+        assert result[0]["title"] == "embedding"
 
 
 def test_context_aware_query_expansion_uses_cache(
@@ -293,6 +400,37 @@ def test_context_aware_query_expansion_uses_cache(
         def build_topic_model(self) -> None:  # pragma: no cover - no-op
             return None
 
+        def reset_search_strategy(self) -> None:  # pragma: no cover - no-op
+            return None
+
+        def summarize_retrieval_outcome(
+            self,
+            query: str,
+            results: List[Dict[str, Any]],
+            *,
+            fetch_limit: int,
+            by_backend: Dict[str, List[Dict[str, Any]]],
+        ) -> Dict[str, Any]:  # pragma: no cover - deterministic stub
+            del query, fetch_limit, by_backend
+            count = len(results)
+            return {
+                "coverage_gap": 0.0,
+                "unique_results": count,
+                "result_count": count,
+            }
+
+        def record_fetch_plan(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover
+            del args, kwargs
+
+        def record_scout_observation(
+            self,
+            query: str,
+            results: List[Dict[str, Any]],
+            *,
+            by_backend: Dict[str, List[Dict[str, Any]]],
+        ) -> None:  # pragma: no cover - no-op
+            del query, results, by_backend
+
     with search.temporary_state() as s:
         s.backends = {"dummy": backend}
         cfg = ConfigModel.model_construct(loops=1)
@@ -300,6 +438,8 @@ def test_context_aware_query_expansion_uses_cache(
         cfg.search.context_aware.enabled = True
         cfg.search.context_aware.use_topic_modeling = False
         cfg.search.use_semantic_similarity = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
 
         def _get_config() -> ConfigModel:
             return cfg
