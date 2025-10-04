@@ -23,6 +23,31 @@ from .utils import (
 log = get_logger(__name__)
 
 
+def _diagnostic_claim_for_group(
+    group: Sequence[str],
+    *,
+    message: str,
+    event: str,
+    detail: str,
+    timeout: float | None = None,
+) -> Dict[str, Any]:
+    """Return a structured diagnostic claim for parallel execution issues."""
+
+    debug_payload: Dict[str, Any] = {
+        "agent_group": [str(agent) for agent in group],
+        "event": event,
+        "detail": detail,
+    }
+    if timeout is not None:
+        debug_payload["timeout_seconds"] = timeout
+    return {
+        "type": "diagnostic",
+        "subtype": f"parallel_group_{event}",
+        "content": message,
+        "debug": debug_payload,
+    }
+
+
 def execute_parallel_query(
     query: str,
     config: ConfigModel,
@@ -168,11 +193,24 @@ def execute_parallel_query(
         err_claims: list[dict[str, object]] = []
         if errors:
             err_claims.extend(
-                {"text": f"Error in agent group {grp}: {err}"} for grp, err in errors
+                _diagnostic_claim_for_group(
+                    grp,
+                    message=f"Error in agent group {grp}: {err}",
+                    event="error",
+                    detail=str(err),
+                )
+                for grp, err in errors
             )
         if timeouts:
             err_claims.extend(
-                {"text": f"Agent group {grp} timed out"} for grp in timeouts
+                _diagnostic_claim_for_group(
+                    grp,
+                    message=f"Agent group {grp} timed out",
+                    event="timeout",
+                    detail="timeout",
+                    timeout=float(timeout),
+                )
+                for grp in timeouts
             )
         err_info: Dict[str, Any] = {
             "claims": err_claims,

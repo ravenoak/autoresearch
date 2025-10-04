@@ -18,6 +18,16 @@ lifting the TestPyPI hold.
 【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
 【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
+Structured error claims now mirror the evidence contract. `_handle_agent_error`
+builds diagnostic claim dictionaries with explicit `debug` payloads, and
+parallel orchestration emits the same schema for timeout and failure paths. The
+unit and documentation updates confirm telemetry coverage so claim persistence
+and downstream exports stay lossless.
+【F:src/autoresearch/orchestration/error_handling.py†L1-L160】
+【F:src/autoresearch/orchestration/parallel.py†L1-L220】
+【F:tests/unit/test_orchestrator_errors.py†L1-L360】
+【F:docs/orchestration.md†L1-L120】
+
 PR5 reverification now extracts stored claims, retries audits with structured
 attempt metadata, and persists outcomes through `StorageManager.persist_claim`,
 while behavior coverage keeps audit badges visible in response payloads. PR4

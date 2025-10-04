@@ -72,6 +72,16 @@ def test_execute_agent_records_errors_and_circuit_breaker(
     state.metadata["execution_metrics"] = metrics.get_summary()
     resp = state.synthesize()
     assert resp.metrics["errors"][0]["agent"] == "FailingAgent"
+    error_record = resp.metrics["errors"][0]
+    assert error_record["telemetry"]["recovery_strategy"] == "fail_gracefully"
+    assert error_record["telemetry"]["claim_debug"]["agent"] == "FailingAgent"
+    assert error_record["claim"]["type"] == "diagnostic"
+    assert error_record["claim"]["debug"]["error_category"] == "critical"
+
+    assert resp.reasoning, "Expected diagnostic claim in reasoning"
+    diagnostic_claim = resp.reasoning[0]
+    assert diagnostic_claim["type"] == "diagnostic"
+    assert diagnostic_claim["debug"]["agent"] == "FailingAgent"
     assert "circuit_breakers" in resp.metrics["execution_metrics"]
     assert (
         resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"][
@@ -120,11 +130,22 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     state.metadata["execution_metrics"] = metrics.get_summary()
     resp = state.synthesize()
     # One error recorded from first attempt
-    assert resp.metrics["errors"][0]["agent"] == "RetryAgent"
+    error_record = resp.metrics["errors"][0]
+    assert error_record["agent"] == "RetryAgent"
+    assert error_record["telemetry"]["recovery_strategy"] == "retry_with_backoff"
+    assert error_record["claim"]["debug"]["agent"] == "RetryAgent"
+    assert error_record["claim"]["content"].startswith("Agent RetryAgent encountered")
     # Circuit breaker should be closed after successful retry
     assert (
         resp.metrics["execution_metrics"]["circuit_breakers"]["RetryAgent"]["state"]
         == "closed"
+    )
+
+    assert any(
+        isinstance(step, dict)
+        and step.get("type") == "diagnostic"
+        and step.get("debug", {}).get("recovery_strategy") == "retry_with_backoff"
+        for step in resp.reasoning
     )
 
 
@@ -294,7 +315,18 @@ def test_parallel_query_error_claims(monkeypatch, orchestrator):
     resp = Orchestrator.run_parallel_query("q", cfg, [["A"], ["B"]])
 
     assert isinstance(resp.reasoning, list)
-    assert any("Error in agent group ['B']" in c for c in resp.reasoning)
+    diag_claims = [
+        claim
+        for claim in resp.reasoning
+        if isinstance(claim, dict)
+        and claim.get("type") == "diagnostic"
+        and claim.get("subtype") == "parallel_group_error"
+    ]
+    assert diag_claims, "Expected diagnostic claim for failing group"
+    payload = diag_claims[0]
+    assert "Error in agent group ['B']" in payload["content"]
+    assert payload["debug"]["agent_group"] == ["B"]
+    assert payload["debug"]["event"] == "error"
 
 
 def test_parallel_query_timeout_claims(monkeypatch, orchestrator):
@@ -355,4 +387,15 @@ def test_parallel_query_timeout_claims(monkeypatch, orchestrator):
     )
 
     assert isinstance(resp.reasoning, list)
-    assert any("Agent group ['slow'] timed out" in c for c in resp.reasoning)
+    timeout_claims = [
+        claim
+        for claim in resp.reasoning
+        if isinstance(claim, dict)
+        and claim.get("type") == "diagnostic"
+        and claim.get("subtype") == "parallel_group_timeout"
+    ]
+    assert timeout_claims, "Expected timeout diagnostic claim"
+    timeout_payload = timeout_claims[0]
+    assert timeout_payload["debug"]["agent_group"] == ["slow"]
+    assert timeout_payload["debug"]["event"] == "timeout"
+    assert timeout_payload["debug"]["timeout_seconds"] == pytest.approx(0.001)
