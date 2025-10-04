@@ -37,7 +37,11 @@ class DummyTimer:
 @pytest.fixture()
 def scheduler_environment(
     monkeypatch: pytest.MonkeyPatch,
-) -> tuple[BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]]:
+) -> tuple[
+    BackupScheduler,
+    list["DummyTimer"],
+    list[tuple[str, str, str, bool, BackupConfig]],
+]:
     timers: list[DummyTimer] = []
     backups: list[tuple[str, str, str, bool, BackupConfig]] = []
 
@@ -61,7 +65,7 @@ def scheduler_environment(
 
     monkeypatch.setattr(storage_backup, "_create_backup", fake_create_backup)
 
-    def fake_start_timer(interval: float, callback: Callable[[], None]) -> DummyTimer:
+    def fake_start_timer(interval: float, callback: Callable[[], None]) -> "DummyTimer":
         timer = DummyTimer(interval, callback)
         timers.append(timer)
         timer.start()
@@ -76,7 +80,9 @@ def scheduler_environment(
 
 def test_scheduler_runs_backup_and_reschedules(
     scheduler_environment: tuple[
-        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler,
+        list["DummyTimer"],
+        list[tuple[str, str, str, bool, BackupConfig]],
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -99,7 +105,9 @@ def test_scheduler_runs_backup_and_reschedules(
 
 def test_scheduler_restarts_existing_timer(
     scheduler_environment: tuple[
-        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler,
+        list["DummyTimer"],
+        list[tuple[str, str, str, bool, BackupConfig]],
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -120,7 +128,9 @@ def test_scheduler_restarts_existing_timer(
 
 def test_scheduler_prevents_cancelled_timer_from_rescheduling(
     scheduler_environment: tuple[
-        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler,
+        list["DummyTimer"],
+        list[tuple[str, str, str, bool, BackupConfig]],
     ],
 ) -> None:
     scheduler, timers, backups = scheduler_environment
@@ -146,7 +156,9 @@ def test_scheduler_prevents_cancelled_timer_from_rescheduling(
 
 def test_backup_manager_schedule_uses_resolved_scheduler(
     scheduler_environment: tuple[
-        BackupScheduler, list[DummyTimer], list[tuple[str, str, str, bool, BackupConfig]]
+        BackupScheduler,
+        list["DummyTimer"],
+        list[tuple[str, str, str, bool, BackupConfig]],
     ],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
