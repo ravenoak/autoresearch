@@ -41,6 +41,7 @@ import subprocess
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -58,6 +59,7 @@ from typing import (
     Protocol,
     Sequence,
     Tuple,
+    NamedTuple,
     TypedDict,
     TypeVar,
     cast,
@@ -123,6 +125,53 @@ cache_results = _cache_results
 get_cached_results = _get_cached_results
 
 log = get_logger(__name__)
+
+
+class _HybridFrame(NamedTuple):
+    """Record describing a hybridmethod invocation frame."""
+
+    binding: str
+    method: str
+    owner: str | None
+
+
+_HYBRID_CALL_STACK: ContextVar[tuple[_HybridFrame, ...]] = ContextVar(
+    "search_hybrid_call_stack", default=()
+)
+_HYBRID_STAGE_STACK: ContextVar[tuple[str, ...]] = ContextVar(
+    "search_hybrid_stage_stack", default=()
+)
+
+
+def capture_hybrid_call_context() -> Dict[str, Any]:
+    """Return the current hybridmethod call metadata for diagnostics."""
+
+    frames = _HYBRID_CALL_STACK.get(())
+    stage_stack = _HYBRID_STAGE_STACK.get(())
+    current = frames[-1] if frames else None
+    parent = frames[-2] if len(frames) > 1 else None
+    return {
+        "binding": current.binding if current else None,
+        "caller_binding": parent.binding if parent else None,
+        "method": current.method if current else None,
+        "owner": current.owner if current else None,
+        "stage": stage_stack[-1] if stage_stack else None,
+        "stack": [frame._asdict() for frame in frames],
+        "stage_stack": list(stage_stack),
+    }
+
+
+@contextmanager
+def _hybrid_stage(stage: str) -> Iterator[None]:
+    """Push a stage label for nested add_embeddings invocations."""
+
+    stack = _HYBRID_STAGE_STACK.get(())
+    token = _HYBRID_STAGE_STACK.set(stack + (stage,))
+    try:
+        yield
+    finally:
+        _HYBRID_STAGE_STACK.reset(token)
+
 
 SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -621,6 +670,9 @@ class hybridmethod(Generic[T_co, P, R]):
         self.func = func
 
     def __get__(self, obj: T_co | None, objtype: type[T_co] | None = None) -> Callable[P, R]:
+        method_name = getattr(self.func, "__name__", "<call>")
+        owner_name = objtype.__qualname__ if objtype is not None else None
+
         if obj is None:
             if objtype is None or not hasattr(objtype, "get_instance"):
                 raise AttributeError("hybridmethod requires a class with get_instance()")
@@ -629,10 +681,30 @@ class hybridmethod(Generic[T_co, P, R]):
             @functools.wraps(self.func)
             def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 instance = get_instance()
-                return self.func(instance, *args, **kwargs)
+                stack = _HYBRID_CALL_STACK.get(())
+                frame = _HybridFrame("class", method_name, owner_name)
+                token = _HYBRID_CALL_STACK.set(stack + (frame,))
+                try:
+                    return self.func(instance, *args, **kwargs)
+                finally:
+                    _HYBRID_CALL_STACK.reset(token)
 
             return wrapper
-        return cast(Callable[P, R], self.func.__get__(obj, objtype))
+
+        bound = cast(Callable[P, R], self.func.__get__(obj, objtype))
+
+        @functools.wraps(bound)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            stack = _HYBRID_CALL_STACK.get(())
+            owner = owner_name or type(obj).__qualname__
+            frame = _HybridFrame("instance", method_name, owner)
+            token = _HYBRID_CALL_STACK.set(stack + (frame,))
+            try:
+                return bound(*args, **kwargs)
+            finally:
+                _HYBRID_CALL_STACK.reset(token)
+
+        return wrapper
 
 
 @dataclass(frozen=True)
@@ -1127,10 +1199,21 @@ class Search:
     ) -> None:
         """Add embeddings and similarity scores to documents in-place."""
         doc_count = len(documents)
+        context = capture_hybrid_call_context()
+        binding_label = context.get("binding") or "instance"
+        caller_binding = context.get("caller_binding")
+        stage_label = context.get("stage") or "direct"
+        owner_label = context.get("owner") or type(self).__qualname__
         log.debug(
             "add_embeddings invoked for %d documents (query_embedding=%s)",
             doc_count,
             "provided" if query_embedding is not None else "missing",
+            extra={
+                "hybrid_binding": binding_label,
+                "hybrid_caller_binding": caller_binding,
+                "hybrid_stage": stage_label,
+                "hybrid_owner": owner_label,
+            },
         )
 
         if not documents:
@@ -1218,7 +1301,8 @@ class Search:
             stage,
             "provided" if query_embedding is not None else "missing",
         )
-        self.add_embeddings(docs, query_embedding)
+        with _hybrid_stage(stage):
+            self.add_embeddings(docs, query_embedding)
 
     @staticmethod
     def assess_source_credibility(documents: List[Dict[str, str]]) -> List[float]:
@@ -1738,7 +1822,8 @@ class Search:
             ordered.append(dict(entry))
 
         if query_embedding is not None:
-            self.add_embeddings(ordered, query_embedding)
+            with _hybrid_stage("storage-hydrate"):
+                self.add_embeddings(ordered, query_embedding)
 
         return {"storage": ordered[: max_results * 3]}
 
@@ -2111,7 +2196,8 @@ class Search:
                 )
                 cached = self.cache.get_cached_results(cache_key, name)
                 if cached is not None:
-                    self.add_embeddings(cached, np_query_embedding)
+                    with _hybrid_stage("cache-hit"):
+                        self.add_embeddings(cached, np_query_embedding)
                     for r in cached:
                         r.setdefault("backend", name)
                     return name, cached[:max_results]
@@ -2369,9 +2455,8 @@ class Search:
             fallback_results = self._make_fallback_results(
                 text_query, fallback_count
             )
-            results_by_backend["__fallback__"] = [
-                dict(result) for result in fallback_results
-            ]
+            fallback_payload = [dict(result) for result in fallback_results]
+            results_by_backend["__fallback__"] = fallback_payload
             self._log_embedding_enrichment(
                 results_by_backend,
                 np_query_embedding,
@@ -2430,12 +2515,9 @@ class Search:
                     plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
                     continue
 
-            sanitized_results = [
-                {**result, "url": ""} for result in fallback_results
-            ]
             bundle = ExternalLookupResult(
                 query=text_query,
-                results=sanitized_results,
+                results=fallback_payload,
                 by_backend={},
                 cache_base=self._cache_base,
                 cache_view=self.cache,
