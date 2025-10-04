@@ -19,6 +19,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 4, 2025
+- `uv run mypy --strict src tests` at **05:34 UTC** reported "Success: no
+  issues found in 790 source files", keeping the strict gate green while we
+  prioritise search stub remediation ahead of the next verify sweep.
+  【c2f747†L1-L2】
+- `uv run --extra test pytest` at **05:31 UTC** now fails immediately in the
+  search stub regression: the legacy and VSS-enabled flows never record the
+  expected `add_calls`, and the fallback query preserves the templated text
+  instead of the caller input. The log pinpoints PR-C scope before the run was
+  interrupted for faster triage.【81b49d†L25-L155】【81b49d†L156-L204】
 - The 2025-10-04 verify sweep with all non-GPU extras still fails
   during flake8; Search core imports, behavior fixtures, and storage
   tests carry unused symbols and whitespace debt documented in the new
@@ -47,7 +56,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Documented the v0.1.0a1 preflight readiness plan, capturing strict
   typing success, current pytest failures, and the PR slices required to
   restore coverage.
-  【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
+  【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
 - `task check` and `task verify` now invoke `task mypy-strict` before other
   steps, giving the repository an automated strict gate on every local sweep.
   The CI workflow triggers the same target and keeps the `run_testpypi_dry_run`
