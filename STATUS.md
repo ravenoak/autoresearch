@@ -18,6 +18,22 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 4, 2025
+- The 2025-10-04 verify sweep with all non-GPU extras still fails
+  during flake8; Search core imports, behavior fixtures, and storage
+  tests carry unused symbols and whitespace debt documented in the new
+  baseline log.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
+- The matching coverage run stops on the legacy search stub regression:
+  the instrumentation never records the expected instance add-calls, so
+  `test_search_stub_backend` fails while confirming vector search parity.
+  The log preserves the dialectical trace alongside the slowest durations
+  for follow-up analysis.
+  【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+- `docs/release_plan.md` and the alpha issue now reiterate that TestPyPI
+  remains paused until the lint and legacy search regressions clear, and
+  they cite the latest logs for traceability.【F:docs/release_plan.md†L1-L64】
+  【F:issues/prepare-first-alpha-release.md†L1-L32】
+
 ## October 3, 2025
 - `uv run mypy --strict src tests` succeeded again at **22:37 UTC**,
   reporting “Success: no issues found in 787 source files” and confirming

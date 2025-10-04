@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 3, 2025** and
+`2025-05-18`). This schedule was last updated on **October 4, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -18,24 +18,26 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The strict typing gate is green but the pytest suite remains red. On
-**2025-10-03 at 14:52 UTC** `uv run mypy --strict src tests` completed without
-findings, yet `uv run --extra test pytest` failed across reverification
-configuration, backup scheduling, search caching, API parsing, and FastMCP
-handshake fixtures. The new [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md)
-tracks the remediation work as a sequence of small PRs.
-【4b1e56†L1-L2】【7be155†L104-L262】
+The strict typing gate remains green, but the latest release sweeps still
+stall earlier. At **2025-10-04 01:56 UTC** `uv run task verify
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` fails in flake8
+because Search core imports, behavior fixtures, and storage tests retain
+unused symbols and whitespace debt. Minutes later `uv run task coverage
+EXTRAS="nlp ui vss git distributed analysis llm parsers"` stops when the
+legacy branch of `tests/unit/test_core_modules_additional.py::
+test_search_stub_backend` no longer records the expected instance
+`add_calls`, keeping coverage frozen at the previous 92.4 % evidence. The
+[v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) still sequences
+lint and search instrumentation repairs through PR-A to PR-H before coverage
+can refresh.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
+【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
 
-Reverification now injects deterministic FactChecker defaults when
-`ConfigModel.verification.fact_checker` is omitted and respects
-`enabled=false` to skip the loop. This documents the configuration contract for
-test fixtures and future alpha reviews.
-
-TestPyPI remains paused by default. We will refresh coverage evidence only
-after PR-A through PR-D from the preflight plan land and the suite is green.
-Until then the **September 30, 2025 at 18:19 UTC** coverage run remains the
-reference for the 92.4 % gate.
-【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+TestPyPI remains paused by default; the release plan and alpha ticket now cite
+the October 4 verify and coverage logs and will resume the dry run only after
+the lint and legacy search regressions clear.
+【F:docs/v0.1.0a1_preflight_plan.md†L115-L173】
+【F:issues/prepare-first-alpha-release.md†L1-L32】
 
 
 ## Milestones

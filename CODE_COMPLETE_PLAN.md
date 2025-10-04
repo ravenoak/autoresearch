@@ -1,29 +1,29 @@
 
 # Comprehensive Plan for Autoresearch Code Completion
 
-Based on a thorough analysis of the Autoresearch codebase, I've developed a comprehensive plan to bring the project to completion. This plan addresses all aspects of the system, from core functionality to testing and documentation.
+Based on a thorough analysis of the Autoresearch codebase, I've developed a
+comprehensive plan to bring the project to completion. This plan addresses all
+aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 3, 2025 at 22:37 UTC** the strict typing gate remains green:
-`uv run mypy --strict src tests` again reported “Success: no issues found in
-787 source files”, confirming the repository-wide strict baseline holds.
-【d70b9a†L1-L2】
-
-The pytest suite is still red. The latest `uv run --extra test pytest`
-execution finished with 26 failures and five errors spanning reverification
-defaults, backup scheduler rotation, search cache determinism, API parsing
-exports, FastMCP constructor shims, orchestrator error handling, planner
-metadata, storage contracts, and environment metadata checks. These
-regressions block fresh coverage evidence and must be resolved before the
-92.4 % statement gate can be revalidated.
-【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
-
-The alpha release issue, roadmap, and task progress log now point to the
-preflight plan for a consistent summary of the recovery path. TestPyPI remains
-deferred per the existing directive until the suite and coverage runs are
-restored.
-【F:issues/prepare-first-alpha-release.md†L1-L80】
+As of **October 4, 2025 at 01:57 UTC** the strict typing gate remains green,
+yet the release sweep still stalls earlier in the dialectical pipeline. The
+fresh `uv run task verify EXTRAS="nlp ui vss git distributed analysis llm
+parsers"` attempt fails in flake8, which reports unused imports, excess blank
+lines, and trailing whitespace across Search, behavior, integration, and
+storage suites.【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】
+Minutes later `uv run task coverage EXTRAS="nlp ui vss git distributed
+analysis llm parsers"` stops when the legacy branch of
+`tests/unit/test_core_modules_additional.py::test_search_stub_backend` no
+longer records the expected instance `add_calls`, keeping coverage frozen at
+the prior 92.4 % baseline.
+【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
+The preflight plan still sequences remediation through PR-A to PR-H, and the
+alpha issue plus task log now point to the new evidence while TestPyPI stays
+paused pending lint and search instrumentation fixes.
+【F:docs/v0.1.0a1_preflight_plan.md†L80-L239】
+【F:issues/prepare-first-alpha-release.md†L1-L32】
 
 ### Immediate Follow-ups
 

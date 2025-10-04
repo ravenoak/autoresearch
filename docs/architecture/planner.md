@@ -20,6 +20,10 @@ and exit criteria for reporting.
 - `TaskGraph.from_planner_output` accepts JSON strings, mappings, or sequences
   and produces a `TaskGraph` with canonical task nodes plus preserved
   objectives, exit criteria, and explanations.
+- Search instrumentation feeds the planner's telemetry audit: the legacy
+  lookup path still records instance `add_calls` alongside vector counters so
+  regression tests can assert parity across releases.
+  【F:tests/unit/test_core_modules_additional.py†L363-L441】
 - `QueryState.set_task_graph` merges planner telemetry into
   `state.metadata['planner']['telemetry']` and records a `planner.telemetry`
   React log entry containing task statistics and the latest snapshot.
