@@ -146,6 +146,7 @@ class GraphExtractionSummary:
     storage_latency: dict[str, float] = field(default_factory=dict)
     query: str = ""
     timestamp: float = field(default_factory=time.time)
+    highlights: dict[str, list[str]] = field(default_factory=dict)
 
     @property
     def contradiction_score(self) -> float:
@@ -181,6 +182,7 @@ class GraphExtractionSummary:
             "query": self.query,
             "timestamp": self.timestamp,
             "contradiction_score": self.contradiction_score,
+            "highlights": {key: list(values) for key, values in self.highlights.items()},
         }
 
 
@@ -332,6 +334,7 @@ class SessionGraphPipeline:
             "graph_json": bool((artifacts.get("graph_json") or "").strip()),
         }
         self._persist_exports(manager, query=query, summary=summary, artifacts=artifacts)
+        summary.highlights = self._build_highlights(summary)
 
         self._store_summary(summary)
         return summary
@@ -844,6 +847,65 @@ class SessionGraphPipeline:
                 "formats": [fmt for fmt, value in artifacts.items() if value],
             }
         )
+
+    def _build_highlights(self, summary: GraphExtractionSummary) -> dict[str, list[str]]:
+        """Return human-readable contradiction and provenance highlights."""
+
+        highlights: dict[str, list[str]] = {}
+
+        contradiction_lines: list[str] = []
+        for contradiction in summary.contradictions[:5]:
+            subject = contradiction.subject or "Unknown subject"
+            predicate = contradiction.predicate or "related_to"
+            objects = ", ".join(obj for obj in contradiction.objects if obj)
+            if not objects:
+                objects = "undetermined objects"
+            contradiction_lines.append(
+                f"Contradiction: {subject} has multiple '{predicate}' relations → {objects}"
+            )
+        if contradiction_lines:
+            highlights["contradictions"] = contradiction_lines
+
+        provenance_lines: list[str] = []
+        for record in summary.provenance[:8]:
+            subject = str(record.get("subject", "")) if record.get("subject") else ""
+            predicate = str(record.get("predicate", "")) if record.get("predicate") else ""
+            obj = str(record.get("object", "")) if record.get("object") else ""
+            claim_id = record.get("claim_id")
+            record_type = str(record.get("type", "")) if record.get("type") else ""
+            base: str
+            if subject and predicate and obj:
+                base = f"Provenance: {subject} —{predicate}→ {obj}"
+            elif record_type:
+                base = f"Provenance: {record_type.replace('_', ' ')}"
+            else:
+                base = "Provenance: graph insight"
+
+            details: list[str] = []
+            source = record.get("source")
+            if isinstance(source, str) and source.strip():
+                details.append(f"source {source.strip()}")
+            snippet = record.get("snippet")
+            if isinstance(snippet, str) and snippet.strip():
+                details.append(f"snippet \"{_truncate_snippet(snippet, 120)}\"")
+            formats = record.get("formats")
+            if isinstance(formats, Sequence):
+                formatted = ", ".join(
+                    str(fmt) for fmt in formats if isinstance(fmt, str) and fmt
+                )
+                if formatted:
+                    details.append(f"formats {formatted}")
+            if isinstance(claim_id, str) and claim_id.strip():
+                details.append(f"claim {claim_id.strip()}")
+
+            if details:
+                base = f"{base} ({'; '.join(details)})"
+            provenance_lines.append(base)
+
+        if provenance_lines:
+            highlights["provenance"] = provenance_lines
+
+        return highlights
 
 
 __all__ = [

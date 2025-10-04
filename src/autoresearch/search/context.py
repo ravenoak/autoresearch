@@ -1168,6 +1168,21 @@ class SearchContext:
                 "relation_count": relation_count_float,
             },
         }
+        highlights_raw = summary.get("highlights") if isinstance(summary, Mapping) else None
+        if isinstance(highlights_raw, Mapping):
+            highlights_payload: dict[str, list[str]] = {}
+            for key, values in highlights_raw.items():
+                if not isinstance(values, Sequence):
+                    continue
+                cleaned = [
+                    str(value).strip()
+                    for value in values
+                    if isinstance(value, str) and value.strip()
+                ]
+                if cleaned:
+                    highlights_payload[str(key)] = cleaned
+            if highlights_payload:
+                metadata["highlights"] = highlights_payload
         exports_meta = summary.get("exports") if isinstance(summary, Mapping) else None
         if isinstance(exports_meta, Mapping):
             metadata["exports"] = {

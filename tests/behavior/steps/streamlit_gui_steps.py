@@ -3,6 +3,7 @@ from tests.behavior.utils import empty_metrics
 
 from collections.abc import Iterator
 from contextlib import ExitStack
+from dataclasses import replace
 from typing import Callable, cast
 
 import pytest
@@ -34,6 +35,7 @@ def streamlit_app_running(
 ) -> Iterator[None]:
     """Mock the Streamlit application for testing."""
 
+    toggle_mock = MagicMock(side_effect=lambda *args, **kwargs: kwargs.get("value", False))
     streamlit_mocks = StreamlitComponentMocks(
         markdown=MagicMock(),
         tabs=MagicMock(),
@@ -41,6 +43,8 @@ def streamlit_app_running(
         image=MagicMock(),
         graphviz=MagicMock(),
         success=MagicMock(),
+        toggle=toggle_mock,
+        checkbox=toggle_mock,
     )
     tab_mocks = StreamlitTabMocks(
         citations=MagicMock(),
@@ -59,6 +63,8 @@ def streamlit_app_running(
         stack.enter_context(patch("streamlit.image", streamlit_mocks.image))
         stack.enter_context(patch("streamlit.graphviz_chart", streamlit_mocks.graphviz))
         stack.enter_context(patch("streamlit.success", streamlit_mocks.success))
+        stack.enter_context(patch("streamlit.toggle", streamlit_mocks.toggle))
+        stack.enter_context(patch("streamlit.checkbox", streamlit_mocks.checkbox))
 
         yield
 
@@ -228,6 +234,73 @@ def run_query_with_knowledge_graph(bdd_context: BehaviorContext) -> None:
     display_results(mock_response)
 
 
+@when("I run a query that generates a knowledge graph with exports enabled")
+def run_query_with_graph_exports_enabled(bdd_context: BehaviorContext) -> None:
+    """Simulate enabling graph exports for a knowledge graph result."""
+
+    mock_response = QueryResponse(
+        answer="This is the answer",
+        citations=["Citation 1", "Citation 2"],
+        reasoning=["Reasoning step 1", "Reasoning step 2"],
+        metrics={"tokens": 100, "time": "1.2s"},
+    )
+
+    set_value(bdd_context, "query_response", mock_response)
+
+    from autoresearch.output_format import DepthPayload, OutputDepth
+    from autoresearch.streamlit_app import OutputFormatter, display_results
+
+    base_payload = DepthPayload(
+        depth=OutputDepth.STANDARD,
+        tldr="",
+        answer=mock_response.answer,
+        key_findings=[],
+        citations=list(mock_response.citations),
+        claim_audits=[],
+        reasoning=list(mock_response.reasoning),
+        metrics=dict(mock_response.metrics),
+        raw_response=None,
+        task_graph=None,
+        react_traces=[],
+        knowledge_graph={"contradictions": []},
+        graph_exports={"graphml": True, "graph_json": True},
+        graph_export_payloads={},
+        sections={
+            "tldr": True,
+            "key_findings": False,
+            "claim_audits": False,
+            "reasoning": False,
+            "react_traces": False,
+            "knowledge_graph": True,
+            "graph_exports": True,
+        },
+    )
+    export_payload = replace(
+        base_payload,
+        graph_export_payloads={
+            "graphml": "<graphml/>",
+            "graph_json": "{\"nodes\": []}",
+        },
+    )
+
+    plan_mock = MagicMock(side_effect=[base_payload, export_payload])
+
+    with patch.object(OutputFormatter, "plan_response_depth", plan_mock):
+        import streamlit as st
+
+        original_state = dict(st.session_state)
+        try:
+            st.session_state.clear()
+            st.session_state["ui_toggle_graph_exports"] = True
+            st.session_state["ui_depth"] = OutputDepth.STANDARD.value
+            display_results(mock_response)
+        finally:
+            st.session_state.clear()
+            st.session_state.update(original_state)
+
+    set_value(bdd_context, "graph_export_plan_calls", plan_mock.call_args_list)
+
+
 @then('the knowledge graph should be visualized in the "Knowledge Graph" tab')
 def check_knowledge_graph_visualization(bdd_context: BehaviorContext) -> None:
     """Check that the knowledge graph is visualized in the Knowledge Graph tab."""
@@ -255,6 +328,20 @@ def check_node_coloring(bdd_context: BehaviorContext) -> None:
     assert create_knowledge_graph is not None
 
 
+@then("graph export downloads should be prepared")
+def assert_graph_export_prefetch(bdd_context: BehaviorContext) -> None:
+    """Ensure enabling graph exports triggers payload prefetch."""
+
+    plan_calls = get_required(bdd_context, "graph_export_plan_calls", list)
+    assert len(plan_calls) >= 2, "Expected depth planner to run twice with exports"
+    first_call = plan_calls[0]
+    second_call = plan_calls[-1]
+    assert not first_call.kwargs.get("prefetch_graph_exports", False)
+    assert second_call.kwargs.get("prefetch_graph_exports", False) is True
+    formats = second_call.kwargs.get("graph_export_formats")
+    assert formats == ["graphml", "graph_json"]
+
+
 @pytest.mark.slow
 @scenario(
     "../features/streamlit_gui.feature",
@@ -274,6 +361,15 @@ def test_tabbed_interface() -> None:
 @scenario("../features/streamlit_gui.feature", "Knowledge Graph Visualization")
 def test_knowledge_graph_visualization() -> None:
     """Test the Knowledge Graph Visualization scenario."""
+
+
+@pytest.mark.slow
+@scenario(
+    "../features/streamlit_gui.feature",
+    "Knowledge graph exports toggle prepares downloads",
+)
+def test_graph_export_toggle_prepares_downloads() -> None:
+    """Test the knowledge graph export toggle scenario."""
 
 
 @when("I navigate to the configuration section")
