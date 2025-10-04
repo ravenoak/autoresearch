@@ -23,6 +23,10 @@ while retaining thread safety and reproducible telemetry.
   scheduler candidates to preserve planner hints such as priority or budgets.
 - Planner and coordinator metadata flow into the `react_log`, agent results,
   and behaviour scenarios for observability.
+- Scout gate telemetry records `coverage_ratio`, aggregated
+  `scout_agreement` statistics (score, sample count, min, and max), and a
+  normalized `decision_outcome` so dashboards can chart debate versus
+  scout-only exits without replaying runs.
 
 ## Socratic Q/A
 

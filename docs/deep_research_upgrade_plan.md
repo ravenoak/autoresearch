@@ -58,6 +58,10 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
      response payload so reverification signals remain visible.
       【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
       【F:tests/behavior/steps/reasoning_modes_steps.py†L1-L40】
+   - Record scout gate `coverage_ratio`, agreement score summaries, and the
+     normalized decision outcome in `OrchestrationMetrics` and
+     `ScoutGateDecision.telemetry`, with regression coverage across the AUTO
+     unit and behaviour suites to guard the schema.
    - **Status:** Completed. The September 30 verify and coverage sweeps finish
      through the Task CLI with strict mypy, scout gate telemetry, and the 92.4 %
      statement rate restored, so Phase 1 objectives and evidence trails are all

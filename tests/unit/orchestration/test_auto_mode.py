@@ -4,6 +4,7 @@ import pytest
 
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
@@ -27,6 +28,17 @@ class DummySynthesizer:
 
 
 def _decision(should_debate: bool, loops: int) -> ScoutGateDecision:
+    coverage = {"total_claims": 1, "audited_claims": 1, "audit_records": 1, "coverage_ratio": 1.0}
+    agreement = {
+        "score": 1.0,
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "sample_count": 1,
+        "pairwise_scores": [1.0],
+        "basis": "answer_claim_tokens",
+    }
+    outcome = "debate" if should_debate else "scout_exit"
     return ScoutGateDecision(
         should_debate=should_debate,
         target_loops=loops,
@@ -52,6 +64,12 @@ def _decision(should_debate: bool, loops: int) -> ScoutGateDecision:
         },
         reason="test",  # pragma: no cover - metadata only
         tokens_saved=0,
+        telemetry={
+            "coverage": coverage,
+            "coverage_ratio": 1.0,
+            "scout_agreement": agreement,
+            "decision_outcome": outcome,
+        },
     )
 
 
@@ -96,6 +114,12 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
     assert auto_meta.get("scout_sample_count") == len(samples)
     assert auto_meta.get("scout_agreement") == 1.0
     assert response.metrics.get("scout_samples") == samples
+    gate_snapshot = response.metrics.get("scout_gate", {})
+    telemetry = gate_snapshot.get("telemetry", {})
+    assert telemetry.get("coverage_ratio") == 1.0
+    assert telemetry.get("decision_outcome") == "scout_exit"
+    agreement_meta = telemetry.get("scout_agreement", {})
+    assert agreement_meta.get("score") == 1.0
 
 
 def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
@@ -153,3 +177,22 @@ def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
     assert isinstance(samples, list)
     assert len(samples) == config.auto_scout_samples + 1
     assert auto_meta.get("scout_agreement") == 1.0
+    gate_snapshot = response.metrics.get("scout_gate", {})
+    telemetry = gate_snapshot.get("telemetry", {})
+    assert telemetry.get("coverage_ratio") == 1.0
+    assert telemetry.get("decision_outcome") == "debate"
+    agreement_meta = telemetry.get("scout_agreement", {})
+    assert agreement_meta.get("score") == 1.0
+
+
+def test_metrics_record_gate_decision_telemetry() -> None:
+    """`OrchestrationMetrics` should persist new scout gate telemetry fields."""
+
+    metrics = OrchestrationMetrics()
+    decision = _decision(True, 2)
+
+    metrics.record_gate_decision(decision)
+
+    assert metrics.gate_coverage_ratios == [1.0]
+    assert metrics.gate_decision_outcomes == ["debate"]
+    assert metrics.gate_agreement_stats[0]["score"] == 1.0

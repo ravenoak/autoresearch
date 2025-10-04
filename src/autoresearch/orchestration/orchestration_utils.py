@@ -124,6 +124,9 @@ class ScoutGatePolicy:
                 graph_summary = {}
 
         coverage_gap, coverage_details = self._coverage_gap(state, details=True)
+        coverage_snapshot: dict[str, int | float] = dict(coverage_details)
+        coverage_ratio = float(max(0.0, min(1.0, 1.0 - coverage_gap)))
+        coverage_snapshot["coverage_ratio"] = coverage_ratio
         retrieval_confidence, confidence_details = self._retrieval_confidence(
             state, details=True
         )
@@ -134,6 +137,12 @@ class ScoutGatePolicy:
             agreement_score, agreement_details = agreement_result
         else:
             agreement_score, agreement_details = agreement_result, {}
+        agreement_snapshot: dict[str, object] = dict(agreement_details)
+        agreement_snapshot.setdefault("score", float(agreement_score))
+        agreement_snapshot.setdefault("mean", float(agreement_score))
+        agreement_snapshot.setdefault("sample_count", 0)
+        if "pairwise_scores" not in agreement_snapshot:
+            agreement_snapshot["pairwise_scores"] = []
 
         heuristics = {
             "retrieval_overlap": self._retrieval_overlap(state),
@@ -165,6 +174,17 @@ class ScoutGatePolicy:
                 strategy_snapshot = {}
             if strategy_snapshot:
                 search_strategy = strategy_snapshot
+        if not search_strategy and search_context is not None:
+            try:
+                metadata_strategy = search_context.get_scout_metadata().get("search_strategy")
+            except Exception:
+                metadata_strategy = None
+            if isinstance(metadata_strategy, Mapping) and metadata_strategy:
+                search_strategy = dict(metadata_strategy)
+        if not search_strategy:
+            metadata_strategy = state.metadata.get("search_strategy")
+            if isinstance(metadata_strategy, Mapping) and metadata_strategy:
+                search_strategy = dict(metadata_strategy)
 
         self_critique_markers: dict[str, object] = {}
         if getattr(self.config, "gate_capture_self_critique", True) and search_context is not None:
@@ -174,6 +194,17 @@ class ScoutGatePolicy:
                 markers_snapshot = {}
             if markers_snapshot:
                 self_critique_markers = markers_snapshot
+        if not self_critique_markers and search_context is not None:
+            try:
+                metadata_markers = search_context.get_scout_metadata().get("search_self_critique")
+            except Exception:
+                metadata_markers = None
+            if isinstance(metadata_markers, Mapping) and metadata_markers:
+                self_critique_markers = dict(metadata_markers)
+        if not self_critique_markers:
+            metadata_markers = state.metadata.get("search_self_critique")
+            if isinstance(metadata_markers, Mapping) and metadata_markers:
+                self_critique_markers = dict(metadata_markers)
 
         overrides = getattr(self.config, "gate_user_overrides", {})
         signal_overrides = overrides.get("signals", {}) if isinstance(overrides, dict) else {}
@@ -202,12 +233,12 @@ class ScoutGatePolicy:
                     ),
                     "source_count": len(state.sources),
                 },
-                "coverage_gap": coverage_details,
+                "coverage_gap": coverage_snapshot,
                 "retrieval_confidence": confidence_details,
                 "nli_conflict": conflict_details,
                 "graph_contradiction": graph_contradiction_details,
                 "graph_similarity": graph_similarity_details,
-                "scout_agreement": agreement_details,
+                "scout_agreement": agreement_snapshot,
             },
         )
 
@@ -247,15 +278,15 @@ class ScoutGatePolicy:
             graph_telemetry["provenance"] = list(provenance)
 
         telemetry = {
-            "coverage": coverage_details,
+            "coverage": coverage_snapshot,
+            "coverage_ratio": coverage_ratio,
             "retrieval_confidence": confidence_details,
             "contradiction_total": conflict_details.get("total", 0.0),
             "contradiction_samples": conflict_details.get("sample_size", 0),
         }
         if graph_telemetry:
             telemetry["graph"] = graph_telemetry
-        if agreement_details:
-            telemetry["scout_agreement"] = agreement_details
+        telemetry["scout_agreement"] = agreement_snapshot
         if search_strategy:
             telemetry["search_strategy"] = search_strategy
         if self_critique_markers:
@@ -266,6 +297,8 @@ class ScoutGatePolicy:
             metrics=metrics,
             heuristics=heuristics,
         )
+
+        telemetry["decision_outcome"] = "debate" if should_debate else "scout_exit"
 
         decision = ScoutGateDecision(
             should_debate=should_debate,
@@ -283,9 +316,9 @@ class ScoutGatePolicy:
         scout_stage = state.metadata.setdefault("scout_stage", {})
         scout_stage["heuristics"] = heuristics
         scout_stage["rationales"] = rationales
-        scout_stage["coverage"] = coverage_details
+        scout_stage["coverage"] = coverage_snapshot
         scout_stage["retrieval_confidence"] = confidence_details
-        scout_stage["agreement"] = agreement_details
+        scout_stage["agreement"] = agreement_snapshot
         if graph_telemetry:
             scout_stage["graph_context"] = graph_telemetry
         if search_strategy:

@@ -277,6 +277,15 @@ def loops_config(
     return set_value(bdd_context, "config", cfg)
 
 
+@given("loops is set to 2 in configuration")
+def loops_config_default(
+    monkeypatch: pytest.MonkeyPatch, bdd_context: BehaviorContext
+) -> ConfigModel:
+    """Convenience step to reuse the configuration fixture for AUTO telemetry."""
+
+    return loops_config(2, monkeypatch=monkeypatch, bdd_context=bdd_context)
+
+
 @given(parsers.parse('reasoning mode is "{mode}"'))
 def set_reasoning_mode(bdd_context: BehaviorContext, mode: str) -> ConfigModel:
     config = get_config(bdd_context)

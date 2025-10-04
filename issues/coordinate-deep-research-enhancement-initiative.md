@@ -13,6 +13,10 @@ planner and GraphRAG dependencies explicit while Phase 2 spins up.
 【F:docs/deep_research_upgrade_plan.md†L27-L58】
 【F:baseline/logs/mypy-strict-20251001T143959Z.log†L2358-L2377】
 【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
+Scout gate telemetry now exports coverage ratios, agreement summaries, and a
+normalized decision outcome through `OrchestrationMetrics` so dashboards can
+track AUTO escalations without replaying runs.
+【F:docs/orchestration.md†L24-L31】【F:docs/deep_research_upgrade_plan.md†L52-L58】
 
 `task check` and `task verify` now invoke `task mypy-strict` directly, giving the
 initiative an automated strict gate in every local run while the CI workflow
