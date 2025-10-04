@@ -20,7 +20,7 @@ sys.modules["check_env"] = check_env
 spec.loader.exec_module(check_env)
 
 
-@pytest.fixture()
+@pytest.fixture(name="_missing_fakepkg")
 def missing_fakepkg(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})
 
@@ -110,3 +110,16 @@ def test_main_reports_missing_metadata(
         check_env.main()
     captured = capsys.readouterr()
     assert "fakepkg not installed" in captured.err
+
+
+def test_env_metadata_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})
+
+    def fake_version(name: str) -> str:  # pragma: no cover - stub
+        raise metadata.PackageNotFoundError
+
+    monkeypatch.setattr(check_env.metadata, "version", fake_version)
+    monkeypatch.setenv("AUTORESEARCH_FAKEPKG_VERSION", "2.0")
+    result = check_env.check_package("fakepkg")
+    assert result is not None
+    assert result.current == "2.0"
