@@ -56,6 +56,20 @@ def _stubbed_search_environment(monkeypatch, request):
     cfg.search.bm25_weight = 1.0
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.source_credibility_weight = 0.0
+    cfg.search.query_rewrite = types.SimpleNamespace(
+        enabled=False,
+        max_attempts=1,
+        min_results=1,
+        min_unique_sources=1,
+        coverage_gap_threshold=1.0,
+    )
+    cfg.search.adaptive_k = types.SimpleNamespace(
+        enabled=False,
+        min_k=1,
+        max_k=1,
+        step=1,
+        coverage_gap_threshold=1.0,
+    )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.search.core.get_cached_results", lambda *a, **k: None)
     monkeypatch.setattr("autoresearch.search.core.cache_results", lambda *a, **k: None)
@@ -434,7 +448,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert compute_counts == expected_compute
 
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
-    assert env.add_calls[:2] == ["instance", "instance"]
+    assert env.add_calls == ["instance", "instance"]
     assert all(call == "instance" for call in env.rank_calls)
     assert len(env.rank_calls) >= 2
     assert all(call == "instance" for call in env.storage_calls)
@@ -459,6 +473,7 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     assert bundle.cache is env.search_instance.cache
     assert bundle.by_backend == {}
     assert env.backend_calls == [("missing", 2, False)]
+    assert env.add_calls == ["instance"]
 
 
 def test_planner_execute(monkeypatch):

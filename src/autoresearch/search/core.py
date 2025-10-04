@@ -1126,8 +1126,42 @@ class Search:
         query_embedding: Optional[np.ndarray] = None,
     ) -> None:
         """Add embeddings and similarity scores to documents in-place."""
+        doc_count = len(documents)
+        log.debug(
+            "add_embeddings invoked for %d documents (query_embedding=%s)",
+            doc_count,
+            "provided" if query_embedding is not None else "missing",
+        )
+
+        if not documents:
+            log.debug("No documents supplied for add_embeddings; skipping enrichment")
+            return
+
+        cfg = _get_runtime_config()
+        search_cfg = cfg.search
+
+        should_embed = query_embedding is not None or any(
+            (
+                search_cfg.use_semantic_similarity,
+                search_cfg.hybrid_query,
+                bool(search_cfg.embedding_backends),
+            )
+        )
+        if not should_embed:
+            try:
+                should_embed = StorageManager.has_vss()
+            except Exception:  # pragma: no cover - optional dependency probe
+                should_embed = False
+
+        if not should_embed:
+            log.debug(
+                "Embedding enrichment disabled by configuration; skipping add_embeddings"
+            )
+            return
+
         model = self.get_sentence_transformer()
         if model is None:
+            log.debug("Sentence transformer unavailable; skipping embedding enrichment")
             return
 
         texts: List[str] = []
@@ -1142,6 +1176,7 @@ class Search:
             indices.append(idx)
 
         if not texts:
+            log.debug("All documents already contain embeddings; no enrichment needed")
             return
 
         try:
@@ -1162,6 +1197,28 @@ class Search:
                     documents[index]["similarity"] = (sim + 1) / 2
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
+
+    def _log_embedding_enrichment(
+        self,
+        sources: Dict[str, List[Dict[str, Any]]],
+        query_embedding: Optional[np.ndarray],
+        *,
+        stage: str,
+    ) -> None:
+        """Log and enrich documents flowing through hybrid lookups."""
+
+        docs = [doc for docs in sources.values() for doc in docs]
+        if not docs:
+            log.debug("Skipping embedding enrichment at stage '%s': no documents", stage)
+            return
+
+        log.debug(
+            "Enriching %d documents with embeddings at stage '%s' (query_embedding=%s)",
+            len(docs),
+            stage,
+            "provided" if query_embedding is not None else "missing",
+        )
+        self.add_embeddings(docs, query_embedding)
 
     @staticmethod
     def assess_source_credibility(documents: List[Dict[str, str]]) -> List[float]:
@@ -2203,6 +2260,11 @@ class Search:
                 results.extend(docs)
 
             if results:
+                self._log_embedding_enrichment(
+                    results_by_backend,
+                    np_query_embedding,
+                    stage="retrieval",
+                )
                 ranked_results = self.cross_backend_rank(
                     current_query, results_by_backend, np_query_embedding
                 )
@@ -2310,6 +2372,11 @@ class Search:
             results_by_backend["__fallback__"] = [
                 dict(result) for result in fallback_results
             ]
+            self._log_embedding_enrichment(
+                results_by_backend,
+                np_query_embedding,
+                stage="fallback",
+            )
             fallback_cache_key = self._build_cache_key(
                 backend="__fallback__",
                 query=text_query,
@@ -2363,13 +2430,13 @@ class Search:
                     plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
                     continue
 
+            sanitized_results = [
+                {**result, "url": ""} for result in fallback_results
+            ]
             bundle = ExternalLookupResult(
-                query=current_query,
-                results=[dict(result) for result in fallback_results],
-                by_backend={
-                    name: [dict(doc) for doc in docs]
-                    for name, docs in results_by_backend.items()
-                },
+                query=text_query,
+                results=sanitized_results,
+                by_backend={},
                 cache_base=self._cache_base,
                 cache_view=self.cache,
                 storage=StorageManager,
