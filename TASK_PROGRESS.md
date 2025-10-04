@@ -1,16 +1,18 @@
-As of **2025-10-05 at 03:28 UTC** the verify and coverage sweeps are green.
-`uv run task verify` now completes end-to-end with `[verify][lint] flake8 passed`
-and strict mypy reporting “Success: no issues found in 790 source files” while
-`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback` passes,
-closing the last PR-C regression. The paired coverage run lands at the
-92.4 % statement rate and regenerates `coverage.xml`, so TestPyPI reactivation
-is the next gate. Previously, the October 4 logs captured the placeholder URL
-failure; those references remain below for historical context but are now
-superseded as of the October 5 evidence.
-【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
-【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
-【F:baseline/logs/task-verify-20251004T144057Z.log†L555-L782】
-【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
+As of **2025-10-04 at 21:04 UTC** strict typing remains green while the unit
+suite exposes ten regressions concentrated in search, cache determinism,
+orchestrator telemetry, reasoning answers, and output formatting. `uv run mypy
+--strict src tests` continues to report “Success: no issues found in 790 source
+files”, yet `uv run --extra test pytest` now fails with search stubs that miss
+their mocks, cache lookups that re-hit the backend, non-deterministic
+orchestrator merges, warning banners injected into answers, and formatter edge
+cases uncovered by Hypothesis.【a78415†L1-L2】【53776f†L1-L60】 Targeted property
+and unit tests confirm the concrete behaviours we must address in the upcoming
+PR slices: OutputFormatter drops control characters and collapses whitespace,
+cache calls ignore persisted entries, and reasoning telemetry prepends warning
+strings to answers.【5f96a8†L12-L36】【e865e9†L1-L58】【cf191d†L27-L46】 The revised
+preflight plan now sequences PR-S1 through PR-P1 to resolve these failures
+before rerunning the full release sweep.
+【F:docs/v0.1.0a1_preflight_plan.md†L38-L115】
 
 As of **2025-10-04 at 05:34 UTC** the strict gate remains green: `uv run mypy
 --strict src tests` reported "Success: no issues found in 790 source files",

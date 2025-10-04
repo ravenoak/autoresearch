@@ -18,19 +18,29 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
-## October 5, 2025
-- `uv run task verify` at **03:15 UTC** finished cleanly, keeping the lint
-  sweep green and confirming strict mypy plus the deterministic fallback
-  assertions all pass. The archived log documents the PR-C fix through the
-  restored `tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
-  assertion alongside the lint sweep’s `[verify][lint] flake8 passed` marker so
-  reviewers can cite the deterministic URL evidence directly.
-  【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
-- The matching **03:28 UTC** coverage sweep closes the verify/coverage pair at
-  the 92.4 % statement rate, records the same fallback assertion passing, and
-  regenerates `coverage.xml`. With PR-C’s deterministic fallback repair and lint
-  work complete, TestPyPI reactivation remains the next release gate.
-  【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
+## October 4, 2025 (earlier runs)
+- `uv run mypy --strict src tests` at **21:04 UTC** continues to report
+  “Success: no issues found in 790 source files”, so the strict gate stays
+  green while we address the renewed pytest regressions.【a78415†L1-L2】
+- `uv run --extra test pytest` on the same evening now fails with ten
+  regressions spanning search backends, cache determinism, orchestrator
+  telemetry, reasoning answers, and output formatting fidelity. The suite
+  stops on DuckDuckGo stub mismatches, cache misses despite persisted
+  entries, non-deterministic reasoning merges, scheduler benchmarks below
+  their floor, warning banners injected into answers, and formatter edge
+  cases surfaced by Hypothesis.【53776f†L1-L60】
+- Targeted property tests document OutputFormatter dropping control
+  characters and collapsing whitespace, while cache tests show repeated
+  backend calls despite cache hits, confirming the fix list for the next PR
+  slices.【5f96a8†L12-L36】【e865e9†L1-L58】
+- A focused reasoning test demonstrates that warning banners now mutate the
+  final answer, so the behaviour suite remains red until telemetry is
+  disentangled from answers.【cf191d†L27-L46】
+- The refreshed [preflight readiness plan](docs/v0.1.0a1_preflight_plan.md)
+  sequences PR-S1 through PR-P1 to tackle deterministic search stubs, cache
+  key guards, formatter fidelity, reasoning telemetry, and orchestrator
+  determinism before we rerun verify and coverage sweeps.
+  【F:docs/v0.1.0a1_preflight_plan.md†L38-L115】
 
 ## October 4, 2025
 - `uv run mypy --strict src tests` at **05:34 UTC** reported "Success: no
