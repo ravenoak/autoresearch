@@ -55,6 +55,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:docs/v0.1.0a1_preflight_plan.md†L38-L115】
 
 ## October 4, 2025
+- `uv run --extra test pytest tests/unit/test_cache.py -k cache_key` now passes
+  with the expanded property suite that covers sequential hits, hybrid flag
+  toggles, and storage interleaving while exercising the hashed cache key
+  helper.【9e20e4†L1-L3】
 - `Search._normalise_backend_documents` now stamps backend labels and
   canonical URLs across retrieval and fallback flows, so both legacy and VSS
   hybrid lookups emit stage-aware embedding telemetry while the deterministic

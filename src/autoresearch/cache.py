@@ -11,9 +11,13 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
+from dataclasses import dataclass
+from hashlib import blake2b
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+
+import json
 
 from tinydb import TinyDB, Query
 
@@ -127,6 +131,64 @@ class SearchCache:
         if not namespace:
             return self
         return _SearchCacheView(self, namespace)
+
+
+@dataclass(frozen=True)
+class CacheKey:
+    """Encapsulate cache key material for legacy and hashed lookups."""
+
+    primary: str
+    legacy: str
+
+    def candidates(self) -> Tuple[str, ...]:
+        """Return key variants to attempt during cache lookups."""
+
+        if self.primary == self.legacy:
+            return (self.primary,)
+        return (self.primary, self.legacy)
+
+
+def build_cache_key(
+    *,
+    namespace: str | None,
+    backend: str,
+    normalized_query: str,
+    embedding_signature: Sequence[str],
+    embedding_state: str,
+    hybrid_flags: Sequence[str],
+    storage_hints: Sequence[str],
+) -> CacheKey:
+    """Return hashed and legacy cache keys for search result caching."""
+
+    ns = namespace or "__default__"
+    emb_segment = ",".join(sorted(embedding_signature)) or "__none__"
+    flag_segment = ",".join(sorted(hybrid_flags)) if hybrid_flags else "none"
+    embedding_state_value = embedding_state or "none"
+
+    legacy = "|".join(
+        (
+            f"backend={backend}",
+            f"query={normalized_query}",
+            f"emb_backends={emb_segment}",
+            f"embedding={embedding_state_value}",
+            f"flags={flag_segment}",
+        )
+    )
+
+    payload = {
+        "backend": backend,
+        "embedding": embedding_state_value,
+        "flags": sorted(hybrid_flags) if hybrid_flags else ["none"],
+        "namespace": ns,
+        "query": normalized_query,
+        "storage": sorted(storage_hints) if storage_hints else ["none"],
+        "signature": sorted(embedding_signature),
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    digest = blake2b(serialized.encode("utf-8"), digest_size=16).hexdigest()
+    primary = f"v2:{digest}"
+
+    return CacheKey(primary=primary, legacy=legacy)
 
 
 class _SearchCacheView:

@@ -37,6 +37,11 @@ blocker for the release sweep; the alpha ticket tracks the reactivation work
 using the fresh logs as evidence.【F:docs/v0.1.0a1_preflight_plan.md†L1-L314】
 【F:issues/prepare-first-alpha-release.md†L1-L39】
 
+The targeted cache regression run (`uv run --extra test pytest
+tests/unit/test_cache.py -k cache_key`) now passes with the hashed key helper
+migrating legacy entries and covering hybrid and storage permutations, keeping
+search caching ready for the next release checkpoint.【9e20e4†L1-L3】
+
 
 ## Milestones
 

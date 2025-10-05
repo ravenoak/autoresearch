@@ -50,6 +50,17 @@ and hybrid queries and exposes a CLI entry point. See the
   `ExternalLookupResult` containing the ranked documents, a backend map,
   and handles to the shared cache and storage manager.
 
+## Cache Contract
+
+- `autoresearch.cache.build_cache_key` hashes the normalized query, namespace,
+  backend, embedding signature, hybrid toggles, and storage hints into a
+  `CacheKey.primary` string prefixed with `v2:` while preserving the legacy
+  pipe-delimited key in `CacheKey.legacy` for existing TinyDB files.
+- `Search.external_lookup` and `Search.embedding_lookup` write to both key
+  variants and promote legacy hits to the hashed entry, so sequential requests
+  reuse cached payloads even when hybrid flags or storage seeds change while
+  older cache snapshots remain readable.
+
 ## Public API
 
 - `Search.external_lookup(query, max_results=5, *, return_handles=False)` is a
