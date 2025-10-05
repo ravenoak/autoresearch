@@ -1,24 +1,27 @@
 import contextlib
 import os
+from typing import Any
 
 import pytest
 
-from autoresearch.config.models import ConfigModel, DistributedConfig
-from autoresearch.distributed import executors, ProcessExecutor
 from multiprocessing import resource_tracker
 from types import SimpleNamespace
+
+from autoresearch.config.models import ConfigModel, DistributedConfig
+from autoresearch.distributed import ProcessExecutor, executors
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
+from tests.typing_helpers import TypedFixture
 
 
 def _dummy_execute_agent_process(
     agent_name: str,
     state: QueryState,
     config: ConfigModel,
-    result_queue=None,
-    storage_queue=None,
-):
-    msg = {
+    result_queue: Any = None,
+    storage_queue: Any = None,
+) -> dict[str, Any]:
+    msg: dict[str, Any] = {
         "action": "agent_result",
         "agent": agent_name,
         "result": {"results": {agent_name: "ok"}},
@@ -32,7 +35,7 @@ def _dummy_execute_agent_process(
 @pytest.fixture
 def process_executor(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
-) -> ProcessExecutor:
+) -> TypedFixture[ProcessExecutor]:
     """Provide a ProcessExecutor that shuts down cleanly after the test."""
 
     monkeypatch.setattr(executors, "_execute_agent_process", _dummy_execute_agent_process)

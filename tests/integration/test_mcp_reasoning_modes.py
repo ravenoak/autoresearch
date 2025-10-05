@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 import pytest
 
 from autoresearch.test_tools import MCPTestClient
@@ -6,6 +9,7 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from tests.typing_helpers import TypedFixture
 
 
 class DummyResponse:
@@ -22,11 +26,16 @@ pytestmark = pytest.mark.slow
 
 
 @pytest.fixture()
-def mcp_setup(monkeypatch):
+def mcp_setup(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[ConfigModel]:
     config = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=1)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
 
-    def dummy_run_query(query, cfg, callbacks=None, **kwargs):
+    def dummy_run_query(
+        query: str,
+        cfg: ConfigModel,
+        callbacks: Callable[..., object] | None = None,
+        **kwargs: Any,
+    ) -> QueryResponse:
         if query == "fail":
             raise RuntimeError("boom")
         if cfg.reasoning_mode == ReasoningMode.DIRECT:
@@ -42,9 +51,14 @@ def mcp_setup(monkeypatch):
 
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
 
-    def mock_post(url, json=None, **_kwargs):
+    def mock_post(
+        url: str,
+        json: dict[str, Any] | None = None,
+        **_kwargs: Any,
+    ) -> DummyResponse:
         try:
-            resp = dummy_run_query(json["query"], config)
+            payload = dict(json or {})
+            resp = dummy_run_query(payload["query"], config)
             data = {
                 "answer": resp.answer,
                 "citations": resp.citations,

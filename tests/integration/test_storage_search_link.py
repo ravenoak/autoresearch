@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -15,10 +14,13 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 from autoresearch.storage_typing import DuckDBConnectionProtocol, JSONDict
+from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture(autouse=True)
-def setup_storage(tmp_path: Path, monkeypatch: MonkeyPatch) -> Iterator[None]:
+def setup_storage(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> TypedFixture[None]:
     """Configure isolated in-memory storage and search for each test."""
     monkeypatch.chdir(tmp_path)
     ConfigLoader.reset_instance()
@@ -47,7 +49,7 @@ def setup_storage(tmp_path: Path, monkeypatch: MonkeyPatch) -> Iterator[None]:
     storage.teardown(remove_db=True)
     StorageManager.setup(db_path=cfg.storage.duckdb_path)
     try:
-        yield
+        yield None
     finally:
         storage.teardown(remove_db=True)
         ConfigLoader.reset_instance()
