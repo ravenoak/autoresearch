@@ -187,6 +187,8 @@ def _stubbed_search_environment(monkeypatch, request):
                 "caller_binding": context.get("caller_binding"),
                 "stage": context.get("stage"),
                 "context": context,
+                "documents": [dict(doc) for doc in documents],
+                "query_embedding": query_embedding,
             }
             add_calls.append(metadata)
 
@@ -386,6 +388,18 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     if env.vector_search_enabled:
         assert "duckdb" in bundle.by_backend
         assert bundle.by_backend["duckdb"] == []
+
+    retrieval_calls = [call for call in env.add_calls if call["stage"] == "retrieval"]
+    assert any(call["phase"] == "search-instance" for call in retrieval_calls), (
+        "Instance lookups should tag retrieval-stage add_embeddings invocations for diagnostics."
+    )
+    assert any(call["phase"] == "search-class" for call in retrieval_calls), (
+        "Class lookups should also tag retrieval-stage add_embeddings invocations for diagnostics."
+    )
+    for call in retrieval_calls:
+        for doc in call["documents"]:
+            assert doc.get("canonical_url") == doc.get("url")
+            assert doc.get("backend") == "stub"
 
     env.set_phase("direct")
     instance_embedding = env.search_instance.embedding_lookup([0.1], 1)

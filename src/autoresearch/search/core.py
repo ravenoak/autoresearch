@@ -894,18 +894,24 @@ class Search:
         placeholders: List[Dict[str, Any]] = []
         for rank in range(1, max_results + 1):
             url = f"https://example.invalid/search?q={encoded_query}&rank={rank}"
-            placeholders.append(
-                {
-                    "title": f"Result {rank} for {query}",
-                    "url": url,
-                    "canonical_url": url,
-                    "snippet": (
-                        "No search backend succeeded; placeholder preserves deterministic order."
-                    ),
-                    "backend": backend,
-                }
-            )
-        return placeholders
+            payload: Dict[str, Any] = {
+                "title": f"Result {rank} for {query}",
+                "url": url,
+                "snippet": (
+                    "No search backend succeeded; placeholder preserves deterministic order."
+                ),
+            }
+            payload.setdefault("canonical_url", url)
+            payload.setdefault("backend", backend)
+            placeholders.append(payload)
+        return [
+            {
+                **doc,
+                "canonical_url": doc.get("canonical_url", doc.get("url")),
+                "backend": doc.get("backend", backend),
+            }
+            for doc in placeholders
+        ]
 
     @hybridmethod
     def reset(self) -> None:
@@ -1323,6 +1329,10 @@ class Search:
             "provided" if query_embedding is not None else "missing",
         )
         with _hybrid_stage(stage):
+            context = capture_hybrid_call_context()
+            log.debug(
+                "add_embeddings context at stage '%s'", stage, extra={"hybrid_context": context}
+            )
             self.add_embeddings(docs, query_embedding)
 
     @staticmethod
