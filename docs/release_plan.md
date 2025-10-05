@@ -42,6 +42,11 @@ tests/unit/test_cache.py -k cache_key`) now passes with the hashed key helper
 migrating legacy entries and covering hybrid and storage permutations, keeping
 search caching ready for the next release checkpoint.【9e20e4†L1-L3】
 
+A structured warning contract landed in this cycle so API and CLI clients can
+read warnings from `QueryResponse.warnings` while displaying the raw answers.
+The behaviour suite now asserts the warnings array and the metrics mirror the
+payload for telemetry exports.
+
 
 ## Milestones
 

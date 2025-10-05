@@ -103,6 +103,7 @@ class DepthPayload:
     graph_exports: dict[str, bool]
     graph_export_payloads: dict[str, str]
     sections: dict[str, bool]
+    warnings: list[dict[str, Any]] = field(default_factory=list)
     notes: dict[str, str] = field(default_factory=dict)
     state_id: str | None = None
 
@@ -597,20 +598,81 @@ def build_depth_payload(
             labels.append(label)
         return labels
 
+    warning_lookup: dict[str, Mapping[str, Any]] = {}
+    warnings_payload: list[dict[str, Any]] = []
+    for entry in response.warnings:
+        if isinstance(entry, Mapping):
+            code = str(entry.get("code") or "")
+            if code:
+                warning_lookup[code] = entry
+            warnings_payload.append(dict(entry))
+        else:
+            warnings_payload.append({"message": str(entry)})
+
     audit_snapshot = metrics.get("answer_audit") if isinstance(metrics, Mapping) else None
-    if isinstance(audit_snapshot, Mapping):
-        unsupported_ids = [
+
+    def _warning_claim_ids(entry: Mapping[str, Any]) -> list[str]:
+        ids = [
+            str(claim_id)
+            for claim_id in entry.get("claim_ids", [])
+            if claim_id is not None and str(claim_id)
+        ]
+        if ids:
+            return ids
+        claims_payload = entry.get("claims", [])
+        extracted: list[str] = []
+        if isinstance(claims_payload, Sequence) and not isinstance(
+            claims_payload, (str, bytes, bytearray)
+        ):
+            for claim in claims_payload:
+                if isinstance(claim, Mapping):
+                    claim_id = claim.get("id")
+                    if claim_id is not None and str(claim_id):
+                        extracted.append(str(claim_id))
+        return extracted
+
+    def _warning_labels(entry: Mapping[str, Any], fallback_ids: list[str]) -> list[str]:
+        labels: list[str] = []
+        claims_payload = entry.get("claims", [])
+        if isinstance(claims_payload, Sequence) and not isinstance(
+            claims_payload, (str, bytes, bytearray)
+        ):
+            for claim in claims_payload:
+                if isinstance(claim, Mapping):
+                    label = claim.get("label")
+                    if isinstance(label, str) and label.strip():
+                        labels.append(label)
+        if labels:
+            return labels
+        return _claim_labels(fallback_ids)
+
+    unsupported_warning = warning_lookup.get("answer_audit.unsupported_claims")
+    needs_review_warning = warning_lookup.get("answer_audit.needs_review_claims")
+
+    if unsupported_warning is None and isinstance(audit_snapshot, Mapping):
+        unsupported_ids_fallback = [
             str(claim_id)
             for claim_id in audit_snapshot.get("unsupported_claims", [])
             if claim_id is not None and str(claim_id)
         ]
-        needs_review_ids = [
+    else:
+        unsupported_ids_fallback = []
+
+    if needs_review_warning is None and isinstance(audit_snapshot, Mapping):
+        needs_review_ids_fallback = [
             str(claim_id)
             for claim_id in audit_snapshot.get("needs_review_claims", [])
             if claim_id is not None and str(claim_id)
         ]
+    else:
+        needs_review_ids_fallback = []
+
+    if unsupported_warning is not None:
+        unsupported_ids = _warning_claim_ids(unsupported_warning)
+        if not unsupported_ids:
+            unsupported_ids = unsupported_ids_fallback
         if unsupported_ids:
-            labels = _claim_labels(unsupported_ids)
+            labels = _warning_labels(unsupported_warning, unsupported_ids)
             caution = "Unsupported claims were removed from the summary: " + ", ".join(labels)
             key_note = notes.get("key_findings")
             notes["key_findings"] = f"{key_note} {caution}".strip() if key_note else caution
@@ -621,8 +683,15 @@ def build_depth_payload(
             )
             tldr_note = notes.get("tldr")
             notes["tldr"] = f"{tldr_note} {caution}".strip() if tldr_note else caution
-        elif needs_review_ids:
-            labels = _claim_labels(needs_review_ids)
+    elif needs_review_warning is not None or needs_review_ids_fallback:
+        entry = needs_review_warning
+        needs_review_ids = (
+            _warning_claim_ids(entry) if entry is not None else needs_review_ids_fallback
+        )
+        if not needs_review_ids:
+            needs_review_ids = needs_review_ids_fallback
+        if needs_review_ids:
+            labels = _warning_labels(entry or {}, needs_review_ids)
             review_note = "Some claims still require review: " + ", ".join(labels)
             key_note = notes.get("key_findings")
             notes["key_findings"] = (
@@ -860,6 +929,7 @@ def build_depth_payload(
         graph_exports=graph_exports_payload,
         graph_export_payloads=graph_export_payloads,
         sections=sections,
+        warnings=warnings_payload,
         notes=notes,
         state_id=response.state_id,
     )
@@ -1588,6 +1658,8 @@ def _render_json(payload: DepthPayload) -> str:
         "notes": payload.notes,
         "sections": payload.sections,
     }
+    if payload.warnings:
+        data["warnings"] = [_json_safe(item) for item in payload.warnings]
     if payload.state_id:
         data["state_id"] = payload.state_id
     if payload.task_graph is not None:
@@ -1732,6 +1804,7 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
             else ""
         ),
         "raw_response_note": payload.notes.get("raw_response", ""),
+        "warnings": payload.warnings,
         "notes": payload.notes,
         "sections": payload.sections,
         "state_id": payload.state_id,

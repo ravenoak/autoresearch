@@ -1,74 +1,92 @@
+"""Regression tests for structured answer audit warnings."""
+
 from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.state import AnswerAuditor, QueryState
 from autoresearch.output_format import OutputDepth, OutputFormatter
-from autoresearch.orchestration.state import QueryState
 from autoresearch.storage import ClaimAuditStatus
 
 
-@pytest.fixture()
-def unsupported_state(monkeypatch: pytest.MonkeyPatch) -> QueryState:
-    """Provide a QueryState with an unsupported claim for audit testing."""
+def _make_state(
+    *,
+    answer: str,
+    claim_status: ClaimAuditStatus,
+    claim_id: str = "c1",
+    claim_text: str = "Unverified capability",
+) -> QueryState:
+    """Create a query state containing a single audited claim."""
 
-    def fake_external_lookup(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
-        return [
-            {
-                "title": "Placeholder evidence",
-                "snippet": "No corroborating evidence for the unsupported claim.",
-                "url": "https://example.com/unsupported",
-            }
-        ]
-
-    monkeypatch.setattr(
-        "autoresearch.search.Search.external_lookup",
-        fake_external_lookup,
+    state = QueryState(query="structured warnings smoke test")
+    state.results["final_answer"] = answer
+    state.claims.append({
+        "id": claim_id,
+        "content": claim_text,
+        "audit": {"claim_id": claim_id, "status": claim_status.value},
+    })
+    state.claim_audits.append(
+        {
+            "claim_id": claim_id,
+            "status": claim_status.value,
+            "entailment": 0.1,
+        }
     )
-
-    return QueryState(
-        query="unsupported audit rehearsal",
-        results={"final_answer": "Original answer without hedging."},
-        claims=[
-            {
-                "id": "c1",
-                "type": "synthesis",
-                "content": "The system guarantees an unverified capability.",
-            }
-        ],
-        claim_audits=[
-            {
-                "claim_id": "c1",
-                "status": ClaimAuditStatus.UNSUPPORTED.value,
-                "entailment_score": 0.05,
-            }
-        ],
-    )
+    return state
 
 
-def test_answer_auditor_hedges_unsupported_claims(unsupported_state: QueryState) -> None:
-    """Answer auditing should hedge unsupported claims and update provenance."""
+def _first_warning_entry(response: QueryResponse) -> dict[str, Any]:
+    warnings = response.warnings
+    assert warnings, "Expected warnings to be present in the response"
+    return warnings[0]
 
-    response = unsupported_state.synthesize()
 
-    assert response.answer.startswith("⚠️"), "Answer should be prefixed with a caution symbol"
-    assert response.metrics["answer_audit"]["unsupported_claims"] == ["c1"]
+def test_answer_audit_preserves_answer_and_emits_warnings() -> None:
+    """Unsupported claims should produce structured warnings without hedging."""
 
-    reasoning = response.reasoning[0]
-    assert reasoning.get("hedged_content", "").startswith("⚠️ Unsupported")
-    audit_entries = [
-        audit for audit in response.claim_audits if audit.get("claim_id") == "c1"
-    ]
-    assert any(
-        audit.get("provenance", {}).get("retrieval", {}).get("mode")
-        == "answer_audit.retry"
-        for audit in audit_entries
-    )
+    state = _make_state(answer="Original answer", claim_status=ClaimAuditStatus.UNSUPPORTED)
+    outcome = AnswerAuditor(state).review()
 
-    depth_payload = OutputFormatter.plan_response_depth(response, OutputDepth.CONCISE)
-    assert all(
-        "unverified capability" not in finding.lower()
-        for finding in depth_payload.key_findings
-    )
-    assert "unsupported claims" in depth_payload.notes.get("key_findings", "").lower()
+    assert outcome.answer == "Original answer"
+    assert outcome.warnings, "Warnings were not emitted for unsupported claim"
+    warning = outcome.warnings[0]
+    assert warning["code"] == "answer_audit.unsupported_claims"
+    assert warning["claims"]
+    assert warning["claims"][0]["id"] == "c1"
+    assert "Unsupported" in warning["message"]
+
+    response = state.synthesize()
+    assert response.answer == "Original answer"
+    assert response.warnings == outcome.warnings
+    audit_metrics = response.metrics.get("answer_audit", {})
+    assert audit_metrics.get("warnings") == outcome.warnings
+
+
+def test_answer_audit_needs_review_warning() -> None:
+    """Needs review claims should surface a dedicated warning entry."""
+
+    state = _make_state(answer="Review answer", claim_status=ClaimAuditStatus.NEEDS_REVIEW)
+    outcome = AnswerAuditor(state).review()
+
+    assert outcome.answer == "Review answer"
+    assert outcome.warnings
+    warning = outcome.warnings[0]
+    assert warning["code"] == "answer_audit.needs_review_claims"
+    assert warning["claims"][0]["id"] == "c1"
+
+
+def test_output_formatter_uses_structured_warnings() -> None:
+    """Depth payloads should surface caution notes while preserving the answer."""
+
+    state = _make_state(answer="CLI answer", claim_status=ClaimAuditStatus.UNSUPPORTED)
+    response = state.synthesize()
+    warning = _first_warning_entry(response)
+    assert warning["claims"]
+
+    depth_payload = OutputFormatter.plan_response_depth(response, OutputDepth.TLDR)
+    assert depth_payload.answer == "CLI answer"
+    note = depth_payload.notes.get("tldr", "")
+    assert "unsupported" in note.lower()
+    assert "cli answer" not in note.lower()
+

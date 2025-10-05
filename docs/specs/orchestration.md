@@ -73,6 +73,15 @@ prompts, raw responses, structured graphs, and any normalisation warnings. The
 `react_log` pairs with task-level traces to reconstruct planner intent,
 coordinator unlocks, and tool affinity decisions without re-running models.
 
+### Structured answer warnings
+
+Answer auditing emits structured warnings instead of mutating the final
+answer text. The orchestrator attaches warning objects to
+`QueryResponse.warnings`, each exposing `code`, `severity`, `message`,
+`claim_ids`, and labelled `claims`. Clients render caution banners from that
+payload while leaving `answer` untouched. The same entries appear in
+`metrics["answer_audit"]["warnings"]` for telemetry consumers.
+
 ## Invariants
 
 ### Parallel merge

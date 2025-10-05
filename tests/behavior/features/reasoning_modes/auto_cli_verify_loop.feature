@@ -32,9 +32,13 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     Then the CLI should exit directly without escalation
     And the CLI TLDR should warn about unsupported claims
     And the CLI key findings should omit unsupported claims
+    And the CLI answer should remain free of warning prefixes
+    And the CLI response should expose structured unsupported warnings
 
   Scenario: AUTO debate flow hedges unsupported claims
     When I run the AUTO reasoning CLI for query "unsupported debate rehearsal"
     Then the CLI scout gate decision should escalate to debate
     And the CLI TLDR should warn about unsupported claims
     And the CLI key findings should omit unsupported claims
+    And the CLI answer should remain free of warning prefixes
+    And the CLI response should expose structured unsupported warnings

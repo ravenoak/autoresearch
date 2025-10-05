@@ -65,6 +65,7 @@ class QueryResponse(BaseModel):
         citations: Retrieval references associated with the answer.
         reasoning: Ordered reasoning steps exchanged between agents.
         metrics: Execution metrics such as latency and token usage.
+        warnings: Structured warnings captured during orchestration runs.
         claim_audits: Verification metadata mirroring
             :class:`~autoresearch.storage.ClaimAuditRecord` entries, including
             per-claim provenance namespaces (``retrieval``, ``backoff``, and
@@ -82,6 +83,13 @@ class QueryResponse(BaseModel):
     citations: List[Any]
     reasoning: List[Any]
     metrics: Dict[str, Any]
+    warnings: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description=(
+            "Structured warnings captured during orchestration, including "
+            "claim-level remediation hints"
+        ),
+    )
     claim_audits: List[Dict[str, Any]] = Field(
         default_factory=list,
         description=(
