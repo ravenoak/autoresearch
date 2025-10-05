@@ -427,6 +427,15 @@ def run_auto_reasoning_cli(
     computed_badges.pop("", None)
     normalized_badges = {key: int(value) for key, value in computed_badges.items()}
     metrics = payload.setdefault("metrics", {})
+    warning_payload = [
+        dict(entry) if isinstance(entry, Mapping) else {"message": str(entry)}
+        for entry in captured_response.warnings
+    ]
+    payload.setdefault("warnings", warning_payload)
+    if warning_payload:
+        metrics.setdefault("answer_audit", {}).setdefault(
+            "warnings", list(warning_payload)
+        )
     metrics.setdefault("audit_badges", normalized_badges)
     captured_response.metrics.setdefault("audit_badges", dict(normalized_badges))
 
@@ -688,6 +697,24 @@ def assert_cli_answer_unmodified(auto_cli_cycle: dict[str, Any]) -> None:
     payload_answer = str(payload.get("answer", ""))
     assert response.answer == payload_answer
     assert not response.answer.lstrip().startswith("⚠️")
+    answer_lower = response.answer.lower()
+    payload_answer_lower = payload_answer.lower()
+    for prefix in ("warning:", "caution:"):
+        assert not answer_lower.startswith(prefix)
+        assert not payload_answer_lower.startswith(prefix)
+    warning_messages: list[str] = []
+    for entry in response.warnings:
+        if isinstance(entry, Mapping):
+            message = entry.get("message")
+            if isinstance(message, str) and message.strip():
+                warning_messages.append(message.strip().lower())
+    for message in warning_messages:
+        assert message not in answer_lower, (
+            "Warning message leaked into CLI answer"
+        )
+        assert message not in payload_answer_lower, (
+            "Warning message leaked into CLI payload answer"
+        )
 
 
 @then("the CLI response should expose structured unsupported warnings")
@@ -717,3 +744,9 @@ def assert_cli_structured_warnings(auto_cli_cycle: dict[str, Any]) -> None:
         ]
     assert claim_ids, f"Warning entry missing claim identifiers: {claims_payload!r}"
     assert payload.get("warnings", []) == warnings
+    metrics_snapshot = response.metrics.get("answer_audit", {})
+    assert isinstance(metrics_snapshot, Mapping)
+    assert metrics_snapshot.get("warnings", []) == warnings
+    payload_metrics = payload.get("metrics", {}).get("answer_audit", {})
+    if payload_metrics:
+        assert payload_metrics.get("warnings", []) == warnings

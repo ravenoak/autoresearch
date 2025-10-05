@@ -28,11 +28,13 @@ clusters.【53776f†L1-L60】 Targeted property tests highlight how
 `OutputFormatter` drops control characters and collapses whitespace, while
 search cache tests show backend calls firing despite cached results, further
 pinning down the regression scope.【5f96a8†L12-L36】【e865e9†L1-L58】 Focused
-reasoning tests confirm warning banners now mutate the final answer, and the
-DuckDuckGo stub diverges from the mocked payload, keeping behaviour coverage
-red until the new PR slices land.【cf191d†L27-L46】【34ebc5†L1-L76】 TestPyPI dry
-runs stay paused per the improvement plan; we will revisit once the suite is
-green.
+reasoning tests now assert that CLI answers stay clean while warning payloads
+mirror the metrics telemetry, closing the regression that previously mutated
+the summary text.
+【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L685-L723】
+【F:src/autoresearch/orchestration/state.py†L132-L206】【34ebc5†L1-L76】
+TestPyPI dry runs stay paused per the improvement plan; we will revisit once
+the suite is green.
 
 Follow-up work reintroduced canonical URLs and backend labels through
 `Search._normalise_backend_documents`, and the stub backend, fallback
@@ -53,8 +55,10 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   cached queries avoid repeated backend calls.【bebacc†L5-L21】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
-- [ ] Land **PR-R1** – relocate reasoning warning banners into structured
+- [x] Land **PR-R1** – relocate reasoning warning banners into structured
   telemetry and update behaviour coverage to assert clean answers.
+  【F:src/autoresearch/orchestration/state.py†L132-L206】
+  【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L685-L723】
 - [ ] Land **PR-P1** – normalise parallel reasoning merges and recalibrate
   scheduler benchmarks against recorded baselines.
 - [ ] Capture fresh verify and coverage logs once the above PRs merge and

@@ -140,12 +140,15 @@ class AnswerAuditor:
                 needs_review_after.append(claim_id)
 
         answer_text_raw = self._state.results.get("final_answer", "")
-        normalized_answer = self._normalize_answer(str(answer_text_raw or ""))
         warning_entries = self._build_warning_entries(
             unsupported_after,
             needs_review_after,
             claims,
         )
+        sanitized_answer = self._strip_answer_warnings(
+            str(answer_text_raw or ""), warning_entries
+        )
+        normalized_answer = self._normalize_answer(sanitized_answer)
 
         metrics = {
             "unsupported_claims": list(unsupported_after),
@@ -319,6 +322,76 @@ class AnswerAuditor:
                 )
             )
         return entries
+
+    def _strip_answer_warnings(
+        self,
+        answer: str,
+        warnings: Sequence[Mapping[str, Any] | str],
+    ) -> str:
+        """Remove trailing warning banners from ``answer`` when present."""
+
+        if not answer or not warnings:
+            return answer
+
+        warning_messages: list[str] = []
+        for entry in warnings:
+            if isinstance(entry, Mapping):
+                message = entry.get("message")
+                if isinstance(message, str) and message.strip():
+                    warning_messages.append(message.strip())
+            elif isinstance(entry, str) and entry.strip():
+                warning_messages.append(entry.strip())
+
+        if not warning_messages:
+            return answer
+
+        lines = answer.splitlines()
+        trimmed = list(lines)
+
+        while trimmed:
+            candidate = trimmed[-1]
+            if not candidate.strip():
+                trimmed.pop()
+                continue
+            if self._line_matches_warning(candidate, warning_messages):
+                trimmed.pop()
+                continue
+            break
+
+        cleaned = "\n".join(trimmed).rstrip()
+        return cleaned
+
+    def _line_matches_warning(
+        self, line: str, warning_messages: Sequence[str]
+    ) -> bool:
+        """Return ``True`` when ``line`` reproduces a known warning message."""
+
+        normalized = line.strip()
+        if not normalized:
+            return False
+
+        normalized = normalized.lstrip("⚠️").strip()
+        if not normalized:
+            return False
+
+        # Remove common bullet or prefix tokens.
+        while normalized and normalized[0] in {"-", "•"}:
+            normalized = normalized[1:].strip()
+
+        lowered = normalized.lower()
+        for label in ("warning:", "caution:"):
+            if lowered.startswith(label):
+                lowered = lowered[len(label) :].strip()
+
+        for message in warning_messages:
+            target = message.lower()
+            if not target:
+                continue
+            if lowered == target:
+                return True
+            if lowered.startswith(target):
+                return True
+        return False
 
     def _format_warning_entry(
         self,
