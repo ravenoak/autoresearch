@@ -47,6 +47,7 @@ class AnswerAuditOutcome:
     claim_audits: list[dict[str, Any]]
     additional_sources: list[dict[str, Any]] = field(default_factory=list)
     metrics: dict[str, Any] = field(default_factory=dict)
+    warnings: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -129,9 +130,9 @@ class AnswerAuditor:
             elif status is ClaimAuditStatus.NEEDS_REVIEW:
                 needs_review_after.append(claim_id)
 
-        answer_text = self._state.results.get("final_answer", "")
-        sanitized_answer = self._hedge_answer(
-            str(answer_text or ""),
+        answer_text_raw = self._state.results.get("final_answer", "")
+        normalized_answer = self._normalize_answer(str(answer_text_raw or ""))
+        warning_entries = self._build_warning_entries(
             unsupported_after,
             needs_review_after,
             claims,
@@ -151,15 +152,16 @@ class AnswerAuditor:
             ],
             "retry_failures": retry_failures,
         }
-        if sanitized_answer.strip():
-            metrics["hedged_answer"] = sanitized_answer
+        if warning_entries:
+            metrics["warnings"] = [dict(entry) for entry in warning_entries]
 
         return AnswerAuditOutcome(
-            answer=sanitized_answer or "No answer synthesized",
+            answer=normalized_answer,
             reasoning=claims,
             claim_audits=audits,
             additional_sources=self._extract_sources(retry_records),
             metrics=metrics,
+            warnings=warning_entries,
         )
 
     def _copy_claim(self, claim: Mapping[str, Any]) -> dict[str, Any]:
@@ -271,32 +273,70 @@ class AnswerAuditor:
             return f"⚠️ Needs review: {cleaned}"
         return cleaned
 
-    def _hedge_answer(
+    def _normalize_answer(self, answer: str) -> str:
+        """Return ``answer`` when provided, otherwise a fallback string."""
+
+        if answer and answer.strip():
+            return answer
+        return "No answer synthesized"
+
+    def _build_warning_entries(
         self,
-        answer: str,
         unsupported: Sequence[str],
         needs_review: Sequence[str],
         claims: Sequence[Mapping[str, Any]],
-    ) -> str:
-        notices: list[str] = []
-        if unsupported:
-            labels = self._summarise_claims(unsupported, claims)
-            notices.append(
-                "Unsupported claims remain: " + ", ".join(labels)
-            )
-        if needs_review and not unsupported:
-            labels = self._summarise_claims(needs_review, claims)
-            notices.append(
-                "Some claims need review: " + ", ".join(labels)
-            )
-        if not notices:
-            return answer or "No answer synthesized"
+    ) -> list[dict[str, Any]]:
+        """Construct structured warning payloads for downstream consumers."""
 
-        disclaimer = "⚠️ " + " ".join(notices)
-        cleaned_answer = answer.strip()
-        if cleaned_answer:
-            return f"{disclaimer}\n\n{cleaned_answer}"
-        return disclaimer
+        entries: list[dict[str, Any]] = []
+        if unsupported:
+            entries.append(
+                self._format_warning_entry(
+                    code="answer_audit.unsupported_claims",
+                    message="Unsupported claims remain after retries",
+                    severity="warning",
+                    claim_ids=unsupported,
+                    claims=claims,
+                )
+            )
+        elif needs_review:
+            entries.append(
+                self._format_warning_entry(
+                    code="answer_audit.needs_review_claims",
+                    message="Some claims still require review",
+                    severity="warning",
+                    claim_ids=needs_review,
+                    claims=claims,
+                )
+            )
+        return entries
+
+    def _format_warning_entry(
+        self,
+        *,
+        code: str,
+        message: str,
+        severity: str,
+        claim_ids: Sequence[str],
+        claims: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        """Return a structured warning entry with claim labels."""
+
+        labels = self._summarise_claims(claim_ids, claims)
+        structured_claims: list[dict[str, Any]] = []
+        for index, claim_id in enumerate(claim_ids):
+            label = labels[index] if index < len(labels) else str(claim_id)
+            structured_claims.append({
+                "id": str(claim_id),
+                "label": label,
+            })
+        return {
+            "code": code,
+            "message": message,
+            "severity": severity,
+            "claim_ids": [str(cid) for cid in claim_ids],
+            "claims": structured_claims,
+        }
 
     def _summarise_claims(
         self, claim_ids: Sequence[str], claims: Sequence[Mapping[str, Any]]
@@ -1409,6 +1449,7 @@ class QueryState(BaseModel):
             citations=self.sources,
             reasoning=self.claims,
             metrics=metrics,
+            warnings=list(outcome.warnings),
             claim_audits=self.claim_audits,
             task_graph=self.task_graph if self.task_graph.get("tasks") else None,
             react_traces=list(self.react_traces),

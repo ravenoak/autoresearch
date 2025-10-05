@@ -673,3 +673,41 @@ def assert_cli_key_findings_filtered(auto_cli_cycle: dict[str, Any]) -> None:
         assert unsupported_fragment not in finding.lower()
     note = depth_payload.notes.get("key_findings", "")
     assert "unsupported claims" in note.lower() or "require review" in note.lower()
+
+
+@then("the CLI answer should remain free of warning prefixes")
+def assert_cli_answer_unmodified(auto_cli_cycle: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cli_cycle["response"]
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    payload_answer = str(payload.get("answer", ""))
+    assert response.answer == payload_answer
+    assert not response.answer.lstrip().startswith("⚠️")
+
+
+@then("the CLI response should expose structured unsupported warnings")
+def assert_cli_structured_warnings(auto_cli_cycle: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cli_cycle["response"]
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    warnings = response.warnings
+    assert warnings, "Expected structured warnings in the CLI response"
+    target_codes = {
+        "answer_audit.unsupported_claims",
+        "answer_audit.needs_review_claims",
+    }
+    selected = next((entry for entry in warnings if entry.get("code") in target_codes), None)
+    assert selected is not None, "Unsupported warning entry missing"
+    claims_payload = selected.get("claims", [])
+    assert isinstance(claims_payload, list) and claims_payload
+    claim_ids = [
+        str(claim_id)
+        for claim_id in selected.get("claim_ids", [])
+        if claim_id is not None and str(claim_id)
+    ]
+    if not claim_ids:
+        claim_ids = [
+            str(claim.get("id"))
+            for claim in claims_payload
+            if claim.get("id") is not None and str(claim.get("id"))
+        ]
+    assert claim_ids, f"Warning entry missing claim identifiers: {claims_payload!r}"
+    assert payload.get("warnings", []) == warnings
