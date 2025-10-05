@@ -43,6 +43,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:docs/v0.1.0a1_preflight_plan.md†L38-L115】
 
 ## October 4, 2025
+- `Search._normalise_backend_documents` now stamps backend labels and
+  canonical URLs across retrieval and fallback flows, so both legacy and VSS
+  hybrid lookups emit stage-aware embedding telemetry while the deterministic
+  placeholders cover templated queries. The refreshed unit suite exercises the
+  canonical URLs in the stub backend, the fallback return-handles path, and the
+  failure scenarios module, and the latest verify sweep shows those tests
+  passing before `test_parallel_merging_is_deterministic` stops the run with an
+  unrelated `TypeError`.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【4c0de7†L1-L120】
 - `uv run mypy --strict src tests` at **05:34 UTC** reported "Success: no
   issues found in 790 source files", keeping the strict gate green while we
   prioritise search stub remediation ahead of the next verify sweep.

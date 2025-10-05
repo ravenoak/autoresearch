@@ -18,6 +18,14 @@ red until the new PR slices land.【cf191d†L27-L46】【34ebc5†L1-L76】 Tes
 runs stay paused per the improvement plan; we will revisit once the suite is
 green.
 
+Follow-up work reintroduced canonical URLs and backend labels through
+`Search._normalise_backend_documents`, and the stub backend, fallback
+return-handles, and failure scenario tests now lock the enriched metadata.
+The latest `task verify` sweep reaches those assertions before the known
+`test_parallel_merging_is_deterministic` failure returns, so the release gate
+remains blocked on orchestrator determinism rather than fallback
+placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【4c0de7†L1-L120】
+
 ## Tasks
 - [ ] Land **PR-S1** – restore deterministic search stubs, hybrid ranking
   signatures, and local file fallbacks in line with the updated preflight
