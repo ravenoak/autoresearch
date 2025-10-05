@@ -1,4 +1,5 @@
 import functools
+import shutil
 import types
 from collections import defaultdict
 from typing import Any
@@ -15,6 +16,47 @@ from autoresearch.orchestration.state import QueryState
 from autoresearch.search import ExternalLookupResult, Search
 from autoresearch.search.core import capture_hybrid_call_context, hybridmethod
 from autoresearch.storage import StorageManager
+
+
+def _make_search_cfg() -> MagicMock:
+    """Return a baseline search configuration for direct backend tests."""
+
+    cfg = MagicMock()
+    search_ns = types.SimpleNamespace(
+        backends=[],
+        embedding_backends=[],
+        hybrid_query=False,
+        use_semantic_similarity=False,
+        use_bm25=True,
+        use_source_credibility=False,
+        bm25_weight=1.0,
+        semantic_similarity_weight=0.0,
+        source_credibility_weight=0.0,
+        max_workers=1,
+        parallel_enabled=False,
+        parallel_prefetch=0,
+        context_aware=types.SimpleNamespace(enabled=False, use_topic_modeling=False),
+        query_rewrite=types.SimpleNamespace(
+            enabled=False,
+            max_attempts=1,
+            min_results=1,
+            min_unique_sources=1,
+            coverage_gap_threshold=1.0,
+        ),
+        adaptive_k=types.SimpleNamespace(
+            enabled=False,
+            min_k=1,
+            max_k=1,
+            step=1,
+            coverage_gap_threshold=1.0,
+        ),
+        local_file=types.SimpleNamespace(path="", file_types=[]),
+        local_git=types.SimpleNamespace(repo_path="", branches=(), history_depth=0),
+        shared_cache=True,
+        cache_namespace=None,
+    )
+    cfg.search = search_ns
+    return cfg
 
 
 @pytest.fixture
@@ -189,6 +231,11 @@ def _stubbed_search_environment(monkeypatch, request):
                 "context": context,
                 "documents": [dict(doc) for doc in documents],
                 "query_embedding": query_embedding,
+                "raw_query": context.get("raw_query"),
+                "canonical_query": context.get("canonical_query"),
+                "executed_query": context.get("executed_query"),
+                "raw_canonical_query": context.get("raw_canonical_query"),
+                "query_stack": context.get("query_stack"),
             }
             add_calls.append(metadata)
 
@@ -367,8 +414,12 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     env = _stubbed_search_environment
     env.install_backend(docs)
 
+    raw_query = "  Mixed Case Query  "
+    executed_query = "Mixed Case Query"
+    canonical_query = "mixed case query"
+
     env.set_phase("search-instance")
-    instance_results = env.search_instance.external_lookup("q", max_results=1)
+    instance_results = env.search_instance.external_lookup(raw_query, max_results=1)
     assert [r["title"] for r in instance_results] == ["T"]
     assert [r["url"] for r in instance_results] == ["u"]
     assert [r["canonical_url"] for r in instance_results] == ["u"]
@@ -377,7 +428,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         env.set_storage_results({"storage": []})
 
     env.set_phase("search-class")
-    bundle = Search.external_lookup("q", max_results=1, return_handles=True)
+    bundle = Search.external_lookup(raw_query, max_results=1, return_handles=True)
     assert isinstance(bundle, ExternalLookupResult)
     bundle_results = list(bundle)
     assert [r["title"] for r in bundle_results] == ["T"]
@@ -385,6 +436,10 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert [r["canonical_url"] for r in bundle_results] == ["u"]
     assert bundle.results == bundle_results
     assert bundle.cache is env.search_instance.cache
+    assert bundle.raw_query == raw_query
+    assert bundle.executed_query == executed_query
+    assert bundle.query == canonical_query
+    assert bundle.raw_canonical_query == canonical_query
     if env.vector_search_enabled:
         assert "duckdb" in bundle.by_backend
         assert bundle.by_backend["duckdb"] == []
@@ -397,6 +452,15 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         "Class lookups should also tag retrieval-stage add_embeddings invocations for diagnostics."
     )
     for call in retrieval_calls:
+        assert call["raw_query"] == raw_query
+        assert call["executed_query"] == executed_query
+        assert call["canonical_query"] == canonical_query
+        assert call["raw_canonical_query"] == canonical_query
+        assert call["query_stack"]
+        top_query = call["query_stack"][-1]
+        assert top_query["raw_query"] == raw_query
+        assert top_query["executed_query"] == executed_query
+        assert top_query["canonical_query"] == canonical_query
         for doc in call["documents"]:
             assert doc.get("canonical_url") == doc.get("url")
             assert doc.get("backend") == "stub"
@@ -474,7 +538,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     }
     assert compute_counts == expected_compute
 
-    assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
+    assert env.backend_calls == [(executed_query, 1, False), (executed_query, 1, False)]
     expected_add_calls = [
         ("search-instance", "instance", "instance"),
         ("search-class", "instance", "class"),
@@ -509,14 +573,21 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     env.install_backend([])
     env.set_phase("search-class")
 
-    bundle = Search.external_lookup("missing", max_results=2, return_handles=True)
+    raw_query = "  Missing Query  "
+    executed_query = "Missing Query"
+    canonical_query = "missing query"
+
+    bundle = Search.external_lookup(raw_query, max_results=2, return_handles=True)
 
     assert isinstance(bundle, ExternalLookupResult)
-    assert bundle.query == "missing"
+    assert bundle.query == canonical_query
+    assert bundle.raw_query == raw_query
+    assert bundle.executed_query == executed_query
+    assert bundle.raw_canonical_query == canonical_query
     assert list(bundle) == bundle.results
     assert len(bundle.results) == 2
     assert all(result["title"].startswith("Result") for result in bundle.results)
-    encoded = quote_plus("missing")
+    encoded = quote_plus(executed_query)
     assert [result["url"] for result in bundle.results] == [
         f"https://example.invalid/search?q={encoded}&rank=1",
         f"https://example.invalid/search?q={encoded}&rank=2",
@@ -527,7 +598,7 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     ]
     assert bundle.cache is env.search_instance.cache
     assert bundle.by_backend == {}
-    assert env.backend_calls == [("missing", 2, False)]
+    assert env.backend_calls == [(executed_query, 2, False)]
     assert len(env.add_calls) == 1
     call = env.add_calls[0]
     assert call["phase"] == "search-class"
@@ -535,6 +606,15 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     assert call["hybrid_binding"] == "instance"
     assert call["caller_binding"] == "class"
     assert call["stage"] == "fallback"
+    assert call["raw_query"] == raw_query
+    assert call["executed_query"] == executed_query
+    assert call["canonical_query"] == canonical_query
+    assert call["raw_canonical_query"] == canonical_query
+    assert call["query_stack"]
+    top_query = call["query_stack"][-1]
+    assert top_query["raw_query"] == raw_query
+    assert top_query["executed_query"] == executed_query
+    assert top_query["canonical_query"] == canonical_query
     context = call["context"]
     assert context["method"].endswith("add_embeddings")
     assert context["stage"] == "fallback"
@@ -542,6 +622,87 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
     assert context["stage_stack"][-1] == "fallback"
     assert context["binding"] == "instance"
     assert context["caller_binding"] == "class"
+
+
+def test_search_stub_duckduckgo_canonical_query(monkeypatch):
+    cfg = _make_search_cfg()
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.embedding_backends = []
+    cfg.search.hybrid_query = False
+    cfg.search.use_semantic_similarity = False
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(StorageManager, "has_vss", staticmethod(lambda: False))
+    monkeypatch.setattr("autoresearch.search.storage.persist_results", lambda results: None)
+
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "RelatedTopics": [
+            {"Text": "Canonical Result", "FirstURL": "https://example.com"}
+        ]
+    }
+    session = MagicMock()
+    session.get.return_value = response
+    monkeypatch.setattr("autoresearch.search.core.get_http_session", lambda: session)
+
+    raw_query = "  DuckDuckGo Query?  "
+    executed_query = "DuckDuckGo Query?"
+    canonical_query = "duckduckgo query?"
+
+    with Search.temporary_state() as search_instance:
+        search_instance.cache.clear()
+        bundle = search_instance.external_lookup(
+            raw_query, max_results=1, return_handles=True
+        )
+
+    assert bundle.raw_query == raw_query
+    assert bundle.executed_query == executed_query
+    assert bundle.query == canonical_query
+    assert bundle.raw_canonical_query == canonical_query
+    assert list(bundle)
+    assert "duckduckgo" in bundle.by_backend
+    assert bundle.by_backend["duckduckgo"][0]["canonical_url"] == "https://example.com"
+    params = session.get.call_args.kwargs["params"]
+    assert params["q"] == executed_query
+
+
+def test_search_stub_local_file_canonical_query(monkeypatch, tmp_path):
+    cfg = _make_search_cfg()
+    cfg.search.backends = ["local_file"]
+    cfg.search.embedding_backends = []
+    cfg.search.local_file.path = str(tmp_path)
+    cfg.search.local_file.file_types = ["txt"]
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(StorageManager, "has_vss", staticmethod(lambda: False))
+    monkeypatch.setattr("autoresearch.search.storage.persist_results", lambda results: None)
+    monkeypatch.setattr("shutil.which", lambda _: None)
+
+    file_path = tmp_path / "notes.txt"
+    file_path.write_text("Local Query reference", encoding="utf-8")
+    monkeypatch.setattr(
+        "autoresearch.search.core.read_document_text",
+        lambda path: path.read_text(encoding="utf-8"),
+    )
+
+    raw_query = "  Local Query  "
+    executed_query = "Local Query"
+    canonical_query = "local query"
+
+    with Search.temporary_state() as search_instance:
+        search_instance.cache.clear()
+        bundle = search_instance.external_lookup(
+            raw_query, max_results=1, return_handles=True
+        )
+
+    assert bundle.raw_query == raw_query
+    assert bundle.executed_query == executed_query
+    assert bundle.query == canonical_query
+    assert bundle.raw_canonical_query == canonical_query
+    assert list(bundle)
+    assert "local_file" in bundle.by_backend
+    doc = bundle.by_backend["local_file"][0]
+    assert doc["canonical_url"] == str(file_path)
+    assert doc["backend"] == "local_file"
 
 
 def test_planner_execute(monkeypatch):
