@@ -49,6 +49,10 @@ and hybrid queries and exposes a CLI entry point. See the
 - When `return_handles=True`, `Search.external_lookup` returns an
   `ExternalLookupResult` containing the ranked documents, a backend map,
   and handles to the shared cache and storage manager.
+- Cache keys are derived from a helper that hashes the normalized query text,
+  active namespace, embedding signature, hybrid flags, and storage hints while
+  also exposing the legacy pipe-delimited key so pre-existing caches are read
+  transparently.
 
 ## Public API
 

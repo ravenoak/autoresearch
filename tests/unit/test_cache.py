@@ -3,12 +3,15 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 from threading import Thread  # for thread-safety test
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import pytest
 
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
+
+import numpy as np
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
@@ -460,3 +463,154 @@ def test_context_aware_query_expansion_uses_cache(
         assert calls["count"] == 1
         assert results2[0]["title"] == results1[0]["title"]
         assert results2[0]["url"] == results1[0]["url"]
+
+
+@settings(
+    max_examples=25,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    deadline=None,
+)
+@given(
+    st.lists(
+        st.tuples(st.booleans(), st.booleans(), st.booleans()),
+        min_size=1,
+        max_size=6,
+    )
+)
+def test_cache_key_property_sequences(
+    monkeypatch: pytest.MonkeyPatch,
+    toggle_sequence: List[Tuple[bool, bool, bool]],
+) -> None:
+    """Property test ensuring cache keys respect storage and hybrid toggles."""
+
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: None))
+    base_embedding = np.array([0.5, 0.25, 0.75], dtype=float)
+    monkeypatch.setattr(
+        Search,
+        "compute_query_embedding",
+        staticmethod(lambda _: base_embedding),
+    )
+    vector_state = {"enabled": False}
+    monkeypatch.setattr(
+        "autoresearch.storage.StorageManager.has_vss",
+        lambda: vector_state["enabled"],
+    )
+    def _fake_vector_search(*_args: Any, **_kwargs: Any) -> List[Dict[str, Any]]:
+        if not vector_state["enabled"]:
+            return []
+        return [
+            {
+                "node_id": "n1",
+                "content": "storage snippet",
+                "embedding": [0.1, 0.2],
+                "similarity": 0.42,
+            }
+        ]
+
+    monkeypatch.setattr(
+        "autoresearch.search.storage.vector_search",
+        _fake_vector_search,
+    )
+    monkeypatch.setattr(
+        "autoresearch.storage.StorageManager.vector_search",
+        staticmethod(_fake_vector_search),
+    )
+    monkeypatch.setattr(
+        "autoresearch.search.storage.get_claim",
+        lambda node_id: {"content": f"claim:{node_id}"},
+    )
+    monkeypatch.setattr(
+        "autoresearch.storage.StorageManager.get_graph",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "autoresearch.storage.StorageManager.query_rdf",
+        lambda *_args, **_kwargs: [],
+    )
+    monkeypatch.setattr(
+        "autoresearch.search.storage.persist_results",
+        lambda *_args, **_kwargs: None,
+    )
+
+    backend_calls: Dict[str, int] = {"count": 0}
+    embedding_calls: Dict[str, int] = {"count": 0}
+
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        backend_calls["count"] += 1
+        return [
+            {
+                "title": f"backend-{backend_calls['count']}",
+                "url": f"https://example.com/{backend_calls['count']}",
+            }
+        ]
+
+    def embedding_backend(
+        query_embedding: np.ndarray, max_results: int = 5
+    ) -> List[Dict[str, Any]]:
+        embedding_calls["count"] += 1
+        return [
+            {
+                "title": f"embedding-{embedding_calls['count']}",
+                "url": "storage://duckdb",
+                "snippet": "vector",
+                "embedding": query_embedding.tolist(),
+            }
+        ]
+
+    with search.temporary_state() as s:
+        s.backends = {"dummy": backend}
+        s.embedding_backends = {"duckdb": embedding_backend}
+
+        seen_configs: Dict[Tuple[bool, bool, bool], Tuple[Tuple[str, str], ...]] = {}
+
+        def _result_signature(docs: List[Dict[str, Any]]) -> Tuple[Tuple[str, str], ...]:
+            pairs = [(str(doc.get("url", "")), str(doc.get("title", ""))) for doc in docs]
+            return tuple(sorted(pairs))
+
+        for hybrid_enabled, semantic_enabled, vector_enabled in toggle_sequence:
+            cfg = ConfigModel.model_construct(loops=1)
+            cfg.search.backends = ["dummy"]
+            cfg.search.embedding_backends = ["duckdb"]
+            cfg.search.context_aware.enabled = False
+            cfg.search.query_rewrite.enabled = False
+            cfg.search.adaptive_k.enabled = False
+            cfg.search.hybrid_query = hybrid_enabled
+            cfg.search.use_semantic_similarity = semantic_enabled
+            cfg.storage.vector_extension = vector_enabled
+
+            vector_state["enabled"] = vector_enabled
+
+            def _get_config(snapshot: ConfigModel = cfg) -> ConfigModel:
+                return snapshot
+
+            monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+            config_key = (hybrid_enabled, semantic_enabled, vector_enabled)
+            if config_key not in seen_configs:
+                prev_backend = backend_calls["count"]
+                prev_embedding = embedding_calls["count"]
+                first_results = s.external_lookup("python")
+                assert first_results, "external_lookup should return deterministic payload"
+                assert backend_calls["count"] >= prev_backend
+                assert embedding_calls["count"] >= prev_embedding
+
+                second_results = s.external_lookup("python")
+                assert second_results, "cache hit should return payload"
+                assert embedding_calls["count"] >= prev_embedding
+
+                seen_configs[config_key] = _result_signature(first_results)
+            else:
+                prev_backend = backend_calls["count"]
+                prev_embedding = embedding_calls["count"]
+                cached_results = s.external_lookup("python")
+                assert _result_signature(cached_results) == seen_configs[config_key]
+                assert backend_calls["count"] == prev_backend
+                assert embedding_calls["count"] == prev_embedding

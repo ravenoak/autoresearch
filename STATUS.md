@@ -29,6 +29,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   orchestrator regression after exercising the fallback templating case and the
   hybrid stack assertions, giving us synchronized evidence for both gates while
   the merge fix remains outstanding.【F:baseline/logs/task-coverage-20251005T013130Z.log†L1-L184】【F:tests/unit/test_core_modules_additional.py†L170-L215】【F:tests/unit/test_failure_scenarios.py†L61-L86】
+- Search cache keys now flow through a hashing helper that encodes the
+  normalized query, namespace, embedding signature, storage hints, and hybrid
+  flags while migrating legacy key material; `embedding_lookup` and external
+  cache reads route through the same compatibility layer.【F:src/autoresearch/search/core.py†L846-L905】【F:src/autoresearch/search/core.py†L906-L945】【F:src/autoresearch/search/core.py†L1760-L1815】【F:src/autoresearch/search/core.py†L2138-L2376】
+- Property-driven cache-key regression covers sequential hits, hybrid toggles,
+  and storage-vs-backend interleaving, with the targeted suite green on the new
+  strategy.【F:tests/unit/test_cache.py†L520-L616】【3eea38†L1-L3】
 
 ## October 4, 2025 (earlier runs)
 - `uv run mypy --strict src tests` at **21:04 UTC** continues to report
