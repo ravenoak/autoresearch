@@ -18,6 +18,18 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 5, 2025
+- `task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"` at
+  **01:27 UTC** records a clean pass through the refreshed fallback tests before
+  `test_parallel_merging_is_deterministic` raises the known `TypeError`.
+  【F:baseline/logs/task-verify-20251005T012754Z.log†L1-L196】 The run confirms
+  canonical URLs, backend labels, and stage-aware enrichment remain stable
+  across the hybrid lookup paths.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】
+- `task coverage` with the same extras at **01:31 UTC** stops on the identical
+  orchestrator regression after exercising the fallback templating case and the
+  hybrid stack assertions, giving us synchronized evidence for both gates while
+  the merge fix remains outstanding.【F:baseline/logs/task-coverage-20251005T013130Z.log†L1-L184】【F:tests/unit/test_core_modules_additional.py†L170-L215】【F:tests/unit/test_failure_scenarios.py†L61-L86】
+
 ## October 4, 2025 (earlier runs)
 - `uv run mypy --strict src tests` at **21:04 UTC** continues to report
   “Success: no issues found in 790 source files”, so the strict gate stays

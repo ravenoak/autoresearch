@@ -1,10 +1,10 @@
-As of **2025-10-04 at 21:32 UTC** fallback placeholders now ship with canonical
+As of **2025-10-05 at 01:33 UTC** fallback placeholders now ship with canonical
 URLs, backend labels, and stage-aware embedding telemetry. The stub backend,
 return-handles fallback, and failure scenario tests all assert the enriched
 metadata, while the latest `task verify` run progresses past those cases before
 failing on `test_parallel_merging_is_deterministic`’s existing `TypeError`
 regression; the paired coverage sweep halts on the same orchestrator property
-test.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【4c0de7†L1-L120】【a8cf7e†L1-L120】
+test.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【F:baseline/logs/task-verify-20251005T012754Z.log†L1-L196】【F:baseline/logs/task-coverage-20251005T013130Z.log†L1-L184】
 
 As of **2025-10-04 at 21:04 UTC** strict typing remains green while the unit
 suite exposes ten regressions concentrated in search, cache determinism,

@@ -69,9 +69,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - Document the 19:04 UTC `task release:alpha` sweep, ensuring verify, coverage,
   build, and packaging logs stay linked from `CHANGELOG.md`, the release plan,
   and this ticket for auditability, while cross-referencing the
-  `task-verify-20251005T031512Z.log` and `task-coverage-20251005T032844Z.log`
+  `task-verify-20251005T012754Z.log` and `task-coverage-20251005T013130Z.log`
   artifacts that demonstrate the fallback fix alongside the earlier failing
-  runs.
+  runs.【F:baseline/logs/task-verify-20251005T012754Z.log†L1-L196】【F:baseline/logs/task-coverage-20251005T013130Z.log†L1-L184】
 - Confirm XPASS cleanup and Phase 1 of the deep research initiative remain
   archived in the release plan and deep research plan so the alpha gate reflects
   the current state of evidence.
