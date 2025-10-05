@@ -19,6 +19,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 5, 2025
+- Introduced the shared `hash_cache_dimensions` fingerprint with a `v3:` primary
+  cache key while keeping `v2` and legacy aliases, updated documentation for the
+  contract, and extended the property-based cache suite to cover sequential
+  hybrid toggles, v2 migrations, and storage interleaving; the targeted run stays
+  green after the refactor.
+  【F:src/autoresearch/cache.py†L136-L237】【F:src/autoresearch/search/core.py†L833-L899】
+  【F:docs/specs/search.md†L55-L65】【F:tests/unit/test_cache.py†L454-L792】【33bf2d†L1-L3】
 - `task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"` at
   **01:27 UTC** records a clean pass through the refreshed fallback tests before
   `test_parallel_merging_is_deterministic` raises the known `TypeError`.

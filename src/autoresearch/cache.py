@@ -139,13 +139,40 @@ class CacheKey:
 
     primary: str
     legacy: str
+    aliases: Tuple[str, ...] = ()
+    fingerprint: Optional[str] = None
 
     def candidates(self) -> Tuple[str, ...]:
         """Return key variants to attempt during cache lookups."""
 
-        if self.primary == self.legacy:
-            return (self.primary,)
-        return (self.primary, self.legacy)
+        seen: List[str] = []
+        for candidate in (self.primary, *self.aliases, self.legacy):
+            if candidate in seen:
+                continue
+            seen.append(candidate)
+        return tuple(seen)
+
+
+def hash_cache_dimensions(
+    *,
+    namespace: str | None,
+    normalized_query: str,
+    embedding_signature: Sequence[str],
+    hybrid_flags: Sequence[str],
+    storage_hints: Sequence[str],
+) -> str:
+    """Return a hash fingerprint for the shared cache dimensions."""
+
+    ns = namespace or "__default__"
+    payload = {
+        "flags": sorted(hybrid_flags) if hybrid_flags else ["none"],
+        "namespace": ns,
+        "query": normalized_query,
+        "signature": sorted(embedding_signature),
+        "storage": sorted(storage_hints) if storage_hints else ["none"],
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return blake2b(serialized.encode("utf-8"), digest_size=16).hexdigest()
 
 
 def build_cache_key(
@@ -175,7 +202,25 @@ def build_cache_key(
         )
     )
 
-    payload = {
+    fingerprint = hash_cache_dimensions(
+        namespace=ns,
+        normalized_query=normalized_query,
+        embedding_signature=embedding_signature,
+        hybrid_flags=hybrid_flags,
+        storage_hints=storage_hints,
+    )
+
+    payload_v3 = {
+        "backend": backend,
+        "embedding": embedding_state_value,
+        "fingerprint": fingerprint,
+        "version": 3,
+    }
+    serialized_v3 = json.dumps(payload_v3, sort_keys=True, separators=(",", ":"))
+    digest_v3 = blake2b(serialized_v3.encode("utf-8"), digest_size=16).hexdigest()
+    primary = f"v3:{digest_v3}"
+
+    payload_v2 = {
         "backend": backend,
         "embedding": embedding_state_value,
         "flags": sorted(hybrid_flags) if hybrid_flags else ["none"],
@@ -184,11 +229,12 @@ def build_cache_key(
         "storage": sorted(storage_hints) if storage_hints else ["none"],
         "signature": sorted(embedding_signature),
     }
-    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    digest = blake2b(serialized.encode("utf-8"), digest_size=16).hexdigest()
-    primary = f"v2:{digest}"
+    serialized_v2 = json.dumps(payload_v2, sort_keys=True, separators=(",", ":"))
+    digest_v2 = blake2b(serialized_v2.encode("utf-8"), digest_size=16).hexdigest()
+    alias = f"v2:{digest_v2}"
+    aliases = (alias,) if alias != primary else ()
 
-    return CacheKey(primary=primary, legacy=legacy)
+    return CacheKey(primary=primary, legacy=legacy, aliases=aliases, fingerprint=fingerprint)
 
 
 class _SearchCacheView:

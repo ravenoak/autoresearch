@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 from threading import Thread  # for thread-safety test
 from types import MethodType
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pytest
@@ -15,7 +15,7 @@ if not importlib.util.find_spec("tinydb"):
 from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
-from hypothesis import given, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 
@@ -451,6 +451,84 @@ def test_legacy_cache_entries_upgrade_on_hit(
         )
 
 
+@settings(max_examples=15, deadline=None)
+@given(
+    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    hybrid=st.booleans(),
+    semantic=st.booleans(),
+    storage_hint=st.sampled_from(["external", "embedding"]),
+)
+def test_v2_cache_entries_upgrade_on_hit(
+    query: str,
+    hybrid: bool,
+    semantic: bool,
+    storage_hint: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: None))
+
+    calls: Dict[str, int] = {"count": 0}
+
+    def backend(text: str, max_results: int = 5) -> List[Dict[str, str]]:
+        del text, max_results
+        calls["count"] += 1
+        return [{"title": "cached", "url": "https://cached"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"legacy": backend}
+
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["legacy"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+        cfg.search.hybrid_query = hybrid
+        cfg.search.use_semantic_similarity = semantic
+        cfg.search.embedding_backends = []
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        cache_key = s._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=(storage_hint,),
+        )
+
+        assume(cache_key.aliases)
+        alias = cache_key.aliases[0]
+        s.cache.cache_results(
+            alias,
+            "legacy",
+            [{"title": "cached", "url": "https://cached"}],
+        )
+
+        results = s.external_lookup(query)
+        assert calls["count"] == 0, (
+            "If v2 cache entries failed to migrate, why would the backend fire before leveraging the alias?"
+        )
+        assert results, "Without cached payloads, how would the alias prove compatibility across versions?"
+
+        upgraded = s.cache.get_cached_results(cache_key.primary, "legacy")
+        assert upgraded is not None, (
+            "Once accessed via an alias, shouldn't the upgraded cache persist under the new primary hash?"
+        )
+
+
 @settings(max_examples=20, deadline=None)
 @given(
     query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=16),
@@ -502,6 +580,90 @@ def test_cache_key_primary_reflects_hybrid_flags(
     assert key_b.primary != key_c.primary, (
         "When semantic similarity flips, shouldn't the cache key reflect the new retrieval plan?"
     )
+
+
+@settings(max_examples=15, deadline=None)
+@given(
+    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    toggles=st.lists(
+        st.tuples(st.booleans(), st.booleans()),
+        min_size=2,
+        max_size=5,
+    ),
+)
+def test_sequential_hybrid_sequences_respect_cache_fingerprint(
+    query: str,
+    toggles: List[Tuple[bool, bool]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(Search, "compute_query_embedding", lambda self, _: np.array([0.2, 0.4]))
+    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: object()))
+
+    calls: Dict[str, int] = {"count": 0}
+
+    def backend(q: str, max_results: int = 5) -> List[Dict[str, str]]:
+        del q, max_results
+        calls["count"] += 1
+        return [{"title": "seq", "url": "https://seq"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"sequence": backend}
+
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["sequence"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+        cfg.search.embedding_backends = []
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        fingerprints: Dict[Tuple[bool, bool], str] = {}
+
+        for hybrid, semantic in toggles:
+            cfg.search.hybrid_query = hybrid
+            cfg.search.use_semantic_similarity = semantic
+
+            prev_calls = calls["count"]
+            results = s.external_lookup(query)
+            assert results, "Without results, what evidence shows the cache preserved payloads?"
+
+            key = (hybrid, semantic)
+            cache_key = s._build_cache_key(
+                backend="sequence",
+                query=query,
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=hybrid,
+                use_semantic_similarity=semantic,
+                query_embedding=np.array([0.2, 0.4]),
+                storage_hints=("external",),
+            )
+
+            assume(cache_key.fingerprint is not None)
+
+            if key in fingerprints:
+                assert calls["count"] == prev_calls, (
+                    "If cache fingerprints collide, why would sequential repeats hit the backend again?"
+                )
+                assert cache_key.fingerprint == fingerprints[key], (
+                    "How could identical toggle states yield differing fingerprints and still reuse cache entries?"
+                )
+            else:
+                assert calls["count"] == prev_calls + 1, (
+                    "When encountering a new toggle combination, shouldn't the backend fetch occur exactly once?"
+                )
+                fingerprints[key] = cache_key.fingerprint
 
 
 @settings(max_examples=20, deadline=None)
@@ -604,6 +766,29 @@ def test_interleaved_storage_paths_share_cache(
         )
         assert second == first, (
             "Without stable cache keys, how could sequential storage blends return identical payloads?"
+        )
+
+        key = s._build_cache_key(
+            backend="primary",
+            query="topic",
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=np.array([0.1, 0.2]),
+            storage_hints=("external",),
+        )
+        assume(key.fingerprint is not None)
+        repeat = s._build_cache_key(
+            backend="primary",
+            query="topic",
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=np.array([0.1, 0.2]),
+            storage_hints=("external",),
+        )
+        assert repeat.fingerprint == key.fingerprint, (
+            "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
         )
 
 
