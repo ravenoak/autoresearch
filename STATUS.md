@@ -19,6 +19,18 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 5, 2025
+- `uv run mypy --strict src tests` at **16:05 UTC** still reports “Success: no
+  issues found in 205 source files”, confirming the strict gate remains green
+  while we triage the remaining regressions.【daf290†L1-L2】
+- Targeted pytest runs highlight two top blockers: AUTO mode samples drop claim
+  payloads, failing `test_auto_mode_returns_direct_answer_when_gate_exits`, and
+  the cache property suite reuses a function-scoped `monkeypatch` fixture that
+  Hypothesis rejects.【349e1c†L1-L64】【bebacc†L5-L21】 We interrupted the broader
+  suite once these failures reproduced to avoid duplicate noise from downstream
+  dependants.【c59d05†L1-L7】
+- The refreshed preflight plan now inserts **PR-R0** for AUTO mode claim
+  hydration and folds the Hypothesis fixture fix into **PR-S2**, giving us six
+  short, high-impact slices before the next verify sweep.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
 - Reasoning payload helpers now always materialise mappings, downstream
   specialists cast orchestration claims to dictionaries, and the strict gate at
   **15:43 UTC** recorded a clean `uv run mypy --strict src tests` sweep.

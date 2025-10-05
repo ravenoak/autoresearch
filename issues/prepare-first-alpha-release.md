@@ -1,10 +1,21 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 5, 2025 at 16:05 UTC** the strict typing gate remains green and
+targeted pytest runs isolate two top regressions: AUTO mode samples lose their
+claim payloads, and the cache property suite reuses a function-scoped
+`monkeypatch` fixture that Hypothesis rejects.【daf290†L1-L2】
+【349e1c†L1-L64】【bebacc†L5-L21】【c59d05†L1-L7】
+The refreshed preflight plan splits the recovery into six short PRs, adding a
+new **PR-R0** for AUTO mode claim hydration and folding the fixture refactor
+into **PR-S2**.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
+
 As of **October 5, 2025 at 15:43 UTC** reasoning payloads and orchestration
 helpers now normalise claims into concrete dictionaries before tests consume
 them, and `uv run mypy --strict src tests` logs a clean pass for the alpha
-branch.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L208】【F:src/autoresearch/orchestration/parallel.py†L200-L232】【F:baseline/logs/mypy-strict-20251005T154340Z.log†L1-L2】
+branch.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L208】
+【F:src/autoresearch/orchestration/parallel.py†L200-L232】
+【F:baseline/logs/mypy-strict-20251005T154340Z.log†L1-L2】
 
 As of **October 4, 2025 at 21:04 UTC** the strict typing gate remains green:
 `uv run mypy --strict src tests` reports “Success: no issues found in 790
@@ -32,11 +43,14 @@ remains blocked on orchestrator determinism rather than fallback
 placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【4c0de7†L1-L120】
 
 ## Tasks
+- [ ] Land **PR-R0** – hydrate AUTO mode claim samples with serialisable
+  snapshots and extend coverage so early exits keep claim content.
 - [ ] Land **PR-S1** – restore deterministic search stubs, hybrid ranking
   signatures, and local file fallbacks in line with the updated preflight
   plan.【F:docs/v0.1.0a1_preflight_plan.md†L38-L92】
-- [ ] Land **PR-S2** – add namespace-aware cache key helpers plus regression
-  coverage so cached queries avoid repeated backend calls.
+- [ ] Land **PR-S2** – add namespace-aware cache key helpers, replace the
+  function-scoped Hypothesis fixture, and backfill regression coverage so
+  cached queries avoid repeated backend calls.【bebacc†L5-L21】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
 - [ ] Land **PR-R1** – relocate reasoning warning banners into structured
