@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Generator,
     Mapping,
     MutableMapping,
     Protocol,
@@ -31,6 +30,7 @@ from autoresearch.typing.http import (
     RequestsSessionProtocol,
 )
 from tests.conftest import VSS_AVAILABLE
+from tests.typing_helpers import TypedFixture
 
 if TYPE_CHECKING:  # pragma: no cover - typing helpers
     from autoresearch.cache import SearchCache
@@ -155,14 +155,14 @@ class DummyCache(CacheProtocol):
 
 
 @pytest.fixture(autouse=True)
-def clean_storage(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def clean_storage(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Provide isolated in-memory storage for each test."""
     dummy_backend = DummyBackend()
     StorageManager.context.graph = nx.DiGraph()
     StorageManager.context.db_backend = cast("DuckDBStorageBackend", dummy_backend)
     StorageManager.context.rdf_store = cast("GraphProtocol", rdflib.Graph())
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
-    yield
+    yield None
     if StorageManager.context.graph is not None:
         StorageManager.context.graph.clear()
     if StorageManager.context.db_backend is not None:

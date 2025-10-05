@@ -1,9 +1,12 @@
 """Integration tests for ontology reasoning utilities."""
 
-import rdflib
+from pathlib import Path
+
 import pytest
+import rdflib
 
 from tests.optional_imports import import_or_skip
+from tests.typing_helpers import TypedFixture
 
 from autoresearch.storage import StorageManager, teardown
 from autoresearch.config.models import ConfigModel, StorageConfig
@@ -21,13 +24,15 @@ def _simple_rdfs(graph: rdflib.Graph) -> None:
 
 
 @pytest.fixture(autouse=True)
-def cleanup():
-    yield
+def cleanup() -> TypedFixture[None]:
+    yield None
     teardown(remove_db=True)
     ConfigLoader.reset_instance()
 
 
-def _configure(tmp_path, monkeypatch, engine: str = "simple_rdfs"):
+def _configure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, engine: str = "simple_rdfs"
+) -> None:
     cfg = ConfigModel(
         storage=StorageConfig(
             rdf_backend="memory",
@@ -40,7 +45,9 @@ def _configure(tmp_path, monkeypatch, engine: str = "simple_rdfs"):
     register_reasoner("simple_rdfs")(_simple_rdfs)
 
 
-def test_reasoning_infers_subclass(tmp_path, monkeypatch):
+def test_reasoning_infers_subclass(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 
@@ -71,7 +78,9 @@ ex:A rdfs:subClassOf ex:B .
     assert res.askAnswer, "Subclass inference failed"
 
 
-def test_visualization_creates_file(tmp_path, monkeypatch):
+def test_visualization_creates_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 

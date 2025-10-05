@@ -11,7 +11,6 @@ For a standalone demo of idempotent setup and teardown, see
 from __future__ import annotations
 
 import importlib
-from collections.abc import Iterator
 from importlib.machinery import ModuleSpec
 
 import pytest
@@ -22,6 +21,7 @@ from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.errors import StorageError
 from autoresearch.storage import StorageContext, StorageManager
 from autoresearch.storage_typing import JSONDict
+from tests.typing_helpers import TypedFixture
 
 
 def _stub_config_loader(
@@ -34,14 +34,14 @@ def _stub_config_loader(
 
 
 @pytest.fixture(autouse=True)
-def cleanup_rdf_store() -> Iterator[None]:
+def cleanup_rdf_store() -> TypedFixture[None]:
     """Clean up the RDF store after each test.
 
     This fixture ensures that the RDF store is properly cleaned up
     after each test, preventing test pollution and resource leaks.
     """
     # Setup is done in the test
-    yield
+    yield None
 
     # Teardown
     context: StorageContext = StorageManager.context

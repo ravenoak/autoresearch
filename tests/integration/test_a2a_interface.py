@@ -3,6 +3,12 @@ import socket
 import sys
 import time
 
+import asyncio
+import socket
+import sys
+import time
+from typing import Any
+
 import httpx
 import pytest
 
@@ -30,7 +36,9 @@ from autoresearch.a2a_interface import (  # noqa: E402
 )
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
+from autoresearch.models import QueryResponse  # noqa: E402
 from scripts.a2a_concurrency_sim import run_simulation  # noqa: E402
+from tests.typing_helpers import TypedFixture
 
 pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 
@@ -45,7 +53,9 @@ def test_runtime_bindings_match_sdk() -> None:
 
 
 @pytest.fixture
-def running_server(monkeypatch):
+def running_server(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[tuple[A2AInterface, list[float]]]:
     cfg = ConfigModel()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
@@ -58,15 +68,19 @@ def running_server(monkeypatch):
 
     start_times: list[float] = []
 
-    def run_query(self, query, config, *_, **__):
+    def run_query(
+        self: A2AInterface,
+        query: str,
+        config: ConfigModel,
+        *_: object,
+        **__: object,
+    ) -> QueryResponse:
         start_times.append(time.perf_counter())
         time.sleep(0.1)
 
-        class Result:
-            def __init__(self, answer: str) -> None:
-                self.answer = answer
-
-        return Result(f"answer for {query}")
+        return QueryResponse(
+            answer=f"answer for {query}", citations=[], reasoning=[], metrics={}
+        )
 
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
@@ -80,7 +94,7 @@ def running_server(monkeypatch):
         interface.stop()
 
 
-def _build_payload(text: str) -> dict:
+def _build_payload(text: str) -> dict[str, Any]:
     msg = new_agent_text_message(text)
     return {"type": "query", "message": msg.model_dump(mode="python")}
 
@@ -90,7 +104,7 @@ def test_concurrent_queries(running_server):
     interface, start_times = running_server
     url = f"http://{interface.host}:{interface.port}/"
 
-    async def send_all() -> list[dict]:
+    async def send_all() -> list[dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             tasks = [client.post(url, json=_build_payload(f"q{i}")) for i in range(3)]
             responses = await asyncio.gather(*tasks)

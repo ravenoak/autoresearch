@@ -6,11 +6,13 @@ backends and the main search functionality.
 
 import subprocess
 from pathlib import Path
-from typing import Iterator, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import importlib.util
 
 import pytest
+
+from tests.typing_helpers import TypedFixture
 
 try:
     _spec = importlib.util.find_spec("git")
@@ -32,7 +34,7 @@ SearchResults = Sequence[Mapping[str, object]]
 
 
 @pytest.fixture(autouse=True)
-def cleanup_search() -> Iterator[None]:
+def cleanup_search() -> TypedFixture[None]:
     """Clean up the search system after each test.
 
     This fixture ensures that the search system is properly cleaned up
@@ -42,7 +44,7 @@ def cleanup_search() -> Iterator[None]:
     original_backends = Search.backends.copy()
     cache.clear()
 
-    yield
+    yield None
 
     # Teardown
     Search.backends = original_backends

@@ -7,9 +7,9 @@ from typing import cast
 
 import psutil
 import pytest
-from requests import Response as RequestsResponse
 from fastapi.testclient import TestClient
 from prometheus_client import CollectorRegistry, generate_latest
+from requests import Response as RequestsResponse
 from typer.testing import CliRunner
 
 from autoresearch.config.loader import ConfigLoader
@@ -21,6 +21,7 @@ from autoresearch.orchestration import metrics
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.types import CallbackMap
 from autoresearch.resource_monitor import ResourceMonitor
+from tests.typing_helpers import TypedFixture
 
 
 MonitorSetup = Callable[[ConfigModel | None], ConfigModel]
@@ -37,7 +38,9 @@ def dummy_run_query(
 
 
 @pytest.fixture
-def monitor_cli_setup(monkeypatch: pytest.MonkeyPatch) -> MonitorSetup:
+def monitor_cli_setup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> TypedFixture[MonitorSetup]:
     """Return a callable that applies CLI patches with typed state."""
 
     def _apply(config: ConfigModel | None = None) -> ConfigModel:
