@@ -48,6 +48,12 @@ predefined `QueryResponse` including metrics and the sequence of agents
 invoked. This enables precise assertions about payload contents and agent
 ordering without sharing state across scenarios.
 
+Scenario context fixtures such as `steps/api_orchestrator_integration_steps.test_context`
+and `steps/test_cleanup_extended_steps.cleanup_extended_context` now return
+plain `dict[str, Any]` instances via the shared `TypedFixture` alias. This
+keeps pytest-bdd context payloads consistent and allows mypy to verify step
+implementations that rely on shared dictionaries.
+
 
 ## Running CLI and recovery scenarios
 

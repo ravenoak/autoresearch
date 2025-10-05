@@ -70,10 +70,8 @@ def test_invalid_mode_api() -> None:
 
 
 @given("the API server is running", target_fixture="test_context")
-def api_server_running(api_client: Any) -> BehaviorContext:
-    context: BehaviorContext = {}
-    set_value(context, "client", api_client)
-    return context
+def api_server_running(api_client: Any) -> dict[str, Any]:
+    return as_payload(client=api_client)
 
 
 @given(
@@ -93,7 +91,7 @@ def send_query(
     test_context: BehaviorContext, query: str, mode: str, config: ConfigModel
 ) -> PayloadDict:
     record: list[str] = []
-    params: PayloadDict = {}
+    params = as_payload()
     logs: list[str] = []
     state: dict[str, bool] = {"active": True}
 
@@ -146,11 +144,10 @@ def send_query(
         if response.status_code != 200:
             logs.append("unsupported reasoning mode")
     state["active"] = False
-    data: PayloadDict = {}
     try:
         data = as_payload(response.json())
     except Exception:
-        data = {}
+        data = as_payload()
     set_value(test_context, "response", response)
     return as_payload({
         "record": record,
@@ -171,7 +168,7 @@ def send_async_query(
     test_context: BehaviorContext, query: str, mode: str, config: ConfigModel
 ) -> PayloadDict:
     record: list[str] = []
-    params: PayloadDict = {}
+    params = as_payload()
     logs: list[str] = []
     state: dict[str, bool] = {"active": True}
 
@@ -253,11 +250,10 @@ def send_async_query(
             pass
         response = client.get(f"/query/{query_id}")
     state["active"] = False
-    data: PayloadDict = {}
     try:
         data = as_payload(response.json())
     except Exception:
-        data = {}
+        data = as_payload()
     set_value(test_context, "response", response)
     return as_payload({
         "record": record,
@@ -272,11 +268,10 @@ def send_async_query(
 def assert_status(test_context: BehaviorContext, status: int) -> None:
     resp = get_required(test_context, "response")
     assert resp.status_code == status
-    data: PayloadDict = {}
     try:
         data = as_payload(resp.json())
     except Exception:
-        pass
+        data = as_payload()
     if status == 200:
         assert "error" not in data
     else:
@@ -330,12 +325,11 @@ def assert_metrics_agents(run_result: PayloadDict, agents: str) -> None:
 
 @then("a reasoning mode error should be returned")
 def assert_reasoning_mode_error(test_context: BehaviorContext) -> None:
-    data: PayloadDict = {}
     try:
         response = get_required(test_context, "response")
         data = as_payload(response.json())
     except Exception:
-        pass
+        data = as_payload()
     assert "reasoning" in str(data).lower() or "mode" in str(data).lower()
 
 

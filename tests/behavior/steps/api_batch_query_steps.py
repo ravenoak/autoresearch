@@ -2,20 +2,25 @@
 
 from __future__ import annotations
 
-from pytest_bdd import scenario, given, when, then
+from typing import Any, cast
+
+import pytest
+from pytest_bdd import given, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from tests.behavior.context import BehaviorContext
-from tests.behavior.utils import PayloadDict, store_payload
+from tests.behavior.utils import PayloadDict, as_payload, store_payload
 
 from . import common_steps  # noqa: F401
 
 
 @given("the API server is running")
-def api_server_running(test_context: BehaviorContext, api_client) -> None:
+def api_server_running(
+    test_context: BehaviorContext, api_client: Any
+) -> None:
     """Provide a test client for API interactions."""
     test_context["client"] = api_client
 
@@ -51,7 +56,7 @@ def test_batch_query_error_recovery() -> None:
 def submit_batch_mixed_modes(
     test_context: BehaviorContext,
     dummy_query_response: QueryResponse,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Submit a batch query where each subquery uses a different reasoning mode."""
 
@@ -59,23 +64,32 @@ def submit_batch_mixed_modes(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
-        resp = dummy_query_response.model_copy(deep=True)
-        resp.answer = query
+    def run_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        *_: object,
+        **__: object,
+    ) -> dict[str, Any]:
+        payload = as_payload(dummy_query_response.model_dump())
+        payload["answer"] = query
         mode = getattr(config, "reasoning_mode", None)
         if mode is not None:
-            resp.metrics["mode"] = getattr(mode, "value", mode)
-        return resp.model_dump()
+            metrics = cast(dict[str, Any], payload.setdefault("metrics", {}))
+            metrics["mode"] = getattr(mode, "value", mode)
+        return payload
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
-    payload: PayloadDict = {
-        "queries": [
-            {"query": "q1", "reasoning_mode": "direct"},
-            {"query": "q2", "reasoning_mode": "dialectical"},
-            {"query": "q3", "reasoning_mode": "chain-of-thought"},
-        ]
-    }
+    payload = as_payload(
+        {
+            "queries": [
+                {"query": "q1", "reasoning_mode": "direct"},
+                {"query": "q2", "reasoning_mode": "dialectical"},
+                {"query": "q3", "reasoning_mode": "chain-of-thought"},
+            ]
+        }
+    )
     client = test_context["client"]
     resp = client.post("/query/batch?page=1&page_size=3", json=payload)
     test_context["response"] = resp
@@ -113,7 +127,7 @@ def check_modes(test_context: BehaviorContext) -> None:
 def submit_paginated_with_failure(
     test_context: BehaviorContext,
     dummy_query_response: QueryResponse,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Submit a batch query with pagination where a subquery errors."""
 
@@ -121,23 +135,31 @@ def submit_paginated_with_failure(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
+    def run_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        *_: object,
+        **__: object,
+    ) -> dict[str, Any]:
         if query == "q3":
             raise ValueError("boom")
-        resp = dummy_query_response.model_copy(deep=True)
-        resp.answer = query
-        return resp.model_dump()
+        payload = as_payload(dummy_query_response.model_dump())
+        payload["answer"] = query
+        return payload
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
-    payload: PayloadDict = {
-        "queries": [
-            {"query": "q1"},
-            {"query": "q2"},
-            {"query": "q3"},
-            {"query": "q4"},
-        ]
-    }
+    payload = as_payload(
+        {
+            "queries": [
+                {"query": "q1"},
+                {"query": "q2"},
+                {"query": "q3"},
+                {"query": "q4"},
+            ]
+        }
+    )
     client = test_context["client"]
     resp = client.post("/query/batch?page=2&page_size=2", json=payload)
     test_context["response"] = resp
@@ -169,7 +191,7 @@ def check_error_details(test_context: BehaviorContext) -> None:
 def submit_batch_error_recovery(
     test_context: BehaviorContext,
     dummy_query_response: QueryResponse,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Submit a batch query containing a failing subquery followed by a valid one."""
 
@@ -177,18 +199,24 @@ def submit_batch_error_recovery(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
+    def run_query(
+        self: Orchestrator,
+        query: str,
+        config: ConfigModel,
+        *_: object,
+        **__: object,
+    ) -> dict[str, Any]:
         if query == "bad":
             raise RuntimeError("fail")
-        resp = dummy_query_response.model_copy(deep=True)
-        resp.answer = query
-        return resp.model_dump()
+        payload = as_payload(dummy_query_response.model_dump())
+        payload["answer"] = query
+        return payload
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
-    payload: PayloadDict = {
-        "queries": [{"query": "good1"}, {"query": "bad"}, {"query": "good2"}]
-    }
+    payload = as_payload(
+        {"queries": [{"query": "good1"}, {"query": "bad"}, {"query": "good2"}]}
+    )
     client = test_context["client"]
     resp = client.post("/query/batch", json=payload)
     test_context["response"] = resp
