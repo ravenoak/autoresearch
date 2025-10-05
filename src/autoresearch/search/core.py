@@ -879,8 +879,10 @@ class Search:
         """Persist results under hashed and legacy cache keys."""
 
         payload = [dict(doc) for doc in docs]
-        self.cache.cache_results(cache_key.primary, backend, payload)
-        if cache_key.legacy != cache_key.primary:
+        targets = [cache_key.primary, *cache_key.aliases]
+        for target in targets:
+            self.cache.cache_results(target, backend, payload)
+        if cache_key.legacy not in targets:
             self.cache.cache_results(cache_key.legacy, backend, payload)
 
     def _get_cached_documents(
