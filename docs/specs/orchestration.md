@@ -85,7 +85,10 @@ answer text. The orchestrator attaches warning objects to
 `QueryResponse.warnings`, each exposing `code`, `severity`, `message`,
 `claim_ids`, and labelled `claims`. Clients render caution banners from that
 payload while leaving `answer` untouched. The same entries appear in
-`metrics["answer_audit"]["warnings"]` for telemetry consumers.
+`metrics["answer_audit"]["warnings"]` for telemetry consumers. The auditor
+strips trailing caution banners from `results.final_answer` before the
+`QueryResponse` is built, ensuring legacy banner strings do not leak back into
+client answers.
 
 ## Invariants
 

@@ -18,6 +18,13 @@ Every format exposes the same core artifacts:
 - **State ID** – reusable identifier for refreshing claim audits via CLI, UI, or
   API.
 
+## Warning delivery
+
+Structured answer warnings travel in the shared `warnings` array. CLI JSON
+output mirrors `QueryResponse.warnings`, and the same entries appear under
+`metrics.answer_audit.warnings` for telemetry consumers. Depth-specific notes
+surface caution banners while the human-readable `answer` remains unchanged.
+
 ## Layered UX and exports
 
 Depth controls in the CLI (`--depth`) and Streamlit share the same sequence of

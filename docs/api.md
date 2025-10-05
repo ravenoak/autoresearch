@@ -107,12 +107,33 @@ curl -X POST 'http://localhost:8000/query?stream=true' \
   "answer": "Machine learning is ...",
   "citations": ["https://example.com"],
   "reasoning": ["step 1", "step 2"],
+  "warnings": [
+    {
+      "code": "answer_audit.needs_review_claims",
+      "message": "Some claims still require review",
+      "severity": "warning",
+      "claim_ids": ["c1", "c2"]
+    }
+  ],
   "metrics": {
     "cycles_completed": 1,
-    "total_tokens": {"input": 5, "output": 7, "total": 12}
+    "total_tokens": {"input": 5, "output": 7, "total": 12},
+    "answer_audit": {
+      "warnings": [
+        {
+          "code": "answer_audit.needs_review_claims",
+          "claim_ids": ["c1", "c2"]
+        }
+      ]
+    }
   }
 }
 ```
+
+Warning banners never mutate the textual `answer`. The API surfaces structured
+entries under `warnings` and mirrors the same payload in
+`metrics.answer_audit.warnings` so CLI, UI, and automation clients can render
+caution notes without rewriting the summary text.
 
 ### `POST /query/stream`
 
