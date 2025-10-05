@@ -18,6 +18,11 @@ from ..models import QueryResponse
 from ..search import Search
 from ..search.context import SearchContext
 from ..storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
+from .reasoning_payloads import (
+    FrozenReasoningStep,
+    NormalizedReasoning,
+    normalize_reasoning_step,
+)
 from .task_graph import TaskGraph
 
 LOCK_TYPE = type(RLock())
@@ -492,7 +497,7 @@ class QueryState(BaseModel):
     """
 
     query: str
-    claims: list[dict[str, Any]] = Field(default_factory=list)
+    claims: list[NormalizedReasoning] = Field(default_factory=list)
     claim_audits: list[dict[str, Any]] = Field(default_factory=list)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     results: dict[str, Any] = Field(default_factory=dict)
@@ -561,15 +566,14 @@ class QueryState(BaseModel):
                 if not isinstance(claims_obj, Sequence) or isinstance(
                     claims_obj, (str, bytes)
                 ):
-                    raise TypeError("claims must be a sequence of mappings")
+                    raise TypeError("claims must be provided as a non-string sequence")
                 for claim in claims_obj:
-                    if not isinstance(claim, Mapping):
-                        raise TypeError("each claim must be a mapping")
-                    claim_dict = dict(claim)
-                    self.claims.append(claim_dict)
-                    audit_payload = claim_dict.get("audit")
-                    if isinstance(audit_payload, Mapping):
-                        self.claim_audits.append(dict(audit_payload))
+                    normalized_claim = normalize_reasoning_step(claim)
+                    self.claims.append(normalized_claim)
+                    if isinstance(normalized_claim, FrozenReasoningStep):
+                        audit_payload = normalized_claim.get("audit")
+                        if isinstance(audit_payload, Mapping):
+                            self.claim_audits.append(dict(audit_payload))
 
             sources_obj = result.get("sources")
             if sources_obj is not None:
@@ -1399,7 +1403,7 @@ class QueryState(BaseModel):
         outcome = auditor.review()
 
         self.claim_audits = list(outcome.claim_audits)
-        self.claims = list(outcome.reasoning)
+        self.claims = [normalize_reasoning_step(claim) for claim in outcome.reasoning]
         if isinstance(self.results, Mapping):
             self.results.setdefault("final_answer", outcome.answer)
             self.results["final_answer"] = outcome.answer

@@ -1,10 +1,25 @@
 """Tests for orchestrator performance simulation and benchmark."""
 
+import json
 import os
+from pathlib import Path
 
 import pytest
 
 from autoresearch.orchestrator_perf import benchmark_scheduler, queue_metrics, simulate
+
+BASELINE_SCHEDULER_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "baseline"
+    / "evaluation"
+    / "scheduler_benchmark.json"
+)
+with BASELINE_SCHEDULER_PATH.open(encoding="utf-8") as scheduler_file:
+    _SCHEDULER_BASELINE = json.load(scheduler_file)
+
+BASELINE_ONE = _SCHEDULER_BASELINE["workers"]["1"]["throughput"]
+BASELINE_TWO = _SCHEDULER_BASELINE["workers"]["2"]["throughput"]
+BASELINE_RATIO = BASELINE_TWO / BASELINE_ONE
 
 
 def test_queue_metrics_more_workers():
@@ -23,9 +38,12 @@ def test_benchmark_scheduler_scales():
     """
     one = benchmark_scheduler(1, 50, profile=True)
     two = benchmark_scheduler(2, 50, profile=True)
-    baseline = float(os.getenv("SCHEDULER_BASELINE_OPS", "300"))
-    threshold = float(os.getenv("SCHEDULER_SCALE_THRESHOLD", "1.5"))
-    assert one.throughput >= baseline
+    baseline = float(os.getenv("SCHEDULER_BASELINE_OPS", f"{BASELINE_ONE}"))
+    threshold = float(
+        os.getenv("SCHEDULER_SCALE_THRESHOLD", f"{BASELINE_RATIO * 0.9}")
+    )
+    assert one.throughput == pytest.approx(baseline, rel=0.25)
+    assert two.throughput == pytest.approx(BASELINE_TWO, rel=0.25)
     assert two.throughput > one.throughput * threshold
     assert one.cpu_time >= 0
     assert one.mem_kb >= 0

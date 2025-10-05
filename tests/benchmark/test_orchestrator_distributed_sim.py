@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from scripts.orchestrator_distributed_sim import run_simulation
+
+BASELINE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "baseline"
+    / "evaluation"
+    / "orchestrator_distributed_sim.json"
+)
+with BASELINE_PATH.open(encoding="utf-8") as baseline_file:
+    BASELINE_METRICS = json.load(baseline_file)
 
 pytestmark = [pytest.mark.slow]
 
@@ -18,7 +30,12 @@ def test_recovery_ratio_reflects_fail_rate() -> None:
         task_time=0.005,
         fail_rate=0.2,
     )
-    assert metrics["recovery_ratio"] == pytest.approx(0.2, rel=0.5)
+    assert metrics["recovery_ratio"] == pytest.approx(
+        BASELINE_METRICS["recovery_ratio"], rel=0.5
+    )
+    assert metrics["throughput"] == pytest.approx(
+        BASELINE_METRICS["throughput"], rel=0.25
+    )
 
 
 def test_invalid_parameters_raise() -> None:

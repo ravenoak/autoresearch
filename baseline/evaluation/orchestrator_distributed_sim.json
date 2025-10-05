@@ -1,0 +1,9 @@
+{
+  "workers": 2,
+  "tasks": 50,
+  "network_latency": 0.01,
+  "task_time": 0.005,
+  "fail_rate": 0.2,
+  "throughput": 89.36,
+  "recovery_ratio": 0.13
+}
