@@ -1,5 +1,7 @@
 """Property-based test for deterministic parallel merging."""
 
+from __future__ import annotations
+
 from unittest.mock import patch
 
 import pytest
@@ -9,6 +11,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.parallel import execute_parallel_query
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 
 
 class DummyOrchestrator:
@@ -58,3 +61,33 @@ def test_parallel_merging_is_deterministic(agent_groups):
     expected = {",".join(g) for g in agent_groups}
     assert set(resp1.reasoning) == expected
     assert set(resp2.reasoning) == expected
+    assert all(isinstance(step, FrozenReasoningStep) for step in resp1.reasoning)
+
+
+@pytest.mark.reasoning_modes
+def test_parallel_merging_deduplicates_identical_claims():
+    """Parallel execution should deduplicate identical reasoning payloads."""
+
+    agent_groups = [["A"], ["B"]]
+    cfg = ConfigModel(agents=[], loops=1)
+
+    class DuplicateOrchestrator:
+        def run_query(self, query, cfg):
+            del query, cfg
+            return QueryResponse(
+                query="q",
+                answer="duplicate",
+                citations=[],
+                reasoning=[{"text": "shared"}],
+                metrics={},
+            )
+
+    with patch.object(Orchestrator, "run_query", DuplicateOrchestrator().run_query):
+        with patch(
+            "autoresearch.orchestration.parallel.AgentFactory.get",
+            return_value=DummySynthesizer(),
+        ):
+            response = execute_parallel_query("q", cfg, agent_groups)
+
+    assert len(response.reasoning) == 1
+    assert str(response.reasoning[0]) == "shared"

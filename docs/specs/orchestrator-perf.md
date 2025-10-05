@@ -44,10 +44,14 @@ Hardware differences affect throughput. Unit tests and scripts use the
 variables to calibrate expectations.
 
 - ``SCHEDULER_BASELINE_OPS`` sets the minimum single-worker throughput in
-  tasks per second. It defaults to ``300``; lower it on constrained systems.
-- ``SCHEDULER_SCALE_THRESHOLD`` defines the required speedup when adding more
-  workers. It defaults to ``1.5`` and can be raised to demand near-linear
-  scaling on faster machines.
+  tasks per second. The fixture-backed default mirrors
+  ``baseline/evaluation/scheduler_benchmark.json`` (≈121.7) and can be
+  lowered on constrained systems.
+- ``SCHEDULER_SCALE_THRESHOLD`` defines the required speedup when adding
+  more workers. Tests compute 90 % of the recorded throughput ratio
+  (≈1.78) so modest hardware variance still satisfies the expectation.
+- Memory checks reuse the same baseline to enforce a 25 MiB budget during
+  regression runs.
 
 Adjust these variables before running ``pytest`` or
 ``scripts/orchestrator_perf_sim.py --benchmark`` to match local hardware.
