@@ -86,6 +86,7 @@ from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+from .cache import build_cache_slots
 
 # Re-export parser helpers so downstream imports stay stable.
 from .parsers import (  # noqa: F401
@@ -918,27 +919,62 @@ class Search:
         cache_key: CacheKey,
         backend: str,
         docs: Sequence[Dict[str, Any]],
+        *,
+        storage_hints: Sequence[str] | None = None,
+        embedding_backend: str | None = None,
     ) -> None:
-        """Persist results under hashed and legacy cache keys."""
+        """Persist results under hashed, aliased, and legacy cache keys."""
 
         payload = [dict(doc) for doc in docs]
-        targets = [cache_key.primary, *cache_key.aliases]
-        for target in targets:
-            self.cache.cache_results(target, backend, payload)
-        if cache_key.legacy not in targets:
-            self.cache.cache_results(cache_key.legacy, backend, payload)
+        seen: set[str] = set()
+        for slot in build_cache_slots(
+            cache_key,
+            namespace=self._cache_namespace,
+            embedding_backend=embedding_backend,
+            storage_hints=storage_hints,
+        ):
+            if slot in seen:
+                continue
+            seen.add(slot)
+            self.cache.cache_results(slot, backend, payload)
+        for candidate in cache_key.candidates():
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            self.cache.cache_results(candidate, backend, payload)
 
     def _get_cached_documents(
-        self, cache_key: CacheKey, backend: str
+        self,
+        cache_key: CacheKey,
+        backend: str,
+        *,
+        storage_hints: Sequence[str] | None = None,
+        embedding_backend: str | None = None,
     ) -> Optional[List[Dict[str, Any]]]:
         """Return cached documents, upgrading legacy entries when necessary."""
+
+        slots = build_cache_slots(
+            cache_key,
+            namespace=self._cache_namespace,
+            embedding_backend=embedding_backend,
+            storage_hints=storage_hints,
+        )
+        for slot in slots:
+            cached = self.cache.get_cached_results(slot, backend)
+            if cached is not None:
+                return cached
 
         for candidate in cache_key.candidates():
             cached = self.cache.get_cached_results(candidate, backend)
             if cached is None:
                 continue
-            if candidate != cache_key.primary:
-                self.cache.cache_results(cache_key.primary, backend, cached)
+            self._cache_documents(
+                cache_key,
+                backend,
+                cached,
+                storage_hints=storage_hints,
+                embedding_backend=embedding_backend,
+            )
             return cached
         return None
 
@@ -1785,7 +1821,12 @@ class Search:
                 storage_hints=storage_hints,
             )
 
-            cached = self._get_cached_documents(cache_key, name)
+            cached = self._get_cached_documents(
+                cache_key,
+                name,
+                storage_hints=storage_hints,
+                embedding_backend=name,
+            )
             if cached is not None:
                 results[name] = cached[:max_results]
                 continue
@@ -1798,7 +1839,13 @@ class Search:
 
             normalised = self._normalise_backend_documents(backend_results, name)
             results[name] = normalised
-            self._cache_documents(cache_key, name, normalised)
+            self._cache_documents(
+                cache_key,
+                name,
+                normalised,
+                storage_hints=storage_hints,
+                embedding_backend=name,
+            )
 
         return results
 
@@ -2264,6 +2311,7 @@ class Search:
                 name: str, docs: Sequence[Dict[str, Any]] | None
             ) -> None:
                 pending_embedding_backends.discard(name)
+                storage_hints: Tuple[str, ...] = ("embedding",)
                 cache_key = self._build_cache_key(
                     backend=name,
                     query=current_query,
@@ -2271,17 +2319,29 @@ class Search:
                     hybrid_query=cfg.search.hybrid_query,
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
-                    storage_hints=("embedding",),
+                    storage_hints=storage_hints,
                 )
                 if not docs:
                     results_by_backend.setdefault(name, [])
-                    self._cache_documents(cache_key, name, [])
+                    self._cache_documents(
+                        cache_key,
+                        name,
+                        [],
+                        storage_hints=storage_hints,
+                        embedding_backend=name,
+                    )
                     return
 
                 normalised_docs = self._normalise_backend_documents(docs, name)
                 results_by_backend[name] = normalised_docs
                 results.extend(normalised_docs)
-                self._cache_documents(cache_key, name, normalised_docs)
+                self._cache_documents(
+                    cache_key,
+                    name,
+                    normalised_docs,
+                    storage_hints=storage_hints,
+                    embedding_backend=name,
+                )
 
             np_query_embedding: Optional[np.ndarray] = None
             if query_embedding is not None:
@@ -2302,6 +2362,7 @@ class Search:
 
             if np_query_embedding is not None and pending_embedding_backends:
                 for backend_name in tuple(pending_embedding_backends):
+                    storage_hints: Tuple[str, ...] = ("embedding",)
                     cache_key = self._build_cache_key(
                         backend=backend_name,
                         query=current_query,
@@ -2309,9 +2370,14 @@ class Search:
                         hybrid_query=cfg.search.hybrid_query,
                         use_semantic_similarity=cfg.search.use_semantic_similarity,
                         query_embedding=np_query_embedding,
-                        storage_hints=("embedding",),
+                        storage_hints=storage_hints,
                     )
-                    cached_embedding = self._get_cached_documents(cache_key, backend_name)
+                    cached_embedding = self._get_cached_documents(
+                        cache_key,
+                        backend_name,
+                        storage_hints=storage_hints,
+                        embedding_backend=backend_name,
+                    )
                     if cached_embedding is None:
                         continue
                     _record_embedding_backend(backend_name, cached_embedding[:max_results])
@@ -2346,6 +2412,7 @@ class Search:
                         suggestion="Configure a valid search backend in your configuration file",
                     )
 
+                storage_hints: Tuple[str, ...] = ("external",)
                 cache_key = self._build_cache_key(
                     backend=name,
                     query=current_query,
@@ -2353,9 +2420,14 @@ class Search:
                     hybrid_query=cfg.search.hybrid_query,
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
-                    storage_hints=("external",),
+                    storage_hints=storage_hints,
                 )
-                cached = self._get_cached_documents(cache_key, name)
+                cached = self._get_cached_documents(
+                    cache_key,
+                    name,
+                    storage_hints=storage_hints,
+                    embedding_backend=None,
+                )
                 if cached is not None:
                     cached_docs = self._normalise_backend_documents(cached, name)
                     with _hybrid_stage("cache-hit"):
@@ -2404,7 +2476,13 @@ class Search:
                     )
 
                 backend_docs = self._normalise_backend_documents(backend_results, name)
-                self._cache_documents(cache_key, name, backend_docs)
+                self._cache_documents(
+                    cache_key,
+                    name,
+                    backend_docs,
+                    storage_hints=storage_hints,
+                    embedding_backend=None,
+                )
                 results.extend(backend_docs)
                 return name, backend_docs[:max_results]
 
@@ -2492,7 +2570,13 @@ class Search:
                     query_embedding=np_query_embedding,
                     storage_hints=("storage-vector", "duckdb-seed"),
                 )
-                self._cache_documents(duckdb_cache_key, "duckdb", duckdb_docs)
+                self._cache_documents(
+                    duckdb_cache_key,
+                    "duckdb",
+                    duckdb_docs,
+                    storage_hints=("storage-vector", "duckdb-seed"),
+                    embedding_backend="duckdb",
+                )
                 duckdb_from_storage = True
 
             if storage_results.get("storage"):
@@ -2645,6 +2729,8 @@ class Search:
                 fallback_cache_key,
                 "__fallback__",
                 fallback_payload,
+                storage_hints=("fallback",),
+                embedding_backend=None,
             )
 
             metrics = context.summarize_retrieval_outcome(
