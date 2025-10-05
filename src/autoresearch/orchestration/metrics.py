@@ -11,10 +11,11 @@ import logging
 import math
 import time
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import replace
 from contextlib import contextmanager, suppress
+from dataclasses import replace
 from os import getenv
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, SupportsFloat
 
 from prometheus_client import Counter, Histogram
@@ -33,6 +34,7 @@ from .model_routing import (
     ingest_state_overrides,
     resolve_agent_directives,
 )
+from .reasoning_payloads import FrozenReasoningStep
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..config.models import ConfigModel
@@ -211,6 +213,68 @@ def _normalize_latency_mapping(
     if prefix:
         result[prefix] = max(0.0, _safe_float(payload))
     return result
+
+
+def _snapshot_value(value: Any) -> Any:
+    """Return ``value`` converted to an immutable telemetry-friendly form."""
+
+    if isinstance(value, MappingProxyType):
+        return value
+    if isinstance(value, FrozenReasoningStep):
+        return snapshot_mapping(value.to_dict())
+    if isinstance(value, Mapping):
+        return snapshot_mapping(value)
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return tuple(_snapshot_value(item) for item in value)
+    return value
+
+
+def snapshot_mapping(payload: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Return an immutable snapshot of ``payload`` suitable for telemetry.
+
+    Args:
+        payload: Mapping to snapshot.
+
+    Returns:
+        Mapping proxy containing recursively frozen values.
+    """
+
+    if isinstance(payload, FrozenReasoningStep):
+        items = payload.to_dict().items()
+    else:
+        items = payload.items()
+    snapshot: dict[str, Any] = {}
+    for key, value in items:
+        snapshot[str(key)] = _snapshot_value(value)
+    return MappingProxyType(snapshot)
+
+
+def snapshot_reasoning_claims(
+    claims: Mapping[str, Any] | Sequence[Any] | None,
+) -> tuple[Mapping[str, Any], ...]:
+    """Return immutable snapshots for reasoning claims.
+
+    Args:
+        claims: Mapping or sequence describing reasoning claims.
+
+    Returns:
+        Tuple of mapping proxies for each non-empty claim.
+    """
+
+    if claims is None:
+        return tuple()
+    if isinstance(claims, Mapping):
+        frozen = snapshot_mapping(claims)
+        return (frozen,) if len(frozen) else tuple()
+    if isinstance(claims, Sequence) and not isinstance(claims, (str, bytes, bytearray)):
+        frozen_claims: list[Mapping[str, Any]] = []
+        for claim in claims:
+            if isinstance(claim, Mapping):
+                frozen = snapshot_mapping(claim)
+                if len(frozen):
+                    frozen_claims.append(frozen)
+        return tuple(frozen_claims)
+    return tuple()
 
 
 _GRAPH_TOTAL_FIELDS: tuple[str, ...] = (

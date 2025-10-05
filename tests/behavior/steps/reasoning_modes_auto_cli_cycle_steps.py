@@ -557,13 +557,19 @@ def assert_cli_scout_samples(auto_cli_cycle: dict[str, Any]) -> None:
     metrics: dict[str, Any] = payload.get("metrics", {})
     auto_mode = metrics.get("auto_mode", {})
     samples = auto_mode.get("scout_samples")
-    assert isinstance(samples, list) and samples
+    assert isinstance(samples, tuple) and samples
     assert auto_mode.get("scout_sample_count") == len(samples)
     agreement = auto_mode.get("scout_agreement")
     assert agreement is not None
     for sample in samples:
+        assert isinstance(sample, Mapping)
         assert "answer" in sample
-        assert "claims" in sample
+        claims = sample.get("claims")
+        assert isinstance(claims, tuple)
+        assert claims, "CLI telemetry must retain non-empty claim payloads"
+        for claim in claims:
+            assert isinstance(claim, Mapping)
+            assert len(claim) > 0
     scout_stage = metrics.get("scout_stage", {})
     assert isinstance(scout_stage, dict)
     heuristics = scout_stage.get("heuristics", {})

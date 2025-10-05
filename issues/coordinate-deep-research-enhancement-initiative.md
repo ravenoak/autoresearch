@@ -18,6 +18,13 @@ normalized decision outcome through `OrchestrationMetrics` so dashboards can
 track AUTO escalations without replaying runs.
 【F:docs/orchestration.md†L24-L31】【F:docs/deep_research_upgrade_plan.md†L52-L58】
 
+The AUTO scout snapshots now freeze synthesiser claims before telemetry export,
+and both unit and behaviour suites assert that every sample carries a non-empty
+immutable claim payload. This guards against parallel merge mutation while the
+gate policy reasons over agreement metrics.
+【F:src/autoresearch/orchestration/metrics.py†L180-L220】【F:src/autoresearch/orchestration/orchestrator.py†L190-L280】
+【F:tests/unit/orchestration/test_auto_mode.py†L90-L135】【F:tests/behavior/steps/reasoning_modes_auto_steps.py†L350-L375】
+
 `task check` and `task verify` now invoke `task mypy-strict` directly, giving the
 initiative an automated strict gate in every local run while the CI workflow
 keeps the TestPyPI flag paused by default. The deterministic storage resident

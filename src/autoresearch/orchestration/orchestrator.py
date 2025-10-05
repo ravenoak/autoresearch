@@ -9,7 +9,7 @@ is exercised by unit and integration tests under ``tests/``.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Sequence, cast
+from typing import Any, Dict, List, Mapping, Sequence, cast
 
 import rdflib
 
@@ -26,7 +26,12 @@ from ..models import QueryResponse
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
 from .circuit_breaker import CircuitBreakerManager, CircuitBreakerState
-from .metrics import OrchestrationMetrics, record_query
+from .metrics import (
+    OrchestrationMetrics,
+    record_query,
+    snapshot_mapping,
+    snapshot_reasoning_claims,
+)
 from .orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
@@ -176,20 +181,21 @@ class Orchestrator:
 
         decision: ScoutGateDecision | None = None
 
-        def _capture_scout_sample(sample_state: QueryState, sample_index: int) -> dict[str, Any]:
+        def _capture_scout_sample(
+            sample_state: QueryState, sample_index: int
+        ) -> Mapping[str, Any]:
             """Return a normalized snapshot of a scout sample."""
 
-            claims_snapshot: list[dict[str, Any]] = []
-            for claim in sample_state.claims:
-                if isinstance(claim, dict):
-                    claims_snapshot.append(dict(claim))
-            return {
-                "index": sample_index,
-                "answer": sample_state.results.get("final_answer"),
-                "claims": claims_snapshot,
-            }
+            claim_snapshots = snapshot_reasoning_claims(sample_state.claims)
+            return snapshot_mapping(
+                {
+                    "index": sample_index,
+                    "answer": sample_state.results.get("final_answer"),
+                    "claims": claim_snapshots,
+                }
+            )
 
-        scout_samples: list[dict[str, Any]] = []
+        scout_samples: list[Mapping[str, Any]] = []
 
         if mode == ReasoningMode.AUTO:
             scout_state = state
@@ -246,7 +252,8 @@ class Orchestrator:
                         config.reasoning_mode = original_mode_setting
                     scout_samples.append(_capture_scout_sample(sample_state, sample_index))
 
-            scout_state.metadata["scout_samples"] = list(scout_samples)
+            scout_samples_view = tuple(scout_samples)
+            scout_state.metadata["scout_samples"] = scout_samples_view
 
             decision = OrchestrationUtils.evaluate_scout_gate_policy(
                 query=query,
@@ -262,7 +269,7 @@ class Orchestrator:
                     "scout_answer": scout_state.results.get("final_answer"),
                     "scout_should_debate": decision.should_debate,
                     "scout_reason": decision.reason,
-                    "scout_samples": list(scout_samples),
+                    "scout_samples": scout_samples_view,
                     "scout_sample_count": len(scout_samples),
                     "scout_agreement": decision.heuristics.get("scout_agreement"),
                 }
