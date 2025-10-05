@@ -1,3 +1,10 @@
+As of **2025-10-05 at 15:43 UTC** reasoning payloads normalise into mappings,
+parallel orchestration converts stabilised claims back to dictionaries for the
+state, and strict typing now passes under `uv run mypy --strict src tests`.
+The fixtures and helper modules convert orchestration artefacts with
+`dict(claim)` before exposing them to tests, and the fresh log captures the
+clean sweep.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L208】【F:src/autoresearch/orchestration/state.py†L76-L188】【F:src/autoresearch/orchestration/parallel.py†L200-L232】【F:src/autoresearch/agents/specialized/user_agent.py†L60-L86】【F:src/autoresearch/agents/specialized/moderator.py†L92-L120】【F:src/autoresearch/agents/specialized/domain_specialist.py†L208-L252】【F:baseline/logs/mypy-strict-20251005T154340Z.log†L1-L2】
+
 As of **2025-10-05 at 05:22 UTC** the formatter fences control characters,
 zero-width spaces, and whitespace-only strings inside Markdown code blocks while
 leaving JSON payloads untouched; the expanded property suite covering these

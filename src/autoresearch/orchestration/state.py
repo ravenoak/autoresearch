@@ -76,7 +76,11 @@ class AnswerAuditor:
     def review(self) -> AnswerAuditOutcome:
         """Return a hedged answer, updated claims, and enriched audits."""
 
-        claims = [self._copy_claim(claim) for claim in self._state.claims]
+        claims: list[dict[str, Any]] = []
+        for raw_claim in self._state.claims:
+            normalized = normalize_reasoning_step(raw_claim)
+            if isinstance(normalized, Mapping):
+                claims.append(self._copy_claim(normalized))
         grouped, audits = self._collect_audits(claims)
 
         for claim in claims:

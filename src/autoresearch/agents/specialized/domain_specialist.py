@@ -230,18 +230,18 @@ class DomainSpecialistAgent(Agent):
 
         if not keywords:
             # If no specific keywords for this domain, return all claims
-            return state.claims
+            return [dict(claim) for claim in state.claims]
 
         for claim in state.claims:
             content = claim.get("content", "").lower()
 
             # Check if any domain keyword appears in the claim
             if any(keyword in content for keyword in keywords):
-                relevant_claims.append(claim)
+                relevant_claims.append(dict(claim))
 
         # If no relevant claims found, return the most recent claims
         if not relevant_claims and state.claims:
-            return state.claims[-3:]  # Return the 3 most recent claims
+            return [dict(claim) for claim in state.claims[-3:]]  # Return the 3 most recent claims
 
         return relevant_claims
 

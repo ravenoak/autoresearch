@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
-from typing import Any, Iterator, Tuple, TypeAlias
+from typing import Any, Iterator, Protocol, Tuple, TypeAlias
 
-from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
+
+
+class GetCoreSchemaHandler(Protocol):
+    """Minimal protocol for ``pydantic`` schema handler callbacks."""
+
+    def generate_schema(self, source: type[Any]) -> core_schema.CoreSchema: ...
 
 
 class FrozenReasoningStep(Mapping[str, Any]):
@@ -109,10 +114,6 @@ class FrozenReasoningStep(Mapping[str, Any]):
             return [FrozenReasoningStep._export_value(item) for item in value]
         return value
 
-    def items(self) -> Iterator[tuple[str, Any]]:  # pragma: no cover - simple proxy
-        for key in self._data:
-            yield key, self._export_value(self._data[key])
-
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serialisable copy of the payload."""
 
@@ -145,10 +146,10 @@ class FrozenReasoningStep(Mapping[str, Any]):
         return cls({"value": value})
 
 
-NormalizedReasoning: TypeAlias = FrozenReasoningStep | tuple[Any, ...] | str
+NormalizedReasoning: TypeAlias = Mapping[str, Any]
 
 
-def normalize_reasoning_step(step: Any) -> NormalizedReasoning:
+def normalize_reasoning_step(step: Any) -> FrozenReasoningStep:
     """Return a hashable reasoning step representation."""
 
     if isinstance(step, FrozenReasoningStep):
@@ -158,19 +159,20 @@ def normalize_reasoning_step(step: Any) -> NormalizedReasoning:
     if isinstance(step, str):
         return FrozenReasoningStep({"text": step})
     if isinstance(step, Sequence) and not isinstance(step, (str, bytes)):
-        return tuple(normalize_reasoning_step(item) for item in step)
+        items = [normalize_reasoning_step(item).to_dict() for item in step]
+        return FrozenReasoningStep({"items": items})
     if isinstance(step, Hashable):
         return FrozenReasoningStep({"value": step})
     return FrozenReasoningStep({"value": repr(step)})
 
 
-def normalize_reasoning_sequence(steps: Sequence[Any]) -> list[NormalizedReasoning]:
+def normalize_reasoning_sequence(steps: Sequence[Any]) -> list[FrozenReasoningStep]:
     """Normalise all reasoning steps within ``steps``."""
 
     return [normalize_reasoning_step(step) for step in steps]
 
 
-def stabilize_reasoning_order(steps: Sequence[Any]) -> list[NormalizedReasoning]:
+def stabilize_reasoning_order(steps: Sequence[Any]) -> list[FrozenReasoningStep]:
     """Return reasoning steps sorted by their semantic label."""
 
     normalized = normalize_reasoning_sequence(steps)
@@ -180,6 +182,4 @@ def stabilize_reasoning_order(steps: Sequence[Any]) -> list[NormalizedReasoning]
 def _sort_key(step: NormalizedReasoning) -> str:
     if isinstance(step, FrozenReasoningStep):
         return step.sort_key
-    if isinstance(step, tuple):
-        return "|".join(_sort_key(item) for item in step)
-    return str(step)
+    return FrozenReasoningStep(step).sort_key

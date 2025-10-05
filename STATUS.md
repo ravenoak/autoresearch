@@ -19,6 +19,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 5, 2025
+- Reasoning payload helpers now always materialise mappings, downstream
+  specialists cast orchestration claims to dictionaries, and the strict gate at
+  **15:43 UTC** recorded a clean `uv run mypy --strict src tests` sweep.
+  【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L208】【F:src/autoresearch/orchestration/state.py†L76-L188】【F:src/autoresearch/agents/specialized/moderator.py†L1-L128】【F:src/autoresearch/agents/specialized/domain_specialist.py†L196-L252】【F:src/autoresearch/agents/specialized/user_agent.py†L34-L86】【F:src/autoresearch/orchestration/parallel.py†L1-L230】【F:baseline/logs/mypy-strict-20251005T154340Z.log†L1-L2】
+- Updated the typing guidelines to describe the new targeted exclusions, typed
+  fixture patterns, and strict CI hook so contributors follow the normalisation
+  approach when extending the test suite.【F:docs/dev/typing-strictness.md†L1-L59】
 - `OutputFormatter` now wraps control characters, zero-width spaces, and
   whitespace-only strings in fenced Markdown blocks while leaving JSON payloads
   byte-for-byte intact; the expanded Hypothesis strategy exercises these edge

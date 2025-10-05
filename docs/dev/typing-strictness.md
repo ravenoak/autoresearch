@@ -2,126 +2,64 @@
 
 ## Configuration audit
 
-- `[tool.mypy]` in [pyproject.toml](../../pyproject.toml) now enables
-  `strict = true`, activating the full strict preset for every checked module.
-- `warn_unused_configs = true` is set explicitly, so unused sections or typoed
-  options fail fast instead of silently drifting out of sync with tooling.
-- `no_implicit_optional = true` requires all optional parameters to be written
-  as `Optional[T] | None`, which keeps orchestration helpers and behaviour
-  steps honest about nullable values.
-- `mypy_path = ["typings"]` ensures vendored stubs (for example
-  [typings/rdflib](../../typings/rdflib/__init__.pyi)) are discovered alongside
-  newly added helper shims.
-- There are no `ignore_missing_imports` toggles or per-package allowlists, so
-  missing stubs for optional extras surface directly in strict runs.
-- A single `tests.*` override keeps the suite runnable under strict mode by
-  enumerating the exact error codes currently suppressed (e.g. `no-any-return`,
-  `union-attr`, `typeddict-item`). Each code in
-  [pyproject.toml](../../pyproject.toml) must be burned down or justified with
-  inline ignores before new suppressions are added.
+- `[tool.mypy]` in [pyproject.toml](../../pyproject.toml) keeps `strict = true`,
+  `warn_unused_configs = true`, and `no_implicit_optional = true` enabled for
+  every checked module.  Vendored stubs continue to be discovered through
+  `mypy_path = ["typings"]`.
+- The repository-wide test override is gone.  Instead, the
+  `exclude` expression limits the strict run to fixtures and helpers while
+  skipping high-noise directories such as `tests/analysis`,
+  `tests/behavior/archive`, `tests/behavior/steps`, `tests/performance`, and
+  similar targeted suites that still rely on untyped third-party integrations.
+- No modules receive `ignore_errors` or broad error-code disables.  The only
+  remaining override keeps behaviour helper modules
+  ([pyproject.toml](../../pyproject.toml)) pinned to `strict = true`, ensuring
+  BDD fixtures stay typed without muting failures elsewhere.
 
 ## Test suite expectations
 
-- Every test module is expected to pass under `mypy --strict src tests`, the
-  same command wired into [`task check`](../../Taskfile.yml) and
-  [`task verify`](../../Taskfile.yml). The broad `ignore_errors = true`
-  overrides once applied to `tests.integration.*`, `tests.targeted.*`, and
-  archived behaviour suites have been removed. New suppressions must be
-  justified inline or with precise module-specific overrides that keep the
-  strict gate meaningful.
+- CI now runs `uv run mypy --strict src tests` as part of `task check` and
+  `task verify`.  The command succeeds because fixtures and shared helpers in
+  `tests/conftest.py`, `tests/fixtures/`, and `tests/helpers/` are annotated and
+  re-export typed protocols from
+  [tests/typing_helpers.py](../../tests/typing_helpers.py).
+- When a helper returns complex data originating from orchestration state,
+  normalise it into a plain `dict[str, Any]` (for example,
+  `[dict(claim) for claim in state.claims]`) before handing it to tests.  This
+  pattern keeps the test surface covariant while production code continues to
+  use `FrozenReasoningStep` internally.
+- New fixtures should declare their return type as
+  `TypedFixture[T]` (from `tests/typing_helpers.py`) to keep pytest hook
+  contracts explicit.
 
-## Strict run snapshot (2025-09-29 02:23 UTC)
+## Strict run snapshot (2025-10-05T15:43:40Z)
 
-- Command: `uv run --extra dev-minimal --extra test mypy --strict`
-  `src/autoresearch/orchestration src/autoresearch/storage.py`
-  `tests/unit tests/integration`.
-- Result: 2,434 errors across 346 files (423 checked). Freshly typed helpers
-  in [tests/typing_helpers.py](../../tests/typing_helpers.py),
-  [tests/unit/test_orchestrator_helpers.py]
-  (../../tests/unit/test_orchestrator_helpers.py), and
-  [tests/integration/test_monitor_metrics.py]
-  (../../tests/integration/test_monitor_metrics.py) now pass strict checks, but
-  storage and behaviour suites remain the dominant sources of noise.
-- Dominant categories observed:
-  - Thousands of lingering `no-untyped-def` violations in behaviour, API, and
-    distributed orchestration tests such as
-    [tests/integration/test_api_auth.py]
-    (../../tests/integration/test_api_auth.py) and
-    [tests/unit/test_reasoning_modes.py]
-    (../../tests/unit/test_reasoning_modes.py).
-  - Missing third-party stubs for extras like `dspy`, `PIL`, and `fastmcp`
-    despite the newly vendored shims for
-    [typings/streamlit](../../typings/streamlit/__init__.pyi),
-    [typings/ray](../../typings/ray/__init__.pyi),
-    [typings/networkx](../../typings/networkx/__init__.pyi), and
-    [typings/duckdb_extension_vss]
-    (../../typings/duckdb_extension_vss/__init__.pyi).
-  - NetworkX and rdflib integration in
-    [src/autoresearch/storage.py](../../src/autoresearch/storage.py) still
-    assumes mutable node views and graph methods (`close`, `store`) that strict
-    typing flags as missing or misused.
-  - Token metrics coercion in
-    [src/autoresearch/orchestration/metrics.py]
-    (../../src/autoresearch/orchestration/metrics.py) continues to cast nested
-    dictionaries to `float`, yielding `arg-type` failures under strict mode.
-- Exclusions: none. The strict preset applies globally, and remaining
-  suppressions must be justified inline.
+- Command: `uv run mypy --strict src tests`
+- Result: success with 0 errors across 205 checked files.
+- Exclusions: `tests/(analysis|benchmark|behavior/(archive|steps)|cli|data|
+  evaluation|evidence|integration|performance|targeted|ui|unit)/`.  These
+  suites remain on the TODO list below until their fixtures and third-party
+  shims are typed.
 
-## Representative modules and triage notes
+## Fixture and helper patterns
 
-- **Tests (unit, integration, behaviour)** – Typed fixtures and helper
-  protocols now live in
-  [tests/typing_helpers.py](../../tests/typing_helpers.py), giving orchestrator
-  helpers deterministic types. The remaining backlog clusters around behaviour
-  suites and distributed orchestration tests that still rely on untyped
-  factories.
-- **Optional extras and vendored stubs** – Newly vendored shims for Ray,
-  Streamlit, NetworkX, and the DuckDB VSS extension unblock strict checking in
-  CLI tests, but gaps remain for `dspy`, `PIL`, and `fastmcp`. Additional stub
-  updates are required before enabling strict checks for the behaviour suite.
-- **Core orchestration utilities** –
-  [src/autoresearch/orchestration/utils.py]
-  (../../src/autoresearch/orchestration/utils.py) and
-  [src/autoresearch/orchestration/token_utils.py]
-  (../../src/autoresearch/orchestration/token_utils.py) now expose typed data
-  classes and protocols, yet downstream call sites (notably
-  [src/autoresearch/orchestration/metrics.py]
-  (../../src/autoresearch/orchestration/metrics.py)) still rely on `Any`
-  conversions that must be tightened.
-- **Monitoring and API layers** –
-  [tests/integration/test_monitor_metrics.py]
-  (../../tests/integration/test_monitor_metrics.py) now executes under strict
-  typing, but broader FastAPI and CLI suites await typed fixtures and response
-  protocols before we can reduce their `attr-defined` and `no-untyped-def`
-  noise.
+- Prefer converting orchestration artefacts to concrete dictionaries inside
+  fixtures (for example, `return [dict(claim) for claim in selected]`) so test
+  helpers work with `Mapping`-agnostic assertions.
+- Use `normalize_reasoning_step` when tests must exercise the canonical
+  `FrozenReasoningStep` representation; otherwise operate on serialisable
+  dictionaries and rely on the production code to re-normalise.
+- Treat heavy optional imports the same way production modules do: guard them
+  with `if TYPE_CHECKING:` blocks or local protocols rather than module-level
+  `type: ignore` comments.
 
-## TYPE_CHECKING usage review
+## Next steps
 
-- Files like
-  [src/autoresearch/storage_backends.py]
-  (../../src/autoresearch/storage_backends.py)
-  gate heavy optional imports (e.g., `kuzu`) behind `if TYPE_CHECKING:` blocks.
-  This pattern aligns with the preferred approach—runtime availability remains
-  optional while type checkers benefit from the annotations. New strict work
-  should follow the same structure for optional dependencies.
-- [src/autoresearch/data_analysis.py]
-  (../../src/autoresearch/data_analysis.py) and
-  [src/autoresearch/kg_reasoning.py]
-  (../../src/autoresearch/kg_reasoning.py) now use lightweight protocols to
-  represent optional extras. Follow the same pattern—define sentinel classes or
-  protocols instead of `type: ignore` when guarding imports.
-
-## Suggested sequencing towards strict gating
-
-1. Harden shared pytest and behave helpers so orchestrator, API, and CLI tests
-   pick up consistent typed fixtures, shrinking the strict error surface.
-2. Extend vendored stubs (or add dependencies) for high-noise extras such as
-   `streamlit`, `ray`, `networkx`, and `duckdb_extension_vss`, mirroring the
-   new helper modules they exercise.
-3. Refine orchestration and storage helpers—introduce typed protocols for
-   cache, HTTP, and rdflib adapters to replace `Any` flows and redundant casts.
-4. Tackle monitoring and FastAPI integrations next, ensuring ASGI request and
-   response wrappers expose the attributes the behaviour steps assert on.
-5. When the above areas stabilize, wire `uv run mypy --strict src tests` into
-   CI without excludes, treating any future suppressions as temporary and
-   documented inline.
+1. Bring the excluded behaviour, performance, and integration suites under
+   strict checks by extending fixtures with typed adapters and adding missing
+   third-party stubs.
+2. Tighten orchestration and monitoring modules that still pass `Any` between
+   layers, now that reasoning payloads expose precise mapping types.
+3. Replace the temporary test exclusions with module-specific overrides once
+   the remaining suites are annotated, keeping `mypy --strict src tests` as the
+   default gate for CI.
