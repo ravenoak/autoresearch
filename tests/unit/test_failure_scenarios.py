@@ -68,6 +68,9 @@ def test_external_lookup_fallback(monkeypatch):
     assert results[0]["url"] == f"https://example.invalid/search?q={encoded}&rank=1", (
         "If fallback URLs drift, how would we detect nondeterministic cache placeholders?"
     )
+    assert results[0]["canonical_url"] == (
+        f"https://example.invalid/search?q={encoded}&rank=1"
+    ), "Canonical URLs document deterministic fallback cache entries."
     assert results[0]["backend"] == "__fallback__", (
         "When the fallback backend label changes, who will warn us about cache coverage gaps?"
     )
@@ -75,6 +78,23 @@ def test_external_lookup_fallback(monkeypatch):
     assert repeat == results, (
         "If deterministic placeholders vanish, what signal would alert us to fallback regressions?"
     )
+
+
+def test_external_lookup_fallback_templated_query(monkeypatch):
+    cfg = _make_cfg([])
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    query = {"text": "value {placeholder}"}
+    results = Search.external_lookup(query, max_results=1)
+    assert len(results) == 1
+    encoded = quote_plus("value {placeholder}")
+    expected_url = f"https://example.invalid/search?q={encoded}&rank=1"
+    record = results[0]
+    assert record["title"] == "Result 1 for value {placeholder}"
+    assert record["url"] == expected_url
+    assert record["canonical_url"] == expected_url
+    assert record["backend"] == "__fallback__"
+    repeat = Search.external_lookup(query, max_results=1)
+    assert repeat == results
 
 
 def test_get_message_broker_invalid():

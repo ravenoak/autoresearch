@@ -867,6 +867,25 @@ class Search:
         return "|".join(parts)
 
     @staticmethod
+    def _normalise_backend_documents(
+        docs: Sequence[Dict[str, Any]],
+        backend: str,
+    ) -> List[Dict[str, Any]]:
+        """Ensure backend metadata and canonical URLs for result documents."""
+
+        normalised: List[Dict[str, Any]] = []
+        for doc in docs:
+            payload = dict(doc)
+            payload.setdefault("backend", backend)
+            canonical = payload.get("canonical_url")
+            if canonical is None:
+                canonical = payload.get("url")
+            if canonical is not None:
+                payload["canonical_url"] = str(canonical)
+            normalised.append(payload)
+        return normalised
+
+    @staticmethod
     def _make_fallback_results(query: str, max_results: int) -> List[Dict[str, Any]]:
         """Generate deterministic placeholder results for fallback scenarios."""
 
@@ -874,10 +893,12 @@ class Search:
         encoded_query = quote_plus(query.strip())
         placeholders: List[Dict[str, Any]] = []
         for rank in range(1, max_results + 1):
+            url = f"https://example.invalid/search?q={encoded_query}&rank={rank}"
             placeholders.append(
                 {
                     "title": f"Result {rank} for {query}",
-                    "url": f"https://example.invalid/search?q={encoded_query}&rank={rank}",
+                    "url": url,
+                    "canonical_url": url,
                     "snippet": (
                         "No search backend succeeded; placeholder preserves deterministic order."
                     ),
@@ -2117,9 +2138,7 @@ class Search:
                     self.cache.cache_results(cache_key, name, [])
                     return
 
-                normalised_docs = [dict(doc) for doc in docs]
-                for doc in normalised_docs:
-                    doc.setdefault("backend", name)
+                normalised_docs = self._normalise_backend_documents(docs, name)
                 results_by_backend[name] = normalised_docs
                 results.extend(normalised_docs)
                 self.cache.cache_results(cache_key, name, normalised_docs)
@@ -2196,11 +2215,11 @@ class Search:
                 )
                 cached = self.cache.get_cached_results(cache_key, name)
                 if cached is not None:
+                    cached_docs = self._normalise_backend_documents(cached, name)
                     with _hybrid_stage("cache-hit"):
-                        self.add_embeddings(cached, np_query_embedding)
-                    for r in cached:
-                        r.setdefault("backend", name)
-                    return name, cached[:max_results]
+                        self.add_embeddings(cached_docs, np_query_embedding)
+                    results.extend(cached_docs)
+                    return name, cached_docs[:max_results]
 
                 try:
                     backend_results = backend(current_query, max_results)
@@ -2242,11 +2261,10 @@ class Search:
                         suggestion="Check the search backend configuration",
                     )
 
-                for doc in backend_results:
-                    doc.setdefault("backend", name)
-                self.cache.cache_results(cache_key, name, backend_results)
-                results.extend(backend_results)
-                return name, backend_results[:max_results]
+                backend_docs = self._normalise_backend_documents(backend_results, name)
+                self.cache.cache_results(cache_key, name, backend_docs)
+                results.extend(backend_docs)
+                return name, backend_docs[:max_results]
 
             backends = cfg.search.backends
             if not backends:
@@ -2294,13 +2312,15 @@ class Search:
             storage_results = self.storage_hybrid_lookup(
                 current_query, np_query_embedding, results_by_backend, max_results
             )
-            for name, docs in storage_results.items():
+            for name, docs in list(storage_results.items()):
                 if not docs:
                     continue
+                enriched_docs = self._normalise_backend_documents(docs, name)
+                storage_results[name] = enriched_docs
                 if name in results_by_backend:
-                    results_by_backend[name].extend(docs)
+                    results_by_backend[name].extend(enriched_docs)
                 else:
-                    results_by_backend[name] = docs
+                    results_by_backend[name] = enriched_docs
             if storage_results:
                 pending_embedding_backends.difference_update(
                     name for name in storage_results if name in pending_embedding_backends
@@ -2317,8 +2337,9 @@ class Search:
                 and np_query_embedding is not None
                 and _vss_available()
             ):
-                duckdb_docs = vector_storage_docs[:max_results] if vector_storage_docs else []
-                results_by_backend["duckdb"] = [dict(doc) for doc in duckdb_docs]
+                duckdb_seed = vector_storage_docs[:max_results] if vector_storage_docs else []
+                duckdb_docs = self._normalise_backend_documents(duckdb_seed, "duckdb")
+                results_by_backend["duckdb"] = duckdb_docs
                 pending_embedding_backends.discard("duckdb")
                 duckdb_cache_key = self._build_cache_key(
                     backend="duckdb",
@@ -2328,11 +2349,7 @@ class Search:
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
                 )
-                self.cache.cache_results(
-                    duckdb_cache_key,
-                    "duckdb",
-                    results_by_backend["duckdb"],
-                )
+                self.cache.cache_results(duckdb_cache_key, "duckdb", duckdb_docs)
                 duckdb_from_storage = True
 
             if storage_results.get("storage"):
@@ -2452,10 +2469,11 @@ class Search:
                 return bundle if return_handles else bundle.results
 
             fallback_count = max(1, base_max_results)
-            fallback_results = self._make_fallback_results(
-                text_query, fallback_count
+            fallback_results = self._make_fallback_results(text_query, fallback_count)
+            fallback_payload = self._normalise_backend_documents(
+                fallback_results,
+                "__fallback__",
             )
-            fallback_payload = [dict(result) for result in fallback_results]
             results_by_backend["__fallback__"] = fallback_payload
             self._log_embedding_enrichment(
                 results_by_backend,
@@ -2473,12 +2491,12 @@ class Search:
             self.cache.cache_results(
                 fallback_cache_key,
                 "__fallback__",
-                fallback_results,
+                fallback_payload,
             )
 
             metrics = context.summarize_retrieval_outcome(
                 current_query,
-                fallback_results,
+                fallback_payload,
                 fetch_limit=fallback_count,
                 by_backend=results_by_backend,
             )
@@ -2526,7 +2544,7 @@ class Search:
 
             context.record_scout_observation(
                 current_query,
-                fallback_results,
+                fallback_payload,
                 by_backend=results_by_backend,
             )
 

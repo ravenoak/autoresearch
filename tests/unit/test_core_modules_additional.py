@@ -180,15 +180,15 @@ def _stubbed_search_environment(monkeypatch, request):
             target = _resolve_subject(subject)
             binding = "instance" if target is search_instance else "other"
             context = capture_hybrid_call_context()
-            add_calls.append(
-                {
-                    "phase": phase,
-                    "binding": binding,
-                    "hybrid_binding": context.get("binding"),
-                    "caller_binding": context.get("caller_binding"),
-                    "stage": context.get("stage"),
-                }
-            )
+            metadata = {
+                "phase": phase,
+                "binding": binding,
+                "hybrid_binding": context.get("binding"),
+                "caller_binding": context.get("caller_binding"),
+                "stage": context.get("stage"),
+                "context": context,
+            }
+            add_calls.append(metadata)
 
         def _stub_rank_results(subject, query, result_docs, query_embedding=None):
             """Track rank_results invocations while returning passthrough docs."""
@@ -369,6 +369,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     instance_results = env.search_instance.external_lookup("q", max_results=1)
     assert [r["title"] for r in instance_results] == ["T"]
     assert [r["url"] for r in instance_results] == ["u"]
+    assert [r["canonical_url"] for r in instance_results] == ["u"]
 
     if env.vector_search_enabled:
         env.set_storage_results({"storage": []})
@@ -379,6 +380,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     bundle_results = list(bundle)
     assert [r["title"] for r in bundle_results] == ["T"]
     assert [r["url"] for r in bundle_results] == ["u"]
+    assert [r["canonical_url"] for r in bundle_results] == ["u"]
     assert bundle.results == bundle_results
     assert bundle.cache is env.search_instance.cache
     if env.vector_search_enabled:
@@ -460,22 +462,25 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
 
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
     expected_add_calls = [
-        {
-            "phase": "search-instance",
-            "binding": "instance",
-            "hybrid_binding": "instance",
-            "caller_binding": "instance",
-            "stage": "retrieval",
-        },
-        {
-            "phase": "search-class",
-            "binding": "instance",
-            "hybrid_binding": "instance",
-            "caller_binding": "class",
-            "stage": "retrieval",
-        },
+        ("search-instance", "instance", "instance"),
+        ("search-class", "instance", "class"),
     ]
-    assert env.add_calls == expected_add_calls
+    assert len(env.add_calls) == len(expected_add_calls)
+    for call, (phase, hybrid_binding, caller_binding) in zip(
+        env.add_calls, expected_add_calls
+    ):
+        assert call["phase"] == phase
+        assert call["binding"] == "instance"
+        assert call["hybrid_binding"] == hybrid_binding
+        assert call["caller_binding"] == caller_binding
+        assert call["stage"] == "retrieval"
+        context = call["context"]
+        assert context["stage"] == "retrieval"
+        assert context["method"].endswith("add_embeddings")
+        assert context["binding"] == hybrid_binding
+        assert context["caller_binding"] == caller_binding
+        assert context["stage_stack"]
+        assert context["stage_stack"][-1] == "retrieval"
     assert all(call == "instance" for call in env.rank_calls)
     assert len(env.rank_calls) >= 2
     assert all(call == "instance" for call in env.storage_calls)
@@ -502,18 +507,27 @@ def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment
         f"https://example.invalid/search?q={encoded}&rank=1",
         f"https://example.invalid/search?q={encoded}&rank=2",
     ]
+    assert [result["canonical_url"] for result in bundle.results] == [
+        f"https://example.invalid/search?q={encoded}&rank=1",
+        f"https://example.invalid/search?q={encoded}&rank=2",
+    ]
     assert bundle.cache is env.search_instance.cache
     assert bundle.by_backend == {}
     assert env.backend_calls == [("missing", 2, False)]
-    assert env.add_calls == [
-        {
-            "phase": "search-class",
-            "binding": "instance",
-            "hybrid_binding": "instance",
-            "caller_binding": "class",
-            "stage": "fallback",
-        }
-    ]
+    assert len(env.add_calls) == 1
+    call = env.add_calls[0]
+    assert call["phase"] == "search-class"
+    assert call["binding"] == "instance"
+    assert call["hybrid_binding"] == "instance"
+    assert call["caller_binding"] == "class"
+    assert call["stage"] == "fallback"
+    context = call["context"]
+    assert context["method"].endswith("add_embeddings")
+    assert context["stage"] == "fallback"
+    assert context["stage_stack"]
+    assert context["stage_stack"][-1] == "fallback"
+    assert context["binding"] == "instance"
+    assert context["caller_binding"] == "class"
 
 
 def test_planner_execute(monkeypatch):
