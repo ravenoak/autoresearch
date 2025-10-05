@@ -5,12 +5,13 @@ import pytest
 from autoresearch.cli_helpers import depth_help_text
 from autoresearch.models import QueryResponse
 from autoresearch.output_format import OutputDepth, OutputFormatter
+from tests.typing_helpers import TypedFixture
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def response_payload() -> QueryResponse:
+def response_payload() -> TypedFixture[QueryResponse]:
     return QueryResponse(
         query="depth test",
         answer="An extended answer about adaptive depth rendering.",

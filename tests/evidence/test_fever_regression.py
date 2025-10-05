@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from autoresearch.agents.mixins import ClaimGeneratorMixin
 from autoresearch.evidence import (
@@ -41,7 +42,7 @@ def test_entailment_scoring_supported_claim() -> None:
         entailment_score=breakdown.score,
         sources=[{"snippet": evidence}],
     )
-    payload = record.to_payload()
+    payload: dict[str, Any] = record.to_payload()
     assert payload["provenance"] == {}
     recovered = ClaimAuditRecord.from_payload(payload)
     assert recovered.status == status
@@ -71,7 +72,7 @@ def test_claim_audit_record_from_score_overrides_status() -> None:
 
 
 def test_claim_audit_record_preserves_provenance_round_trip() -> None:
-    provenance = {
+    provenance: dict[str, Any] = {
         "retrieval": {"variants": ["base"]},
         "backoff": {"retry_count": 1},
         "evidence": {"ids": ["src-abc"]},
@@ -95,7 +96,7 @@ def test_claim_generator_attaches_audit_metadata() -> None:
         status=ClaimAuditStatus.NEEDS_REVIEW,
         entailment_score=0.4,
     )
-    claim = harness.create_claim(
+    claim: dict[str, Any] = harness.create_claim(
         "Paris hosts the Eiffel Tower.",
         "thesis",
         audit=record,
@@ -105,7 +106,7 @@ def test_claim_generator_attaches_audit_metadata() -> None:
     assert claim["audit"]["status"] == ClaimAuditStatus.NEEDS_REVIEW.value
     assert claim["audit"].get("provenance") == {}
 
-    claim2 = harness.create_claim(
+    claim2: dict[str, Any] = harness.create_claim(
         "The Louvre is in Paris.",
         "thesis",
         verification_status="supported",
