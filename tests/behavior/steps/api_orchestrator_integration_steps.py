@@ -6,25 +6,27 @@ parameter handling, and concurrent request handling.
 """
 
 import concurrent.futures
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.errors import OrchestrationError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from tests.behavior.context import BehaviorContext
 from tests.behavior.utils import PayloadDict, as_payload, store_payload
+from tests.typing_helpers import TypedFixture
 
 
 # Fixtures
 @pytest.fixture
-def test_context() -> BehaviorContext:
+def test_context() -> TypedFixture[dict[str, Any]]:
     """Create a context for storing test state."""
-    payload: PayloadDict = as_payload(
+    payload: dict[str, Any] = as_payload(
         {
             "client": None,
             "mock_orchestrator": None,
@@ -38,11 +40,11 @@ def test_context() -> BehaviorContext:
 
 
 @pytest.fixture
-def mock_orchestrator():
+def mock_orchestrator() -> MagicMock:
     """Create a mock orchestrator for testing."""
     mock = MagicMock()
 
-    def run_query(query: str, *args, **kwargs) -> QueryResponse:
+    def run_query(query: str, *args: object, **kwargs: object) -> QueryResponse:
         """Return a QueryResponse echoing the provided query."""
         return QueryResponse(
             answer=query,
@@ -119,7 +121,9 @@ def test_api_config_crud() -> None:
 # Background steps
 @given("the API server is running")
 def api_server_running(
-    test_context: BehaviorContext, api_client, monkeypatch
+    test_context: BehaviorContext,
+    api_client: Any,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Set up a running API server for testing with permissive permissions."""
     cfg = ConfigModel(api=APIConfig())
@@ -130,7 +134,9 @@ def api_server_running(
 
 @given("the orchestrator is configured with test agents")
 def orchestrator_with_test_agents(
-    test_context: BehaviorContext, mock_orchestrator, monkeypatch
+    test_context: BehaviorContext,
+    mock_orchestrator: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Configure the orchestrator with test agents."""
     test_context["mock_orchestrator"] = mock_orchestrator
@@ -206,11 +212,11 @@ def response_includes_reasoning(test_context: BehaviorContext) -> None:
 # Scenario: API handles orchestrator errors gracefully
 @given("the orchestrator is configured to raise an error")
 def orchestrator_raises_error(
-    test_context: BehaviorContext, monkeypatch
+    test_context: BehaviorContext, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Configure the orchestrator to raise an error."""
 
-    def mock_run_query(*args, **kwargs):
+    def mock_run_query(*args: object, **kwargs: object) -> None:
         raise OrchestrationError("Test error")
 
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
@@ -249,7 +255,9 @@ def error_response_includes_message(test_context: BehaviorContext) -> None:
 
 @then("the error should be logged")
 def error_is_logged(
-    test_context: BehaviorContext, monkeypatch, caplog
+    test_context: BehaviorContext,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Verify that the error is logged."""
     # This is a bit tricky to test without modifying the code
@@ -272,12 +280,14 @@ def error_is_logged(
 def send_query_with_parameters(test_context: BehaviorContext) -> None:
     """Send a query with custom parameters to the API."""
     query = "Test query with parameters"
-    parameters: PayloadDict = {
-        "query": query,
-        "reasoning_mode": "dialectical",
-        "max_sources": 5,
-        "format": "markdown",
-    }
+    parameters = as_payload(
+        {
+            "query": query,
+            "reasoning_mode": "dialectical",
+            "max_sources": 5,
+            "format": "markdown",
+        }
+    )
     response = test_context["client"].post("/query", json=parameters)
     test_context["query"] = query
     store_payload(test_context, "parameters", parameters)
@@ -363,7 +373,7 @@ def responses_match_queries(test_context: BehaviorContext) -> None:
 )
 def send_batch_query(test_context: BehaviorContext, page: int, size: int) -> None:
     """Send a batch query to the API with pagination."""
-    payload: PayloadDict = {"queries": [{"query": f"q{i}"} for i in range(1, 5)]}
+    payload = as_payload({"queries": [{"query": f"q{i}"} for i in range(1, 5)]})
     client = test_context["client"]
     response = client.post(f"/query/batch?page={page}&page_size={size}", json=payload)
     test_context["response"] = response

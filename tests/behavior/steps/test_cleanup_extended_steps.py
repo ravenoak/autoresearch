@@ -7,7 +7,7 @@ and handling cleanup errors.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 import os
 import tempfile
@@ -29,11 +29,11 @@ from tests.typing_helpers import TypedFixture
 
 # Fixtures
 @pytest.fixture
-def cleanup_extended_context() -> BehaviorContext:
+def cleanup_extended_context() -> TypedFixture[dict[str, Any]]:
     """Create a context for storing test state and tracking resources."""
 
     payload: CleanupExtendedPayload = build_cleanup_payload()
-    return cast(BehaviorContext, as_payload(payload))
+    return as_payload(payload)
 
 
 # Scenarios

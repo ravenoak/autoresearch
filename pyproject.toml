@@ -268,7 +268,11 @@ strict = true
 warn_unused_configs = true
 no_implicit_optional = true
 mypy_path = ["typings"]
-exclude = "(?x)(^tests/(?:analysis|benchmark|behavior/(?:archive|steps)|cli|data|evaluation|evidence|integration|performance|targeted|ui|unit)/)"
+exclude = "(?x)(^tests/(?:analysis|benchmark|behavior/(?:archive)|cli|data|evaluation|evidence|integration|performance|targeted|ui|unit)/)"
+
+[[tool.mypy.overrides]]
+module = ["tests.behavior.steps.*"]
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -300,6 +304,9 @@ module = [
     "tests.behavior.steps.orchestration_system_steps",
     "tests.behavior.steps.orchestrator_agents_integration_extended_steps",
     "tests.behavior.steps.orchestrator_agents_integration_steps",
+    "tests.behavior.steps.api_batch_query_steps",
+    "tests.behavior.steps.api_orchestrator_integration_steps",
+    "tests.behavior.steps.test_cleanup_extended_steps",
     "tests.behavior.steps.parallel_group_merging_steps",
     "tests.behavior.steps.mcp_interface_steps",
     "tests.behavior.steps.reasoning_mode_api_steps",
