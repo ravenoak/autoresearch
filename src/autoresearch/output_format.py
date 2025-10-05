@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import string
+import unicodedata
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
@@ -369,7 +370,9 @@ def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
     steps: List[str] = []
     for step in reasoning:
         if isinstance(step, str):
-            steps.append(step.strip())
+            if step == "":
+                continue
+            steps.append(step)
             continue
         if isinstance(step, Mapping):
             visibility = step.get("visibility")
@@ -377,8 +380,10 @@ def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
                 continue
             for key in ("hedged_content", "summary", "content", "text", "message"):
                 value = step.get(key)
-                if isinstance(value, str) and value.strip():
-                    steps.append(value.strip())
+                if isinstance(value, str):
+                    if value == "":
+                        continue
+                    steps.append(value)
                     break
             else:
                 steps.append(json.dumps(step, ensure_ascii=False))
@@ -404,17 +409,19 @@ def _generate_key_findings(response: QueryResponse) -> List[str]:
                 continue
             for key in ("hedged_content", "summary", "content", "text", "message"):
                 value = step.get(key)
-                if isinstance(value, str) and value.strip():
-                    findings.append(value.strip())
+                if isinstance(value, str):
+                    if value == "":
+                        continue
+                    findings.append(value)
                     break
             continue
-        if isinstance(step, str) and step.strip():
-            findings.append(step.strip())
+        if isinstance(step, str) and step != "":
+            findings.append(step)
     if not findings:
         answer_lines = [
-            line.strip()
+            line
             for line in response.answer.splitlines()
-            if line.strip()
+            if line
             and not line.lstrip().startswith("⚠️")
             and "unsupported claims remain" not in line.lower()
             and "needs review" not in line.lower()
@@ -518,7 +525,7 @@ def build_depth_payload(
         tldr = ""
         notes["tldr"] = _hidden_message("tldr", plan)
 
-    answer = response.answer.strip()
+    answer = response.answer
 
     if plan.include_key_findings:
         findings_all = _generate_key_findings(response)
@@ -870,19 +877,92 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
+_BLOCK_WHITESPACE = {"\n", "\r", "\t"}
+
+
+def _escape_markdown_text(value: str) -> tuple[str, bool]:
+    """Escape control characters for safe Markdown rendering."""
+
+    sanitized_chars: list[str] = []
+    needs_block = False
+    for char in value:
+        if char in _BLOCK_WHITESPACE:
+            sanitized_chars.append(char)
+            continue
+        code_point = ord(char)
+        category = unicodedata.category(char)
+        if category in {"Cc", "Cf"} or code_point == 0x7F:
+            sanitized_chars.append(f"\\u{code_point:04x}")
+            needs_block = True
+        else:
+            sanitized_chars.append(char)
+    sanitized = "".join(sanitized_chars)
+    if sanitized and not sanitized.strip():
+        sanitized = "".join(f"\\u{ord(char):04x}" for char in value)
+        needs_block = True
+    return sanitized, needs_block
+
+
+def _prepare_markdown_text(
+    value: Any, *, block_multiline: bool = False
+) -> tuple[str, bool, bool]:
+    """Return sanitized text, block flag, and placeholder marker."""
+
+    if value is None:
+        return "—", False, True
+    text = str(value)
+    if text == "":
+        return "—", False, True
+    sanitized, needs_block = _escape_markdown_text(text)
+    if block_multiline and any(ch in text for ch in ("\n", "\r", "\t")):
+        needs_block = True
+    if sanitized == "":
+        return "—", needs_block, True
+    return sanitized, needs_block, False
+
+
+def _markdown_value_lines(value: Any) -> list[str]:
+    """Return Markdown lines for a single value with sanitisation."""
+
+    sanitized, needs_block, is_placeholder = _prepare_markdown_text(value)
+    if needs_block:
+        return ["```text", sanitized, "```"]
+    if is_placeholder:
+        return ["—"]
+    return [sanitized]
+
+
 def _format_list_markdown(items: Iterable[Any]) -> str:
     """Render a sequence as a markdown list."""
 
-    values = [str(item) for item in items if str(item).strip()]
-    if not values:
-        return ""
-    return "\n".join(f"- {value}" for value in values)
+    lines: list[str] = []
+    for item in items:
+        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
+            item, block_multiline=True
+        )
+        if is_placeholder:
+            continue
+        if needs_block:
+            lines.append("- ```text")
+            for line in sanitized.splitlines():
+                lines.append(f"  {line}" if line else "  ")
+            lines.append("  ```")
+        else:
+            lines.append(f"- {sanitized}")
+    return "\n".join(lines)
 
 
 def _format_list_plain(items: Iterable[Any]) -> str:
     """Render a sequence as plain text bullets."""
 
-    values = [str(item) for item in items if str(item).strip()]
+    values: list[str] = []
+    for item in items:
+        if item is None:
+            continue
+        text = str(item)
+        if text == "":
+            continue
+        values.append(text)
     if not values:
         return ""
     return "\n".join(f"- {value}" for value in values)
@@ -903,8 +983,21 @@ def _format_citations_plain(citations: Iterable[Any]) -> str:
 def _format_reasoning_markdown(reasoning: Iterable[str]) -> str:
     """Format reasoning trace for markdown output."""
 
-    values = [f"{idx + 1}. {step}" for idx, step in enumerate(reasoning)]
-    return "\n".join(values)
+    lines: list[str] = []
+    for idx, step in enumerate(reasoning, start=1):
+        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
+            step, block_multiline=True
+        )
+        if is_placeholder:
+            continue
+        if needs_block:
+            lines.append(f"{idx}. ```text")
+            for line in sanitized.splitlines():
+                lines.append(f"   {line}" if line else "   ")
+            lines.append("   ```")
+        else:
+            lines.append(f"{idx}. {sanitized}")
+    return "\n".join(lines)
 
 
 def _format_reasoning_plain(reasoning: Iterable[str]) -> str:
@@ -919,7 +1012,22 @@ def _format_metrics_markdown(metrics: Mapping[str, Any]) -> str:
 
     if not metrics:
         return ""
-    return "\n".join(f"- **{key}**: {value}" for key, value in metrics.items())
+    lines: list[str] = []
+    for key, value in metrics.items():
+        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
+            value, block_multiline=True
+        )
+        label = str(key)
+        if needs_block:
+            lines.append(f"- **{label}**:")
+            lines.append("  ```text")
+            for line in sanitized.splitlines():
+                lines.append(f"  {line}" if line else "  ")
+            lines.append("  ```")
+        else:
+            display = "—" if is_placeholder else sanitized
+            lines.append(f"- **{label}**: {display}")
+    return "\n".join(lines)
 
 
 def _format_metrics_plain(metrics: Mapping[str, Any]) -> str:
@@ -965,7 +1073,12 @@ def _format_knowledge_graph_markdown(summary: Optional[Mapping[str, Any]]) -> st
                 predicate = item.get("predicate")
                 objects = item.get("objects")
                 if subject and predicate and isinstance(objects, Iterable):
-                    obj_values = [str(obj) for obj in objects if str(obj).strip()]
+                    obj_values: list[str] = []
+                    for obj in objects:
+                        text = str(obj)
+                        if text == "":
+                            continue
+                        obj_values.append(text)
                     joined = ", ".join(obj_values) if obj_values else "—"
                     lines.append(f"- {subject} — {predicate} → {joined}")
                 else:
@@ -984,7 +1097,12 @@ def _format_knowledge_graph_markdown(summary: Optional[Mapping[str, Any]]) -> st
         lines.append("**Multi-hop paths**")
         for path in path_values:
             if isinstance(path, Iterable) and not isinstance(path, (str, bytes)):
-                labels = [str(node) for node in path if str(node).strip()]
+                labels: list[str] = []
+                for node in path:
+                    text = str(node)
+                    if text == "":
+                        continue
+                    labels.append(text)
                 lines.append(f"- {' → '.join(labels) if labels else '—'}")
             else:
                 lines.append(f"- {path}")
@@ -1027,7 +1145,12 @@ def _format_knowledge_graph_plain(summary: Optional[Mapping[str, Any]]) -> str:
                 predicate = item.get("predicate")
                 objects = item.get("objects")
                 if subject and predicate and isinstance(objects, Iterable):
-                    obj_values = [str(obj) for obj in objects if str(obj).strip()]
+                    obj_values: list[str] = []
+                    for obj in objects:
+                        text = str(obj)
+                        if text == "":
+                            continue
+                        obj_values.append(text)
                     joined = ", ".join(obj_values) if obj_values else "—"
                     lines.append(f"- {subject} — {predicate} -> {joined}")
                 else:
@@ -1243,11 +1366,14 @@ def _format_react_traces_plain(traces: Iterable[Mapping[str, Any]]) -> str:
 def _render_markdown(payload: DepthPayload) -> str:
     """Render the payload as markdown text."""
 
-    parts: list[str] = ["# TL;DR", payload.tldr or "—"]
+    parts: list[str] = ["# TL;DR"]
+    parts.extend(_markdown_value_lines(payload.tldr))
     if note := payload.notes.get("tldr"):
         parts.append(f"> {note}")
 
-    parts.extend(["", "## Answer", payload.answer or "—"])
+    parts.append("")
+    parts.append("## Answer")
+    parts.extend(_markdown_value_lines(payload.answer))
 
     parts.append("")
     parts.append("## Key Findings")
@@ -1331,12 +1457,15 @@ def _render_markdown(payload: DepthPayload) -> str:
 
     parts.append("")
     parts.append("## Depth")
-    parts.append(payload.depth.label)
+    parts.extend(_markdown_value_lines(payload.depth.label))
 
     parts.append("")
     parts.append("## Raw Response")
     if payload.raw_response is not None:
-        parts.append(json.dumps(payload.raw_response, indent=2, ensure_ascii=False))
+        raw_json = json.dumps(payload.raw_response, indent=2, ensure_ascii=False)
+        parts.append("```json")
+        parts.append(raw_json)
+        parts.append("```")
     if note := payload.notes.get("raw_response"):
         parts.append(f"> {note}")
 
@@ -1479,6 +1608,11 @@ def _render_json(payload: DepthPayload) -> str:
 def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
     """Build template variables from a depth payload."""
 
+    tldr_lines = _markdown_value_lines(payload.tldr)
+    answer_lines = _markdown_value_lines(payload.answer)
+    tldr_markdown = "\n".join(tldr_lines)
+    answer_markdown = "\n".join(answer_lines)
+
     key_markdown = _format_list_markdown(payload.key_findings)
     key_plain = _format_list_plain(payload.key_findings)
     citations_markdown = _format_citations_markdown(payload.citations)
@@ -1537,9 +1671,13 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         graph_exports_section_plain = "\n".join(ge_lines_plain).strip()
 
     return {
-        "tldr": payload.tldr,
+        "tldr": tldr_markdown,
+        "tldr_markdown": tldr_markdown,
         "tldr_note": payload.notes.get("tldr", ""),
         "depth_label": payload.depth.label,
+        "answer": answer_markdown,
+        "answer_markdown": answer_markdown,
+        "answer_plain": payload.answer,
         "key_findings": key_markdown or payload.notes.get("key_findings", ""),
         "key_findings_markdown": key_markdown,
         "key_findings_plain": key_plain,

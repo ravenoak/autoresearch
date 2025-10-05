@@ -19,6 +19,16 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 5, 2025
+- `OutputFormatter` now wraps control characters, zero-width spaces, and
+  whitespace-only strings in fenced Markdown blocks while leaving JSON payloads
+  byte-for-byte intact; the expanded Hypothesis strategy exercises these edge
+  cases and passes under `uv run --extra test pytest
+  tests/unit/test_output_formatter_property.py`.
+  【F:src/autoresearch/output_format.py†L880-L1469】【F:tests/unit/test_output_formatter_property.py†L21-L146】【b982c8†L1-L5】
+- Behaviour coverage gained a "Markdown escapes control characters" scenario
+  that formats a stub response with control bytes and asserts the CLI emits
+  `\uXXXX` escapes inside fenced blocks, ensuring terminal viewers never drop
+  hidden payloads.【F:tests/behavior/features/output_formatting.feature†L25-L27】【F:tests/behavior/steps/output_formatting_steps.py†L89-L156】
 - Introduced the shared `hash_cache_dimensions` fingerprint with a `v3:` primary
   cache key while keeping `v2` and legacy aliases, updated documentation for the
   contract, and extended the property-based cache suite to cover sequential

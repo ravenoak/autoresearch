@@ -1,7 +1,10 @@
 # flake8: noqa
-from tests.behavior.context import BehaviorContext
 import json
-from pytest_bdd import scenario, when, then, parsers
+
+from autoresearch.models import QueryResponse
+from autoresearch.output_format import OutputFormatter
+from tests.behavior.context import BehaviorContext
+from pytest_bdd import parsers, scenario, then, when
 
 from .common_steps import app_running, app_running_with_default, application_running, cli_app
 
@@ -83,6 +86,35 @@ def check_markdown_output_with_flag(bdd_context: BehaviorContext):
     assert result.stderr == ""
 
 
+@when("I format a response containing control characters as markdown")
+def format_response_with_control_characters(bdd_context: BehaviorContext):
+    answer = "Escaped\x01answer\u200b"
+    citations = ["Reference\x02", "   "]
+    reasoning = ["Reasoning\x03", "\u200bmarker"]
+    response = QueryResponse(
+        answer=answer,
+        citations=citations,
+        reasoning=reasoning,
+        metrics={},
+    )
+    markdown = OutputFormatter.render(response, "markdown")
+    bdd_context["control_markdown"] = markdown
+
+
+@then("the markdown output should fence escaped control sequences")
+def check_control_markdown(bdd_context: BehaviorContext):
+    markdown = bdd_context["control_markdown"]
+
+    assert markdown.count("```text") >= 3
+    for raw in ("\x01", "\x02", "\x03", "\u200b"):
+        assert raw not in markdown
+    for escaped in ("\\u0001", "\\u0002", "\\u0003", "\\u200b", "\\u0020\\u0020\\u0020"):
+        assert escaped in markdown
+
+    answer_section = markdown.split("## Answer", 1)[1]
+    assert "```text" in answer_section.split("##", 1)[0]
+
+
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output graph`'))
 def run_with_graph_flag(query, bdd_context: BehaviorContext, cli_runner):
     result = cli_runner.invoke(cli_app, ["search", query, "--output", "graph"])
@@ -114,6 +146,14 @@ def test_explicit_json_flag(bdd_context: BehaviorContext):
 @scenario("../features/output_formatting.feature", "Explicit Markdown flag")
 def test_explicit_markdown_flag(bdd_context: BehaviorContext):
     assert bdd_context["markdown_flag_result"].exit_code == 0
+
+
+@scenario(
+    "../features/output_formatting.feature",
+    "Markdown escapes control characters",
+)
+def test_markdown_control_characters(bdd_context: BehaviorContext):
+    assert "control_markdown" in bdd_context
 
 
 @scenario("../features/output_formatting.feature", "Graph output format")
