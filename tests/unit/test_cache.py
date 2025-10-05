@@ -3,8 +3,10 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 from threading import Thread  # for thread-safety test
+from types import MethodType
 from typing import Any, Dict, List
 
+import numpy as np
 import pytest
 
 if not importlib.util.find_spec("tinydb"):
@@ -13,6 +15,8 @@ if not importlib.util.find_spec("tinydb"):
 from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 
 def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[float]:
@@ -368,6 +372,239 @@ def test_cache_key_respects_embedding_flags(monkeypatch: pytest.MonkeyPatch) -> 
             "If embedding toggles share cache keys, how would we detect stale similarity mixes?"
         )
         assert result[0]["title"] == "embedding"
+
+
+@settings(max_examples=15, deadline=None)
+@given(
+    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    hybrid=st.booleans(),
+    semantic=st.booleans(),
+)
+def test_legacy_cache_entries_upgrade_on_hit(
+    query: str,
+    hybrid: bool,
+    semantic: bool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(
+        Search,
+        "get_sentence_transformer",
+        staticmethod(lambda: None),
+    )
+
+    calls: Dict[str, int] = {"count": 0}
+
+    def backend(text: str, max_results: int = 5) -> List[Dict[str, str]]:
+        calls["count"] += 1
+        return [{"title": "cached", "url": "https://cached"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"legacy": backend}
+
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["legacy"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+        cfg.search.hybrid_query = hybrid
+        cfg.search.use_semantic_similarity = semantic
+        cfg.search.embedding_backends = []
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+
+        cache_key = s._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=("external",),
+        )
+        s.cache.cache_results(
+            cache_key.legacy,
+            "legacy",
+            [{"title": "cached", "url": "https://cached"}],
+        )
+
+        results = s.external_lookup(query)
+        assert calls["count"] == 0, (
+            "If legacy cache entries fail to migrate, why would the backend stay idle on the first hit?"
+        )
+        assert results, "Without cached payloads, what documents justify skipping the backend entirely?"
+        assert results[0]["url"] == "https://cached"
+
+        upgraded = s.cache.get_cached_results(cache_key.primary, "legacy")
+        assert upgraded is not None, (
+            "When migration runs, shouldn't the hashed key inherit the legacy payload for future hits?"
+        )
+
+
+@settings(max_examples=20, deadline=None)
+@given(
+    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=16),
+    embedding_backends=st.lists(
+        st.sampled_from(["duckdb", "faiss", "azure"]),
+        unique=True,
+        max_size=2,
+    ),
+)
+def test_cache_key_primary_reflects_hybrid_flags(
+    query: str,
+    embedding_backends: List[str],
+) -> None:
+    search = Search()
+
+    base_backends = tuple(embedding_backends)
+
+    key_a = search._build_cache_key(
+        backend="dummy",
+        query=query,
+        embedding_backends=base_backends,
+        hybrid_query=True,
+        use_semantic_similarity=False,
+        query_embedding=None,
+        storage_hints=("external",),
+    )
+    key_b = search._build_cache_key(
+        backend="dummy",
+        query=query,
+        embedding_backends=base_backends,
+        hybrid_query=False,
+        use_semantic_similarity=False,
+        query_embedding=None,
+        storage_hints=("external",),
+    )
+    key_c = search._build_cache_key(
+        backend="dummy",
+        query=query,
+        embedding_backends=base_backends,
+        hybrid_query=False,
+        use_semantic_similarity=True,
+        query_embedding=None,
+        storage_hints=("external",),
+    )
+
+    assert key_a.primary != key_b.primary, (
+        "If hybrid toggles left the hash untouched, how would the cache distinguish hybrid reranks?"
+    )
+    assert key_b.primary != key_c.primary, (
+        "When semantic similarity flips, shouldn't the cache key reflect the new retrieval plan?"
+    )
+
+
+@settings(max_examples=20, deadline=None)
+@given(
+    vector_seed=st.booleans(),
+    storage_sources=st.lists(
+        st.sampled_from(["vector", "ontology", "bm25"]),
+        unique=True,
+        max_size=2,
+    ),
+)
+def test_interleaved_storage_paths_share_cache(
+    vector_seed: bool,
+    storage_sources: List[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(Search, "compute_query_embedding", lambda self, _: np.array([0.1, 0.2]))
+    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: object()))
+
+    calls: Dict[str, int] = {"backend": 0, "duckdb": 0}
+
+    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        calls["backend"] += 1
+        return [{"title": "primary", "url": "https://primary"}]
+
+    def duckdb_backend(embedding: np.ndarray, max_results: int = 5) -> List[Dict[str, str]]:
+        del embedding, max_results
+        calls["duckdb"] += 1
+        return [{"title": "duckdb", "url": "https://duckdb"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"primary": backend}
+        s.embedding_backends = {"duckdb": duckdb_backend}
+
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["primary"]
+        cfg.search.context_aware.enabled = False
+        cfg.search.query_rewrite.enabled = False
+        cfg.search.adaptive_k.enabled = False
+        cfg.search.hybrid_query = False
+        cfg.search.use_semantic_similarity = False
+        cfg.search.embedding_backends = ["duckdb"]
+
+        def _get_config() -> ConfigModel:
+            return cfg
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
+        monkeypatch.setattr(
+            "autoresearch.search.core.StorageManager.has_vss",
+            staticmethod(lambda: vector_seed),
+        )
+
+        def fake_storage(
+            self: Search,
+            query: str,
+            query_embedding: np.ndarray | None,
+            backend_results: Dict[str, List[Dict[str, Any]]],
+            max_results: int,
+        ) -> Dict[str, List[Dict[str, Any]]]:
+            del self, query_embedding, backend_results, max_results
+            docs: List[Dict[str, Any]] = []
+            if vector_seed:
+                docs.append(
+                    {
+                        "url": "urn:vector",
+                        "title": "VectorDoc",
+                        "storage_sources": ["vector"],
+                    }
+                )
+            for source in storage_sources:
+                if source == "vector" and not vector_seed:
+                    continue
+                docs.append(
+                    {
+                        "url": f"urn:{source}",
+                        "title": f"{source.title()}Doc",
+                        "storage_sources": [source],
+                    }
+                )
+            return {"storage": docs}
+
+        s.storage_hybrid_lookup = MethodType(fake_storage, s)
+
+        first = s.external_lookup("topic")
+        second = s.external_lookup("topic")
+
+        assert calls["backend"] == 1, (
+            "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
+        )
+        assert calls["duckdb"] == 1, (
+            "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
+        )
+        assert second == first, (
+            "Without stable cache keys, how could sequential storage blends return identical payloads?"
+        )
 
 
 def test_context_aware_query_expansion_uses_cache(
