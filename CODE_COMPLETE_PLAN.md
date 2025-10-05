@@ -53,6 +53,8 @@ paused pending lint and search instrumentation fixes.
   docstrings so planner metadata and documentation hygiene suites pass.
 - [ ] Ship **PR-H** – supply environment metadata fixtures and telemetry
   guards for the `check_env_warnings` and `formattemplate_metrics` tests.
+- [ ] Ship **PR-R0** – hydrate AUTO mode scout samples with serialisable claim
+  snapshots so early exits expose structured telemetry again.【349e1c†L1-L64】
 - [ ] Ship **PR-I** – rerun `task coverage` after PR-A through PR-H land and
   update release documentation with the new evidence.
 - [ ] Ship **PR-J** – add AUTO mode telemetry once the suite is green.

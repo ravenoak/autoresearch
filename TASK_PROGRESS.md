@@ -1,3 +1,13 @@
+As of **2025-10-05 at 16:05 UTC** the strict gate remains green and the highest
+impact regressions are narrowed to AUTO mode claim hydration and cache fixture
+hygiene. `uv run mypy --strict src tests` reports “Success: no issues found in
+205 source files”, and targeted pytest runs reproduce the AUTO mode failure and
+the Hypothesis health-check error without incurring the rest of the test-suite
+noise.【daf290†L1-L2】【349e1c†L1-L64】【bebacc†L5-L21】【c59d05†L1-L7】 The updated
+preflight plan now breaks the follow-up work into six small PRs, adding
+**PR-R0** for claim hydration and folding the fixture refactor into
+**PR-S2**.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
+
 As of **2025-10-05 at 15:43 UTC** reasoning payloads normalise into mappings,
 parallel orchestration converts stabilised claims back to dictionaries for the
 state, and strict typing now passes under `uv run mypy --strict src tests`.
