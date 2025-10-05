@@ -16,7 +16,10 @@ Empirical throughput across worker counts:
 
 These ranges show near-linear scaling up to two workers with diminishing
 returns beyond that. Tests check for an improvement factor controlled by the
-``SCHEDULER_SCALE_THRESHOLD`` environment variable, defaulting to 1.9.
+``SCHEDULER_SCALE_THRESHOLD`` environment variable. The default threshold
+derives from the repository baseline (two-worker throughput is roughly
+1.98× the single-worker rate) and uses 90 % of that ratio to account for
+environment noise.
 
 Profiling uncovered a list rotation routine in `execution._rotate_list` that
 allocated multiple intermediate lists. The implementation now uses
@@ -38,4 +41,7 @@ Running the new profiler option illustrates throughput scaling:
 - Adjust ``mem_per_task`` to model memory pressure; combine with profiling to
   observe how allocation affects scheduler efficiency.
 - Set ``SCHEDULER_BASELINE_OPS`` to calibrate expected single-worker throughput.
-- Adjust ``SCHEDULER_SCALE_THRESHOLD`` to define required scaling for tests.
+- Adjust ``SCHEDULER_SCALE_THRESHOLD`` if hardware deviates substantially
+  from the recorded baseline. Unit tests read ``baseline/evaluation``
+  fixtures to derive both the throughput ratio and the 25 MiB memory
+  budget enforced during regression checks.

@@ -9,7 +9,11 @@ from typing import Any, Dict, List, Mapping, Sequence, Tuple, cast
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
-from .reasoning_payloads import normalize_reasoning_step, stabilize_reasoning_order
+from .reasoning_payloads import (
+    FrozenReasoningStep,
+    normalize_reasoning_step,
+    stabilize_reasoning_order,
+)
 from .state import QueryState
 from ..agents.registry import AgentFactory
 from ..errors import AgentError, OrchestrationError, TimeoutError
@@ -66,6 +70,20 @@ def execute_parallel_query(
     # Normalise the incoming groups so downstream logic can freely mutate or
     # index into them without mutating caller-owned containers such as tuples.
     group_list: List[List[str]] = [list(group) for group in agent_groups]
+
+    def deduplicate_reasoning(steps: Sequence[Any]) -> list[FrozenReasoningStep]:
+        ordered = stabilize_reasoning_order(steps)
+        unique: list[FrozenReasoningStep] = []
+        seen: set[FrozenReasoningStep] = set()
+        for step in ordered:
+            normalized = (
+                step if isinstance(step, FrozenReasoningStep) else normalize_reasoning_step(step)
+            )
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            unique.append(normalized)
+        return unique
 
     cpu_count = os.cpu_count() or 4
     max_workers = min(len(group_list), max(1, cpu_count - 1))
@@ -173,12 +191,16 @@ def execute_parallel_query(
     for group, result in results:
         confidence = _calculate_result_confidence(result)
         raw_claims = result.reasoning
-        claims: list[Any] = []
+        normalized_claims: set[FrozenReasoningStep] = set()
         if isinstance(raw_claims, Sequence) and not isinstance(raw_claims, (str, bytes)):
             for entry in raw_claims:
-                claims.append(normalize_reasoning_step(entry))
+                normalized_claims.add(normalize_reasoning_step(entry))
         elif raw_claims is not None:
-            claims.append(normalize_reasoning_step(raw_claims))
+            normalized_claims.add(normalize_reasoning_step(raw_claims))
+
+        claims: tuple[FrozenReasoningStep, ...] = tuple(
+            sorted(normalized_claims, key=lambda step: step.sort_key)
+        )
         result_dict = {
             "claims": claims,
             "sources": result.citations,
@@ -219,8 +241,8 @@ def execute_parallel_query(
         }
         final_state.update(err_info)
 
-    ordered_claims = stabilize_reasoning_order(final_state.claims)
-    final_state.claims = cast(List[Mapping[str, Any]], list(ordered_claims))
+    deduped_claims = deduplicate_reasoning(final_state.claims)
+    final_state.claims = cast(List[Mapping[str, Any]], list(deduped_claims))
 
     synthesizer = AgentFactory.get("Synthesizer")
     aggregation_context = {
@@ -236,7 +258,7 @@ def execute_parallel_query(
     final_state.update(final_result)
 
     response = final_state.synthesize()
-    response.reasoning = stabilize_reasoning_order(response.reasoning)
+    response.reasoning = deduplicate_reasoning(response.reasoning)
     if "answer" in final_result and final_result["answer"]:
         response.answer = final_result["answer"]
 

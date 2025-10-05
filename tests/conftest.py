@@ -44,6 +44,7 @@ pytest_plugins = [
     "tests.fixtures.extras",
     "tests.fixtures.parsers",
     "tests.fixtures.diagnostics",
+    "tests.fixtures.performance",
     "pytest_httpx",
 ]
 
