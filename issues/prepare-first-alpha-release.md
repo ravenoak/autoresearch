@@ -1,6 +1,11 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 5, 2025 at 15:43 UTC** reasoning payloads and orchestration
+helpers now normalise claims into concrete dictionaries before tests consume
+them, and `uv run mypy --strict src tests` logs a clean pass for the alpha
+branch.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L208】【F:src/autoresearch/orchestration/parallel.py†L200-L232】【F:baseline/logs/mypy-strict-20251005T154340Z.log†L1-L2】
+
 As of **October 4, 2025 at 21:04 UTC** the strict typing gate remains green:
 `uv run mypy --strict src tests` reports “Success: no issues found in 790
 source files”, so the alpha push can continue to rely on strict mode while we

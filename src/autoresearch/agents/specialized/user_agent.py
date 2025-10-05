@@ -136,7 +136,8 @@ class UserAgent(Agent):
         """Get the most recent claims from the state, up to a limit."""
         # Get the most recent 5 claims, or all if fewer than 5
         max_claims = 5
-        return state.claims[-max_claims:] if len(state.claims) > max_claims else state.claims
+        selected = state.claims[-max_claims:] if len(state.claims) > max_claims else state.claims
+        return [dict(claim) for claim in selected]
 
     def _extract_current_results(self, state: QueryState) -> Dict[str, Any]:
         """Extract current results from the state."""

@@ -126,7 +126,8 @@ class ModeratorAgent(Agent):
         """Get the most recent claims from the state, up to a limit."""
         # Get the most recent 10 claims, or all if fewer than 10
         max_claims = 10
-        return state.claims[-max_claims:] if len(state.claims) > max_claims else state.claims
+        selected = state.claims[-max_claims:] if len(state.claims) > max_claims else state.claims
+        return [dict(claim) for claim in selected]
 
     def _identify_conflicts(self, claims: List[Dict[str, Any]]) -> List[str]:
         """Identify potential conflicts or disagreements between claims."""

@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Sequence, Tuple, cast
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
@@ -219,7 +219,8 @@ def execute_parallel_query(
         }
         final_state.update(err_info)
 
-    final_state.claims = stabilize_reasoning_order(final_state.claims)
+    ordered_claims = stabilize_reasoning_order(final_state.claims)
+    final_state.claims = cast(List[Mapping[str, Any]], list(ordered_claims))
 
     synthesizer = AgentFactory.get("Synthesizer")
     aggregation_context = {

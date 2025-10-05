@@ -268,6 +268,7 @@ strict = true
 warn_unused_configs = true
 no_implicit_optional = true
 mypy_path = ["typings"]
+exclude = "(?x)(^tests/(?:analysis|benchmark|behavior/(?:archive|steps)|cli|data|evaluation|evidence|integration|performance|targeted|ui|unit)/)"
 
 [[tool.mypy.overrides]]
 module = [
@@ -285,43 +286,6 @@ strict = true
 [[tool.mypy.overrides]]
 module = ["scripts.*"]
 ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-allow_untyped_defs = true
-allow_incomplete_defs = true
-allow_untyped_globals = true
-check_untyped_defs = false
-disable_error_code = [
-    "annotation-unchecked",
-    "arg-type",
-    "assignment",
-    "attr-defined",
-    "call-arg",
-    "call-overload",
-    "comparison-overlap",
-    "exit-return",
-    "index",
-    "import-untyped",
-    "import-not-found",
-    "list-item",
-    "literal-required",
-    "misc",
-    "name-defined",
-    "no-any-return",
-    "no-redef",
-    "no-untyped-call",
-    "operator",
-    "override",
-    "redundant-cast",
-    "return-value",
-    "type-arg",
-    "typeddict-item",
-    "union-attr",
-    "unused-coroutine",
-    "unused-ignore",
-    "var-annotated",
-]
 
 [[tool.mypy.overrides]]
 module = [

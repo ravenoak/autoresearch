@@ -684,14 +684,16 @@ def build_depth_payload(
             tldr_note = notes.get("tldr")
             notes["tldr"] = f"{tldr_note} {caution}".strip() if tldr_note else caution
     elif needs_review_warning is not None or needs_review_ids_fallback:
-        entry = needs_review_warning
+        warning_entry = needs_review_warning
         needs_review_ids = (
-            _warning_claim_ids(entry) if entry is not None else needs_review_ids_fallback
+            _warning_claim_ids(warning_entry)
+            if warning_entry is not None
+            else needs_review_ids_fallback
         )
         if not needs_review_ids:
             needs_review_ids = needs_review_ids_fallback
         if needs_review_ids:
-            labels = _warning_labels(entry or {}, needs_review_ids)
+            labels = _warning_labels(warning_entry or {}, needs_review_ids)
             review_note = "Some claims still require review: " + ", ".join(labels)
             key_note = notes.get("key_findings")
             notes["key_findings"] = (
