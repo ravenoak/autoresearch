@@ -140,6 +140,18 @@ uv run mypy --strict tests/behavior
 # if you need quicker iterations.
 ```
 
+Install the repository's pre-commit hooks to execute the focused flake8 rule
+set (`F401`, `F402`, `F811`, `W291`, `W293`, `W391`) before every commit:
+
+```bash
+pre-commit install
+pre-commit run --all-files flake8-lint
+```
+
+The lint hook aligns with `tests/integration/test_lint_regressions.py`, which
+fails if unused imports or stray whitespace return to `search/core`, behavior
+fixtures, or the integration suite.
+
 ### Project-specific mypy baseline
 
 Before modifying the search stack or the tests that exercise it, capture the
