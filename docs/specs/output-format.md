@@ -20,6 +20,10 @@ custom templates.
 
 - Runs in `O(n)` time relative to the length of formatted fields.
 - Order of sections is fixed and appears exactly once.
+- Any field containing control characters, zero-width spaces, or
+  whitespace-only text is rendered inside a fenced `text` block with
+  `\uXXXX` escapes so the payload cannot collapse or truncate in
+  Markdown viewers.
 - Output is deterministic and contains no ANSI escape sequences.
 
 ### JSON renderer
@@ -32,6 +36,9 @@ custom templates.
 
 - Runs in `O(n)` time where `n` is the serialized length.
 - Field order follows the pydantic model definition.
+- Strings are emitted verbatim (aside from JSON-required escaping) so
+  byte-for-byte payloads survive round-trips without trimming or
+  normalisation.
 - Output contains only UTF-8 text and no ANSI codes.
 
 ### Graph renderer
@@ -78,10 +85,13 @@ for unknown formats.
 ## Simulation Expectations
 
 BDD scenarios and unit tests exercise Markdown, JSON, and graph renderers.
-The tests assert deterministic strings and no side effects. On 2025-09-07,
-`pytest tests/unit/test_output_format.py` reported 21 passing tests, and
-the feature scenarios in `tests/behavior/features/output_formatting.feature`
-executed successfully in `task verify`.
+The refreshed property suite verifies that control characters, zero-width
+spaces, and whitespace-only strings survive JSON round-trips and render in
+Markdown as fenced blocks with `\uXXXX` escapes. The behaviour feature now
+asserts that the CLI surfaces the escaped blocks instead of truncating or
+silently dropping characters. On 2025-10-05, `pytest
+tests/unit/test_output_formatter_property.py` and the updated behaviour
+scenario passed under `uv run --extra test pytest`.
 
 ## Traceability
 
@@ -90,8 +100,8 @@ executed successfully in `task verify`.
   - [src/autoresearch/output_format.py][m1]
 - Tests
   - [tests/behavior/features/output_formatting.feature][t1]
-  - [tests/unit/test_output_format.py][t2]
+  - [tests/unit/test_output_formatter_property.py][t2]
 
 [m1]: ../../src/autoresearch/output_format.py
 [t1]: ../../tests/behavior/features/output_formatting.feature
-[t2]: ../../tests/unit/test_output_format.py
+[t2]: ../../tests/unit/test_output_formatter_property.py

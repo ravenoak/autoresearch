@@ -272,6 +272,12 @@ CLI output uses Markdown headings and plain-text lists so screen readers can
 navigate sections. Help messages avoid color-only cues and respect the
 `NO_COLOR` environment variable for ANSI-free output.
 
+Markdown answers fence any control characters or zero-width spaces inside
+`text` code blocks and replace them with `\uXXXX` escapes so assistive
+technology never drops hidden payloads. JSON output keeps the original
+strings intact—aside from JSON-required escaping—so integrations can round-trip
+byte-for-byte payloads without rehydrating sanitised values.
+
 ## Depth-aware output and provenance
 
 The `search` command exposes a `--depth` option that controls how much detail

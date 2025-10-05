@@ -22,6 +22,10 @@ Feature: Adaptive Output Formatting
     When I run `autoresearch search "Test formatting" --output markdown`
     Then the output should be Markdown-formatted as in TTY mode
 
+  Scenario: Markdown escapes control characters
+    When I format a response containing control characters as markdown
+    Then the markdown output should fence escaped control sequences
+
   Scenario: Graph output format
     When I run `autoresearch search "Test formatting" --output graph`
     Then the output should include "Knowledge Graph"
