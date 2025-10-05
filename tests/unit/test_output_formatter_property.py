@@ -5,9 +5,8 @@ See `docs/specification.md` and
 """
 
 import json
-import unicodedata
-
-from hypothesis import HealthCheck, given, settings, strategies as st
+import re
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.strategies import SearchStrategy
 
 from autoresearch.output_format import OutputFormatter
@@ -16,6 +15,7 @@ from autoresearch.models import QueryResponse
 
 _CONTROL_CODEPOINTS = [*range(0x00, 0x20), 0x7F]
 _FORMAT_CODEPOINTS = [0x200B, 0xFEFF]
+_ESCAPE_PATTERN = re.compile("\\\\u([0-9a-fA-F]{4})")
 
 
 def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
@@ -31,6 +31,12 @@ def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
     mixed_alphabet = st.one_of(printable, control_chars, format_chars)
 
     general_text = st.text(alphabet=mixed_alphabet, min_size=min_size, max_size=max_size)
+
+    control_dense = st.lists(
+        st.sampled_from([chr(cp) for cp in _CONTROL_CODEPOINTS]),
+        min_size=1,
+        max_size=max_size,
+    ).map("".join)
 
     whitespace_pool = [
         " " * n for n in range(1, 5)
@@ -48,32 +54,122 @@ def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
             suffix,
         )
 
-    return st.one_of(general_text, whitespace_only, _with_required_control())
+    return st.one_of(general_text, whitespace_only, _with_required_control(), control_dense)
 
 
-def _escape_for_markdown(value: str, *, block_multiline: bool = False) -> tuple[str, bool]:
-    """Mirror the formatter's sanitisation contract for assertions."""
+def _decode_sanitized(text: str) -> str:
+    """Convert ``\\u`` escape sequences back to their original characters."""
 
-    sanitized_chars: list[str] = []
-    needs_block = False
-    for char in value:
-        if char in {"\n", "\r", "\t"}:
-            sanitized_chars.append(char)
+    return _ESCAPE_PATTERN.sub(lambda match: chr(int(match.group(1), 16)), text)
+
+
+def _strip_indent_preserving(text: str, indent: str) -> str:
+    """Remove ``indent`` prefixes from each line while keeping newlines intact."""
+
+    if not indent:
+        return text
+    lines = text.splitlines(keepends=True)
+    if not lines:
+        return ""
+    return "".join(line[len(indent) :] if line.startswith(indent) else line for line in lines)
+
+
+def _extract_block(section: str, indent: str = "") -> str:
+    """Return the raw contents of a fenced code block."""
+
+    marker = "```text"
+    start = section.find(marker)
+    if start == -1:
+        return ""
+    start = section.find("\n", start)
+    if start == -1:
+        return ""
+    start += 1
+    closing = f"\n{indent}```"
+    end = section.find(closing, start)
+    if end == -1:
+        end = len(section)
+    body = section[start:end]
+    return _strip_indent_preserving(body, indent)
+
+
+def _decode_value(section: str) -> str:
+    """Decode a scalar value section back to its original text."""
+
+    block = _extract_block(section)
+    if block:
+        return _decode_sanitized(block)
+    text = section
+    if text.startswith("\n"):
+        text = text[1:]
+    text = text.rstrip("\n")
+    return _decode_sanitized(text)
+
+
+def _decode_bullets(section: str) -> list[str]:
+    """Decode a Markdown bullet list back to the original sequence."""
+
+    lines = section.splitlines(keepends=True)
+    items: list[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if not line.strip():
+            idx += 1
             continue
-        code_point = ord(char)
-        category = unicodedata.category(char)
-        if category in {"Cc", "Cf"} or code_point == 0x7F:
-            sanitized_chars.append(f"\\u{code_point:04x}")
-            needs_block = True
-        else:
-            sanitized_chars.append(char)
-    sanitized = "".join(sanitized_chars)
-    if sanitized and not sanitized.strip():
-        sanitized = "".join(f"\\u{ord(char):04x}" for char in value)
-        needs_block = True
-    if block_multiline and any(char in value for char in "\n\r\t"):
-        needs_block = True
-    return sanitized or "—", needs_block
+        if line.startswith("- ```text"):
+            idx += 1
+            block_lines: list[str] = []
+            while idx < len(lines) and not lines[idx].startswith("  ```"):
+                block_lines.append(lines[idx])
+                idx += 1
+            body = _strip_indent_preserving("".join(block_lines), "  ")
+            if body.endswith("\n"):
+                body = body[:-1]
+            if idx < len(lines) and lines[idx].startswith("  ```"):
+                idx += 1
+            items.append(_decode_sanitized(body))
+            continue
+        if line.startswith("- "):
+            content = line[2:]
+            if content.endswith("\n"):
+                content = content[:-1]
+            items.append(_decode_sanitized(content))
+        idx += 1
+    return items
+
+
+def _decode_numbered(section: str) -> list[str]:
+    """Decode a numbered Markdown list back to the original sequence."""
+
+    lines = section.splitlines(keepends=True)
+    items: list[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if not line.strip():
+            idx += 1
+            continue
+        if ". ```text" in line:
+            idx += 1
+            block_lines: list[str] = []
+            while idx < len(lines) and not lines[idx].startswith("   ```"):
+                block_lines.append(lines[idx])
+                idx += 1
+            body = _strip_indent_preserving("".join(block_lines), "   ")
+            if body.endswith("\n"):
+                body = body[:-1]
+            if idx < len(lines) and lines[idx].startswith("   ```"):
+                idx += 1
+            items.append(_decode_sanitized(body))
+            continue
+        if ". " in line:
+            content = line.split(". ", 1)[1]
+            if content.endswith("\n"):
+                content = content[:-1]
+            items.append(_decode_sanitized(content))
+        idx += 1
+    return items
 
 
 def _section(markdown: str, header: str) -> str:
@@ -93,19 +189,17 @@ def _section(markdown: str, header: str) -> str:
     return markdown[start:next_header]
 
 
-def _bullet_block(sanitized: str) -> str:
-    lines = sanitized.splitlines() or [""]
-    indented = "\n".join(f"  {line}" if line else "  " for line in lines)
-    return f"- ```text\n{indented}\n  ```"
-
-
-def _numbered_block(index: int, sanitized: str) -> str:
-    lines = sanitized.splitlines() or [""]
-    indented = "\n".join(f"   {line}" if line else "   " for line in lines)
-    return f"{index}. ```text\n{indented}\n   ```"
-
-
 @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
+@example(
+    answer="\u0000core\r\n",
+    citations=["\talpha", "beta\u0002"],
+    reasoning=["lead\ntrail", "\u0007"],
+)
+@example(
+    answer="\u2028split",
+    citations=["only\r", "\u200b"],
+    reasoning=["\u000bbranch"],
+)
 @given(
     answer=_edge_text(),
     citations=st.lists(_edge_text(max_size=15), min_size=1, max_size=3),
@@ -122,25 +216,10 @@ def test_output_formatter_json_markdown(answer, citations, reasoning, capsys):
     OutputFormatter.format(resp, "markdown")
     md = capsys.readouterr().out
     answer_section = _section(md, "Answer")
-    sanitized_answer, answer_block = _escape_for_markdown(answer)
-    assert sanitized_answer in answer_section
-    if answer_block:
-        assert "```text" in answer_section
+    assert _decode_value(answer_section) == answer
 
     citations_section = _section(md, "Citations")
-    for citation in citations:
-        sanitized_citation, citation_block = _escape_for_markdown(
-            citation, block_multiline=True
-        )
-        if citation_block:
-            assert _bullet_block(sanitized_citation) in citations_section
-        else:
-            assert f"- {sanitized_citation}" in citations_section
+    assert _decode_bullets(citations_section) == citations
 
     reasoning_section = _section(md, "Reasoning Trace")
-    for idx, step in enumerate(reasoning, start=1):
-        sanitized_step, step_block = _escape_for_markdown(step, block_multiline=True)
-        if step_block:
-            assert _numbered_block(idx, sanitized_step) in reasoning_section
-        else:
-            assert f"{idx}. {sanitized_step}" in reasoning_section
+    assert _decode_numbered(reasoning_section) == reasoning

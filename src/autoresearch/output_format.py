@@ -952,14 +952,40 @@ def _json_safe(value: Any) -> Any:
 _BLOCK_WHITESPACE = {"\n", "\r", "\t"}
 
 
+def _indent_block_lines(text: str, indent: str) -> str:
+    """Indent ``text`` for Markdown code blocks without losing control bytes."""
+
+    if text == "":
+        return indent
+    segments = text.splitlines(keepends=True)
+    if not segments:
+        segments = [""]
+    indented: list[str] = []
+    for segment in segments:
+        if segment:
+            indented.append(f"{indent}{segment}")
+        else:
+            indented.append(indent)
+    return "".join(indented)
+
+
 def _escape_markdown_text(value: str) -> tuple[str, bool]:
     """Escape control characters for safe Markdown rendering."""
 
     sanitized_chars: list[str] = []
     needs_block = False
     for char in value:
-        if char in _BLOCK_WHITESPACE:
+        if char == "\n":
             sanitized_chars.append(char)
+            needs_block = True
+            continue
+        if char == "\r":
+            sanitized_chars.append("\\u000d")
+            needs_block = True
+            continue
+        if char == "\t":
+            sanitized_chars.append("\\u0009")
+            needs_block = True
             continue
         code_point = ord(char)
         category = unicodedata.category(char)
@@ -1015,9 +1041,9 @@ def _format_list_markdown(items: Iterable[Any]) -> str:
         if is_placeholder:
             continue
         if needs_block:
+            block_body = _indent_block_lines(sanitized, "  ")
             lines.append("- ```text")
-            for line in sanitized.splitlines():
-                lines.append(f"  {line}" if line else "  ")
+            lines.append(block_body)
             lines.append("  ```")
         else:
             lines.append(f"- {sanitized}")
@@ -1063,9 +1089,9 @@ def _format_reasoning_markdown(reasoning: Iterable[str]) -> str:
         if is_placeholder:
             continue
         if needs_block:
+            block_body = _indent_block_lines(sanitized, "   ")
             lines.append(f"{idx}. ```text")
-            for line in sanitized.splitlines():
-                lines.append(f"   {line}" if line else "   ")
+            lines.append(block_body)
             lines.append("   ```")
         else:
             lines.append(f"{idx}. {sanitized}")
@@ -1092,9 +1118,9 @@ def _format_metrics_markdown(metrics: Mapping[str, Any]) -> str:
         label = str(key)
         if needs_block:
             lines.append(f"- **{label}**:")
+            block_body = _indent_block_lines(sanitized, "  ")
             lines.append("  ```text")
-            for line in sanitized.splitlines():
-                lines.append(f"  {line}" if line else "  ")
+            lines.append(block_body)
             lines.append("  ```")
         else:
             display = "—" if is_placeholder else sanitized
