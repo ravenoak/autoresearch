@@ -5,7 +5,7 @@ from __future__ import annotations
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from duckdb import DuckDBPyConnection
 
@@ -17,11 +17,17 @@ from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
 from autoresearch.evaluation.harness import RoutingStrategyComparison
 from autoresearch.evaluation.summary import RoutingMetrics
 from autoresearch.models import QueryResponse
+from tests.typing_helpers import TypedFixture
 from tests.unit.typing_helpers import build_summary_fixture
 
 
+class _RunnerProtocol(Protocol):
+    def __call__(self, query: str, config: ConfigModel) -> QueryResponse:
+        """Protocol describing orchestrator runner call signatures."""
+
+
 @pytest.fixture
-def tmp_harness(tmp_path: Path) -> EvaluationHarness:
+def tmp_harness(tmp_path: Path) -> TypedFixture[EvaluationHarness]:
     """Return an evaluation harness writing artifacts to ``tmp_path``."""
 
     duckdb_path: Path = tmp_path / "metrics.duckdb"
@@ -29,7 +35,7 @@ def tmp_harness(tmp_path: Path) -> EvaluationHarness:
 
 
 @pytest.fixture
-def base() -> EvaluationSummary:
+def base() -> TypedFixture[EvaluationSummary]:
     """Provide a populated baseline summary for routing strategy comparisons."""
 
     return build_summary_fixture(
@@ -68,10 +74,12 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
         calls.append(query)
         raise AssertionError("Runner should not be invoked during dry runs")
 
+    runner: _RunnerProtocol = _runner
+
     harness = EvaluationHarness(
         output_dir=tmp_harness.output_dir,
         duckdb_path=tmp_harness.duckdb_path,
-        runner=_runner,
+        runner=runner,
     )
     config: ConfigModel = ConfigModel()
 
@@ -168,10 +176,12 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             task_graph=task_graph,
         )
 
+    runner: _RunnerProtocol = _runner
+
     harness = EvaluationHarness(
         output_dir=tmp_harness.output_dir,
         duckdb_path=tmp_harness.duckdb_path,
-        runner=_runner,
+        runner=runner,
     )
     config: ConfigModel = ConfigModel()
 
