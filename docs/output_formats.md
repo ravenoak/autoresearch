@@ -44,6 +44,12 @@ The default Markdown renderer highlights the TL;DR, answer, citations, and claim
 verification table. Enable the trace depth to surface the full reasoning log,
 raw JSON payload, and the audit table that now mirrors the CLI schema.
 
+Control and format characters are rendered using escaped `\uXXXX` sequences
+inside fenced code blocks so that whitespace-only values, carriage returns, and
+other control bytes survive a round-trip back to the original payload. The
+property tests in `tests/unit/test_output_formatter_property.py` cover
+whitespace-only and control-heavy strings to guard against regressions.
+
 ```bash
 autoresearch search "What is quantum computing?" --output markdown
 ```
@@ -66,6 +72,11 @@ JSON is ideal for programmatic consumers. The payload mirrors the
 autoresearch search "What is quantum computing?" --depth trace --output json \
     > result.json
 ```
+
+Every control character is preserved via JSON string escapes, so
+`json.loads(OutputFormatter.render(..., "json"))` round-trips exactly to the
+source response. The regression property tests listed above assert this
+behaviour across control-character seeds.
 
 ### Plain text
 
