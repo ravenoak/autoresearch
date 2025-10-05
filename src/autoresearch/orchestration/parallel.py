@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
+from .reasoning_payloads import normalize_reasoning_step, stabilize_reasoning_order
 from .state import QueryState
 from ..agents.registry import AgentFactory
 from ..errors import AgentError, OrchestrationError, TimeoutError
@@ -172,15 +173,12 @@ def execute_parallel_query(
     for group, result in results:
         confidence = _calculate_result_confidence(result)
         raw_claims = result.reasoning
-        claims: list[dict[str, object]] = []
+        claims: list[Any] = []
         if isinstance(raw_claims, Sequence) and not isinstance(raw_claims, (str, bytes)):
             for entry in raw_claims:
-                if isinstance(entry, Mapping):
-                    claims.append(dict(entry))
-                else:
-                    claims.append({"text": str(entry)})
+                claims.append(normalize_reasoning_step(entry))
         elif raw_claims is not None:
-            claims.append({"text": str(raw_claims)})
+            claims.append(normalize_reasoning_step(raw_claims))
         result_dict = {
             "claims": claims,
             "sources": result.citations,
@@ -221,6 +219,8 @@ def execute_parallel_query(
         }
         final_state.update(err_info)
 
+    final_state.claims = stabilize_reasoning_order(final_state.claims)
+
     synthesizer = AgentFactory.get("Synthesizer")
     aggregation_context = {
         "successful_groups": len(results),
@@ -235,6 +235,7 @@ def execute_parallel_query(
     final_state.update(final_result)
 
     response = final_state.synthesize()
+    response.reasoning = stabilize_reasoning_order(response.reasoning)
     if "answer" in final_result and final_result["answer"]:
         response.answer = final_result["answer"]
 

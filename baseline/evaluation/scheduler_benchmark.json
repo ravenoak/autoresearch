@@ -1,0 +1,12 @@
+{
+  "workers": {
+    "1": {
+      "throughput": 121.73933131360306,
+      "expected_memory": 25.0
+    },
+    "2": {
+      "throughput": 241.3490776298582,
+      "expected_memory": 25.0
+    }
+  }
+}

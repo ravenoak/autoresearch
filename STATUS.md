@@ -42,6 +42,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:baseline/logs/task-verify-20251005T012754Z.log†L1-L196】 The run confirms
   canonical URLs, backend labels, and stage-aware enrichment remain stable
   across the hybrid lookup paths.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】
+- Recorded fresh distributed orchestration and scheduler micro-benchmark
+  baselines under `baseline/evaluation/`: the recovery simulation at 50 tasks,
+  0.01 s latency, and 0.2 fail rate now averages 89.36 tasks/s with a 0.13
+  recovery ratio, while the scheduler reference run logs 121.74 ops/s for one
+  worker versus 241.35 ops/s for two. These figures back the tightened
+  throughput assertions in the benchmark and scheduler suites.
+  【F:baseline/evaluation/orchestrator_distributed_sim.json†L1-L8】
+  【F:baseline/evaluation/scheduler_benchmark.json†L1-L9】
 - `task coverage` with the same extras at **01:31 UTC** stops on the identical
   orchestrator regression after exercising the fallback templating case and the
   hybrid stack assertions, giving us synchronized evidence for both gates while

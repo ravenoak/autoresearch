@@ -47,6 +47,15 @@ read warnings from `QueryResponse.warnings` while displaying the raw answers.
 The behaviour suite now asserts the warnings array and the metrics mirror the
 payload for telemetry exports.
 
+Distributed metrics now cite the captured baselines under
+`baseline/evaluation/`. The orchestrator recovery simulation (50 tasks, 0.01 s
+latency, 0.2 fail rate) averages 89.36 tasks/s with a 0.13 recovery ratio, and
+the scheduler micro-benchmark records 121.74 ops/s for one worker versus 241.35
+ops/s for two workers. These figures back the refreshed throughput gates in the
+benchmark and scheduler suites.
+【F:baseline/evaluation/orchestrator_distributed_sim.json†L1-L8】
+【F:baseline/evaluation/scheduler_benchmark.json†L1-L9】
+
 
 ## Milestones
 

@@ -11,6 +11,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import OrchestrationError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.parallel import execute_parallel_query
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 
 
 class DummyTracer:
@@ -107,3 +108,25 @@ def test_execute_parallel_query_all_fail(monkeypatch):
 
     with pytest.raises(OrchestrationError):
         execute_parallel_query("q", config, groups, timeout=0.3)
+
+
+def test_execute_parallel_query_reasoning_normalization(monkeypatch):
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.Orchestrator",
+        SelectorOrchestrator,
+    )
+
+    config = ConfigModel()
+    groups = [["good"], ["good"]]
+
+    first = execute_parallel_query("q", config, groups, timeout=1.0)
+    second = execute_parallel_query("q", config, list(reversed(groups)), timeout=1.0)
+
+    for payload in first.reasoning:
+        assert isinstance(payload, FrozenReasoningStep)
+        assert payload == payload["text"]
+        assert hash(payload) == hash(payload["text"])
+
+    assert [step["text"] for step in first.reasoning] == [
+        step["text"] for step in second.reasoning
+    ]

@@ -15,6 +15,7 @@ from ..evidence import extract_candidate_claims, should_retry_verification
 from ..logging_utils import get_logger
 from ..models import QueryResponse
 from ..storage import StorageManager
+from .reasoning_payloads import normalize_reasoning_step
 from .state_registry import QueryStateRegistry
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checking only
@@ -164,7 +165,7 @@ def run_reverification(
                 "content": content,
                 "origin": "reverify.extracted",
             }
-            state.claims.append(claim_payload)
+            state.claims.append(normalize_reasoning_step(claim_payload))
         base_claims = [dict(claim) for claim in state.claims]
 
     reverify_meta["seed_claims"] = len(base_claims)
