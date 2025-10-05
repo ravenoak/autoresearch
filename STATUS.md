@@ -22,12 +22,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - `uv run mypy --strict src tests` at **16:05 UTC** still reports “Success: no
   issues found in 205 source files”, confirming the strict gate remains green
   while we triage the remaining regressions.【daf290†L1-L2】
-- Targeted pytest runs highlight two top blockers: AUTO mode samples drop claim
-  payloads, failing `test_auto_mode_returns_direct_answer_when_gate_exits`, and
-  the cache property suite reuses a function-scoped `monkeypatch` fixture that
-  Hypothesis rejects.【349e1c†L1-L64】【bebacc†L5-L21】 We interrupted the broader
-  suite once these failures reproduced to avoid duplicate noise from downstream
-  dependants.【c59d05†L1-L7】
+- Targeted pytest runs now show mixed results: AUTO mode still drops claim
+  payloads, failing `test_auto_mode_returns_direct_answer_when_gate_exits`, yet
+  the cache property suite passes under `uv run --extra test pytest
+  tests/unit/test_cache.py -k cache`, proving the namespace-aware slot helper
+  and inline fixtures keep backend calls capped at one per unique key.
+  【349e1c†L1-L64】【816271†L1-L3】【F:tests/unit/test_cache.py†L538-L686】
+  【F:tests/unit/test_cache.py†L742-L874】【F:tests/unit/test_cache.py†L877-L960】
 - The refreshed preflight plan now inserts **PR-R0** for AUTO mode claim
   hydration and folds the Hypothesis fixture fix into **PR-S2**, giving us six
   short, high-impact slices before the next verify sweep.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
@@ -51,10 +52,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Introduced the shared `hash_cache_dimensions` fingerprint with a `v3:` primary
   cache key while keeping `v2` and legacy aliases, updated documentation for the
   contract, and extended the property-based cache suite to cover sequential
-  hybrid toggles, v2 migrations, and storage interleaving; the targeted run stays
-  green after the refactor.
+  hybrid toggles, v2 migrations, and storage interleaving; the targeted run
+  remains green after the refactor and now enforces one-call-per-slot
+  invariants.
   【F:src/autoresearch/cache.py†L136-L237】【F:src/autoresearch/search/core.py†L833-L899】
-  【F:docs/specs/search.md†L55-L65】【F:tests/unit/test_cache.py†L454-L792】【33bf2d†L1-L3】
+  【F:docs/specs/search.md†L55-L65】【F:tests/unit/test_cache.py†L538-L686】
+  【F:tests/unit/test_cache.py†L742-L874】【F:tests/unit/test_cache.py†L877-L960】【816271†L1-L3】
 - `task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"` at
   **01:27 UTC** records a clean pass through the refreshed fallback tests before
   `test_parallel_merging_is_deterministic` raises the known `TypeError`.

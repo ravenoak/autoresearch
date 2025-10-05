@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
 from types import MethodType
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -15,6 +17,7 @@ if not importlib.util.find_spec("tinydb"):
 from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
+from autoresearch.search.cache import build_cache_slots
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
@@ -24,6 +27,58 @@ def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[f
     assert isinstance(query, str)
     assert isinstance(documents, list)
     return [1.0] * len(documents)
+
+
+@contextmanager
+def property_search(
+    cache: Any,
+    cfg: ConfigModel,
+    *,
+    embedding_vector: Sequence[float] | None = None,
+    transformer_factory: Callable[[], Any] | None = None,
+) -> Any:
+    """Yield a temporary :class:`Search` instance with property stubs applied."""
+
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(
+                Search,
+                "calculate_bm25_scores",
+                new=staticmethod(assert_bm25_signature),
+            )
+        )
+        if embedding_vector is not None:
+            vector = np.array(embedding_vector, dtype=float)
+
+            stack.enter_context(
+                patch.object(
+                    Search,
+                    "compute_query_embedding",
+                    lambda self, _: np.array(vector, dtype=float),
+                )
+            )
+            factory = transformer_factory or (lambda: object())
+            stack.enter_context(
+                patch.object(
+                    Search,
+                    "get_sentence_transformer",
+                    new=staticmethod(lambda: factory()),
+                )
+            )
+        else:
+            stack.enter_context(
+                patch.object(
+                    Search,
+                    "get_sentence_transformer",
+                    new=staticmethod(lambda: None),
+                )
+            )
+        stack.enter_context(
+            patch("autoresearch.search.core.get_config", lambda: cfg)
+        )
+        search = Search(cache=cache)
+        with search.temporary_state() as state:
+            yield state
 
 
 @pytest.fixture(autouse=True)
@@ -384,70 +439,92 @@ def test_legacy_cache_entries_upgrade_on_hit(
     query: str,
     hybrid: bool,
     semantic: bool,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cache = SearchCache()
-    search = Search(cache=cache)
 
-    monkeypatch.setattr(
-        Search,
-        "calculate_bm25_scores",
-        staticmethod(assert_bm25_signature),
-    )
-    monkeypatch.setattr(
-        Search,
-        "get_sentence_transformer",
-        staticmethod(lambda: None),
-    )
+    cfg = ConfigModel.model_construct(loops=1)
+    cfg.search.backends = ["legacy"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.query_rewrite.enabled = False
+    cfg.search.adaptive_k.enabled = False
+    cfg.search.hybrid_query = hybrid
+    cfg.search.use_semantic_similarity = semantic
+    cfg.search.embedding_backends = []
 
     calls: Dict[str, int] = {"count": 0}
+    payload = [{"title": "cached", "url": "https://cached"}]
+    storage_hints: Tuple[str, ...] = ("external",)
 
     def backend(text: str, max_results: int = 5) -> List[Dict[str, str]]:
         calls["count"] += 1
-        return [{"title": "cached", "url": "https://cached"}]
+        return payload
 
-    with search.temporary_state() as s:
-        s.backends = {"legacy": backend}
-
-        cfg = ConfigModel.model_construct(loops=1)
-        cfg.search.backends = ["legacy"]
-        cfg.search.context_aware.enabled = False
-        cfg.search.query_rewrite.enabled = False
-        cfg.search.adaptive_k.enabled = False
-        cfg.search.hybrid_query = hybrid
-        cfg.search.use_semantic_similarity = semantic
-        cfg.search.embedding_backends = []
-
-        def _get_config() -> ConfigModel:
-            return cfg
-
-        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
-
-        cache_key = s._build_cache_key(
+    with property_search(cache, cfg) as search_default:
+        search_default.backends = {"legacy": backend}
+        cache_key = search_default._build_cache_key(
             backend="legacy",
             query=query,
             embedding_backends=tuple(cfg.search.embedding_backends),
             hybrid_query=cfg.search.hybrid_query,
             use_semantic_similarity=cfg.search.use_semantic_similarity,
             query_embedding=None,
-            storage_hints=("external",),
+            storage_hints=storage_hints,
         )
-        s.cache.cache_results(
-            cache_key.legacy,
-            "legacy",
-            [{"title": "cached", "url": "https://cached"}],
-        )
+        search_default.cache.cache_results(cache_key.legacy, "legacy", payload)
 
-        results = s.external_lookup(query)
+        results = search_default.external_lookup(query)
         assert calls["count"] == 0, (
             "If legacy cache entries fail to migrate, why would the backend stay idle on the first hit?"
         )
         assert results, "Without cached payloads, what documents justify skipping the backend entirely?"
         assert results[0]["url"] == "https://cached"
 
-        upgraded = s.cache.get_cached_results(cache_key.primary, "legacy")
+        slots = build_cache_slots(
+            cache_key,
+            namespace=search_default._cache_namespace,
+            embedding_backend=None,
+            storage_hints=storage_hints,
+        )
+        assert search_default.cache.get_cached_results(slots[0], "legacy") is not None, (
+            "If namespace-aware slots never fill, "
+            "how will hashed entries persist for future hits?"
+        )
+        upgraded = search_default.cache.get_cached_results(cache_key.primary, "legacy")
         assert upgraded is not None, (
             "When migration runs, shouldn't the hashed key inherit the legacy payload for future hits?"
+        )
+
+    alt_namespace = "alt-namespace"
+    with property_search(cache.namespaced(alt_namespace), cfg) as search_alt:
+        search_alt.backends = {"legacy": backend}
+        alt_cache_key = search_alt._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=storage_hints,
+        )
+        first = search_alt.external_lookup(query)
+        assert calls["count"] == 1, (
+            "If namespaces share cache slots, how would the alternate view trigger a backend fetch?"
+        )
+        assert first, "Without backend payloads, what documents prove the alternate namespace executed?"
+        second = search_alt.external_lookup(query)
+        assert calls["count"] == 1, (
+            "When a namespace caches the result, shouldn't subsequent hits reuse the payload?"
+        )
+        assert second == first
+        alt_slots = build_cache_slots(
+            alt_cache_key,
+            namespace=search_alt._cache_namespace,
+            embedding_backend=None,
+            storage_hints=storage_hints,
+        )
+        assert search_alt.cache.get_cached_results(alt_slots[0], "legacy") is not None, (
+            "If alternate namespaces never persist slots, "
+            "what guarantees their second hit avoids the backend?"
         )
 
 
@@ -463,17 +540,8 @@ def test_v2_cache_entries_upgrade_on_hit(
     hybrid: bool,
     semantic: bool,
     storage_hint: str,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cache = SearchCache()
-    search = Search(cache=cache)
-
-    monkeypatch.setattr(
-        Search,
-        "calculate_bm25_scores",
-        staticmethod(assert_bm25_signature),
-    )
-    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: None))
 
     calls: Dict[str, int] = {"count": 0}
 
@@ -482,50 +550,139 @@ def test_v2_cache_entries_upgrade_on_hit(
         calls["count"] += 1
         return [{"title": "cached", "url": "https://cached"}]
 
-    with search.temporary_state() as s:
-        s.backends = {"legacy": backend}
+    cfg = ConfigModel.model_construct(loops=1)
+    cfg.search.backends = ["legacy"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.query_rewrite.enabled = False
+    cfg.search.adaptive_k.enabled = False
+    cfg.search.hybrid_query = hybrid
+    cfg.search.use_semantic_similarity = semantic
+    cfg.search.embedding_backends = []
 
-        cfg = ConfigModel.model_construct(loops=1)
-        cfg.search.backends = ["legacy"]
-        cfg.search.context_aware.enabled = False
-        cfg.search.query_rewrite.enabled = False
-        cfg.search.adaptive_k.enabled = False
-        cfg.search.hybrid_query = hybrid
-        cfg.search.use_semantic_similarity = semantic
-        cfg.search.embedding_backends = []
+    payload = [{"title": "cached", "url": "https://cached"}]
+    storage_hints: Tuple[str, ...] = (storage_hint,)
 
-        def _get_config() -> ConfigModel:
-            return cfg
-
-        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
-
-        cache_key = s._build_cache_key(
+    with property_search(cache, cfg) as search_default:
+        search_default.backends = {"legacy": backend}
+        cache_key = search_default._build_cache_key(
             backend="legacy",
             query=query,
             embedding_backends=tuple(cfg.search.embedding_backends),
             hybrid_query=cfg.search.hybrid_query,
             use_semantic_similarity=cfg.search.use_semantic_similarity,
             query_embedding=None,
-            storage_hints=(storage_hint,),
+            storage_hints=storage_hints,
         )
 
         assume(cache_key.aliases)
         alias = cache_key.aliases[0]
-        s.cache.cache_results(
-            alias,
-            "legacy",
-            [{"title": "cached", "url": "https://cached"}],
-        )
+        search_default.cache.cache_results(alias, "legacy", payload)
 
-        results = s.external_lookup(query)
-        assert calls["count"] == 0, (
+        results = search_default.external_lookup(query)
+        expected_calls = 0 if storage_hint == "external" else 1
+        assert calls["count"] == expected_calls, (
             "If v2 cache entries failed to migrate, why would the backend fire before leveraging the alias?"
         )
         assert results, "Without cached payloads, how would the alias prove compatibility across versions?"
 
-        upgraded = s.cache.get_cached_results(cache_key.primary, "legacy")
+        repeat_default = search_default.external_lookup(query)
+        assert calls["count"] == expected_calls, (
+            "Once the alias migrates, why would repeated hits increment backend invocations?"
+        )
+        assert repeat_default == results
+
+        slots = build_cache_slots(
+            cache_key,
+            namespace=search_default._cache_namespace,
+            embedding_backend=None,
+            storage_hints=storage_hints,
+        )
+        if storage_hint == "external":
+            assert search_default.cache.get_cached_results(slots[0], "legacy") is not None, (
+                "If alias migrations skip the namespaced slot, "
+                "what ensures subsequent hits stay in-memory?"
+            )
+        canonical_cache_key = search_default._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=("external",),
+        )
+        canonical_slots = build_cache_slots(
+            canonical_cache_key,
+            namespace=search_default._cache_namespace,
+            embedding_backend=None,
+            storage_hints=("external",),
+        )
+        assert search_default.cache.get_cached_results(
+            canonical_slots[0], "legacy"
+        ) is not None, (
+            "After migrating an alias, how could the canonical slot remain empty?"
+        )
+        upgraded = search_default.cache.get_cached_results(
+            canonical_cache_key.primary if storage_hint != "external" else cache_key.primary,
+            "legacy",
+        )
         assert upgraded is not None, (
             "Once accessed via an alias, shouldn't the upgraded cache persist under the new primary hash?"
+        )
+
+    alt_namespace = "alt-v2"
+    with property_search(cache.namespaced(alt_namespace), cfg) as search_alt:
+        search_alt.backends = {"legacy": backend}
+        alt_cache_key = search_alt._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=storage_hints,
+        )
+        baseline_calls = calls["count"]
+        first = search_alt.external_lookup(query)
+        assert calls["count"] == baseline_calls + 1, (
+            "If alias hits leaked across namespaces, why would the alternate view touch the backend at all?"
+        )
+        assert first, "Without backend payloads, how would the alternate namespace prove isolation?"
+        second = search_alt.external_lookup(query)
+        assert calls["count"] == baseline_calls + 1, (
+            "After caching per-namespace, shouldn't repeated hits fall back to the stored payload?"
+        )
+        assert second == first
+        alt_slots = build_cache_slots(
+            alt_cache_key,
+            namespace=search_alt._cache_namespace,
+            embedding_backend=None,
+            storage_hints=storage_hints,
+        )
+        if storage_hint == "external":
+            assert search_alt.cache.get_cached_results(alt_slots[0], "legacy") is not None, (
+                "If the alternate namespace skips slot upgrades, "
+                "what blocks a second backend invocation?"
+            )
+        canonical_alt_key = search_alt._build_cache_key(
+            backend="legacy",
+            query=query,
+            embedding_backends=tuple(cfg.search.embedding_backends),
+            hybrid_query=cfg.search.hybrid_query,
+            use_semantic_similarity=cfg.search.use_semantic_similarity,
+            query_embedding=None,
+            storage_hints=("external",),
+        )
+        canonical_alt_slots = build_cache_slots(
+            canonical_alt_key,
+            namespace=search_alt._cache_namespace,
+            embedding_backend=None,
+            storage_hints=("external",),
+        )
+        assert search_alt.cache.get_cached_results(
+            canonical_alt_slots[0], "legacy"
+        ) is not None, (
+            "Without canonical slot upgrades, why would the namespace avoid repeated backend calls?"
         )
 
 
@@ -584,7 +741,11 @@ def test_cache_key_primary_reflects_hybrid_flags(
 
 @settings(max_examples=15, deadline=None)
 @given(
-    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    query=st.text(
+        alphabet=st.characters(min_codepoint=97, max_codepoint=122),
+        min_size=1,
+        max_size=12,
+    ),
     toggles=st.lists(
         st.tuples(st.booleans(), st.booleans()),
         min_size=2,
@@ -594,76 +755,123 @@ def test_cache_key_primary_reflects_hybrid_flags(
 def test_sequential_hybrid_sequences_respect_cache_fingerprint(
     query: str,
     toggles: List[Tuple[bool, bool]],
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cache = SearchCache()
-    search = Search(cache=cache)
 
-    monkeypatch.setattr(
-        Search,
-        "calculate_bm25_scores",
-        staticmethod(assert_bm25_signature),
-    )
-    monkeypatch.setattr(Search, "compute_query_embedding", lambda self, _: np.array([0.2, 0.4]))
-    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: object()))
+    assume(len(set(toggles)) < len(toggles))
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: Dict[str, int] = {"default": 0, "alt": 0}
 
-    def backend(q: str, max_results: int = 5) -> List[Dict[str, str]]:
-        del q, max_results
-        calls["count"] += 1
-        return [{"title": "seq", "url": "https://seq"}]
+    def backend_factory(label: str) -> Callable[[str, int], List[Dict[str, str]]]:
+        def _backend(q: str, max_results: int = 5) -> List[Dict[str, str]]:
+            del q, max_results
+            calls[label] += 1
+            return [{"title": "seq", "url": "https://seq"}]
 
-    with search.temporary_state() as s:
-        s.backends = {"sequence": backend}
+        return _backend
 
-        cfg = ConfigModel.model_construct(loops=1)
-        cfg.search.backends = ["sequence"]
-        cfg.search.context_aware.enabled = False
-        cfg.search.query_rewrite.enabled = False
-        cfg.search.adaptive_k.enabled = False
-        cfg.search.embedding_backends = []
+    cfg = ConfigModel.model_construct(loops=1)
+    cfg.search.backends = ["sequence"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.query_rewrite.enabled = False
+    cfg.search.adaptive_k.enabled = False
+    cfg.search.embedding_backends = []
 
-        def _get_config() -> ConfigModel:
-            return cfg
+    default_fingerprints: Dict[Tuple[bool, bool], str] = {}
+    alt_fingerprints: Dict[Tuple[bool, bool], str] = {}
+    vector = np.array([0.2, 0.4], dtype=float)
 
-        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
-
-        fingerprints: Dict[Tuple[bool, bool], str] = {}
+    alt_namespace = "alt-sequence"
+    with ExitStack() as stack:
+        search_default = stack.enter_context(
+            property_search(
+                cache,
+                cfg,
+                embedding_vector=vector,
+                transformer_factory=lambda: object(),
+            )
+        )
+        search_alt = stack.enter_context(
+            property_search(
+                cache.namespaced(alt_namespace),
+                cfg,
+                embedding_vector=vector,
+                transformer_factory=lambda: object(),
+            )
+        )
+        search_default.backends = {"sequence": backend_factory("default")}
+        search_alt.backends = {"sequence": backend_factory("alt")}
 
         for hybrid, semantic in toggles:
             cfg.search.hybrid_query = hybrid
             cfg.search.use_semantic_similarity = semantic
 
-            prev_calls = calls["count"]
-            results = s.external_lookup(query)
-            assert results, "Without results, what evidence shows the cache preserved payloads?"
-
             key = (hybrid, semantic)
-            cache_key = s._build_cache_key(
+
+            prev_default = calls["default"]
+            default_results = search_default.external_lookup(query)
+            assert default_results, (
+                "Without results, what evidence shows the cache preserved payloads?"
+            )
+            default_key = search_default._build_cache_key(
                 backend="sequence",
                 query=query,
                 embedding_backends=tuple(cfg.search.embedding_backends),
                 hybrid_query=hybrid,
                 use_semantic_similarity=semantic,
-                query_embedding=np.array([0.2, 0.4]),
+                query_embedding=vector,
                 storage_hints=("external",),
             )
+            assume(default_key.fingerprint is not None)
 
-            assume(cache_key.fingerprint is not None)
-
-            if key in fingerprints:
-                assert calls["count"] == prev_calls, (
+            if key in default_fingerprints:
+                assert calls["default"] == prev_default, (
                     "If cache fingerprints collide, why would sequential repeats hit the backend again?"
                 )
-                assert cache_key.fingerprint == fingerprints[key], (
+                assert default_key.fingerprint == default_fingerprints[key], (
                     "How could identical toggle states yield differing fingerprints and still reuse cache entries?"
                 )
             else:
-                assert calls["count"] == prev_calls + 1, (
+                assert calls["default"] == prev_default + 1, (
                     "When encountering a new toggle combination, shouldn't the backend fetch occur exactly once?"
                 )
-                fingerprints[key] = cache_key.fingerprint
+                default_fingerprints[key] = default_key.fingerprint
+
+            prev_alt = calls["alt"]
+            alt_results = search_alt.external_lookup(query)
+            assert alt_results == default_results, (
+                "If namespaces drifted cache slots, why would the alternate view produce different results?"
+            )
+            alt_key = search_alt._build_cache_key(
+                backend="sequence",
+                query=query,
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=hybrid,
+                use_semantic_similarity=semantic,
+                query_embedding=vector,
+                storage_hints=("external",),
+            )
+            assume(alt_key.fingerprint is not None)
+
+            if key in alt_fingerprints:
+                assert calls["alt"] == prev_alt, (
+                    "How would cached namespaces regress if repeated draws still triggered backend calls?"
+                )
+                assert alt_key.fingerprint == alt_fingerprints[key], (
+                    "When namespaces reuse fingerprints, shouldn't repeated hits remain stable?"
+                )
+            else:
+                assert calls["alt"] == prev_alt + 1, (
+                    "Why would a fresh namespace skip backend execution for a new toggle combination?"
+                )
+                alt_fingerprints[key] = alt_key.fingerprint
+
+    assert calls["default"] == len(default_fingerprints), (
+        "If caching failed, how could backend calls exceed the number of unique toggle combinations?"
+    )
+    assert calls["alt"] == len(alt_fingerprints), (
+        "When namespaces reuse cached payloads, shouldn't backend calls still match unique combinations?"
+    )
 
 
 @settings(max_examples=20, deadline=None)
@@ -678,19 +886,8 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
 def test_interleaved_storage_paths_share_cache(
     vector_seed: bool,
     storage_sources: List[str],
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cache = SearchCache()
-    search = Search(cache=cache)
-
-    monkeypatch.setattr(
-        Search,
-        "calculate_bm25_scores",
-        staticmethod(assert_bm25_signature),
-    )
-    monkeypatch.setattr(Search, "compute_query_embedding", lambda self, _: np.array([0.1, 0.2]))
-    monkeypatch.setattr(Search, "get_sentence_transformer", staticmethod(lambda: object()))
-
     calls: Dict[str, int] = {"backend": 0, "duckdb": 0}
 
     def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
@@ -702,27 +899,35 @@ def test_interleaved_storage_paths_share_cache(
         calls["duckdb"] += 1
         return [{"title": "duckdb", "url": "https://duckdb"}]
 
-    with search.temporary_state() as s:
-        s.backends = {"primary": backend}
-        s.embedding_backends = {"duckdb": duckdb_backend}
+    cfg = ConfigModel.model_construct(loops=1)
+    cfg.search.backends = ["primary"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.query_rewrite.enabled = False
+    cfg.search.adaptive_k.enabled = False
+    cfg.search.hybrid_query = False
+    cfg.search.use_semantic_similarity = False
+    cfg.search.embedding_backends = ["duckdb"]
 
-        cfg = ConfigModel.model_construct(loops=1)
-        cfg.search.backends = ["primary"]
-        cfg.search.context_aware.enabled = False
-        cfg.search.query_rewrite.enabled = False
-        cfg.search.adaptive_k.enabled = False
-        cfg.search.hybrid_query = False
-        cfg.search.use_semantic_similarity = False
-        cfg.search.embedding_backends = ["duckdb"]
+    vector = np.array([0.1, 0.2], dtype=float)
 
-        def _get_config() -> ConfigModel:
-            return cfg
-
-        monkeypatch.setattr("autoresearch.search.core.get_config", _get_config)
-        monkeypatch.setattr(
-            "autoresearch.search.core.StorageManager.has_vss",
-            staticmethod(lambda: vector_seed),
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch(
+                "autoresearch.search.core.StorageManager.has_vss",
+                new=staticmethod(lambda: vector_seed),
+            )
         )
+        search_default = stack.enter_context(
+            property_search(
+                cache,
+                cfg,
+                embedding_vector=vector,
+                transformer_factory=lambda: object(),
+            )
+        )
+
+        search_default.backends = {"primary": backend}
+        search_default.embedding_backends = {"duckdb": duckdb_backend}
 
         def fake_storage(
             self: Search,
@@ -753,43 +958,52 @@ def test_interleaved_storage_paths_share_cache(
                 )
             return {"storage": docs}
 
-        s.storage_hybrid_lookup = MethodType(fake_storage, s)
+        search_default.storage_hybrid_lookup = MethodType(fake_storage, search_default)
 
-        first = s.external_lookup("topic")
-        second = s.external_lookup("topic")
+        first = search_default.external_lookup("topic")
+        initial_backend_calls = calls["backend"]
+        initial_duckdb_calls = calls["duckdb"]
+        second = search_default.external_lookup("topic")
 
-        assert calls["backend"] == 1, (
+        assert calls["backend"] == initial_backend_calls, (
             "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
         )
-        assert calls["duckdb"] == 1, (
+        assert calls["duckdb"] == initial_duckdb_calls, (
             "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
         )
         assert second == first, (
             "Without stable cache keys, how could sequential storage blends return identical payloads?"
         )
 
-        key = s._build_cache_key(
+        key = search_default._build_cache_key(
             backend="primary",
             query="topic",
             embedding_backends=tuple(cfg.search.embedding_backends),
             hybrid_query=cfg.search.hybrid_query,
             use_semantic_similarity=cfg.search.use_semantic_similarity,
-            query_embedding=np.array([0.1, 0.2]),
+            query_embedding=vector,
             storage_hints=("external",),
         )
         assume(key.fingerprint is not None)
-        repeat = s._build_cache_key(
+        repeat = search_default._build_cache_key(
             backend="primary",
             query="topic",
             embedding_backends=tuple(cfg.search.embedding_backends),
             hybrid_query=cfg.search.hybrid_query,
             use_semantic_similarity=cfg.search.use_semantic_similarity,
-            query_embedding=np.array([0.1, 0.2]),
+            query_embedding=vector,
             storage_hints=("external",),
         )
         assert repeat.fingerprint == key.fingerprint, (
             "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
         )
+
+    assert calls["backend"] == 1, (
+        "If cache slots multiplied, how could backend calls stay capped at a single execution?"
+    )
+    assert calls["duckdb"] <= 1, (
+        "When cache keys stabilise embeddings, shouldn't vector fetches avoid repeated calls?"
+    )
 
 
 def test_context_aware_query_expansion_uses_cache(
