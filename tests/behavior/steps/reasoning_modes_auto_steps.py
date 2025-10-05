@@ -362,7 +362,15 @@ def assert_auto_scout_samples(auto_cycle_result: dict[str, Any]) -> None:
     response: QueryResponse = auto_cycle_result["response"]
     auto_mode = response.metrics.get("auto_mode", {})
     samples = auto_mode.get("scout_samples")
-    assert isinstance(samples, list) and samples
+    assert isinstance(samples, tuple) and samples
+    for sample in samples:
+        assert isinstance(sample, Mapping)
+        claims = sample.get("claims")
+        assert isinstance(claims, tuple)
+        assert claims, "AUTO telemetry must keep non-empty claim payloads"
+        for claim in claims:
+            assert isinstance(claim, Mapping)
+            assert len(claim) > 0
     assert auto_mode.get("scout_sample_count") == len(samples)
     agreement = auto_mode.get("scout_agreement")
     assert agreement is not None

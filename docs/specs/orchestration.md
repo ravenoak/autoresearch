@@ -35,6 +35,11 @@ policy, and either returns the direct answer or escalates to full debate with
 `ReasoningMode.DIALECTICAL`. When debate proceeds the scout metadata is carried
 into the new query state so downstream agents can reference the heuristics.
 
+Scout samples now persist immutable claim snapshots so AUTO telemetry cannot be
+mutated during later merges. The orchestrator stores mapping-proxy snapshots of
+each claim before publishing scout metrics and propagating them through the
+gate decision payload.
+
 Operators can tune the gate policy through configuration or the CLI/UI:
 
 - `core.gate_policy_enabled` toggles the policy entirely.

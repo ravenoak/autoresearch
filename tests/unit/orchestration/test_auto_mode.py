@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Dict, List
 
 import pytest
@@ -103,14 +104,21 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
     assert auto_meta.get("outcome") == "direct_exit"
     assert auto_meta.get("scout_answer") == "scout"
     samples = auto_meta.get("scout_samples")
-    assert isinstance(samples, list)
+    assert isinstance(samples, tuple)
     assert len(samples) == config.auto_scout_samples + 1
     for index, sample in enumerate(samples):
+        assert isinstance(sample, Mapping)
         assert sample.get("index") == index
         assert sample.get("answer") == "scout"
-        claims = sample.get("claims", [])
-        assert isinstance(claims, list)
-        assert claims and claims[0].get("content") == "scout"
+        claims = sample.get("claims")
+        assert isinstance(claims, tuple)
+        assert claims, "scout samples must preserve non-empty claim payloads"
+        first_claim = claims[0]
+        assert isinstance(first_claim, Mapping)
+        assert len(first_claim) > 0
+        assert first_claim.get("content") == "scout"
+        with pytest.raises(TypeError):
+            first_claim["content"] = "mutated"  # type: ignore[index]
     assert auto_meta.get("scout_sample_count") == len(samples)
     assert auto_meta.get("scout_agreement") == 1.0
     assert response.metrics.get("scout_samples") == samples
@@ -174,8 +182,16 @@ def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
     assert auto_meta.get("outcome") == "escalated"
     assert auto_meta.get("scout_answer") == "scout"
     samples = auto_meta.get("scout_samples")
-    assert isinstance(samples, list)
+    assert isinstance(samples, tuple)
     assert len(samples) == config.auto_scout_samples + 1
+    for sample in samples:
+        assert isinstance(sample, Mapping)
+        claims = sample.get("claims")
+        assert isinstance(claims, tuple)
+        assert claims, "escalation path must capture non-empty claim payloads"
+        for claim in claims:
+            assert isinstance(claim, Mapping)
+            assert len(claim) > 0
     assert auto_meta.get("scout_agreement") == 1.0
     gate_snapshot = response.metrics.get("scout_gate", {})
     telemetry = gate_snapshot.get("telemetry", {})
