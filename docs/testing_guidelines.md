@@ -159,6 +159,12 @@ suite adds "AUTO mode completes the configured PRDV verification loops" to
 assert that CLI payloads, orchestrator metrics, and audit rollups report the
 configured loop count consistently.
 
+The integration suite also runs
+`tests/integration/test_lint_regressions.py` to ensure the search core,
+behavior fixtures, and integration helpers stay free of unused imports or
+whitespace regressions flagged by flake8 codes `F401`, `F402`, `F811`, `W291`,
+`W293`, and `W391`.
+
 During `task coverage`, targeted smoke tests execute once per optional extra.
 The task iterates over `ALL_EXTRAS` and runs `pytest tests/targeted -m
 "requires_<extra> and not slow" --noconftest` so CI logs show which marker

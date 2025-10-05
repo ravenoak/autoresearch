@@ -89,4 +89,3 @@ def test_output_formatter_uses_structured_warnings() -> None:
     note = depth_payload.notes.get("tldr", "")
     assert "unsupported" in note.lower()
     assert "cli answer" not in note.lower()
-

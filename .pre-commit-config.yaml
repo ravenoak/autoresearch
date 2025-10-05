@@ -6,3 +6,8 @@ repos:
     entry: uv run python scripts/check_spec_updated.py
     language: system
     pass_filenames: false
+  - id: flake8-lint
+    name: Enforce lint-critical flake8 rules
+    entry: uv run flake8 --select=F401,F402,F811,W291,W293,W391
+    language: system
+    types: [python]
