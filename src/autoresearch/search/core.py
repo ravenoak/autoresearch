@@ -143,6 +143,9 @@ _HYBRID_CALL_STACK: ContextVar[tuple[_HybridFrame, ...]] = ContextVar(
 _HYBRID_STAGE_STACK: ContextVar[tuple[str, ...]] = ContextVar(
     "search_hybrid_stage_stack", default=()
 )
+_HYBRID_QUERY_STACK: ContextVar[tuple[Dict[str, str], ...]] = ContextVar(
+    "search_hybrid_query_stack", default=()
+)
 
 
 def capture_hybrid_call_context() -> Dict[str, Any]:
@@ -150,8 +153,10 @@ def capture_hybrid_call_context() -> Dict[str, Any]:
 
     frames = _HYBRID_CALL_STACK.get(())
     stage_stack = _HYBRID_STAGE_STACK.get(())
+    query_stack = _HYBRID_QUERY_STACK.get(())
     current = frames[-1] if frames else None
     parent = frames[-2] if len(frames) > 1 else None
+    query_context = query_stack[-1] if query_stack else {}
     return {
         "binding": current.binding if current else None,
         "caller_binding": parent.binding if parent else None,
@@ -160,6 +165,11 @@ def capture_hybrid_call_context() -> Dict[str, Any]:
         "stage": stage_stack[-1] if stage_stack else None,
         "stack": [frame._asdict() for frame in frames],
         "stage_stack": list(stage_stack),
+        "raw_query": query_context.get("raw_query"),
+        "canonical_query": query_context.get("canonical_query"),
+        "executed_query": query_context.get("executed_query"),
+        "raw_canonical_query": query_context.get("raw_canonical_query"),
+        "query_stack": [dict(entry) for entry in query_stack],
     }
 
 
@@ -173,6 +183,30 @@ def _hybrid_stage(stage: str) -> Iterator[None]:
         yield
     finally:
         _HYBRID_STAGE_STACK.reset(token)
+
+
+@contextmanager
+def _hybrid_query_context(
+    *,
+    raw_query: str,
+    executed_query: str,
+    canonical_query: str,
+    raw_canonical_query: str,
+) -> Iterator[None]:
+    """Push query metadata for nested ``add_embeddings`` invocations."""
+
+    stack = _HYBRID_QUERY_STACK.get(())
+    payload = {
+        "raw_query": raw_query,
+        "executed_query": executed_query,
+        "canonical_query": canonical_query,
+        "raw_canonical_query": raw_canonical_query,
+    }
+    token = _HYBRID_QUERY_STACK.set(stack + (payload,))
+    try:
+        yield
+    finally:
+        _HYBRID_QUERY_STACK.reset(token)
 
 
 SentenceTransformer: SentenceTransformerType | None = None
@@ -617,6 +651,9 @@ class ExternalLookupResult:
     """Aggregate external lookup output with cache and storage handles."""
 
     query: str
+    raw_query: str
+    executed_query: str
+    raw_canonical_query: str
     results: List[Dict[str, Any]]
     by_backend: Dict[str, List[Dict[str, Any]]]
     cache_base: SearchCache
@@ -631,6 +668,12 @@ class ExternalLookupResult:
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         return self.results[index]
+
+    @property
+    def canonical_query(self) -> str:
+        """Return the canonical form of the executed query."""
+
+        return self.query
 
     @property
     def cache(self) -> SearchCache | _SearchCacheView:
@@ -1355,6 +1398,8 @@ class Search:
         query_embedding: Optional[np.ndarray],
         *,
         stage: str,
+        raw_query: str,
+        executed_query: str,
     ) -> None:
         """Log and enrich documents flowing through hybrid lookups."""
 
@@ -1363,13 +1408,22 @@ class Search:
             log.debug("Skipping embedding enrichment at stage '%s': no documents", stage)
             return
 
+        executed = executed_query or raw_query
+        canonical_query = self._normalise_cache_query(executed)
+        raw_canonical_query = self._normalise_cache_query(raw_query)
+
         log.debug(
             "Enriching %d documents with embeddings at stage '%s' (query_embedding=%s)",
             len(docs),
             stage,
             "provided" if query_embedding is not None else "missing",
         )
-        with _hybrid_stage(stage):
+        with _hybrid_stage(stage), _hybrid_query_context(
+            raw_query=raw_query,
+            executed_query=executed,
+            canonical_query=canonical_query,
+            raw_canonical_query=raw_canonical_query,
+        ):
             context = capture_hybrid_call_context()
             log.debug(
                 "add_embeddings context at stage '%s'", stage, extra={"hybrid_context": context}
@@ -2138,13 +2192,17 @@ class Search:
             text_query = str(query.get("text", ""))
             query_embedding = query.get("embedding")
         else:
-            text_query = query
+            text_query = str(query)
             query_embedding = None
+
+        raw_query = text_query
 
         context = SearchContext.get_instance()
 
         context_cfg = cfg.search.context_aware
-        search_query = text_query
+        search_query = text_query.strip()
+        if not search_query:
+            search_query = text_query
         if context_cfg.enabled:
             expanded_query = context.expand_query(text_query)
             if expanded_query != text_query:
@@ -2452,6 +2510,8 @@ class Search:
                     results_by_backend,
                     np_query_embedding,
                     stage="retrieval",
+                    raw_query=raw_query,
+                    executed_query=current_query,
                 )
                 ranked_results = self.cross_backend_rank(
                     current_query, results_by_backend, np_query_embedding
@@ -2540,8 +2600,13 @@ class Search:
                     by_backend=results_by_backend,
                 )
 
+                canonical_query = self._normalise_cache_query(current_query)
+                raw_canonical_query = self._normalise_cache_query(raw_query)
                 bundle = ExternalLookupResult(
-                    query=current_query,
+                    query=canonical_query,
+                    raw_query=raw_query,
+                    executed_query=current_query,
+                    raw_canonical_query=raw_canonical_query,
                     results=[dict(result) for result in ranked_results],
                     by_backend={
                         name: [dict(doc) for doc in docs]
@@ -2564,10 +2629,12 @@ class Search:
                 results_by_backend,
                 np_query_embedding,
                 stage="fallback",
+                raw_query=raw_query,
+                executed_query=current_query,
             )
             fallback_cache_key = self._build_cache_key(
                 backend="__fallback__",
-                query=text_query,
+                query=current_query,
                 embedding_backends=embedding_backends,
                 hybrid_query=cfg.search.hybrid_query,
                 use_semantic_similarity=cfg.search.use_semantic_similarity,
@@ -2619,8 +2686,14 @@ class Search:
                     plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
                     continue
 
+            executed_query = current_query
+            canonical_query = self._normalise_cache_query(executed_query)
+            raw_canonical_query = self._normalise_cache_query(raw_query)
             bundle = ExternalLookupResult(
-                query=text_query,
+                query=canonical_query,
+                raw_query=raw_query,
+                executed_query=executed_query,
+                raw_canonical_query=raw_canonical_query,
                 results=fallback_payload,
                 by_backend={},
                 cache_base=self._cache_base,

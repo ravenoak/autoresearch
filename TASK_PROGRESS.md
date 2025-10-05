@@ -8,6 +8,13 @@ preflight plan now breaks the follow-up work into six small PRs, adding
 **PR-R0** for claim hydration and folding the fixture refactor into
 **PR-S2**.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
 
+As of **2025-10-05 at 18:00 UTC** the search stub contract records raw,
+executed, and canonical queries for retrieval and fallback enrichment, and new
+DuckDuckGo/local file regressions lock the deterministic telemetry path. The
+targeted `uv run --extra test pytest tests/unit/test_core_modules_additional.py
+-k search_stub` sweep now passes with the expanded assertions, confirming the
+canonical logging is stable.【F:src/autoresearch/search/core.py†L623-L666】【F:src/autoresearch/search/core.py†L1324-L1374】【F:tests/unit/test_core_modules_additional.py†L321-L485】【f972c5†L1-L2】
+
 As of **2025-10-05 at 15:43 UTC** reasoning payloads normalise into mappings,
 parallel orchestration converts stabilised claims back to dictionaries for the
 state, and strict typing now passes under `uv run mypy --strict src tests`.

@@ -73,6 +73,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   orchestrator regression after exercising the fallback templating case and the
   hybrid stack assertions, giving us synchronized evidence for both gates while
   the merge fix remains outstanding.【F:baseline/logs/task-coverage-20251005T013130Z.log†L1-L184】【F:tests/unit/test_core_modules_additional.py†L170-L215】【F:tests/unit/test_failure_scenarios.py†L61-L86】
+- Search stubs now expose raw, executed, and canonical query metadata during
+  retrieval and fallback flows, while targeted DuckDuckGo and local file
+  regressions lock the canonical contract for deterministic telemetry.
+  【F:src/autoresearch/search/core.py†L623-L666】【F:src/autoresearch/search/core.py†L1324-L1374】【F:tests/unit/test_core_modules_additional.py†L321-L485】
 
 ## October 4, 2025 (earlier runs)
 - `uv run mypy --strict src tests` at **21:04 UTC** continues to report
