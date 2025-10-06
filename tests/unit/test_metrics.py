@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
 
 import duckdb
 from pytest import MonkeyPatch
@@ -13,7 +11,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class DummyConn:
-    def execute(self, *args: Any, **kwargs: Any) -> DummyConn:
+    def execute(self, *args: object, **kwargs: object) -> "DummyConn":
         return self
 
 
@@ -29,8 +27,7 @@ def test_metrics_collection_and_endpoint(
     def fake_run_query(
         query: str,
         config: ConfigModel,
-        callbacks: Callable[..., None] | None = None,
-        **kwargs: Any,
+        callbacks: object | None = None,
     ) -> QueryResponse:
         metrics.record_query()
         m = metrics.OrchestrationMetrics()

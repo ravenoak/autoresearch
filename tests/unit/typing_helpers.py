@@ -11,7 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
+from typing import Protocol, Sequence
 
 from autoresearch.evaluation.summary import (
     EvaluationSummary,
@@ -142,7 +143,7 @@ def build_summary_fixture(
     summary_parquet: Path | None = None,
     example_csv: Path | None = None,
     summary_csv: Path | None = None,
-    **overrides: Any,
+    **overrides: object,
 ) -> EvaluationSummary:
     """Construct a populated :class:`EvaluationSummary` for tests.
 
@@ -161,7 +162,7 @@ def build_summary_fixture(
         strategy=routing_strategy,
     )
 
-    summary_kwargs: dict[str, Any] = {
+    summary_kwargs: dict[str, object] = {
         "dataset": dataset,
         "run_id": run_id,
         "started_at": started,
@@ -256,14 +257,47 @@ def make_psutil_stub(
     )
 
 
-class StreamlitSessionState(dict[str, Any]):
-    """Dictionary with attribute access to mirror Streamlit's session state."""
+class StreamlitSessionState(MutableMapping[str, object]):
+    """Dictionary-like session state with attribute access semantics."""
 
-    def __getattr__(self, key: str) -> Any:  # pragma: no cover - trivial
-        return self[key]
+    _storage: dict[str, object]
 
-    def __setattr__(self, key: str, value: Any) -> None:  # pragma: no cover - trivial
-        self[key] = value
+    def __init__(self, initial: Mapping[str, object] | None = None) -> None:
+        super().__setattr__("_storage", dict(initial or {}))
+
+    def __getitem__(self, key: str) -> object:  # pragma: no cover - trivial
+        return self._storage[key]
+
+    def __setitem__(self, key: str, value: object) -> None:  # pragma: no cover - trivial
+        self._storage[key] = value
+
+    def __delitem__(self, key: str) -> None:  # pragma: no cover - trivial
+        del self._storage[key]
+
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover - trivial
+        return iter(self._storage)
+
+    def __len__(self) -> int:  # pragma: no cover - trivial
+        return len(self._storage)
+
+    def __getattr__(self, key: str) -> object:  # pragma: no cover - trivial
+        try:
+            return self._storage[key]
+        except KeyError as exc:  # pragma: no cover - trivial
+            raise AttributeError(key) from exc
+
+    def __setattr__(self, key: str, value: object) -> None:  # pragma: no cover - trivial
+        if key == "_storage":
+            super().__setattr__(key, value)
+        else:
+            self._storage[key] = value
+
+
+class MarkdownRenderer(Protocol):
+    """Protocol for ``st.markdown`` compatible callables."""
+
+    def __call__(self, body: str, *, unsafe_allow_html: bool = ...) -> None:
+        ...
 
 
 @dataclass(slots=True)
@@ -271,17 +305,19 @@ class StreamlitStub:
     """Minimal Streamlit interface required for tests."""
 
     session_state: StreamlitSessionState
-    markdown: Callable[..., None]
+    markdown: MarkdownRenderer
 
 
 def make_streamlit_stub(
     *,
-    markdown: Callable[..., None] | None = None,
+    markdown: MarkdownRenderer | None = None,
 ) -> StreamlitStub:
     """Return a Streamlit stub with a mutable session state."""
 
-    def _default_markdown(*_args: Any, **_kwargs: Any) -> None:  # pragma: no cover - trivial
-        return None
+    def _default_markdown(
+        body: str, *, unsafe_allow_html: bool = False
+    ) -> None:  # pragma: no cover - trivial
+        del body, unsafe_allow_html
 
     return StreamlitStub(
         session_state=StreamlitSessionState(),

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from collections.abc import Callable
 
 import psutil
 from typer.testing import CliRunner
@@ -19,14 +19,23 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.search import Search
 
 
-def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[float]:
+SearchDocument = dict[str, object]
+
+
+def assert_bm25_signature(query: str, documents: list[SearchDocument]) -> list[float]:
     """Stub ensuring BM25 receives ``(query, documents)``."""
     assert isinstance(query, str)
     assert isinstance(documents, list)
     return [1.0] * len(documents)
 
 
-def dummy_run_query(query, config, callbacks=None, **kwargs):
+def dummy_run_query(
+    query: str,
+    config: ConfigModel,
+    callbacks: dict[str, Callable[[int, object], None]] | None = None,
+    **kwargs: object,
+) -> QueryResponse:
+    assert kwargs == {}
     assert callbacks is not None and "on_cycle_end" in callbacks
     # Exercise BM25 scoring to verify call signature
     Search.calculate_bm25_scores(query=query, documents=[{"title": "t", "url": "u"}])
