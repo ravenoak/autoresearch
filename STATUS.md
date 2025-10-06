@@ -18,6 +18,19 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 6, 2025
+- Captured a fresh `uv run task verify` sweep at **04:41 UTC** after the
+  targeted search, cache, and AUTO-mode PRs merged. The run now fails during
+  `flake8` with 70+ style regressions across the API entrypoint, behaviour
+  steps, fixtures, integration shims, and distributed/search/storage tests,
+  so the suite does not reach mypy or pytest until the lint fallout is
+  resolved.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+- Kicked off `uv run task coverage` at **04:41 UTC** to refresh release
+  evidence, but the sync immediately began compiling GPU-heavy extras (for
+  example `hdbscan==0.8.40`). We aborted the attempt to avoid spending the
+  evaluation window on optional builds; the truncated log is archived for the
+  follow-up sweep once the lint step is green again.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+
 ## October 5, 2025
 - `uv run mypy --strict src tests` at **16:05 UTC** still reports “Success: no
   issues found in 205 source files”, confirming the strict gate remains green

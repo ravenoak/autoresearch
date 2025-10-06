@@ -1,14 +1,19 @@
 # Prepare first alpha release
 
 ## Context
-As of **October 5, 2025 at 16:05 UTC** the strict typing gate remains green and
-targeted pytest runs isolate two top regressions: AUTO mode samples lose their
-claim payloads, and the cache property suite reuses a function-scoped
-`monkeypatch` fixture that Hypothesis rejects.【daf290†L1-L2】
-【349e1c†L1-L64】【bebacc†L5-L21】【c59d05†L1-L7】
-The refreshed preflight plan splits the recovery into six short PRs, adding a
-new **PR-R0** for AUTO mode claim hydration and folding the fixture refactor
-into **PR-S2**.【F:docs/v0.1.0a1_preflight_plan.md†L9-L152】
+As of **October 6, 2025 at 04:41 UTC** the merged search, cache, and AUTO-mode
+telemetry PRs introduced lint regressions: `uv run task verify` now fails
+inside `flake8` with unused imports, duplicate definitions, misplaced
+`__future__` imports, and newline violations across behaviour, integration,
+and storage suites, preventing mypy and pytest from executing.
+【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+The paired coverage sweep begins compiling GPU-heavy extras (for example
+`hdbscan==0.8.40`) and was aborted to preserve the evaluation window; the
+partial log is archived for the next run after lint repairs.
+【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+The refreshed preflight plan now records **PR-S1**, **PR-S2**, and **PR-R0** as
+merged while prioritising lint cleanup and the coverage rerun before TestPyPI
+reactivation.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
 
 As of **October 5, 2025 at 15:43 UTC** reasoning payloads and orchestration
 helpers now normalise claims into concrete dictionaries before tests consume
@@ -45,14 +50,18 @@ remains blocked on orchestrator determinism rather than fallback
 placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/test_core_modules_additional.py†L134-L215】【F:tests/unit/test_failure_scenarios.py†L43-L86】【4c0de7†L1-L120】
 
 ## Tasks
-- [ ] Land **PR-R0** – hydrate AUTO mode claim samples with serialisable
+- [x] Land **PR-R0** – hydrate AUTO mode claim samples with serialisable
   snapshots and extend coverage so early exits keep claim content.
-- [ ] Land **PR-S1** – restore deterministic search stubs, hybrid ranking
+  【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L166】
+  【F:src/autoresearch/orchestration/parallel.py†L191-L210】
+- [x] Land **PR-S1** – restore deterministic search stubs, hybrid ranking
   signatures, and local file fallbacks in line with the updated preflight
-  plan.【F:docs/v0.1.0a1_preflight_plan.md†L38-L92】
-- [ ] Land **PR-S2** – add namespace-aware cache key helpers, replace the
+  plan.【F:src/autoresearch/search/core.py†L650-L686】【F:src/autoresearch/search/core.py†L1431-L1468】
+  【F:tests/unit/legacy/test_cache.py†L503-L608】
+- [x] Land **PR-S2** – add namespace-aware cache key helpers, replace the
   function-scoped Hypothesis fixture, and backfill regression coverage so
-  cached queries avoid repeated backend calls.【bebacc†L5-L21】
+  cached queries avoid repeated backend calls.【F:tests/unit/legacy/test_cache.py†L503-L608】
+  【F:tests/unit/legacy/test_cache.py†L779-L879】【F:tests/unit/legacy/test_cache.py†L883-L1010】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
 - [x] Land **PR-R1** – relocate reasoning warning banners into structured
@@ -61,8 +70,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L685-L723】
 - [ ] Land **PR-P1** – normalise parallel reasoning merges and recalibrate
   scheduler benchmarks against recorded baselines.
-- [ ] Capture fresh verify and coverage logs once the above PRs merge and
-  update the release dossier.
+- [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
+  mypy and pytest again, then capture fresh verify and coverage logs for the
+  release dossier.
 - [ ] Schedule and run the release sign-off review after the suite and
   coverage gates return to green.
 

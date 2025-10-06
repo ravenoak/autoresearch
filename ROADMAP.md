@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 4, 2025**.
+[README](README.md). Last updated **October 6, 2025**.
 
 ## Deep Research enhancement program
 
@@ -53,18 +53,18 @@ instrumenting AUTO mode—before Phase 2 planner upgrades resume.
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. As of **October 4, 2025 at 05:34 UTC** the
-strict typing gate remains green:
-`uv run mypy --strict src tests` reported “Success: no issues found in 790
-source files”. Minutes earlier, `uv run --extra test pytest` at **05:31 UTC**
-failed in the search stub suite—the legacy and VSS-enabled flows miss the
-expected `add_calls` telemetry and the fallback bundle echoes the templated
-prompt—so the release sweep still depends on PR-C landing first. The broader
-October 3 diagnostic run with 26 failures remains the reference for other
-regression clusters, and the refreshed preflight readiness plan keeps the
-remediation path visible across documentation and issues.
-【c2f747†L1-L2】【81b49d†L25-L155】【81b49d†L156-L204】
-【ce87c2†L81-L116】【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
+across project documentation. As of **October 6, 2025 at 04:41 UTC** the strict
+typing gate stays green, but `uv run task verify` now fails inside `flake8`
+with unused imports, duplicate definitions, misplaced `__future__` imports, and
+newline violations introduced by the merged search, cache, and AUTO-mode
+telemetry work. Coverage attempts begin compiling GPU-heavy extras and were
+aborted to preserve the evaluation window, so lint repair and a refreshed
+coverage sweep are the next gates.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】 The updated
+[preflight readiness plan](docs/v0.1.0a1_preflight_plan.md) marks PR-S1,
+PR-S2, and PR-R0 complete while prioritising lint cleanup, coverage reruns, and
+TestPyPI reactivation; the alpha ticket mirrors the same checklist.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】【F:issues/prepare-first-alpha-release.md†L1-L64】
 
 The deterministic storage resident-floor documentation remains published and
 linked from the release plan, keeping the TestPyPI stage paused until coverage

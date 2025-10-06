@@ -7,62 +7,46 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 4, 2025 at 05:34 UTC** the strict typing gate remains green:
-`uv run mypy --strict src tests` reports “Success: no issues found in 790
-source files”, so we can focus on clearing the remaining pytest regressions
-before rerunning the full release sweep.【c2f747†L1-L2】 A fresh
-`uv run --extra test pytest` sample at **05:31 UTC** fails immediately in the
-search stub suite: both the legacy and VSS-enabled paths miss the expected
-`add_calls` telemetry and the fallback bundle preserves the templated query,
-confirming PR-C must repair backend instrumentation first.
-【81b49d†L25-L155】【81b49d†L156-L204】 The broader release sweep still stalls
-earlier in the dialectical pipeline. The
-`uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"`
-attempt fails in flake8, which reports unused imports, excess blank lines, and
-trailing whitespace across Search, behavior, integration, and storage suites.
-【F:baseline/logs/task-verify-20251004T015651Z.log†L1-L62】 Minutes later
-`uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm
-parsers"` stops when the legacy branch of
-`tests/unit/test_core_modules_additional.py::test_search_stub_backend` no
-longer records the expected instance `add_calls`, keeping coverage frozen at
-the prior 92.4 % baseline.【F:baseline/logs/task-coverage-20251004T015738Z.log†L1-L565】
-The preflight plan still sequences remediation through PR-A to PR-H, and the
-alpha issue plus task log now point to the new evidence while TestPyPI stays
-paused pending lint and search instrumentation fixes.
-【F:docs/v0.1.0a1_preflight_plan.md†L9-L323】
-【F:issues/prepare-first-alpha-release.md†L1-L32】
+As of **October 6, 2025 at 04:41 UTC** the strict typing gate stays green, but
+`uv run task verify` now fails inside `flake8` with unused imports, duplicate
+definitions, misplaced `__future__` imports, and newline violations across the
+search, cache, and AUTO-mode telemetry updates. Mypy and pytest do not execute
+until the lint fallout is resolved.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+The paired `uv run task coverage` sweep begins compiling GPU-heavy extras
+(`hdbscan==0.8.40` is the first build) and was aborted to preserve the
+evaluation window, so coverage remains pegged to the earlier 92.4 % evidence
+until the lint cleanup lands.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+The updated preflight plan records PR-S1, PR-S2, and PR-R0 as merged while
+promoting lint repair, coverage reruns, and TestPyPI reactivation as the next
+gates, and the alpha ticket mirrors the same checklist.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】【F:issues/prepare-first-alpha-release.md†L1-L64】
 
 ### Immediate Follow-ups
 
-- [ ] Ship **PR-A** – normalize FactChecker defaults and update
-  reverification fixtures so the reverification unit test suite passes
-  while preserving opt-out coverage.
-- [ ] Ship **PR-B** – repair backup scheduler restart semantics and rotation
-  policy to satisfy `tests/unit/storage/test_backup_scheduler.py` without
-  introducing timing flakiness.
-- [ ] Ship **PR-C** – restore search cache determinism and stub behaviour so
-  cache-related unit tests stop over-fetching and preserve query text.
-- [ ] Ship **PR-D** – expose `autoresearch.api.parse`, align FastMCP adapter
-  construction, and unblock the API and MCP handshake suites.
-- [ ] Ship **PR-E** – normalise orchestrator error claim payloads and
-  parallel timeout messaging so error-handling suites regain mapping-based
-  claims.
-- [ ] Ship **PR-F** – stabilise storage initialisation and migration
-  contracts to satisfy incremental update and DuckDB migration tests.
-- [ ] Ship **PR-G** – provide planner metadata adapters and refreshed
-  docstrings so planner metadata and documentation hygiene suites pass.
-- [ ] Ship **PR-H** – supply environment metadata fixtures and telemetry
-  guards for the `check_env_warnings` and `formattemplate_metrics` tests.
-- [ ] Ship **PR-R0** – hydrate AUTO mode scout samples with serialisable claim
-  snapshots so early exits expose structured telemetry again.【349e1c†L1-L64】
-- [ ] Ship **PR-I** – rerun `task coverage` after PR-A through PR-H land and
-  update release documentation with the new evidence.
-- [ ] Ship **PR-J** – add AUTO mode telemetry once the suite is green.
-- [ ] Ship **PR-K** – layer dependency-aware planner prompts with Socratic
-  self-checks building on PR-J outputs.
-- [ ] Complete the
-  [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
-  milestones with the refreshed coverage data and updated documentation set.
+- [x] Ship **PR-S1** – deterministic search stubs, hybrid ranking signatures,
+  and refreshed fixtures are merged, keeping canonical queries consistent
+  across telemetry and cache layers.【F:src/autoresearch/search/core.py†L650-L686】
+  【F:src/autoresearch/search/core.py†L1431-L1468】【F:tests/unit/legacy/test_cache.py†L503-L608】
+- [x] Ship **PR-S2** – namespace-aware cache keys and property fixtures now
+  prevent redundant backend calls across namespaces and storage hints.
+  【F:tests/unit/legacy/test_cache.py†L503-L608】【F:tests/unit/legacy/test_cache.py†L779-L879】
+  【F:tests/unit/legacy/test_cache.py†L883-L1010】
+- [x] Ship **PR-R0** – AUTO mode claim hydration leverages the reasoning
+  payload normalisers and orchestrator merge logic to keep telemetry
+  serialisable.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L166】
+  【F:src/autoresearch/orchestration/parallel.py†L191-L210】
+- [ ] Deliver **PR-O1** – finish output formatter fidelity work so control
+  characters and whitespace remain intact across JSON and markdown outputs.
+- [ ] Deliver **PR-R1** – confirm warning banners stay in structured telemetry
+  while answers remain clean in CLI and API flows.
+- [ ] Deliver **PR-P1** – recalibrate scheduler benchmarks with merged claim
+  hydration and deterministic cache behaviour.
+- [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
+  mypy and pytest, then rerun coverage without GPU extras unless explicitly
+  required and publish the new logs through the release dossier.
+- [ ] Resume TestPyPI dry runs once verify and coverage are green, then close
+  the remaining [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
+  milestones before proposing the tag.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 
 ## Deep Research Enhancement Program
 
