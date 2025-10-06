@@ -176,6 +176,16 @@ def _coerce_float(value: Any) -> float:
     return _safe_float(value)
 
 
+def _normalize_structure(value: Any) -> Any:
+    """Convert nested mappings and sequences to plain Python containers."""
+
+    if isinstance(value, Mapping):
+        return {str(key): _normalize_structure(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_normalize_structure(item) for item in value]
+    return value
+
+
 def _normalize_latency_mapping(
     payload: Mapping[str, Any] | Sequence[Any] | None,
     *,
@@ -1054,11 +1064,17 @@ class OrchestrationMetrics:
                 "output": total_tokens_out,
                 "total": total_tokens_in + total_tokens_out,
             },
-            "agent_timings": self.agent_timings,
-            "agent_tokens": self.token_counts,
-            "errors": {"total": total_errors, "by_agent": self.error_counts},
-            "circuit_breakers": self.circuit_breakers,
-            "gate_events": self.gate_events,
+            "agent_timings": {
+                agent: list(samples) for agent, samples in self.agent_timings.items()
+            },
+            "agent_tokens": {
+                agent: dict(tokens) for agent, tokens in self.token_counts.items()
+            },
+            "errors": {"total": total_errors, "by_agent": dict(self.error_counts)},
+            "circuit_breakers": {
+                agent: dict(state) for agent, state in self.circuit_breakers.items()
+            },
+            "gate_events": [_normalize_structure(event) for event in self.gate_events],
             "resource_usage": [
                 {
                     "timestamp": ts,

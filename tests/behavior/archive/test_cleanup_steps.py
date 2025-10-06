@@ -6,25 +6,44 @@ their side effects properly, including monkeypatches, mocks, and temporary files
 
 import os
 import sys
+from typing import Any, TypedDict
+from unittest.mock import MagicMock, patch
+
 import pytest
-from pytest_bdd import scenario, given, when, then
-from unittest.mock import patch, MagicMock
+from pytest_bdd import given, scenario, then, when
+
+from tests.typing_helpers import TypedFixture
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.llm import DummyAdapter
 
 
+class CleanupContext(TypedDict, total=False):
+    """State container for cleanup verification across steps."""
+
+    config: Any
+    monkeypatches: list[tuple[str, Any]]
+    mocks: list[MagicMock]
+    temp_files: list[str]
+    result: Any
+    error: BaseException
+    initial_env_vars: dict[str, str]
+    initial_sys_modules: set[str]
+
+
 # Fixtures
 @pytest.fixture
-def cleanup_context():
+def cleanup_context() -> TypedFixture[CleanupContext]:
     """Create a context for storing test state and tracking resources."""
-    return {
+
+    context: CleanupContext = {
         "config": None,
         "monkeypatches": [],
         "mocks": [],
         "temp_files": [],
         "result": None,
     }
+    return context
 
 
 # Scenarios
@@ -32,14 +51,16 @@ def cleanup_context():
     "../features/test_cleanup.feature",
     "Orchestrator and agents integration tests clean up properly",
 )
-def test_orchestrator_agents_cleanup():
+def test_orchestrator_agents_cleanup() -> None:
     """Test that orchestrator and agents integration tests clean up properly."""
     pass
 
 
 # Step definitions
 @given("the system is configured with multiple agents", target_fixture="config")
-def system_configured_with_multiple_agents(cleanup_context, config_model):
+def system_configured_with_multiple_agents(
+    cleanup_context: CleanupContext, config_model: Any
+) -> Any:
     """Configure the system with multiple agents."""
     config = config_model.model_copy()
     config.agents = ["Synthesizer", "Contrarian", "FactChecker"]
@@ -55,7 +76,9 @@ def system_configured_with_multiple_agents(cleanup_context, config_model):
 
 
 @when("I run a query with the dialectical reasoning mode")
-def run_query_with_dialectical_reasoning(config, cleanup_context, monkeypatch):
+def run_query_with_dialectical_reasoning(
+    config: Any, cleanup_context: CleanupContext, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Run a query with the dialectical reasoning mode."""
     # Import the original function directly
     from autoresearch.llm import get_llm_adapter as original_get_llm_adapter
@@ -68,9 +91,9 @@ def run_query_with_dialectical_reasoning(config, cleanup_context, monkeypatch):
 
     # Create and track mocks
     mock_agent_factory = MagicMock()
-    agents = {}
+    agents: dict[str, MagicMock] = {}
 
-    def get_agent(name):
+    def get_agent(name: str) -> MagicMock:
         if name not in agents:
             agent = MagicMock()
             agent.name = name
@@ -89,17 +112,16 @@ def run_query_with_dialectical_reasoning(config, cleanup_context, monkeypatch):
     with patch(
         "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
     ):
+        orchestrator = Orchestrator()
         try:
-            cleanup_context["result"] = Orchestrator.run_query("test query", config)
-        except Exception as e:
-            # Store the exception in the context instead of letting it propagate
-            cleanup_context["error"] = e
-            # Create a dummy result to avoid NoneType errors in the assertions
-            cleanup_context["result"] = {"error": str(e)}
+            cleanup_context["result"] = orchestrator.run_query("test query", config)
+        except Exception as exc:
+            cleanup_context["error"] = exc
+            cleanup_context["result"] = {"error": str(exc)}
 
 
 @then("all monkeypatches should be properly cleaned up")
-def monkeypatches_properly_cleaned_up(cleanup_context):
+def monkeypatches_properly_cleaned_up(cleanup_context: CleanupContext) -> None:
     """Verify that all monkeypatches are properly cleaned up."""
     # Surface any error captured during execution
     if "error" in cleanup_context:
@@ -124,7 +146,7 @@ def monkeypatches_properly_cleaned_up(cleanup_context):
 
 
 @then("all mocks should be properly cleaned up")
-def mocks_properly_cleaned_up(cleanup_context):
+def mocks_properly_cleaned_up(cleanup_context: CleanupContext) -> None:
     """Verify that all mocks are properly cleaned up."""
     # Surface any error captured during execution
     if "error" in cleanup_context:
@@ -144,7 +166,7 @@ def mocks_properly_cleaned_up(cleanup_context):
 
 
 @then("all temporary files should be properly cleaned up")
-def temp_files_properly_cleaned_up(cleanup_context):
+def temp_files_properly_cleaned_up(cleanup_context: CleanupContext) -> None:
     """Verify that all temporary files are properly cleaned up."""
     # Check that environment variables are restored
     for key, value in cleanup_context["initial_env_vars"].items():

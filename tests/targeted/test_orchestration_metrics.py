@@ -1,8 +1,11 @@
 """Tests for token recording, regression checks, and coverage targets."""
 
 import json
+from pathlib import Path
 import types
+from typing import Protocol
 
+import pytest
 from coverage import Coverage
 
 from tests.helpers.modules import ensure_stub_module
@@ -19,7 +22,13 @@ ensure_stub_module(
 from autoresearch.orchestration.metrics import OrchestrationMetrics  # noqa: E402
 
 
-def test_record_and_check_query_tokens(tmp_path):
+class _GaugeProxy(Protocol):
+    def get(self) -> float: ...
+
+    def set(self, value: float) -> None: ...
+
+
+def test_record_and_check_query_tokens(tmp_path: Path) -> None:
     """Metrics track total tokens and detect regressions."""
     metrics = OrchestrationMetrics()
     metrics.record_tokens("agent", 5, 7)
@@ -32,7 +41,9 @@ def test_record_and_check_query_tokens(tmp_path):
     assert metrics.check_query_regression("search", file_path)
 
 
-def test_metrics_coverage_threshold(tmp_path, monkeypatch):
+def test_metrics_coverage_threshold(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Executed lines in metrics exceed 80 percent of statements.
 
     This approximation focuses on functions exercised in this test to prevent
@@ -49,9 +60,16 @@ def test_metrics_coverage_threshold(tmp_path, monkeypatch):
     m.reset_metrics()
 
     class DummyHist:
-        def __init__(self):
-            self._sum = types.SimpleNamespace(get=lambda: 0, set=lambda v: None)
-            self._count = types.SimpleNamespace(get=lambda: 0, set=lambda v: None)
+        def __init__(self) -> None:
+            def _get() -> float:
+                return 0.0
+
+            def _set(_: float) -> None:
+                return None
+
+            proxy = types.SimpleNamespace(get=_get, set=_set)
+            self._sum: _GaugeProxy = proxy
+            self._count: _GaugeProxy = proxy
 
     monkeypatch.setattr(m, "KUZU_QUERY_TIME", DummyHist())
 

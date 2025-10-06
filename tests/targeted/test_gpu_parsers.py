@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import sys
-from typing import Generator
+from collections.abc import Iterator
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
+import sys
 
 import pytest
 
@@ -10,25 +11,25 @@ try:
     from tests.optional_imports import import_or_skip
 except Exception:  # pragma: no cover - path fallback for --noconftest runs
     import importlib.util
-    from pathlib import Path as _Path
 
-    _mod_path = _Path(__file__).resolve().parents[1] / "optional_imports.py"
+    _mod_path = Path(__file__).resolve().parents[1] / "optional_imports.py"
     spec = importlib.util.spec_from_file_location("tests.optional_imports", str(_mod_path))
     if spec and spec.loader:
         _mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(_mod)
         import_or_skip = getattr(_mod, "import_or_skip")
-    else:
-        raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
+    else:  # pragma: no cover - defensive fallback
+        raise ModuleNotFoundError(
+            "Could not import tests.optional_imports via direct path fallback"
+        )
+
+from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture
-def stub_bertopic_module(
-    monkeypatch: pytest.MonkeyPatch,
-) -> Generator[ModuleType, None, None]:
+def stub_bertopic_module(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[ModuleType]:
     """Provide a stub BERTopic module and restore ``sys.modules`` afterward."""
 
-    original = sys.modules.get("bertopic")
     stub = ModuleType("bertopic")
 
     class _StubBERTopic:  # pragma: no cover - simple container
@@ -36,37 +37,29 @@ def stub_bertopic_module(
 
     setattr(stub, "BERTopic", _StubBERTopic)
     monkeypatch.setitem(sys.modules, "bertopic", stub)
-    try:
-        yield stub
-    finally:
-        if original is not None:
-            sys.modules["bertopic"] = original
-        else:
-            sys.modules.pop("bertopic", None)
+    return stub
 
 
 @pytest.fixture
-def reset_bertopic_state() -> Generator[ModuleType, None, None]:
+def reset_bertopic_state(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[ModuleType]:
     """Reset ``context`` globals before and after a BERTopic import test."""
 
     from autoresearch.search import context
 
-    original_cls = context.BERTopic
-    original_flag = context.BERTOPIC_AVAILABLE
-    context.BERTopic = None
-    context.BERTOPIC_AVAILABLE = False
-    try:
-        yield context
-    finally:
-        context.BERTopic = original_cls
-        context.BERTOPIC_AVAILABLE = original_flag
+    monkeypatch.setattr(context, "BERTopic", None)
+    monkeypatch.setattr(context, "BERTOPIC_AVAILABLE", False)
+    return context
 
 
 @pytest.mark.requires_gpu
-def test_bertopic_integration(monkeypatch, stub_bertopic_module, reset_bertopic_state):
+def test_bertopic_integration(
+    monkeypatch: pytest.MonkeyPatch,
+    stub_bertopic_module: ModuleType,
+    reset_bertopic_state: ModuleType,
+) -> None:
     """BERTopic integration activates when GPU extras are available."""
-    context = reset_bertopic_state
 
+    context = reset_bertopic_state
     monkeypatch.setattr(
         context,
         "get_config",
@@ -86,8 +79,11 @@ def test_bertopic_integration(monkeypatch, stub_bertopic_module, reset_bertopic_
 
 
 @pytest.mark.requires_parsers
-def test_docx_backend_search(tmp_path, monkeypatch):
+def test_docx_backend_search(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Local file backend indexes DOCX files when parsers extras are installed."""
+
     docx = import_or_skip("docx")
     from autoresearch.search import core
 
@@ -101,8 +97,8 @@ def test_docx_backend_search(tmp_path, monkeypatch):
 
     consumed = False
 
-    class TrackingParagraphs(list):
-        def __iter__(self):  # pragma: no cover - simple flag update
+    class TrackingParagraphs(list[SimpleNamespace]):
+        def __iter__(self) -> Iterator[SimpleNamespace]:  # pragma: no cover - simple flag update
             nonlocal consumed
             consumed = True
             return super().__iter__()
@@ -113,12 +109,14 @@ def test_docx_backend_search(tmp_path, monkeypatch):
             self.paragraphs = TrackingParagraphs([SimpleNamespace(text=seed_text)])
 
     cfg = SimpleNamespace(
-        search=SimpleNamespace(local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"]))
+        search=SimpleNamespace(
+            local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"])
+        )
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.search.core.Document", StubDocument)
 
-    results = core._local_file_backend("hello", max_results=1)
+    results = core._local_file_backend("hello", 1)
     assert results and results[0]["title"] == "example.docx"
     assert seed_text in results[0]["snippet"]
     assert consumed

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import multiprocessing
+from pathlib import Path
 from multiprocessing.managers import ListProxy
-from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -12,6 +12,14 @@ from autoresearch.distributed import coordinator as dist_coordinator
 from autoresearch.distributed.broker import AgentResultMessage
 
 from tests.analysis.distributed_coordination_analysis import run
+from tests.typing_helpers import TypedFixture
+
+
+class StubQueue:
+    """Minimal queue stub capturing metadata for assertions."""
+
+    def __init__(self, label: str) -> None:
+        self.label = label
 
 
 class StubBroker:
@@ -19,7 +27,7 @@ class StubBroker:
 
     def __init__(self, label: str | None) -> None:
         self.label = label or "memory"
-        self.queue = SimpleNamespace(label=f"{self.label}-queue")
+        self.queue = StubQueue(label=f"{self.label}-queue")
         self.published: list[dict[str, Any]] = []
 
     def publish(self, message: dict[str, Any]) -> None:
@@ -42,17 +50,18 @@ class RecordedEvent:
 
 
 @pytest.fixture
-def stub_config() -> SimpleNamespace:
-    """Return the minimal configuration objects consumed by the coordinator."""
+def stub_config(tmp_path: Path) -> TypedFixture[ConfigModel]:
+    """Return a concrete :class:`ConfigModel` tailored for coordinator tests."""
 
-    return SimpleNamespace(
-        storage=SimpleNamespace(duckdb_path="/tmp/autoresearch-test.duckdb"),
-        distributed_config=SimpleNamespace(message_broker="memory", broker_url=None),
-    )
+    config = ConfigModel()
+    config.storage.duckdb_path = str(tmp_path / "autoresearch-test.duckdb")
+    config.distributed_config.message_broker = "memory"
+    config.distributed_config.broker_url = None
+    return config
 
 
 @pytest.fixture
-def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> list[StubBroker]:
+def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[list[StubBroker]]:
     """Provide deterministic broker instances for coordinator orchestration."""
 
     created: list[StubBroker] = []
@@ -67,7 +76,7 @@ def stub_brokers(monkeypatch: pytest.MonkeyPatch) -> list[StubBroker]:
 
 
 @pytest.fixture
-def fake_events(monkeypatch: pytest.MonkeyPatch) -> list[RecordedEvent]:
+def fake_events(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[list[RecordedEvent]]:
     """Replace :func:`multiprocessing.Event` with an in-memory stub."""
 
     created: list[RecordedEvent] = []
@@ -85,7 +94,7 @@ def fake_events(monkeypatch: pytest.MonkeyPatch) -> list[RecordedEvent]:
 @pytest.fixture
 def fake_storage_coordinators(
     monkeypatch: pytest.MonkeyPatch,
-) -> list[dist_coordinator.StorageCoordinator]:
+) -> TypedFixture[list[dist_coordinator.StorageCoordinator]]:
     """Patch :class:`StorageCoordinator` with a lightweight spy."""
 
     created: list[dist_coordinator.StorageCoordinator] = []
@@ -108,7 +117,7 @@ def fake_storage_coordinators(
 @pytest.fixture
 def fake_result_aggregators(
     monkeypatch: pytest.MonkeyPatch,
-) -> list[dist_coordinator.ResultAggregator]:
+) -> TypedFixture[list[dist_coordinator.ResultAggregator]]:
     """Patch :class:`ResultAggregator` with a lightweight spy."""
 
     created: list[dist_coordinator.ResultAggregator] = []
@@ -135,7 +144,7 @@ def test_distributed_coordination_metrics() -> None:
 
 
 def test_distributed_coordinator_orchestration(
-    stub_config: SimpleNamespace,
+    stub_config: ConfigModel,
     stub_brokers: list[StubBroker],
     fake_events: list[RecordedEvent],
     fake_storage_coordinators: list[dist_coordinator.StorageCoordinator],
@@ -143,7 +152,7 @@ def test_distributed_coordinator_orchestration(
 ) -> None:
     """Coordinator helpers publish claims and start background workers."""
 
-    config = cast(ConfigModel, stub_config)
+    config = stub_config
     coordinator_proc, broker = dist_coordinator.start_storage_coordinator(config)
     assert isinstance(broker, StubBroker)
     assert fake_storage_coordinators, "StorageCoordinator should be instantiated"

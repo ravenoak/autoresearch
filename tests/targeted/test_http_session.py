@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -21,6 +21,7 @@ ensure_stub_module("docx", {"Document": object})
 
 from autoresearch.typing.http import (  # noqa: E402
     RequestsAdapterProtocol,
+    RequestsResponseProtocol,
     RequestsSessionProtocol,
 )
 import autoresearch.search.http as http  # noqa: E402
@@ -35,7 +36,7 @@ class DummyResponse:
     def raise_for_status(self) -> None:
         self.raise_called = True
 
-    def json(self) -> dict[str, str]:
+    def json(self, **_: Any) -> dict[str, str]:
         return {"ok": "true"}
 
     @property
@@ -60,7 +61,9 @@ class DummySession:
         self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
         self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
-    def request(self, method: str, url: str, **kwargs: Any) -> DummyResponse:
+    def request(
+        self, method: str, url: str, *args: Any, **kwargs: Any
+    ) -> RequestsResponseProtocol:
         self.requests.append((method, url))
         return DummyResponse()
 
@@ -81,11 +84,15 @@ class DummySession:
     def headers(self) -> dict[str, str]:
         return self._headers
 
-    def get(self, url: str, **kwargs: Any) -> DummyResponse:
-        return self.request("GET", url, **kwargs)
+    def get(
+        self, url: str, *args: Any, **kwargs: Any
+    ) -> RequestsResponseProtocol:
+        return self.request("GET", url, *args, **kwargs)
 
-    def post(self, url: str, **kwargs: Any) -> DummyResponse:
-        return self.request("POST", url, **kwargs)
+    def post(
+        self, url: str, *args: Any, **kwargs: Any
+    ) -> RequestsResponseProtocol:
+        return self.request("POST", url, *args, **kwargs)
 
 
 def test_get_http_session_creates_and_reuses(
@@ -94,12 +101,12 @@ def test_get_http_session_creates_and_reuses(
     """New session is created once and reused."""
     cfg = make_config_model(search_overrides={"http_pool_size": 3})
     monkeypatch.setattr(http, "get_config", lambda: cfg)
-    monkeypatch.setattr(
-        http.requests.adapters, "HTTPAdapter", lambda **k: DummyAdapter()
-    )
-    monkeypatch.setattr(http.requests, "Session", DummySession)
+    requests_module = cast(Any, getattr(http, "requests"))
+    monkeypatch.setattr(requests_module.adapters, "HTTPAdapter", lambda **k: DummyAdapter())
+    monkeypatch.setattr(requests_module, "Session", DummySession)
     calls: list[object] = []
-    monkeypatch.setattr(http.atexit, "register", lambda f: calls.append(f))
+    atexit_mod = cast(Any, getattr(http, "atexit"))
+    monkeypatch.setattr(atexit_mod, "register", lambda f: calls.append(f))
     http.close_http_session()
 
     first = http.get_http_session()
@@ -117,11 +124,13 @@ def test_set_and_close_http_session(monkeypatch: pytest.MonkeyPatch) -> None:
     """Injected session registers atexit and closes cleanly."""
     dummy = DummySession()
     calls: list[object] = []
-    monkeypatch.setattr(http.atexit, "register", lambda f: calls.append(f))
+    atexit_mod = cast(Any, getattr(http, "atexit"))
+    monkeypatch.setattr(atexit_mod, "register", lambda f: calls.append(f))
     http.set_http_session(dummy)
 
-    assert http.get_http_session() is dummy
-    assert isinstance(dummy, RequestsSessionProtocol)
+    retrieved = http.get_http_session()
+    assert isinstance(retrieved, DummySession)
+    assert retrieved is dummy
     assert calls == [http.close_http_session]
 
     http.close_http_session()

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict
 
 import pytest
+
+from tests.typing_helpers import TypedFixture
 
 METRIC_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "backend_metrics.json"
 
@@ -58,7 +60,7 @@ MetricsBaselineFn = Callable[[str, float, float, float], None]
 @pytest.fixture
 def metrics_baseline(
     request: pytest.FixtureRequest,
-) -> Iterator[MetricsBaselineFn]:
+) -> TypedFixture[MetricsBaselineFn]:
     """Record and compare backend metrics across test runs."""
 
     def _check(
@@ -84,7 +86,7 @@ def metrics_baseline(
         data[key] = record
         _persist_backend_metrics(METRIC_BASELINE_FILE, data)
 
-    yield _check
+    return _check
 
 
 TOKEN_MEMORY_FILE = Path(__file__).resolve().parents[1] / "data" / "token_memory_benchmark.json"
@@ -143,7 +145,7 @@ TokenMemoryBaselineFn = Callable[[int, int, float, float], None]
 @pytest.fixture
 def token_memory_baseline(
     request: pytest.FixtureRequest,
-) -> Iterator[TokenMemoryBaselineFn]:
+) -> TypedFixture[TokenMemoryBaselineFn]:
     """Record and compare token and resource metrics across runs."""
 
     def _check(
@@ -170,4 +172,4 @@ def token_memory_baseline(
         data[key] = record
         _persist_token_memory(TOKEN_MEMORY_FILE, data)
 
-    yield _check
+    return _check
