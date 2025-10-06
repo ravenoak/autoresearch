@@ -1,0 +1,8 @@
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+   --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers --extra gpu \
+  
+
+Resolved 328 packages in 7ms
+   Building hdbscan==0.8.40

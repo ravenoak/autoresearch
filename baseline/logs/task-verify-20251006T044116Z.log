@@ -1,0 +1,124 @@
+task: [verify] set -eu
+extras="dev-minimal test"
+export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  $(printf ' --extra %s' $extras) \
+  
+
+Resolved 328 packages in 7ms
+Audited 176 packages in 0.48ms
+task: [verify] task check-env EXTRAS="dev-minimal test"
+task: [check-env] task --version
+3.45.4
+task: [check-env] uv run python scripts/check_env.py
+Verifying extras: dev-minimal, test
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+a2a-sdk 0.3.7
+black 25.9.0
+duckdb 1.3.2
+fakeredis 2.31.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.2
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+redis 6.4.0
+responses 0.25.8
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20250822
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+task: [verify] set -eu
+uv run flake8 src tests
+echo "[verify][lint] flake8 passed"
+
+src/autoresearch/main/app.py:86:1: E305 expected 2 blank lines after class or function definition, found 0
+tests/behavior/steps/api_batch_query_steps.py:16:1: F401 'tests.behavior.utils.PayloadDict' imported but unused
+tests/behavior/steps/api_orchestrator_integration_steps.py:22:1: F401 'tests.behavior.utils.PayloadDict' imported but unused
+tests/fixtures/__init__.py:1:22: W292 no newline at end of file
+tests/fixtures/performance.py:37:1: W391 blank line at end of file
+tests/integration/deploy/__init__.py:1:22: W292 no newline at end of file
+tests/integration/extras/__init__.py:1:22: W292 no newline at end of file
+tests/integration/storage/__init__.py:1:22: W292 no newline at end of file
+tests/integration/test_a2a_interface.py:7:1: F811 redefinition of unused 'asyncio' from line 2
+tests/integration/test_a2a_interface.py:8:1: F811 redefinition of unused 'socket' from line 3
+tests/integration/test_a2a_interface.py:9:1: F811 redefinition of unused 'sys' from line 4
+tests/integration/test_a2a_interface.py:10:1: F811 redefinition of unused 'time' from line 5
+tests/integration/test_a2a_interface.py:42:1: E402 module level import not at top of file
+tests/performance/__init__.py:1:22: W292 no newline at end of file
+tests/targeted/test_cli_backup_validation.py:8:1: F404 from __future__ imports must occur at the beginning of the file
+tests/targeted/test_llm_validate_model.py:3:1: F404 from __future__ imports must occur at the beginning of the file
+tests/targeted/test_llm_validate_model.py:5:1: F811 redefinition of unused 'pytest' from line 1
+tests/targeted/test_storage_helpers.py:17:1: E402 module level import not at top of file
+tests/unit/distributed/test_coordination_properties.py:9:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/distributed/test_coordination_properties.py:11:1: F811 redefinition of unused 'importlib' from line 3
+tests/unit/distributed/test_coordination_properties.py:12:1: F811 redefinition of unused 'multiprocessing' from line 4
+tests/unit/distributed/test_coordination_properties.py:13:1: F811 redefinition of unused 'random' from line 5
+tests/unit/distributed/test_coordination_properties.py:14:1: F811 redefinition of unused 'sys' from line 6
+tests/unit/distributed/test_coordination_properties.py:15:1: F811 redefinition of unused 'Path' from line 7
+tests/unit/distributed/test_coordination_properties.py:16:1: F811 redefinition of unused 'ModuleType' from line 8
+tests/unit/distributed/test_coordination_properties.py:17:1: F401 'typing.Any' imported but unused
+tests/unit/distributed/test_coordination_properties.py:17:1: F401 'typing.Mapping' imported but unused
+tests/unit/legacy/test_core_modules_additional.py:3:1: F401 'shutil' imported but unused
+tests/unit/monitor/test_metrics_endpoint.py:3:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/monitor/test_metrics_endpoint.py:5:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/monitor/test_metrics_endpoint.py:7:1: F811 redefinition of unused 'asyncio' from line 1
+tests/unit/monitor/test_metrics_endpoint.py:12:1: F811 redefinition of unused 'monitor_metrics' from line 2
+tests/unit/orchestration/test_auto_mode.py:2:1: F401 'typing.Dict' imported but unused
+tests/unit/orchestration/test_auto_mode.py:2:1: F401 'typing.List' imported but unused
+tests/unit/orchestration/test_auto_mode.py:5:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/orchestration/test_auto_mode.py:7:1: F811 redefinition of unused 'Mapping' from line 1
+tests/unit/orchestration/test_auto_mode.py:8:1: F811 redefinition of unused 'Any' from line 2
+tests/unit/orchestration/test_auto_mode.py:10:1: F811 redefinition of unused 'pytest' from line 4
+tests/unit/orchestration/test_metrics_graph_summary.py:4:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/orchestration/test_metrics_graph_summary.py:6:1: F811 redefinition of unused 'OrchestrationMetrics' from line 3
+tests/unit/orchestration/test_orchestration_simulations.py:2:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/orchestration/test_orchestration_simulations.py:4:1: F811 redefinition of unused 'sys' from line 1
+tests/unit/search/test_adaptive_rewrite.py:3:1: F401 'typing.List' imported but unused
+tests/unit/search/test_adaptive_rewrite.py:5:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/search/test_adaptive_rewrite.py:7:1: F401 'types.SimpleNamespace' imported but unused
+tests/unit/search/test_query_expansion_convergence.py:10:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/search/test_query_expansion_convergence.py:12:1: F811 redefinition of unused 'sys' from line 1
+tests/unit/search/test_query_expansion_convergence.py:14:1: F811 redefinition of unused 'ModuleType' from line 2
+tests/unit/search/test_query_expansion_convergence.py:14:1: F811 redefinition of unused 'SimpleNamespace' from line 2
+tests/unit/search/test_query_expansion_convergence.py:16:1: F811 redefinition of unused 'patch' from line 3
+tests/unit/search/test_query_expansion_convergence.py:20:1: F811 redefinition of unused 'ctx' from line 5
+tests/unit/search/test_query_expansion_convergence.py:21:1: F811 redefinition of unused 'search_core' from line 6
+tests/unit/search/test_query_expansion_convergence.py:22:1: F811 redefinition of unused 'SearchContext' from line 7
+tests/unit/search/test_query_expansion_convergence.py:23:1: F811 redefinition of unused 'Search' from line 8
+tests/unit/search/test_query_expansion_convergence.py:24:1: F811 redefinition of unused 'make_config_model' from line 9
+tests/unit/search/test_ranking_formula.py:6:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/search/test_ranking_formula.py:8:1: F811 redefinition of unused 'pytest' from line 1
+tests/unit/search/test_ranking_formula.py:10:1: F811 redefinition of unused 'ConfigLoader' from line 4
+tests/unit/search/test_ranking_formula.py:11:1: F811 redefinition of unused 'ConfigModel' from line 3
+tests/unit/search/test_ranking_formula.py:11:1: F811 redefinition of unused 'SearchConfig' from line 5
+tests/unit/search/test_session_retry.py:2:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/search/test_session_retry.py:4:1: F811 redefinition of unused 'pytest' from line 1
+tests/unit/storage/test_backup_scheduler.py:6:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/storage/test_backup_scheduler.py:9:1: F811 redefinition of unused 'datetime' from line 3
+tests/unit/storage/test_backup_scheduler.py:9:1: F811 redefinition of unused 'timedelta' from line 3
+tests/unit/storage/test_backup_scheduler.py:10:1: F811 redefinition of unused 'Path' from line 4
+tests/unit/storage/test_backup_scheduler.py:11:1: F811 redefinition of unused 'Any' from line 5
+tests/unit/storage/test_backup_scheduler.py:11:1: F811 redefinition of unused 'Callable' from line 5
+tests/unit/storage/test_knowledge_graph.py:6:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/storage/test_knowledge_graph.py:8:1: F811 redefinition of unused 'SimpleNamespace' from line 3
+tests/unit/storage/test_knowledge_graph.py:9:1: F811 redefinition of unused 'Any' from line 4
+tests/unit/storage/test_knowledge_graph.py:9:1: F811 redefinition of unused 'Sequence' from line 4
+tests/unit/storage/test_protocols.py:4:1: F404 from __future__ imports must occur at the beginning of the file
+tests/unit/storage/test_protocols.py:6:1: F811 redefinition of unused 'Path' from line 3
+tests/unit/typing_helpers.py:14:1: F401 'collections.abc.Callable' imported but unused
+task: Failed to run task "verify": exit status 1

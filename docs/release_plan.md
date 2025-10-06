@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 5, 2025** and
+`2025-05-18`). This schedule was last updated on **October 6, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -18,41 +18,31 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The strict typing gate remains green, and the latest release sweeps now finish
-cleanly. At **2025-10-05 03:15 UTC** `uv run task verify` records
-`[verify][lint] flake8 passed`, strict mypy success, and
-`tests/unit/test_failure_scenarios.py::test_external_lookup_fallback`
-passing, closing PR-C’s deterministic fallback regression and confirming the
-lint sweep is complete.【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
-The matching **03:28 UTC** `uv run task coverage` sweep lands at 92.4 %
-coverage, documents the same fallback assertion passing, and refreshes
-`coverage.xml` for release auditors.
-【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
-The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now treats
-PR-C as complete and elevates TestPyPI reactivation as the next gate.
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L314】
+The strict typing gate remains green, but the latest release sweep regressed
+at the lint step. At **2025-10-06 04:41 UTC** `uv run task verify` exits
+during `flake8` with unused imports, duplicate definitions, misplaced
+`__future__` imports, and newline violations across the newly merged search,
+cache, and AUTO-mode telemetry changes. Mypy and pytest did not run because
+the lint step fails early.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+The follow-on **04:41 UTC** `uv run task coverage` attempt began compiling the
+GPU and analysis extras (`hdbscan==0.8.40` is the first build) and was
+aborted to avoid spending the release window on optional wheels; the partial
+log is archived for the next sweep once lint is stable.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 
-With verify and coverage green, TestPyPI reactivation becomes the remaining
-blocker for the release sweep; the alpha ticket tracks the reactivation work
-using the fresh logs as evidence.【F:docs/v0.1.0a1_preflight_plan.md†L1-L314】
-【F:issues/prepare-first-alpha-release.md†L1-L39】
+The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now marks
+PR-S1 (deterministic search stubs), PR-S2 (namespace-aware cache keys), and
+PR-R0 (AUTO-mode claim hydration) as complete while promoting lint repair and
+coverage refresh as the next actions.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
+The alpha ticket mirrors the updated checklist and references the new logs so
+release review can trace the lint regression and aborted coverage run.
+【F:issues/prepare-first-alpha-release.md†L1-L64】【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 
-The targeted cache regression run (`uv run --extra test pytest
-tests/unit/test_cache.py -k cache_key`) now passes with the hashed key helper
-migrating legacy entries and covering hybrid and storage permutations, keeping
-search caching ready for the next release checkpoint.【9e20e4†L1-L3】
-
-A structured warning contract landed in this cycle so API and CLI clients can
-read warnings from `QueryResponse.warnings` while displaying the raw answers.
-The behaviour suite now asserts the warnings array and the metrics mirror the
-payload for telemetry exports.
-
-Distributed metrics now cite the captured baselines under
-`baseline/evaluation/`. The orchestrator recovery simulation (50 tasks, 0.01 s
-latency, 0.2 fail rate) averages 89.36 tasks/s with a 0.13 recovery ratio, and
-the scheduler micro-benchmark records 121.74 ops/s for one worker versus 241.35
-ops/s for two workers. These figures back the refreshed throughput gates in the
-benchmark and scheduler suites.
+Distributed metrics still cite the captured baselines under
+`baseline/evaluation/`. The orchestrator recovery simulation (50 tasks,
+0.01 s latency, 0.2 fail rate) averages 89.36 tasks/s with a 0.13 recovery
+ratio, and the scheduler micro-benchmark records 121.74 ops/s for one worker
+versus 241.35 ops/s for two workers. These figures continue to back the
+throughput gates in the benchmark and scheduler suites.
 【F:baseline/evaluation/orchestrator_distributed_sim.json†L1-L8】
 【F:baseline/evaluation/scheduler_benchmark.json†L1-L9】
 

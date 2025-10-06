@@ -1,3 +1,13 @@
+As of **2025-10-06 at 04:41 UTC** the merged search/cache/AUTO telemetry PRs
+introduced lint fallout: `uv run task verify` now fails during `flake8` with
+dozens of unused imports, misplaced `__future__` imports, and newline errors
+across the orchestrator, storage, and behaviour suites, so the run halts
+before mypy or pytest execute.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+The paired `uv run task coverage` attempt begins compiling GPU extras (for
+example `hdbscan==0.8.40`) and was aborted to avoid exhausting the evaluation
+window; we archived the partial log for the follow-up sweep once the lint step
+is green.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+
 As of **2025-10-05 at 16:05 UTC** the strict gate remains green and the highest
 impact regressions are narrowed to AUTO mode claim hydration and cache fixture
 hygiene. `uv run mypy --strict src tests` reports “Success: no issues found in
