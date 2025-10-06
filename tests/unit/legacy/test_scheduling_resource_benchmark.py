@@ -8,8 +8,11 @@ import statistics
 import pytest
 
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _load_module():
-    path = Path(__file__).resolve().parents[2] / "scripts" / "scheduling_resource_benchmark.py"
+    path = REPO_ROOT / "scripts" / "scheduling_resource_benchmark.py"
     spec = util.spec_from_file_location("scheduling_resource_benchmark", path)
     if spec is None or spec.loader is None:
         raise RuntimeError("Unable to load scheduling_resource_benchmark module")

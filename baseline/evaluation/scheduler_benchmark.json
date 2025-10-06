@@ -1,11 +1,16 @@
 {
+  "_meta": {
+    "generated_at": "2025-10-06T15:04:43.014354+00:00",
+    "command": "uv run scripts/scheduling_resource_benchmark.py --max-workers 2 --arrival-rate 3 --service-rate 5 --tasks 50 --mem-per-task 0.5",
+    "notes": "Uses default scheduler benchmark sleep and measure durations to capture current throughput and memory floors."
+  },
   "workers": {
     "1": {
-      "throughput": 121.73933131360306,
+      "throughput": 120.7928467520343,
       "expected_memory": 25.0
     },
     "2": {
-      "throughput": 241.3490776298582,
+      "throughput": 243.57057115124772,
       "expected_memory": 25.0
     }
   }

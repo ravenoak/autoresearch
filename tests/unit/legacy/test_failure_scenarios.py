@@ -9,7 +9,11 @@ from autoresearch import distributed
 from autoresearch.errors import SearchError
 from autoresearch.search import Search
 
-from .typing_helpers import make_runtime_config, make_search_config, make_storage_config
+from tests.unit.typing_helpers import (
+    make_runtime_config,
+    make_search_config,
+    make_storage_config,
+)
 
 
 def _make_cfg(backends):

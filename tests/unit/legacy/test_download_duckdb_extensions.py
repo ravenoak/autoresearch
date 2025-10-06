@@ -8,9 +8,10 @@ from pathlib import Path
 
 import duckdb
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location(
     "download_duckdb_extensions",
-    Path(__file__).resolve().parents[2] / "scripts" / "download_duckdb_extensions.py",
+    REPO_ROOT / "scripts" / "download_duckdb_extensions.py",
 )
 if spec is None or spec.loader is None:
     raise RuntimeError("Unable to load download_duckdb_extensions module")

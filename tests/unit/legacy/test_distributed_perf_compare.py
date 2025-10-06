@@ -38,8 +38,11 @@ class DistributedPerfCompareModule(Protocol):
         ...
 
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _load_module() -> DistributedPerfCompareModule:
-    path = Path(__file__).resolve().parents[2] / "scripts" / "distributed_perf_compare.py"
+    path = REPO_ROOT / "scripts" / "distributed_perf_compare.py"
     spec: ModuleSpec | None = spec_from_file_location("distributed_perf_compare", path)
     if spec is None or spec.loader is None:
         raise ImportError("distributed_perf_compare")

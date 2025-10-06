@@ -9,11 +9,9 @@ import pytest
 
 from autoresearch.orchestrator_perf import benchmark_scheduler, queue_metrics, simulate
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 BASELINE_SCHEDULER_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "baseline"
-    / "evaluation"
-    / "scheduler_benchmark.json"
+    REPO_ROOT / "baseline" / "evaluation" / "scheduler_benchmark.json"
 )
 with BASELINE_SCHEDULER_PATH.open(encoding="utf-8") as scheduler_file:
     _SCHEDULER_BASELINE = json.load(scheduler_file)
