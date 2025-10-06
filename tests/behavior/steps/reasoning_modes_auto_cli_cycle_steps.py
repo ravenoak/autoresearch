@@ -716,6 +716,13 @@ def assert_cli_answer_unmodified(auto_cli_cycle: dict[str, Any]) -> None:
         assert message not in payload_answer_lower, (
             "Warning message leaked into CLI payload answer"
         )
+    auto_mode_metrics = response.metrics.get("auto_mode", {})
+    samples = auto_mode_metrics.get("scout_samples")
+    assert isinstance(samples, tuple) and samples, "AUTO metrics must retain scout samples"
+    first_sample = samples[0]
+    assert isinstance(first_sample, Mapping)
+    claims = first_sample.get("claims")
+    assert isinstance(claims, tuple) and claims, "Scout claim snapshots should persist"
 
 
 @then("the CLI response should expose structured unsupported warnings")

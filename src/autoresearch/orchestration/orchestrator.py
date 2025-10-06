@@ -26,20 +26,81 @@ from ..models import QueryResponse
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
 from .circuit_breaker import CircuitBreakerManager, CircuitBreakerState
-from .metrics import (
-    OrchestrationMetrics,
-    record_query,
-    snapshot_mapping,
-    snapshot_reasoning_claims,
-)
+from .metrics import OrchestrationMetrics, record_query
 from .orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
+from .reasoning_payloads import FrozenReasoningStep, normalize_reasoning_step
 from .state import QueryState
 from .state_registry import QueryStateRegistry
 from .token_utils import _capture_token_usage
 from .types import CallbackMap, CycleCallback, TracerProtocol
 
 log = get_logger(__name__)
+
+
+def _snapshot_scout_sample(sample_state: "QueryState", sample_index: int) -> Mapping[str, Any]:
+    """Return an immutable snapshot of a scout sample for telemetry.
+
+    Args:
+        sample_state: Query state produced by the scout synthesiser run.
+        sample_index: Zero-based index identifying the sample order.
+
+    Returns:
+        Mapping providing the scout answer and frozen claim payloads.
+    """
+
+    normalized_claims: list[FrozenReasoningStep] = []
+    for claim in sample_state.claims:
+        normalized = normalize_reasoning_step(claim)
+        if len(normalized):
+            normalized_claims.append(normalized)
+
+    return FrozenReasoningStep(
+        {
+            "index": sample_index,
+            "answer": sample_state.results.get("final_answer"),
+            "claims": tuple(normalized_claims),
+        }
+    )
+
+
+def _reduce_auto_mode_metadata(
+    existing: Mapping[str, Any] | None,
+    decision: "ScoutGateDecision",
+    *,
+    final_answer: Any,
+    scout_samples: tuple[Mapping[str, Any], ...],
+) -> dict[str, Any]:
+    """Normalise AUTO mode metadata with scout samples and gate telemetry.
+
+    Args:
+        existing: Prior AUTO mode metadata to merge into the snapshot.
+        decision: Gate decision emitted after scout evaluation.
+        final_answer: Final answer from the scout synthesiser run.
+        scout_samples: Tuple of frozen scout sample payloads.
+
+    Returns:
+        Fresh metadata dictionary safe for downstream mutation.
+    """
+
+    metadata: dict[str, Any] = {}
+    if isinstance(existing, Mapping):
+        metadata.update({str(key): value for key, value in existing.items()})
+
+    metadata.update(
+        {
+            "scout_answer": final_answer,
+            "scout_should_debate": decision.should_debate,
+            "scout_reason": decision.reason,
+            "scout_samples": scout_samples,
+            "scout_sample_count": len(scout_samples),
+        }
+    )
+
+    scout_agreement = decision.heuristics.get("scout_agreement")
+    metadata["scout_agreement"] = scout_agreement
+
+    return metadata
 
 
 class Orchestrator:
@@ -181,20 +242,6 @@ class Orchestrator:
 
         decision: ScoutGateDecision | None = None
 
-        def _capture_scout_sample(
-            sample_state: QueryState, sample_index: int
-        ) -> Mapping[str, Any]:
-            """Return a normalized snapshot of a scout sample."""
-
-            claim_snapshots = snapshot_reasoning_claims(sample_state.claims)
-            return snapshot_mapping(
-                {
-                    "index": sample_index,
-                    "answer": sample_state.results.get("final_answer"),
-                    "claims": claim_snapshots,
-                }
-            )
-
         scout_samples: list[Mapping[str, Any]] = []
 
         if mode == ReasoningMode.AUTO:
@@ -225,7 +272,7 @@ class Orchestrator:
             scout_state.metadata["execution_metrics"] = metrics.get_summary()
             metrics.record_query_tokens(query)
 
-            scout_samples.append(_capture_scout_sample(scout_state, 0))
+            scout_samples.append(_snapshot_scout_sample(scout_state, 0))
 
             extra_samples = max(0, int(getattr(config, "auto_scout_samples", 0)))
             if extra_samples:
@@ -250,7 +297,7 @@ class Orchestrator:
                         )
                     finally:
                         config.reasoning_mode = original_mode_setting
-                    scout_samples.append(_capture_scout_sample(sample_state, sample_index))
+                    scout_samples.append(_snapshot_scout_sample(sample_state, sample_index))
 
             scout_samples_view = tuple(scout_samples)
             scout_state.metadata["scout_samples"] = scout_samples_view
@@ -263,16 +310,11 @@ class Orchestrator:
                 metrics=metrics,
             )
 
-            auto_meta = dict(scout_state.metadata.get("auto_mode", {}))
-            auto_meta.update(
-                {
-                    "scout_answer": scout_state.results.get("final_answer"),
-                    "scout_should_debate": decision.should_debate,
-                    "scout_reason": decision.reason,
-                    "scout_samples": scout_samples_view,
-                    "scout_sample_count": len(scout_samples),
-                    "scout_agreement": decision.heuristics.get("scout_agreement"),
-                }
+            auto_meta = _reduce_auto_mode_metadata(
+                cast(Mapping[str, Any] | None, scout_state.metadata.get("auto_mode")),
+                decision,
+                final_answer=scout_state.results.get("final_answer"),
+                scout_samples=scout_samples_view,
             )
             scout_state.metadata["auto_mode"] = auto_meta
 

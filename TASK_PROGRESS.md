@@ -1,3 +1,8 @@
+As of **2025-10-06 at 15:23 UTC** targeted AUTO-mode pytest and behaviour runs
+confirm scout claim snapshots persist through the reducer and warning banners no
+longer leak into final answers. Follow-up cache fixture work remains outstanding
+while broader lint fallout still blocks `task verify`.
+
 As of **2025-10-06 at 04:53 UTC** the strict gate remains green and the latest
 `uv run --extra test pytest` attempt fails during collection with 19 errors that
 stem from duplicated imports preceding `from __future__ import annotations` and

@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Optional, Sequence as SeqType, cast
 
 from pydantic import BaseModel, Field, PrivateAttr
@@ -28,6 +29,26 @@ from .task_graph import TaskGraph
 LOCK_TYPE = type(RLock())
 
 log = get_logger(__name__)
+
+
+def _prepare_for_deepcopy(value: Any) -> Any:
+    """Return ``value`` converted into deepcopy-friendly primitives.
+
+    Mapping proxies and ``FrozenReasoningStep`` instances are materialised into
+    standard dictionaries so state cloning can proceed without serialisation
+    errors. Sequences are normalised recursively while leaving scalar values
+    untouched.
+    """
+
+    if isinstance(value, MappingProxyType):
+        return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
+    if isinstance(value, FrozenReasoningStep):
+        return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
+    if isinstance(value, Mapping):
+        return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_prepare_for_deepcopy(item) for item in value]
+    return value
 
 
 def _default_task_graph() -> dict[str, Any]:
@@ -618,6 +639,7 @@ class QueryState(BaseModel):
             for value in self.__dict__.values():
                 if isinstance(value, LOCK_TYPE):
                     effective_memo.setdefault(id(value), value)
+            data = _prepare_for_deepcopy(data)
             data = deepcopy(data, effective_memo)
 
         copied = self.__class__.model_validate(data)

@@ -42,11 +42,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - `uv run mypy --strict src tests` at **16:05 UTC** still reports “Success: no
   issues found in 205 source files”, confirming the strict gate remains green
   while we triage the remaining regressions.【daf290†L1-L2】
-- Targeted pytest runs now show mixed results: AUTO mode still drops claim
-  payloads, failing `test_auto_mode_returns_direct_answer_when_gate_exits`, yet
-  the cache property suite passes under `uv run --extra test pytest
-  tests/unit/test_cache.py -k cache`, proving the namespace-aware slot helper
-  and inline fixtures keep backend calls capped at one per unique key.
+- Targeted pytest runs now confirm AUTO mode preserves scout claim payloads and
+  strips warning banners from final answers while the cache property suite
+  remains green under `uv run --extra test pytest tests/unit/test_cache.py -k
+  cache`. The namespace-aware slot helper and inline fixtures keep backend
+  calls capped at one per unique key.
   【349e1c†L1-L64】【816271†L1-L3】【F:tests/unit/test_cache.py†L538-L686】
   【F:tests/unit/test_cache.py†L742-L874】【F:tests/unit/test_cache.py†L877-L960】
 - The refreshed preflight plan now inserts **PR-R0** for AUTO mode claim
