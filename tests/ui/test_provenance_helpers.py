@@ -34,25 +34,29 @@ def sample_payload() -> DepthPayload:
     )
 
 
-def test_generate_socratic_prompts_highlight_claims(sample_payload) -> None:
+def test_generate_socratic_prompts_highlight_claims(sample_payload: DepthPayload) -> None:
     prompts = generate_socratic_prompts(sample_payload)
     assert prompts
     assert any("claim" in prompt.lower() for prompt in prompts)
 
 
-def test_extract_graphrag_artifacts_filters_non_graph_metrics(sample_payload) -> None:
+def test_extract_graphrag_artifacts_filters_non_graph_metrics(
+    sample_payload: DepthPayload,
+) -> None:
     artifacts = extract_graphrag_artifacts(sample_payload.metrics)
     assert "graphrag_edges" in artifacts
     assert "tokens" not in artifacts
 
 
-def test_audit_status_rollup_orders_known_statuses(sample_payload) -> None:
+def test_audit_status_rollup_orders_known_statuses(sample_payload: DepthPayload) -> None:
     counts = audit_status_rollup(sample_payload.claim_audits)
     assert list(counts.keys())[0] == "supported"
     assert counts["supported"] == 1
 
 
-def test_section_toggle_defaults_reflect_payload_sections(sample_payload) -> None:
+def test_section_toggle_defaults_reflect_payload_sections(
+    sample_payload: DepthPayload,
+) -> None:
     toggles = section_toggle_defaults(sample_payload)
     assert toggles["tldr"]["available"] is True
     assert toggles["key_findings"]["value"] is True
