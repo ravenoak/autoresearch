@@ -1,6 +1,15 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 6, 2025 at 04:53 UTC** `uv run mypy --strict src tests` reports
+“Success: no issues found in 794 source files”, verifying the strict gate stays
+green after the latest merges.【4fb61a†L1-L2】 A full
+`uv run --extra test pytest` sweep at the same timestamp halts during
+collection with 19 errors triggered by duplicated imports that precede
+`from __future__ import annotations` and missing `tests/scripts` shim files
+referenced by the legacy harness.【8e089f†L1-L118】 These failures prevent the
+suite from exercising the orchestrator regressions recorded below.
+
 As of **October 6, 2025 at 04:41 UTC** the merged search, cache, and AUTO-mode
 telemetry PRs introduced lint regressions: `uv run task verify` now fails
 inside `flake8` with unused imports, duplicate definitions, misplaced
@@ -64,6 +73,12 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   【F:tests/unit/legacy/test_cache.py†L779-L879】【F:tests/unit/legacy/test_cache.py†L883-L1010】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
+- [ ] Land **PR-L0** – reorder `from __future__ import annotations`, drop
+  duplicated imports, and rerun `uv run task check` to confirm lint passes
+  before pytest collection resumes.
+- [ ] Land **PR-L1** – restore the legacy helper scripts expected under
+  `tests/scripts/` (or redirect imports to `scripts/`), backfill the scheduler
+  benchmark fixtures, and document the provenance inside `baseline/`.
 - [x] Land **PR-R1** – relocate reasoning warning banners into structured
   telemetry and update behaviour coverage to assert clean answers.
   【F:src/autoresearch/orchestration/state.py†L132-L206】
@@ -73,6 +88,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
   mypy and pytest again, then capture fresh verify and coverage logs for the
   release dossier.
+- [ ] Land **PR-V1** – once lint and collection pass, rerun `task verify` and
+  `task coverage` without GPU extras, archive the October logs, and update the
+  release dossier before the sign-off review.
 - [ ] Schedule and run the release sign-off review after the suite and
   coverage gates return to green.
 

@@ -1,3 +1,11 @@
+As of **2025-10-06 at 04:53 UTC** the strict gate remains green and the latest
+`uv run --extra test pytest` attempt fails during collection with 19 errors that
+stem from duplicated imports preceding `from __future__ import annotations` and
+missing legacy helper scripts expected under `tests/scripts/`. The fresh runs
+confirm `uv run mypy --strict src tests` still reports “Success: no issues
+found in 794 source files”, while pytest cannot proceed until we restore module
+hygiene and fixture assets.【4fb61a†L1-L2】【8e089f†L1-L118】
+
 As of **2025-10-06 at 04:41 UTC** the merged search/cache/AUTO telemetry PRs
 introduced lint fallout: `uv run task verify` now fails during `flake8` with
 dozens of unused imports, misplaced `__future__` imports, and newline errors

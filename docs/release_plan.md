@@ -19,11 +19,18 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 ## Status
 
 The strict typing gate remains green, but the latest release sweep regressed
-at the lint step. At **2025-10-06 04:41 UTC** `uv run task verify` exits
-during `flake8` with unused imports, duplicate definitions, misplaced
-`__future__` imports, and newline violations across the newly merged search,
-cache, and AUTO-mode telemetry changes. Mypy and pytest did not run because
-the lint step fails early.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+at the lint step. At **2025-10-06 04:53 UTC** `uv run mypy --strict src tests`
+still reports “Success: no issues found in 794 source files”, whereas the
+paired `uv run --extra test pytest` attempt halts during collection with 19
+errors caused by duplicated imports appearing before `from __future__ import
+annotations` and missing helper scripts that previously lived under
+`tests/scripts/`. These structural failures must be cleared before we can
+measure the behaviour regressions tracked in the alpha readiness plan.
+【4fb61a†L1-L2】【8e089f†L1-L118】 At **2025-10-06 04:41 UTC** `uv run task
+verify` exits during `flake8` with unused imports, duplicate definitions,
+misplaced `__future__` imports, and newline violations across the newly merged
+search, cache, and AUTO-mode telemetry changes. Mypy and pytest did not run
+because the lint step fails early.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 The follow-on **04:41 UTC** `uv run task coverage` attempt began compiling the
 GPU and analysis extras (`hdbscan==0.8.40` is the first build) and was
 aborted to avoid spending the release window on optional wheels; the partial
@@ -31,8 +38,9 @@ log is archived for the next sweep once lint is stable.【F:baseline/logs/task-c
 
 The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now marks
 PR-S1 (deterministic search stubs), PR-S2 (namespace-aware cache keys), and
-PR-R0 (AUTO-mode claim hydration) as complete while promoting lint repair and
-coverage refresh as the next actions.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
+PR-R0 (AUTO-mode claim hydration) as complete while promoting lint repair,
+legacy fixture restoration (PR-L0/PR-L1), orchestrator clean-up (PR-R2/PR-P1),
+and coverage refresh (PR-V1) as the next actions.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
 The alpha ticket mirrors the updated checklist and references the new logs so
 release review can trace the lint regression and aborted coverage run.
 【F:issues/prepare-first-alpha-release.md†L1-L64】【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】

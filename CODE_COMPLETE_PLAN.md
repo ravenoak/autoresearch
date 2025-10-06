@@ -41,6 +41,16 @@ gates, and the alpha ticket mirrors the same checklist.
   while answers remain clean in CLI and API flows.
 - [ ] Deliver **PR-P1** – recalibrate scheduler benchmarks with merged claim
   hydration and deterministic cache behaviour.
+- [ ] Deliver **PR-L0** – restore test module hygiene by removing duplicated
+  imports, ensuring each file keeps `from __future__ import annotations` at the
+  top, and capturing a green `uv run task check` log for the release dossier.
+- [ ] Deliver **PR-L1** – reintroduce the legacy helper scripts under
+  `tests/scripts/` (or rewire imports to the production copies), regenerate the
+  scheduler benchmark fixture from current baselines, and document provenance in
+  `baseline/` so pytest collection can progress.
+- [ ] Deliver **PR-V1** – once lint and collection succeed, capture fresh
+  `task verify` and `task coverage` logs without GPU extras, restoring the
+  release evidence trail ahead of the tag proposal.
 - [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
   mypy and pytest, then rerun coverage without GPU extras unless explicitly
   required and publish the new logs through the release dossier.
