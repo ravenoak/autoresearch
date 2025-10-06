@@ -49,6 +49,7 @@ htmlcov/
 nosetests.xml
 coverage/
 coverage.xml
+!/coverage.xml
 !baseline/coverage.xml
 *.cover
 *.py,cover
