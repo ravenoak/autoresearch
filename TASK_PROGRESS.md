@@ -49,9 +49,9 @@ As of **2025-10-05 at 05:22 UTC** the formatter fences control characters,
 zero-width spaces, and whitespace-only strings inside Markdown code blocks while
 leaving JSON payloads untouched; the expanded property suite covering these
 cases now passes under `uv run --extra test pytest
-tests/unit/test_output_formatter_property.py`, and the behaviour scenario for
+tests/unit/test_output_formatter.py`, and the behaviour scenario for
 "Markdown escapes control characters" confirms the CLI surfaces the escaped
-blocks.【F:src/autoresearch/output_format.py†L880-L1469】【F:tests/unit/test_output_formatter_property.py†L21-L146】【F:tests/behavior/features/output_formatting.feature†L25-L27】【F:tests/behavior/steps/output_formatting_steps.py†L89-L156】【b982c8†L1-L5】
+blocks.【F:src/autoresearch/output_format.py†L880-L1469】【F:tests/unit/test_output_formatter.py†L1-L181】【F:tests/behavior/features/output_formatting.feature†L25-L27】【F:tests/behavior/steps/output_formatting_steps.py†L89-L156】【b982c8†L1-L5】
 
 As of **2025-10-05 at 01:33 UTC** fallback placeholders now ship with canonical
 URLs, backend labels, and stage-aware embedding telemetry. The stub backend,

@@ -7,6 +7,8 @@ See `docs/specification.md` and
 
 import json
 import re
+from typing import Optional
+
 from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.strategies import SearchStrategy
 
@@ -17,6 +19,7 @@ from autoresearch.models import QueryResponse
 _CONTROL_CODEPOINTS = [*range(0x00, 0x20), 0x7F]
 _FORMAT_CODEPOINTS = [0x200B, 0xFEFF]
 _ESCAPE_PATTERN = re.compile("\\\\u([0-9a-fA-F]{4})")
+_FENCE_PATTERN = re.compile(r"^(?P<prefix>[^`]*)(?P<fence>`{3,})(?P<language>[A-Za-z0-9]*)$")
 
 
 def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
@@ -75,23 +78,43 @@ def _strip_indent_preserving(text: str, indent: str) -> str:
     return "".join(line[len(indent) :] if line.startswith(indent) else line for line in lines)
 
 
-def _extract_block(section: str, indent: str = "") -> str:
-    """Return the raw contents of a fenced code block."""
+def _parse_fence(line: str) -> Optional[tuple[str, int]]:
+    """Return the prefix and fence length for a Markdown code fence line."""
 
-    marker = "```text"
-    start = section.find(marker)
-    if start == -1:
-        return ""
-    start = section.find("\n", start)
-    if start == -1:
-        return ""
-    start += 1
-    closing = f"\n{indent}```"
-    end = section.find(closing, start)
-    if end == -1:
-        end = len(section)
-    body = section[start:end]
-    return _strip_indent_preserving(body, indent)
+    stripped = line.rstrip("\n")
+    match = _FENCE_PATTERN.match(stripped)
+    if match is None:
+        return None
+    prefix = match.group("prefix")
+    fence_length = len(match.group("fence"))
+    return prefix, fence_length
+
+
+def _extract_block(section: str) -> str:
+    """Return the raw contents of the first fenced code block in ``section``."""
+
+    lines = section.splitlines(keepends=True)
+    for idx, line in enumerate(lines):
+        parsed = _parse_fence(line)
+        if parsed is None:
+            continue
+        prefix, fence_length = parsed
+        indent = " " * len(prefix)
+        closing = f"{indent}{'`' * fence_length}"
+        body_lines: list[str] = []
+        pointer = idx + 1
+        while pointer < len(lines):
+            candidate = lines[pointer]
+            if candidate.rstrip("\n") == closing:
+                break
+            body_lines.append(candidate)
+            pointer += 1
+        body = "".join(body_lines)
+        stripped = _strip_indent_preserving(body, indent)
+        if stripped.endswith("\n"):
+            stripped = stripped[:-1]
+        return stripped
+    return ""
 
 
 def _decode_value(section: str) -> str:
@@ -118,17 +141,27 @@ def _decode_bullets(section: str) -> list[str]:
         if not line.strip():
             idx += 1
             continue
-        if line.startswith("- ```text"):
-            idx += 1
+        parsed = _parse_fence(line)
+        if parsed is not None and parsed[0].startswith("- "):
+            prefix, fence_length = parsed
+            indent = " " * len(prefix)
+            closing = f"{indent}{'`' * fence_length}"
+            lookahead = idx + 1
             block_lines: list[str] = []
-            while idx < len(lines) and not lines[idx].startswith("  ```"):
-                block_lines.append(lines[idx])
+            while lookahead < len(lines) and lines[lookahead].rstrip("\n") != closing:
+                block_lines.append(lines[lookahead])
+                lookahead += 1
+            if lookahead >= len(lines):
+                content = line[len(prefix) :]
+                if content.endswith("\n"):
+                    content = content[:-1]
+                items.append(_decode_sanitized(content))
                 idx += 1
-            body = _strip_indent_preserving("".join(block_lines), "  ")
+                continue
+            body = _strip_indent_preserving("".join(block_lines), indent)
             if body.endswith("\n"):
                 body = body[:-1]
-            if idx < len(lines) and lines[idx].startswith("  ```"):
-                idx += 1
+            idx = lookahead + 1
             items.append(_decode_sanitized(body))
             continue
         if line.startswith("- "):
@@ -151,17 +184,31 @@ def _decode_numbered(section: str) -> list[str]:
         if not line.strip():
             idx += 1
             continue
-        if ". ```text" in line:
-            idx += 1
+        parsed = _parse_fence(line)
+        if (
+            parsed is not None
+            and parsed[0].endswith(". ")
+            and parsed[0][:-2].isdigit()
+        ):
+            prefix, fence_length = parsed
+            indent = " " * len(prefix)
+            closing = f"{indent}{'`' * fence_length}"
+            lookahead = idx + 1
             block_lines: list[str] = []
-            while idx < len(lines) and not lines[idx].startswith("   ```"):
-                block_lines.append(lines[idx])
+            while lookahead < len(lines) and lines[lookahead].rstrip("\n") != closing:
+                block_lines.append(lines[lookahead])
+                lookahead += 1
+            if lookahead >= len(lines):
+                content = line.split(". ", 1)[1]
+                if content.endswith("\n"):
+                    content = content[:-1]
+                items.append(_decode_sanitized(content))
                 idx += 1
-            body = _strip_indent_preserving("".join(block_lines), "   ")
+                continue
+            body = _strip_indent_preserving("".join(block_lines), indent)
             if body.endswith("\n"):
                 body = body[:-1]
-            if idx < len(lines) and lines[idx].startswith("   ```"):
-                idx += 1
+            idx = lookahead + 1
             items.append(_decode_sanitized(body))
             continue
         if ". " in line:
@@ -200,6 +247,21 @@ def _section(markdown: str, header: str) -> str:
     answer="\u2028split",
     citations=["only\r", "\u200b"],
     reasoning=["\u000bbranch"],
+)
+@example(
+    answer="tick```tick",
+    citations=["prefix````suffix", "plain"],
+    reasoning=["wrap`````wrap", "steady"],
+)
+@example(
+    answer="\u2029para",
+    citations=["lead\u2028line"],
+    reasoning=["mix```multi", "tab\ttrail"],
+)
+@example(
+    answer="```",
+    citations=["```"],
+    reasoning=["```"],
 )
 @given(
     answer=_edge_text(),
