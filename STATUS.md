@@ -19,6 +19,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 6, 2025
+- Reran `uv run mypy --strict src tests` at **04:53 UTC** and the sweep still
+  reports “Success: no issues found in 794 source files”, confirming the strict
+  gate stays green after the latest merges. The paired `uv run --extra test
+  pytest` attempt at the same timestamp stops during collection with 19 errors
+  triggered by duplicated imports preceding `from __future__ import
+  annotations` and missing legacy helper scripts that formerly lived under
+  `tests/scripts/`.【4fb61a†L1-L2】【8e089f†L1-L118】
 - Captured a fresh `uv run task verify` sweep at **04:41 UTC** after the
   targeted search, cache, and AUTO-mode PRs merged. The run now fails during
   `flake8` with 70+ style regressions across the API entrypoint, behaviour
