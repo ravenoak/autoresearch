@@ -1,6 +1,6 @@
-"""CLI entry point for Autoresearch with adaptive output formatting."""
-
 from __future__ import annotations
+
+# CLI entry point for Autoresearch with adaptive output formatting.
 
 import importlib
 import json
@@ -16,10 +16,10 @@ import typer
 from rich.console import Console
 
 from ..cli_helpers import (
+    depth_help_text,
+    depth_option_callback,
     handle_command_not_found,
     parse_agent_groups,
-    depth_option_callback,
-    depth_help_text,
 )
 from ..cli_utils import (
     Verbosity,
@@ -35,21 +35,19 @@ from ..cli_utils import (
     print_verbose,
     print_warning,
     set_verbosity,
-)
-from ..cli_utils import sparql_query_cli as _cli_sparql
-from ..cli_utils import (
+    sparql_query_cli as _cli_sparql,
     visualize_metrics_cli,
+    visualize_query_cli as _cli_visualize_query,
+    visualize_rdf_cli as _cli_visualize,
 )
-from ..cli_utils import visualize_query_cli as _cli_visualize_query
-from ..cli_utils import visualize_rdf_cli as _cli_visualize
 from ..config.loader import ConfigLoader
 from ..error_utils import format_error_for_cli, get_error_info
 from ..errors import StorageError
 from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
-from ..output_format import OutputDepth
 from ..orchestration.reverify import ReverifyOptions, run_reverification
+from ..output_format import OutputDepth
 
 
 app = cast(
@@ -82,6 +80,8 @@ def typed_command(*args: Any, **kwargs: Any) -> Callable[[F], F]:
     """Return a type-preserving Typer command decorator."""
 
     return cast("Callable[[F], F]", app.command(*args, **kwargs))
+
+
 # Provide test hooks without mutating private Typer attributes directly.
 visualization_hooks: VisualizationHooks = attach_cli_hooks(
     app,

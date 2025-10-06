@@ -7,12 +7,16 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 6, 2025 at 04:41 UTC** the strict typing gate stays green, but
-`uv run task verify` now fails inside `flake8` with unused imports, duplicate
-definitions, misplaced `__future__` imports, and newline violations across the
-search, cache, and AUTO-mode telemetry updates. Mypy and pytest do not execute
-until the lint fallout is resolved.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
-The paired `uv run task coverage` sweep begins compiling GPU-heavy extras
+As of **October 6, 2025 at 14:38 UTC** the refreshed `uv run task check` sweep
+reaches flake8 and mypy cleanly before `check_spec_tests.py` halts on the
+long-standing documentation/test mapping backlog; lint fallout is resolved and
+spec coverage remapping is now the gate to a green run.
+【F:baseline/logs/task-check-20251006T143809Z.log†L1-L160】 The prior
+**04:41 UTC** `uv run task verify` log still captures `flake8` failures across
+search, cache, and AUTO-mode telemetry modules, so the verify gate remains
+closed until those files receive the same hygiene pass.
+【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】 The paired
+`uv run task coverage` sweep begins compiling GPU-heavy extras
 (`hdbscan==0.8.40` is the first build) and was aborted to preserve the
 evaluation window, so coverage remains pegged to the earlier 92.4 % evidence
 until the lint cleanup lands.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
