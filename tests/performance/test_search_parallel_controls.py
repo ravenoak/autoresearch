@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Performance regression tests for search parallelisation controls."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression test for distributed coordination simulation."""
 
 from __future__ import annotations

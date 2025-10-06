@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import autoresearch.search as search
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch

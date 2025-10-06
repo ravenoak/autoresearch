@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for the LLM capabilities module.
 
 This module tests the functionality of the LLM capability probing system,

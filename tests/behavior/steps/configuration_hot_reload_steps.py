@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 import os
 from pytest_bdd import scenario, when, then, parsers

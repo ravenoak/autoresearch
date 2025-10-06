@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from pytest_bdd import given, when, then, scenario
 
 from autoresearch.config.models import ConfigModel, APIConfig

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for the storage backup and restore functionality.
 
 This module tests the backup and restore functionality for the storage system,

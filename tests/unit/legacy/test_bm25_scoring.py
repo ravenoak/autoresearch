@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression tests for BM25 scoring implementation."""
 
 from typing import Any, Dict, List

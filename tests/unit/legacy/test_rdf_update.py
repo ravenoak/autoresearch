@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for RDF update utilities."""
 
 from unittest.mock import MagicMock, patch

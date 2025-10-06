@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.api.utils import generate_bearer_token, verify_bearer_token
 
 

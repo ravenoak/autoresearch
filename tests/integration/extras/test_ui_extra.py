@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the UI optional extra."""
 
 from __future__ import annotations

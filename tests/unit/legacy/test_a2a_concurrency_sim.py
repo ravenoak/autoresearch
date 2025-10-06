@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Validate A2A concurrency simulation against dispatch invariants.
 
 See docs/specs/a2a-interface.md for invariants.

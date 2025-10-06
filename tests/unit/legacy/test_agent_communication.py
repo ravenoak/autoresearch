@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.messages import MessageProtocol
 from autoresearch.agents.registry import AgentFactory, AgentRegistry

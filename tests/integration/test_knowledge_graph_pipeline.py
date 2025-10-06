@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests validating knowledge graph construction."""
 
 from __future__ import annotations

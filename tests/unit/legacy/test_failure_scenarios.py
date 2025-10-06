@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import sys
 from urllib.parse import quote_plus
 

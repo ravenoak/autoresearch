@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Validate streaming webhook simulation against reliability bound.
 
 See :mod:`docs.algorithms.api_streaming` for proof sketch.

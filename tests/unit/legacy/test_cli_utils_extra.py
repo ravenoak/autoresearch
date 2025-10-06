@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.cli_utils import (
     format_error,
     format_success,

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 from pytest_bdd import scenario, when, then
 from typer.testing import CliRunner

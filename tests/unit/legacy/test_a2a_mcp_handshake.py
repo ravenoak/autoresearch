@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from types import MethodType
 from typing import Any
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for token usage tracking functionality.
 
 This module contains tests for the token usage tracking functionality

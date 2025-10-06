@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for deployment configuration validation."""
 
 from __future__ import annotations

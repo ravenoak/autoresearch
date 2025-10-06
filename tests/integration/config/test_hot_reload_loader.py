@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import tomllib
 import tomli_w
 

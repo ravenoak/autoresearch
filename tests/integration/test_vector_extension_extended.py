@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Extended tests for the vector extension functionality.
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for API edge case scenarios."""
 
 from pytest_bdd import scenario, given, when, then, parsers

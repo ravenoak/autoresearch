@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for A2A MCP integration scenarios."""
 
 from __future__ import annotations

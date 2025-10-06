@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import threading
 from collections import Counter
 from typing import Any

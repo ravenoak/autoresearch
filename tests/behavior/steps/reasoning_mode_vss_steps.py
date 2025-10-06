@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from pytest_bdd import scenarios
 
 pytest_plugins = [

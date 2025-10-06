@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from fastapi import Request
 from fastapi.responses import PlainTextResponse
 

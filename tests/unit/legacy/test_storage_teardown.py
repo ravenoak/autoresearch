@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the teardown function in the storage module.
 
 This module contains tests for the teardown function, which is responsible

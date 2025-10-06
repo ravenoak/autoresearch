@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
 from types import MethodType

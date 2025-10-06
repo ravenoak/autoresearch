@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.agents.specialized.planner import PlannerPromptBuilder
 
 

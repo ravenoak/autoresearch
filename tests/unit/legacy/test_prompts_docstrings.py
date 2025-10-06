@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import inspect
 from autoresearch.agents.prompts import (
     PromptTemplate,

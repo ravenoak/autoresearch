@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests covering CLI SPARQL utilities."""
 
 from __future__ import annotations

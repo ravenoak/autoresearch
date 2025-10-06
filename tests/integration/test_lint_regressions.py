@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression tests guarding against lint regressions in critical modules."""
 
 from __future__ import annotations

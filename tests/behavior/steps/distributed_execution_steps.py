@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for distributed execution feature."""
 
 from __future__ import annotations

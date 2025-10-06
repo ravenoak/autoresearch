@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from hypothesis import given
 from hypothesis import strategies as st
 

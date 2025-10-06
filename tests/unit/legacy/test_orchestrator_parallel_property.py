@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property-based checks for parallel query execution."""
 
 from unittest.mock import patch

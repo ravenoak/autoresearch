@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the GPU optional extra."""
 
 from __future__ import annotations

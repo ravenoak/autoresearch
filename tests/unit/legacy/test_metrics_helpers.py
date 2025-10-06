@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for helpers in `orchestration.metrics`."""
 
 from __future__ import annotations

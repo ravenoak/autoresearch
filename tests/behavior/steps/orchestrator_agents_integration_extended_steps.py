@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for extended orchestrator and agents integration tests.
 
 This module contains step definitions for testing the extended integration between

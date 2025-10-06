@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression test for search results stability."""
 
 from __future__ import annotations

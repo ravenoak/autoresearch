@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 

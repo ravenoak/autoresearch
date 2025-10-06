@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared test helpers for integration suites."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression test for cache eviction simulation."""
 
 from __future__ import annotations

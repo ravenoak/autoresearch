@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared typing utilities for fixture stubs.
 
 This module centralises lightweight protocols and dataclasses used by

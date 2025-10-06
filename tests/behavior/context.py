@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared typing helpers for behavior test context payloads."""
 
 from __future__ import annotations

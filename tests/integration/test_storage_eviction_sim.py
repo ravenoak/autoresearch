@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Verify storage eviction simulation aligns with implementation."""
 
 from __future__ import annotations

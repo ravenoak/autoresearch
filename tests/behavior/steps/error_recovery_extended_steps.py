@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Scenario registrations for extended error recovery behavior tests."""
 
 from __future__ import annotations

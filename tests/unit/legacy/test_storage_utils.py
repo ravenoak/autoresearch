@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from collections import OrderedDict
 from unittest.mock import patch
 

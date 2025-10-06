@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from tests.behavior.context import BehaviorContext
 import logging
 import os

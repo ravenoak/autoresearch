@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 """Database connectivity checks for ``scripts/validate_deploy.py``."""

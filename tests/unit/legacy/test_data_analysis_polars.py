@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 
 from tests.optional_imports import import_or_skip

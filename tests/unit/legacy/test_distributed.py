@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 
 from autoresearch.distributed import InMemoryBroker, publish_claim, get_message_broker

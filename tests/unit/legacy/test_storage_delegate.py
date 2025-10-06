@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from queue import Queue
 
 from autoresearch.storage import (

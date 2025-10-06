@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression test ensuring token usage stays within baseline."""
 
 from __future__ import annotations

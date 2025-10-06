@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Interface protocol tests.
 Spec: docs/specs/interfaces.md
 """

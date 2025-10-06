@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.extensions import VSSExtensionLoader

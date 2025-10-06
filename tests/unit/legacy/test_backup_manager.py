@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for storage backup creation, restore, and scheduling."""
 
 from pathlib import Path

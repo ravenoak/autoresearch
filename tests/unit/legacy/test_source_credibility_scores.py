@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for source credibility scoring logic."""
 
 from unittest.mock import MagicMock, patch

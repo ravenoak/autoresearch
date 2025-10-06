@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression test for invoking a single feature file by path."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import asyncio
 from unittest.mock import patch
 

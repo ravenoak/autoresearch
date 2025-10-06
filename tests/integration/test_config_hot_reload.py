@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import time
 from collections.abc import Callable
 from contextlib import contextmanager

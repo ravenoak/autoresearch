@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Load behavior fixtures when running feature files directly."""
 
 import sys

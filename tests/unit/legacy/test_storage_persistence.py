@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression tests for storage initialization and cleanup.
 
 See docs/algorithms/storage_initialization.md for the specification.

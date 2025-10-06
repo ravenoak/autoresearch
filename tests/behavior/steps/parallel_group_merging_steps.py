@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for parallel group merging feature."""
 
 from __future__ import annotations

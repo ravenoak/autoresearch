@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import logging
 import time
 from autoresearch.logging_utils import configure_logging

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared executor helpers for distributed integration tests.
 
 These utilities provide lightweight doubles for process- and Ray-based

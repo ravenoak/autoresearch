@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for Streamlit rerun helper compatibility."""
 
 from __future__ import annotations

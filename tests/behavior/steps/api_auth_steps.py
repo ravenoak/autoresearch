@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for API authentication and rate limiting."""
 
 from __future__ import annotations

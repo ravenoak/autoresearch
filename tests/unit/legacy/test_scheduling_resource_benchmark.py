@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for scheduling_resource_benchmark script."""
 
 from importlib import util

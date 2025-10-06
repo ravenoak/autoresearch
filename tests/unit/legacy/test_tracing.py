@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch import tracing
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider

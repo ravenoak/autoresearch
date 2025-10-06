@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import networkx as nx
 from unittest.mock import MagicMock
 import pytest

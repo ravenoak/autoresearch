@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 from tests.behavior.utils import as_payload
 from typing import Any

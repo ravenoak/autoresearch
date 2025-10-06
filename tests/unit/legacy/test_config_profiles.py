@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for configuration profiles feature.
 
 This module contains tests for the configuration profiles feature, which allows

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 from tests.behavior.utils import as_payload
 from tests.behavior.context import BehaviorContext

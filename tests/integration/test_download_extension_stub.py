@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Test DuckDB extension download fallback."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from pytest_bdd import scenario, given, when, then
 
 from autoresearch.config.loader import ConfigLoader

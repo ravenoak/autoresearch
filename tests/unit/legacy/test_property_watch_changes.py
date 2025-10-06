@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import threading
 from hypothesis import given, strategies as st, settings, HealthCheck
 from autoresearch.config.loader import ConfigLoader

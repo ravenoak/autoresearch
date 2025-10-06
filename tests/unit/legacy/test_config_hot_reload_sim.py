@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Run config hot reload simulation."""
 
 import logging

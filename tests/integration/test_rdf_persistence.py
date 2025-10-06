@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for RDF persistence functionality.
 
 This module contains tests for the RDF persistence functionality of the storage

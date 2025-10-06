@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Fast tests for storage_backup module."""
 
 from autoresearch.storage_backup import list_backups

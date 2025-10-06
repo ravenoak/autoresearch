@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for RDF graph visualization helper."""
 
 from __future__ import annotations

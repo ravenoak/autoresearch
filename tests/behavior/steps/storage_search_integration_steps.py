@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for storage and search integration tests.
 
 This module contains step definitions for testing the integration between

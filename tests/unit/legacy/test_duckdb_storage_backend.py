@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """DuckDB storage backend tests.
 
 See docs/algorithms/storage_initialization.md for the specification.

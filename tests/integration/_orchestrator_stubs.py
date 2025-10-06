@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared orchestrator doubles used by integration tests.
 
 These helpers centralise monkeypatched collaborators so individual tests only

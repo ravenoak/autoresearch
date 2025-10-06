@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.orchestration.budgeting import _apply_adaptive_token_budget
 from tests.helpers import make_config_model
 

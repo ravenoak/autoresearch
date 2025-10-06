@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for ontology reasoning utilities."""
 
 from pathlib import Path

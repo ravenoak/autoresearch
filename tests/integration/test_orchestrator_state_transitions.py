@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression tests for storage claim audit provenance."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics

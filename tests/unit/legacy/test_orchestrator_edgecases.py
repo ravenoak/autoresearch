@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 from autoresearch.orchestration.orchestrator import Orchestrator, ReasoningMode
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils

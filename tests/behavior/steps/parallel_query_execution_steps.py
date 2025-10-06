@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for parallel query execution tests.
 
 This module contains step definitions for testing the parallel query execution

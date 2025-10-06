@@ -250,7 +250,7 @@ def snapshot_mapping(payload: Mapping[str, Any]) -> Mapping[str, Any]:
     """
 
     if isinstance(payload, FrozenReasoningStep):
-        items = payload.to_dict().items()
+        items: Iterable[tuple[str, Any]] = payload.to_dict().items()
     else:
         items = payload.items()
     snapshot: dict[str, Any] = {}

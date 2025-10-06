@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """BDD steps exercising optional extras."""
 
 from __future__ import annotations

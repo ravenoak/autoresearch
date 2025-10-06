@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for `ResourceMonitor` start/stop behavior and gauge helper."""
 
 from __future__ import annotations

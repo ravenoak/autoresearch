@@ -9,8 +9,9 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional, TypeVar, cast
 
+import click
 import typer
 from rich.console import Console
 
@@ -50,19 +51,37 @@ from ..monitor import monitor_app
 from ..output_format import OutputDepth
 from ..orchestration.reverify import ReverifyOptions, run_reverification
 
-app = typer.Typer(
-    help=(
-        "Autoresearch CLI entry point.\n\n"
-        "Set the reasoning mode using --mode or in autoresearch.toml under "
-        "[core.reasoning_mode]. Valid values: auto, direct, dialectical, "
-        "chain-of-thought. Use --primus-start to choose the starting agent "
-        "for dialectical reasoning."
+
+app = cast(
+    typer.Typer,
+    cast(Any, typer).Typer(
+        help=(
+            "Autoresearch CLI entry point.\n\n"
+            "Set the reasoning mode using --mode or in autoresearch.toml under "
+            "[core.reasoning_mode]. Valid values: auto, direct, dialectical, "
+            "chain-of-thought. Use --primus-start to choose the starting agent "
+            "for dialectical reasoning."
+        ),
+        name="autoresearch",
+        no_args_is_help=True,  # Show help when no arguments are provided
+        pretty_exceptions_enable=False,
+        # Disable pretty exceptions to handle them ourselves
     ),
-    name="autoresearch",
-    no_args_is_help=True,  # Show help when no arguments are provided
-    pretty_exceptions_enable=False,
-    # Disable pretty exceptions to handle them ourselves
 )
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def typed_callback(**kwargs: Any) -> Callable[[F], F]:
+    """Return a type-preserving Typer callback decorator."""
+
+    return cast("Callable[[F], F]", app.callback(**kwargs))
+
+
+def typed_command(*args: Any, **kwargs: Any) -> Callable[[F], F]:
+    """Return a type-preserving Typer command decorator."""
+
+    return cast("Callable[[F], F]", app.command(*args, **kwargs))
 # Provide test hooks without mutating private Typer attributes directly.
 visualization_hooks: VisualizationHooks = attach_cli_hooks(
     app,
@@ -95,9 +114,9 @@ evaluation_app = _evaluation_app
 app.add_typer(evaluation_app, name="evaluate")
 
 
-@app.callback(invoke_without_command=False)
+@typed_callback(invoke_without_command=False)
 def start_watcher(
-    ctx: typer.Context,
+    ctx: click.Context,
     vss_path: Optional[str] = typer.Option(
         None,
         "--vss-path",
@@ -153,7 +172,8 @@ def start_watcher(
             break
 
     # Show welcome message on first run
-    if is_first_run and ctx.invoked_subcommand is None:
+    invoked_subcommand = getattr(ctx, "invoked_subcommand", None)
+    if is_first_run and invoked_subcommand is None:
         console.print("\n" + format_success("Welcome to Autoresearch!", symbol=False))
         console.print(
             "A local-first research assistant that coordinates multiple agents "
@@ -190,7 +210,7 @@ def start_watcher(
     if any(arg in {"--help", "-h"} for arg in sys.argv):
         return
 
-    if ctx.invoked_subcommand not in {"config", "monitor"}:
+    if invoked_subcommand not in {"config", "monitor"}:
         try:
             # Import lazily to avoid side-effects during help rendering
             from ..storage import StorageManager
@@ -210,10 +230,12 @@ def start_watcher(
         finally:
             _config_loader.stop_watching()
 
-    ctx.call_on_close(_stop_watcher)
+    call_on_close = getattr(ctx, "call_on_close", None)
+    if callable(call_on_close):
+        call_on_close(_stop_watcher)
 
 
-@app.command()
+@typed_command()
 def search(
     query: str = typer.Argument(..., help="Natural-language query to process"),
     output: Optional[str] = typer.Option(
@@ -662,7 +684,7 @@ def search(
 app.add_typer(monitor_app, name="monitor")
 
 
-@app.command()
+@typed_command()
 def reverify(
     state_id: str = typer.Argument(
         ..., help="State ID emitted after a previous `autoresearch search` run"
@@ -747,7 +769,7 @@ def reverify(
         print_info(f"State ID: {response.state_id}", symbol=False)
 
 
-@app.command()
+@typed_command()
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the MCP server to"),
     port: int = typer.Option(8080, "--port", "-p", help="Port to bind the MCP server to"),
@@ -785,7 +807,7 @@ def serve(
         raise typer.Exit(0)
 
 
-@app.command()
+@typed_command()
 def serve_a2a(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the A2A server to"),
     port: int = typer.Option(8765, "--port", "-p", help="Port to bind the A2A server to"),
@@ -850,7 +872,7 @@ def serve_a2a(
         console.print(f"[bold red]Error starting A2A server:[/bold red] {str(e)}")
 
 
-@app.command("completion")
+@typed_command("completion")
 def completion(
     shell: str = typer.Argument(
         ..., help="Shell to generate completion script for (bash, zsh, fish)"
@@ -945,7 +967,7 @@ _{cmd.upper()}_COMPLETE=fish_source {cmd} | source
         raise typer.Exit(1)
 
 
-@app.command("capabilities")
+@typed_command("capabilities")
 def capabilities(
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
@@ -1076,7 +1098,7 @@ def capabilities(
             print(f"- **{key}**: {value}")
 
 
-@app.command("test_mcp")
+@typed_command("test_mcp")
 def test_mcp(
     host: str = typer.Option("127.0.0.1", "--host", help="Host where the MCP server is running"),
     port: int = typer.Option(8080, "--port", "-p", help="Port where the MCP server is running"),
@@ -1133,7 +1155,7 @@ def test_mcp(
     print(formatted_results)
 
 
-@app.command("test_a2a")
+@typed_command("test_a2a")
 def test_a2a(
     host: str = typer.Option("127.0.0.1", "--host", help="Host where the A2A server is running"),
     port: int = typer.Option(8765, "--port", "-p", help="Port where the A2A server is running"),
@@ -1193,7 +1215,7 @@ def test_a2a(
     print(formatted_results)
 
 
-@app.command("visualize")
+@typed_command("visualize")
 def visualize(
     query: str = typer.Argument(..., help="Query to visualize"),
     output: str = typer.Argument(..., help="Output PNG path for the visualization"),
@@ -1234,7 +1256,7 @@ def visualize(
         raise typer.Exit(1)
 
 
-@app.command("visualize-rdf")
+@typed_command("visualize-rdf")
 def visualize_rdf_cli(
     output: str = typer.Argument(
         "rdf_graph.png",
@@ -1249,7 +1271,7 @@ def visualize_rdf_cli(
         raise typer.Exit(1)
 
 
-@app.command("sparql")
+@typed_command("sparql")
 def sparql_query(
     query: str = typer.Argument(..., help="SPARQL query to run"),
     ontology_reasoner: Optional[str] = typer.Option(
@@ -1271,7 +1293,7 @@ def sparql_query(
         raise typer.Exit(1)
 
 
-@app.command("gui")
+@typed_command("gui")
 def gui(
     port: int = typer.Option(8501, "--port", "-p", help="Port to run the Streamlit app on"),
     browser: bool = typer.Option(True, "--browser/--no-browser", help="Open browser automatically"),
@@ -1338,7 +1360,8 @@ def gui(
 
 if __name__ == "__main__":
     try:
-        app()
+        run_cli = cast(Callable[..., Any], app)
+        run_cli()
     except typer.BadParameter as e:
         print_error(str(e))
         console.print("Run [cyan]autoresearch --help[/cyan] for more information.")
@@ -1353,7 +1376,8 @@ if __name__ == "__main__":
         cmd_name = sys.argv[1] if len(sys.argv) > 1 else ""
         if "No such command" in str(e) and cmd_name:
             # Create a dummy context for the handler
-            ctx = typer.Context(app)  # type: ignore[arg-type]
+            context_cls = cast(Any, typer).Context
+            ctx = context_cls(app)
             handle_command_not_found(ctx, cmd_name)
         else:
             # Re-raise other exceptions

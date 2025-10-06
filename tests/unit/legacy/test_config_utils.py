@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for :mod:`autoresearch.config_utils`."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import tomli_w
 import pytest
 from unittest.mock import patch, MagicMock

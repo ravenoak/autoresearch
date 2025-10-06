@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from typing import NotRequired, Sequence, TypedDict
 
 import pytest

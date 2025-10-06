@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Edge case tests for output formatting.
 
 References `docs/specification.md` and

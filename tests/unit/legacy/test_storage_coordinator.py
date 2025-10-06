@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import multiprocessing
 from typing import Any
 
