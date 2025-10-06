@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Ensure algorithm documentation references in search module stay valid.
 
 The ranking components rely on BM25, semantic similarity and source

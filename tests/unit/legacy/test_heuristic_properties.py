@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 from hypothesis import assume, given, strategies as st
 

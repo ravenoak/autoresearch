@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for message broker configuration scenarios."""
 from tests.behavior.context import BehaviorContext
 

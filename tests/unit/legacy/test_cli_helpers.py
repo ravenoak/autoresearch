@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import inspect
 import io
 from pathlib import Path

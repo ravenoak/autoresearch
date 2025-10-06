@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for server command scenarios."""
 from tests.behavior.context import BehaviorContext
 

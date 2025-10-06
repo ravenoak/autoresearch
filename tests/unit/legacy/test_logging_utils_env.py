@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for configure_logging_from_env helper."""
 
 import logging

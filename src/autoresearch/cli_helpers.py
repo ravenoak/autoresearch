@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import Sequence, List, Mapping, Optional
+from typing import List, Mapping, Optional, Sequence
 
 import click
 import typer
@@ -91,8 +91,9 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
     print_error(f"Command '{command}' not found.")
 
     available_commands: List[str] = []
-    if isinstance(ctx.command, click.Group):
-        for command_obj in ctx.command.commands.values():
+    command_group = getattr(ctx, "command", None)
+    if isinstance(command_group, click.Group):
+        for command_obj in command_group.commands.values():
             if command_obj.name:
                 available_commands.append(command_obj.name)
 

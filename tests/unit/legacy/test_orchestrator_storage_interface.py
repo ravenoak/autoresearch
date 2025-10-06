@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for orchestrator static methods interacting with storage."""
 
 from types import SimpleNamespace

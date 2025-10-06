@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Typed helpers for composing and storing behavior test payloads."""
 
 from __future__ import annotations

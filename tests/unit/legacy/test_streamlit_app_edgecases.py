@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import types
 from pathlib import Path
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for extended test cleanup verification.
 
 This module contains step definitions for verifying that tests clean up

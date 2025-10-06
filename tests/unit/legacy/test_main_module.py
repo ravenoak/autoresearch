@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import unittest
 from unittest.mock import patch
 

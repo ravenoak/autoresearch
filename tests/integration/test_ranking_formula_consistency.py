@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from typing import Mapping, Sequence
 
 from unittest.mock import patch

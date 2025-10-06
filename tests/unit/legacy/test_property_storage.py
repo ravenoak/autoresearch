@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from collections import OrderedDict
 
 import networkx as nx

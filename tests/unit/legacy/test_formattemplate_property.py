@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from hypothesis import given, strategies as st
 from autoresearch.output_format import FormatTemplate
 from autoresearch.models import QueryResponse

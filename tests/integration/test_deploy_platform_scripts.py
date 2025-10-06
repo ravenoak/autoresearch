@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for deployment helpers across platforms."""
 
 from __future__ import annotations

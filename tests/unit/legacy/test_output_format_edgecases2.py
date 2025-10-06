@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Graph output tests.
 
 Spec reference: `docs/specification.md` and

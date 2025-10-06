@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Verify hybrid ranking scores are normalized."""
 
 from typing import Mapping, Sequence

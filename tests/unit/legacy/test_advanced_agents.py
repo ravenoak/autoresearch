@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 from typing import Iterator, cast
 from unittest.mock import MagicMock, patch

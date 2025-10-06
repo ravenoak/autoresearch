@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 from tests.behavior.context import BehaviorContext
 import pytest

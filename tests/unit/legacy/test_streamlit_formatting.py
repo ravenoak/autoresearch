@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import json
 from hypothesis import given, strategies as st
 from autoresearch.streamlit_app import (

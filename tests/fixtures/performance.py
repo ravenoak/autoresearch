@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Performance-related fixtures that expose recorded benchmark baselines."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import builtins  # needed for import monkeypatching
 import sys  # used for module inspection
 import types

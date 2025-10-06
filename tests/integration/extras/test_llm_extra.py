@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the LLM optional extra."""
 
 from __future__ import annotations

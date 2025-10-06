@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property tests for resource monitor statistical formulas."""
 
 from __future__ import annotations

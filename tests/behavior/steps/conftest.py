@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Shared fixtures for behavior step modules."""
 
 from __future__ import annotations

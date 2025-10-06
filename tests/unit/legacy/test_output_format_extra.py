@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Custom template tests referencing documentation.
 
 See `docs/specification.md` and

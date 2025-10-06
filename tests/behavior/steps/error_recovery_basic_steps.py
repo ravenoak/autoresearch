@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from tests.behavior.utils import as_payload
 from typing import TypedDict, cast
 

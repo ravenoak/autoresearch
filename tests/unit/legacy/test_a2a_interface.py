@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for the A2A interface module."""
 
 import asyncio

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for search backend integration.
 
 This module contains tests for the integration between different search

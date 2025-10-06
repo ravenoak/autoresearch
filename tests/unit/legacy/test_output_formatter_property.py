@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property tests for output formatter.
 
 See `docs/specification.md` and

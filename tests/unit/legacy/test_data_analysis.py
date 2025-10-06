@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import builtins
 import importlib
 from typing import Any

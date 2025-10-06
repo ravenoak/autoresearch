@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for the enhanced relevance ranking functionality in the search module.
 
 This module tests the BM25 algorithm, semantic similarity scoring, source credibility

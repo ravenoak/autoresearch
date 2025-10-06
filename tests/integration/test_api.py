@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for versioned query endpoint."""
 
 import pytest

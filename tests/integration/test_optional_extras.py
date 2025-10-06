@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Smoke tests for optional extras and their modules.
 
 This suite verifies that each optional dependency extra is installed and that

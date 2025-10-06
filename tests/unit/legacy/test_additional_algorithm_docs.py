@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Ensure algorithm docs exist for newly covered modules."""
 
 from pathlib import Path

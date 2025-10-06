@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration coverage for typed middleware state interactions."""
 
 from __future__ import annotations

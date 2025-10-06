@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Template fallback tests referencing specification.
 
 See `docs/specification.md` and

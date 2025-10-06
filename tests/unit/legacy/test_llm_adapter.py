@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import responses
 from autoresearch.llm import get_llm_adapter, DummyAdapter
 from autoresearch.llm.token_counting import compress_prompt

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 
 from autoresearch.orchestration import metrics

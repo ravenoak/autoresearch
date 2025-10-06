@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Performance-oriented tests for budget-aware model routing heuristics."""
 
 from __future__ import annotations

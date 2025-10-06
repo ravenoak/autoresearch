@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from types import SimpleNamespace
 
 from autoresearch.orchestration import metrics

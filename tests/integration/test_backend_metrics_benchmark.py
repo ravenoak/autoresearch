@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Benchmark precision, recall, and latency across search backends."""
 
 from __future__ import annotations

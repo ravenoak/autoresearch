@@ -21,7 +21,8 @@ config_app = typer.Typer(help="Configuration management commands")
 @config_app.callback(invoke_without_command=True)
 def config_callback(ctx: typer.Context) -> None:
     """Manage configuration commands."""
-    if ctx.invoked_subcommand is None:
+    invoked_subcommand = getattr(ctx, "invoked_subcommand", None)
+    if invoked_subcommand is None:
         config = _config_loader.load_config()
         payload = config.model_dump(mode="python")
         typer.echo(json.dumps(payload, indent=2))

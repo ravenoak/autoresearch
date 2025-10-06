@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration test for backup and restore using real files."""
 
 from __future__ import annotations

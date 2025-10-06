@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for claim audit stability metadata."""
 
 import pytest

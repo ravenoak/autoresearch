@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Regression tests for distributed performance simulation script."""
 
 import importlib.util

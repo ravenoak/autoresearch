@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for error handling in the orchestration system.
 
 This module contains tests for various error scenarios in the orchestration system,

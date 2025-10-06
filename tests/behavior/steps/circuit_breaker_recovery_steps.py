@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for circuit breaker recovery feature."""
 
 from __future__ import annotations

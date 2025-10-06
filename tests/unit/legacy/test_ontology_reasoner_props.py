@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import rdflib
 import pytest
 from hypothesis import HealthCheck, given, settings

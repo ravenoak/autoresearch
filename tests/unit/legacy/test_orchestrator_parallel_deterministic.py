@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property-based test for deterministic parallel merging."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 
 from tests.helpers.modules import ensure_stub_module

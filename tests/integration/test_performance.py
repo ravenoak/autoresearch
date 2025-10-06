@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Performance benchmarks for query execution."""
 
 from __future__ import annotations

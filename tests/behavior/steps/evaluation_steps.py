@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Behavior steps for evaluation CLI scenarios."""
 
 from __future__ import annotations

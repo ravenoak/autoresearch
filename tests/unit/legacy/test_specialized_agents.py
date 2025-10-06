@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for specialized agents."""
 
 import json

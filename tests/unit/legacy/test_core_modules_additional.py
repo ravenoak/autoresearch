@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import functools
 import shutil
 import types

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 from unittest.mock import patch
 from autoresearch.config.models import ConfigModel

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 

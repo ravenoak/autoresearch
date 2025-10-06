@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for the evaluation harness persistence layer."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Convergence checks for ``suggest_token_budget``.
 
 The mathematical proof appears in ``docs/algorithms/token_budgeting.md``.

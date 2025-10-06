@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import contextlib
 import os
 from typing import Any

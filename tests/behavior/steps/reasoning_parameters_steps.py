@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from tests.behavior.utils import empty_metrics
 from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then, parsers

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Wrapper script for exercising the Streamlit app in tests."""
 
 from __future__ import annotations

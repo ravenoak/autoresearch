@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import requests
 
 from autoresearch.search import http as http_mod

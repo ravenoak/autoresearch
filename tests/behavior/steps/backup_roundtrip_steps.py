@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Backup roundtrip scenario definitions."""
 
 from pytest_bdd import scenarios

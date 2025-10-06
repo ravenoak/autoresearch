@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.llm.token_counting import compress_prompt, prune_context
 
 

@@ -1,6 +1,9 @@
 """CLI entry point for running Autoresearch via ``python -m``."""
 
+from typing import Any, Callable, cast
+
 from autoresearch.main import app
 
 if __name__ == "__main__":
-    app()
+    run_cli = cast(Callable[..., Any], app)
+    run_cli()

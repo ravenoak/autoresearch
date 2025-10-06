@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 

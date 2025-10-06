@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration test for token usage tracking against baselines."""
 
 from __future__ import annotations

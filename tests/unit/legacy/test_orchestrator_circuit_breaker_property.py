@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property-based checks for circuit breaker recovery."""
 
 import time

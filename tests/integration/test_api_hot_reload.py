@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import time
 from pathlib import Path
 

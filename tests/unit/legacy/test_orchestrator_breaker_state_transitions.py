@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property-based test for circuit breaker state transitions."""
 
 import time

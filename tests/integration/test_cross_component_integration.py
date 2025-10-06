@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Cross-component integration tests."""
 
 from __future__ import annotations

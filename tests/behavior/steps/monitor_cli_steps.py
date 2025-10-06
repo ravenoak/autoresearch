@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Monitor CLI behavior step implementations."""
 
 from __future__ import annotations

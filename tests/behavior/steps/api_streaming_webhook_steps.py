@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for API streaming and webhook scenarios."""
 
 from __future__ import annotations

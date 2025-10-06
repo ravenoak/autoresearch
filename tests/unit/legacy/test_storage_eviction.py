@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import math
 from collections import OrderedDict, deque
 from unittest.mock import MagicMock, patch

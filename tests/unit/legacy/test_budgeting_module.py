@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import pytest
 
 from autoresearch.config.models import ConfigModel

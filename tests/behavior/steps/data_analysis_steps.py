@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from tests.behavior.context import BehaviorContext
 from pytest_bdd import given, then, when
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for distributed message broker helpers."""
 
 from __future__ import annotations

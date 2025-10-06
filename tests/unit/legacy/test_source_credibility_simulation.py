@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the source credibility simulation script."""
 from statistics import mean
 

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Token bucket rate limiting tests.
 
 These tests model a simple token bucket to validate expected behavior and

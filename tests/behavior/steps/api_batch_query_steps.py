@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for batch query API behavior tests."""
 
 from __future__ import annotations

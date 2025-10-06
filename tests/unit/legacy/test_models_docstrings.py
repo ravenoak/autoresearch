@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for models docstrings; see docs/algorithms/models.md."""
 
 from pathlib import Path

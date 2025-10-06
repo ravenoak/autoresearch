@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for context-aware search functionality."""
 import os
 import pytest

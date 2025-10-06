@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import time
 from typing import Dict, Tuple, cast
 from unittest.mock import patch

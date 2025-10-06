@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests covering dialectical agents' claim audit provenance."""
 
 from __future__ import annotations

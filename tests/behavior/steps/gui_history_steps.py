@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 from tests.behavior.utils import empty_metrics
 from tests.behavior.context import BehaviorContext

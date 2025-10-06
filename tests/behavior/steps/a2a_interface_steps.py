@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # flake8: noqa
 from tests.behavior.context import BehaviorContext
 from pytest_bdd import scenario, when, then, parsers

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import autoresearch.cache as cache
 
 

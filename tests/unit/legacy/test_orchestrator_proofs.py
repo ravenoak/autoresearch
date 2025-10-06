@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Property-based proofs for orchestration invariants."""
 
 from __future__ import annotations

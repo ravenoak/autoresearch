@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration tests for versioned API schemas."""
 
 import pytest

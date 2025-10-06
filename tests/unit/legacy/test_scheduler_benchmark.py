@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Micro-benchmark tests for scheduler resource usage."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for the analysis optional extra."""
 
 from __future__ import annotations

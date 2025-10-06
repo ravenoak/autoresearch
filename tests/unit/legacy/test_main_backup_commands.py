@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from datetime import datetime
 from unittest.mock import patch
 

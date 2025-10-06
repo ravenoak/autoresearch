@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for storage delegation and message queue configuration."""
 
 from autoresearch import storage

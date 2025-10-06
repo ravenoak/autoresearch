@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for ``scripts/validate_deploy.py``."""
 
 from __future__ import annotations

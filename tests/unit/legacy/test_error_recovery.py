@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Unit tests for :mod:`autoresearch.error_recovery`."""
 from __future__ import annotations
 

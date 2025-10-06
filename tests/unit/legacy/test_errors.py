@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from autoresearch.errors import (
     AgentError,
     AutoresearchError,

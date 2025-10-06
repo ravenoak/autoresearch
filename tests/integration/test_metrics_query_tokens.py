@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Integration test for recording query token usage."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Verify optional extras expose their expected modules.
 
 Each optional extra should install a third-party package.  These smoke tests

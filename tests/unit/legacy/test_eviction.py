@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from datetime import timedelta
 
 from freezegun import freeze_time

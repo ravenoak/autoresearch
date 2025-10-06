@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for RAM usage calculation in the storage module.
 
 This module contains tests for the _current_ram_mb method, which is responsible

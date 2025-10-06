@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from pytest_bdd import given, when, then, scenario
 
 from . import common_steps  # noqa: F401

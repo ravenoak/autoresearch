@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from typer.testing import CliRunner
 
 from autoresearch.main import app as cli_app

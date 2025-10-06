@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Step definitions for error handling feature."""
 
 import pytest

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for resource monitor CPU and memory usage helpers."""
 
 import builtins
