@@ -3,6 +3,12 @@ import pytest
 from autoresearch.config import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import SearchConfig
+from __future__ import annotations
+
+import pytest
+
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search.core import Search
 from autoresearch.search.ranking import combine_scores
 
@@ -29,7 +35,9 @@ def test_combine_scores_requires_convex_weights() -> None:
         combine_scores(bm25, semantic, credibility, (-0.1, 0.6, 0.5))
 
 
-def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
+def test_duckdb_scores_used_without_semantic(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """DuckDB similarities rank results when semantic search is disabled."""
     cfg = ConfigModel(
         search=SearchConfig(
@@ -49,7 +57,9 @@ def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
     assert ranked[0]["bm25_score"] == ranked[0]["credibility_score"] == 1.0
 
 
-def test_rank_results_weighted_combination(monkeypatch) -> None:
+def test_rank_results_weighted_combination(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Search.rank_results normalizes and respects component weights."""
     # Mirror the default convex weighting from docs/specs/search_ranking.md so
     # semantic similarity carries the highest influence.
@@ -88,7 +98,7 @@ def test_rank_results_weighted_combination(monkeypatch) -> None:
     assert ranked[1]["relevance_score"] == pytest.approx(0.0)
 
 
-def test_rank_results_weight_fallback(monkeypatch) -> None:
+def test_rank_results_weight_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     """Zero weights fall back to equal weighting across enabled components."""
     cfg = ConfigModel(
         search=SearchConfig(

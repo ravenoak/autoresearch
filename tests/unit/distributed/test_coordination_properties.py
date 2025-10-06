@@ -6,6 +6,14 @@ import random
 import sys
 from pathlib import Path
 from types import ModuleType
+from __future__ import annotations
+
+import importlib
+import multiprocessing
+import random
+import sys
+from pathlib import Path
+from types import ModuleType
 from typing import Any, Mapping
 
 import pytest
@@ -21,6 +29,7 @@ from scripts.distributed_coordination_sim import (  # noqa: E402
 from autoresearch.distributed import executors  # noqa: E402
 from autoresearch.distributed.broker import (  # noqa: E402
     InMemoryBroker,
+    PersistClaimMessage,
     StorageQueueProtocol,
 )
 
@@ -118,15 +127,15 @@ def test_storage_queue_adapter_accepts_mapping_payloads() -> None:
 
     class MappingQueue:
         def __init__(self) -> None:
-            self.items: list[Mapping[str, Any]] = []
+            self.items: list[PersistClaimMessage] = []
 
-        def put(self, item: Mapping[str, Any]) -> None:
+        def put(self, item: PersistClaimMessage) -> None:
             self.items.append(item)
 
     queue = MappingQueue()
     resolved: StorageQueueProtocol | None = executors._resolve_storage_queue(queue)
     assert resolved is not None
-    payload: Mapping[str, Any] = {
+    payload: PersistClaimMessage = {
         "action": "persist_claim",
         "claim": {},
         "partial_update": False,

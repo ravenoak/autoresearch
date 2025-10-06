@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping, cast
 
 import networkx as nx
 from autoresearch.storage import (
@@ -10,24 +12,25 @@ from autoresearch.storage import (
     StorageManager,
     StorageState,
 )
-from autoresearch.storage_backends import init_rdf_store
+from autoresearch.storage_backends import DuckDBStorageBackend, init_rdf_store
 
 
-class _StubBackend:
+class _StubBackend(DuckDBStorageBackend):
     def __init__(self) -> None:
+        super().__init__()
         self.persisted: list[dict[str, Any]] = []
 
-    def persist_claim_audit(self, payload: dict[str, Any]) -> None:
-        self.persisted.append(payload)
+    def persist_claim_audit(self, payload: Mapping[str, Any]) -> None:
+        self.persisted.append(dict(payload))
 
 
 def test_persist_claim_audit_payload_updates_backends(tmp_path: Path) -> None:
-    graph = nx.DiGraph()
+    graph: nx.DiGraph[Any] = nx.DiGraph()
     graph.add_node("claim-1")
 
     context = StorageContext(
         graph=graph,
-        kg_graph=nx.MultiDiGraph(),
+        kg_graph=nx.MultiDiGraph[Any](),
         db_backend=_StubBackend(),
         rdf_store=init_rdf_store("memory", str(tmp_path / "rdf")),
     )
@@ -49,7 +52,8 @@ def test_persist_claim_audit_payload_updates_backends(tmp_path: Path) -> None:
 
         assert record.claim_id == "claim-1"
         assert context.db_backend is not None
-        assert context.db_backend.persisted[0]["claim_id"] == "claim-1"
+        backend = cast(_StubBackend, context.db_backend)
+        assert backend.persisted[0]["claim_id"] == "claim-1"
         assert context.graph is not None
         assert context.graph.nodes["claim-1"]["audit"]["status"] == "supported"
     finally:

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Mapping, cast
+
 import pytest
 
 from autoresearch.models import QueryResponse
@@ -49,7 +53,8 @@ def test_extract_graphrag_artifacts_filters_non_graph_metrics(
 
 
 def test_audit_status_rollup_orders_known_statuses(sample_payload: DepthPayload) -> None:
-    counts = audit_status_rollup(sample_payload.claim_audits)
+    claim_audits = cast(list[Mapping[str, object]], list(sample_payload.claim_audits))
+    counts = audit_status_rollup(claim_audits)
     assert list(counts.keys())[0] == "supported"
     assert counts["supported"] == 1
 

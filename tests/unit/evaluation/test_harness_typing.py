@@ -25,4 +25,4 @@ def test_open_duckdb_closes_connection(tmp_path: Path, monkeypatch: MonkeyPatch)
         assert conn is connection
 
     connection.close.assert_called_once()
-    duckdb.connect.assert_called_once_with(str(Path(tmp_path / "truth.duckdb")))
+    connect_mock.assert_called_once_with(str(Path(tmp_path / "truth.duckdb")))

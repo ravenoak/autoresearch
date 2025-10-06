@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from typing import Any, cast
 
 import pytest
 
 from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
 from autoresearch.orchestration import reverify as reverify_module
 from autoresearch.orchestration.reverify import ReverifyOptions, run_reverification
 from autoresearch.orchestration.state import QueryState
@@ -15,11 +18,11 @@ from pydantic import Field
 class ConfigWithVerification(ConfigModel):
     """ConfigModel subclass that preserves verification overrides for tests."""
 
-    verification: dict[str, object] = Field(default_factory=dict)  # type: ignore[assignment]
+    verification: dict[str, object] = Field(default_factory=dict)
 
 
 @pytest.fixture(autouse=True)
-def _clear_registry() -> None:
+def _clear_registry() -> Iterator[None]:
     """Reset the in-memory state registry before and after each test."""
 
     QueryStateRegistry._store.clear()
@@ -63,22 +66,15 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
         }
         return {"claims": [verification_claim], "claim_audits": [audit_payload]}
 
-    monkeypatch.setattr(
-        reverify_module.FactChecker,
-        "execute",
-        fake_execute,
-    )
+    module = cast(Any, reverify_module)
+    monkeypatch.setattr(module.FactChecker, "execute", fake_execute)
 
     persisted: list[dict[str, object]] = []
 
     def record_persist(claim: dict[str, object], partial_update: bool = False) -> None:
         persisted.append({"claim": dict(claim), "partial_update": partial_update})
 
-    monkeypatch.setattr(
-        reverify_module.StorageManager,
-        "persist_claim",
-        staticmethod(record_persist),
-    )
+    monkeypatch.setattr(module.StorageManager, "persist_claim", staticmethod(record_persist))
 
     monkeypatch.setattr(
         "autoresearch.search.Search.external_lookup",
@@ -86,18 +82,20 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
     )
 
     response = run_reverification(state_id, options=ReverifyOptions(max_retries=2))
+    assert isinstance(response, QueryResponse)
 
     assert len(attempts) == 2, "Reverify should retry until an audit is supported"
     assert persisted, "Claims should be persisted via StorageManager"
     assert all(entry["partial_update"] for entry in persisted)
 
-    extracted_claims = [
-        entry["claim"]
-        for entry in persisted
-        if entry["claim"].get("type") == "extracted"
-    ]
+    extracted_claims: list[dict[str, object]] = []
+    for entry in persisted:
+        claim_entry = cast(dict[str, object], entry["claim"])
+        if claim_entry.get("type") == "extracted":
+            extracted_claims.append(claim_entry)
     assert extracted_claims, "An extracted claim should be persisted for reverification"
 
+    assert isinstance(response.metrics, dict)
     metrics = response.metrics.get("reverify", {})
     assert metrics.get("attempts") == 2
     assert metrics.get("retries_used") == 1
@@ -133,19 +131,22 @@ def test_reverify_supplies_fact_checker_defaults(
             execute_calls.append(query_state.query)
             return {"claims": [], "claim_audits": []}
 
-    monkeypatch.setattr(reverify_module, "FactChecker", DummyFactChecker)
+    module = cast(Any, reverify_module)
+    monkeypatch.setattr(module, "FactChecker", DummyFactChecker)
     monkeypatch.setattr(
-        reverify_module.StorageManager,
+        module.StorageManager,
         "persist_claim",
         staticmethod(lambda claim, partial_update=False: None),
     )
 
     response = run_reverification(state_id)
+    assert isinstance(response, QueryResponse)
 
     assert init_calls, "FactChecker should be constructed with defaults"
     assert init_calls[0]["name"] == "FactChecker"
     assert init_calls[0]["enabled"] is True
     assert execute_calls == ["default fact checker"]
+    assert isinstance(response.metrics, dict)
     metrics = response.metrics.get("reverify", {})
     assert metrics.get("attempts") == 1
 
@@ -172,18 +173,21 @@ def test_reverify_respects_fact_checker_opt_out(monkeypatch: pytest.MonkeyPatch)
         def execute(self, query_state: QueryState, config: ConfigModel) -> dict[str, object]:
             raise AssertionError("FactChecker should not execute when disabled")
 
-    monkeypatch.setattr(reverify_module, "FactChecker", DisabledFactChecker)
+    module = cast(Any, reverify_module)
+    monkeypatch.setattr(module, "FactChecker", DisabledFactChecker)
     persist_calls: list[dict[str, object]] = []
     monkeypatch.setattr(
-        reverify_module.StorageManager,
+        module.StorageManager,
         "persist_claim",
         staticmethod(lambda claim, partial_update=False: persist_calls.append(dict(claim))),
     )
 
     response = run_reverification(state_id)
+    assert isinstance(response, QueryResponse)
 
     assert not init_calls, "FactChecker should not be constructed when disabled"
     assert not persist_calls, "No claims should be persisted when fact checking is skipped"
+    assert isinstance(response.metrics, dict)
     metrics = response.metrics.get("reverify", {})
     assert metrics.get("skipped") == "fact_checker_disabled"
     assert metrics.get("attempts") == 0

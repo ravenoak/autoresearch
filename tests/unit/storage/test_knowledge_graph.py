@@ -3,6 +3,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, Sequence
 
+from __future__ import annotations
+
+from types import SimpleNamespace
+from typing import Any, Sequence
+
 import networkx as nx
 import pytest
 
@@ -14,7 +19,7 @@ class _StubStorageManager:
 
     def __init__(self) -> None:
         self.persisted_claims: list[tuple[dict[str, Any], bool]] = []
-        self.graph = nx.MultiDiGraph()
+        self.graph: nx.MultiDiGraph[Any] = nx.MultiDiGraph()
         self.context = SimpleNamespace(db_backend=None, rdf_store=None)
 
     def update_knowledge_graph(
@@ -34,7 +39,7 @@ class _StubStorageManager:
                 predicate=relation.get("predicate", "related_to"),
             )
 
-    def get_knowledge_graph(self, *, create: bool = False) -> nx.MultiDiGraph:
+    def get_knowledge_graph(self, *, create: bool = False) -> nx.MultiDiGraph[Any]:
         return self.graph
 
     @staticmethod

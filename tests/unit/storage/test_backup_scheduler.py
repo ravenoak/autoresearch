@@ -3,6 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
+from __future__ import annotations
+
+from collections.abc import Iterator
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Callable
 
 import pytest
 
@@ -37,10 +43,12 @@ class DummyTimer:
 @pytest.fixture()
 def scheduler_environment(
     monkeypatch: pytest.MonkeyPatch,
-) -> tuple[
-    BackupScheduler,
-    list["DummyTimer"],
-    list[tuple[str, str, str, bool, BackupConfig]],
+) -> Iterator[
+    tuple[
+        BackupScheduler,
+        list["DummyTimer"],
+        list[tuple[str, str, str, bool, BackupConfig]],
+    ]
 ]:
     timers: list[DummyTimer] = []
     backups: list[tuple[str, str, str, bool, BackupConfig]] = []
