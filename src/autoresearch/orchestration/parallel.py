@@ -5,12 +5,13 @@ from __future__ import annotations
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Mapping, Sequence, Tuple, cast
+from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
 from .reasoning_payloads import (
     FrozenReasoningStep,
+    ReasoningCollection,
     normalize_reasoning_step,
     stabilize_reasoning_order,
 )
@@ -71,9 +72,9 @@ def execute_parallel_query(
     # index into them without mutating caller-owned containers such as tuples.
     group_list: List[List[str]] = [list(group) for group in agent_groups]
 
-    def deduplicate_reasoning(steps: Sequence[Any]) -> list[FrozenReasoningStep]:
+    def deduplicate_reasoning(steps: Sequence[Any]) -> ReasoningCollection:
         ordered = stabilize_reasoning_order(steps)
-        unique: list[FrozenReasoningStep] = []
+        unique = ReasoningCollection()
         seen: set[FrozenReasoningStep] = set()
         for step in ordered:
             normalized = (
@@ -242,7 +243,8 @@ def execute_parallel_query(
         final_state.update(err_info)
 
     deduped_claims = deduplicate_reasoning(final_state.claims)
-    final_state.claims = cast(List[Mapping[str, Any]], list(deduped_claims))
+    final_state.claims.clear()
+    final_state.claims.extend(deduped_claims)
 
     synthesizer = AgentFactory.get("Synthesizer")
     aggregation_context = {

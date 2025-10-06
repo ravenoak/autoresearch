@@ -21,7 +21,7 @@ from ..search.context import SearchContext
 from ..storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
 from .reasoning_payloads import (
     FrozenReasoningStep,
-    NormalizedReasoning,
+    ReasoningCollection,
     normalize_reasoning_step,
 )
 from .task_graph import TaskGraph
@@ -44,6 +44,8 @@ def _prepare_for_deepcopy(value: Any) -> Any:
         return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
     if isinstance(value, FrozenReasoningStep):
         return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
+    if isinstance(value, ReasoningCollection):
+        return [_prepare_for_deepcopy(item) for item in value]
     if isinstance(value, Mapping):
         return {str(key): _prepare_for_deepcopy(item) for key, item in value.items()}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
@@ -595,7 +597,7 @@ class QueryState(BaseModel):
     """
 
     query: str
-    claims: list[NormalizedReasoning] = Field(default_factory=list)
+    claims: ReasoningCollection = Field(default_factory=ReasoningCollection)
     claim_audits: list[dict[str, Any]] = Field(default_factory=list)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     results: dict[str, Any] = Field(default_factory=dict)
@@ -1502,7 +1504,8 @@ class QueryState(BaseModel):
         outcome = auditor.review()
 
         self.claim_audits = list(outcome.claim_audits)
-        self.claims = [normalize_reasoning_step(claim) for claim in outcome.reasoning]
+        self.claims.clear()
+        self.claims.extend(outcome.reasoning)
         if isinstance(self.results, Mapping):
             self.results.setdefault("final_answer", outcome.answer)
             self.results["final_answer"] = outcome.answer

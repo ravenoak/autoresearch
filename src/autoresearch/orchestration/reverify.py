@@ -80,11 +80,13 @@ def _prepare_state_for_reverify(state: "QueryState") -> None:
     """Reset transient fields so claim audits replace prior runs."""
 
     state.claim_audits = []
-    state.claims = [
-        dict(claim)
+    preserved_claims = [
+        claim
         for claim in state.claims
         if str(claim.get("type", "")).lower() != "verification"
     ]
+    state.claims.clear()
+    state.claims.extend(preserved_claims)
 
 
 def run_reverification(
@@ -211,7 +213,8 @@ def run_reverification(
                 },
             )
             _prepare_state_for_reverify(state)
-            state.claims = [dict(claim) for claim in base_claims]
+            state.claims.clear()
+            state.claims.extend(base_claims)
             if backoff > 0.0:
                 time.sleep(backoff)
     finally:

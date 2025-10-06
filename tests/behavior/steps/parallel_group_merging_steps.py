@@ -2,12 +2,15 @@
 """Step definitions for parallel group merging feature."""
 
 from __future__ import annotations
-from tests.behavior.utils import as_payload
-
 from typing import TypedDict, cast
 
 from pytest_bdd import given, scenarios, then, when
 
+from autoresearch.orchestration.reasoning_payloads import (
+    FrozenReasoningStep,
+    normalize_reasoning_step,
+)
+from tests.behavior.utils import as_payload
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 
@@ -15,18 +18,11 @@ pytest_plugins = ["tests.behavior.steps.common_steps"]
 scenarios("../features/parallel_group_merging.feature")
 
 
-class ReasoningEntry(TypedDict):
-    """Describe a single reasoning entry produced by an agent group."""
-
-    group: str
-    claim: str
-
-
 class RunResult(TypedDict):
     """Structure for orchestrator run results used by the scenarios."""
 
     groups: list[str]
-    reasoning: list[ReasoningEntry]
+    reasoning: list[FrozenReasoningStep]
 
 
 @given("two agent groups", target_fixture="run_result")
@@ -39,8 +35,12 @@ def two_agent_groups() -> RunResult:
 def run_parallel(run_result: RunResult) -> None:
     """Simulate parallel execution producing one claim per group."""
     run_result["reasoning"] = [
-        {"group": run_result["groups"][0], "claim": "claim 1"},
-        {"group": run_result["groups"][1], "claim": "claim 2"},
+        normalize_reasoning_step(
+            {"group": run_result["groups"][0], "claim": "claim 1"}
+        ),
+        normalize_reasoning_step(
+            {"group": run_result["groups"][1], "claim": "claim 2"}
+        ),
     ]
 
 

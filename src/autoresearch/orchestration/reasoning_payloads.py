@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping, Sequence
-from typing import Any, Iterator, Protocol, Tuple, TypeAlias
+from collections.abc import Hashable, Iterable, Mapping, Sequence
+from typing import Any, Iterable as TypingIterable, Iterator, Protocol, SupportsIndex, Tuple, TypeAlias, overload
 
 from pydantic_core import core_schema
 
@@ -147,6 +147,70 @@ class FrozenReasoningStep(Mapping[str, Any]):
 
 
 NormalizedReasoning: TypeAlias = Mapping[str, Any]
+
+
+class ReasoningCollection(list[FrozenReasoningStep]):
+    """Mutable sequence that normalises reasoning payloads on mutation."""
+
+    __slots__ = ()
+
+    def __init__(self, values: Iterable[Any] | None = None) -> None:
+        super().__init__()
+        if values:
+            self.extend(values)
+
+    @staticmethod
+    def _coerce(value: Any) -> FrozenReasoningStep:
+        return normalize_reasoning_step(value)
+
+    def append(self, value: Any) -> None:
+        super().append(self._coerce(value))
+
+    def extend(self, values: Iterable[Any]) -> None:
+        if isinstance(values, (str, bytes, bytearray)):
+            super().extend([self._coerce(values)])
+            return
+        super().extend(self._coerce(value) for value in values)
+
+    def insert(self, index: SupportsIndex, value: Any) -> None:
+        super().insert(index, self._coerce(value))
+
+    @overload
+    def __setitem__(self, index: SupportsIndex, value: Any) -> None: ...
+
+    @overload
+    def __setitem__(self, index: slice, value: TypingIterable[Any]) -> None: ...
+
+    def __setitem__(self, index: SupportsIndex | slice, value: Any) -> None:
+        if isinstance(index, slice):
+            if isinstance(value, (str, bytes, bytearray)):
+                raise TypeError("slice assignment requires an iterable of reasoning payloads")
+            normalized = [self._coerce(item) for item in value]
+            super().__setitem__(index, normalized)
+            return
+        super().__setitem__(index, self._coerce(value))
+
+    def copy(self) -> "ReasoningCollection":
+        return ReasoningCollection(self)
+
+    @classmethod
+    def _validate(
+        cls, value: Any, _handler: core_schema.ValidatorFunctionWrapHandler
+    ) -> "ReasoningCollection":
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+            return cls(value)
+        if isinstance(value, FrozenReasoningStep):
+            return cls([value])
+        raise TypeError("ReasoningCollection requires a sequence of reasoning payloads")
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source: type["ReasoningCollection"], handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        base_schema = handler.generate_schema(list[FrozenReasoningStep])
+        return core_schema.no_info_wrap_validator_function(cls._validate, base_schema)
 
 
 def normalize_reasoning_step(step: Any) -> FrozenReasoningStep:
