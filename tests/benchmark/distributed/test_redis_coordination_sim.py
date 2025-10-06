@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
-from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, TypedDict
 
 import pytest
 
@@ -23,8 +22,7 @@ class RedisLike(Protocol):
         ...
 
 
-@dataclass(frozen=True)
-class RedisSimulationMetrics:
+class RedisSimulationMetrics(TypedDict):
     """Metrics collected from the Redis coordination simulation."""
 
     tasks: float
@@ -94,8 +92,8 @@ def test_throughput_matches_theory(redis_client: RedisLike) -> None:
         task_time=0.01,
     )
     expected = 2 / (0.05 + 0.01)
-    assert metrics.throughput <= expected
-    assert metrics.throughput > expected * 0.5
+    assert metrics["throughput"] <= expected
+    assert metrics["throughput"] > expected * 0.5
 
 
 def test_failure_recovery(redis_client: RedisLike) -> None:
@@ -108,4 +106,4 @@ def test_failure_recovery(redis_client: RedisLike) -> None:
         task_time=0.005,
         fail_worker=True,
     )
-    assert metrics.tasks == 30
+    assert metrics["tasks"] == 30

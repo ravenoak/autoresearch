@@ -6,11 +6,10 @@ import argparse
 import heapq
 import json
 import random
-from dataclasses import asdict, dataclass
+from typing import TypedDict
 
 
-@dataclass(frozen=True)
-class ScheduleMetrics:
+class ScheduleMetrics(TypedDict):
     """Structured metrics captured from the simulation."""
 
     throughput: float
@@ -73,7 +72,9 @@ def run_simulation(
 
 def main() -> None:
     """CLI wrapper for the simulation."""
-    parser = argparse.ArgumentParser(description="Multi-node scheduling simulation with failures")
+    parser = argparse.ArgumentParser(
+        description="Multi-node scheduling simulation with failures"
+    )
     parser.add_argument("--workers", type=int, default=2, help="concurrent workers")
     parser.add_argument("--tasks", type=int, default=100, help="tasks to run")
     parser.add_argument(
@@ -97,7 +98,7 @@ def main() -> None:
         task_time=args.task_time,
         fail_rate=args.fail_rate,
     )
-    print(json.dumps(asdict(metrics)))
+    print(json.dumps(metrics))
 
 
 if __name__ == "__main__":

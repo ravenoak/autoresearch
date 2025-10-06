@@ -13,13 +13,14 @@ from tests.targeted.helpers.git import (
     GitComponentsUnavailable,
     load_git_components,
 )
+from tests.typing_helpers import TypedFixture
 
 if TYPE_CHECKING:  # pragma: no cover - used only for static analysis
     from git.search import SearchResult
 
 
 @pytest.fixture()
-def git_components() -> GitComponentTypes:
+def git_components() -> TypedFixture[GitComponentTypes]:
     """Return Git search classes, installing stubs when extras are absent."""
 
     try:

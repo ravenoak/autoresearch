@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -132,12 +132,12 @@ def test_vss_extension_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     from autoresearch.extensions import VSSExtensionLoader
 
     class DummyConn:
-        def execute(self, _):  # pragma: no cover - trivial
-            class Result:
-                def fetchall(self_inner):
-                    return [("vss",)]
+        class _Result:
+            def fetchall(self) -> list[tuple[str]]:
+                return [("vss",)]
 
-            return Result()
+        def execute(self, _: object) -> "DummyConn._Result":  # pragma: no cover - trivial
+            return self._Result()
 
     def config_loader_factory() -> SimpleNamespace:
         return SimpleNamespace(
@@ -168,7 +168,7 @@ def test_local_git_backend(monkeypatch: pytest.MonkeyPatch) -> None:
         return cfg
 
     monkeypatch.setattr("autoresearch.search.core.get_config", get_config_override)
-    results = _local_git_backend("def", max_results=1)
+    results = _local_git_backend("def", 1)
     assert results
 
 
@@ -213,7 +213,7 @@ def test_metrics_dataframe(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
     df = metrics_dataframe({"agent_timings": {"a": [1.0, 2.0]}})
-    assert list(df.columns) == ["agent", "avg_time", "count"]
+    assert list(cast(Any, df).columns) == ["agent", "avg_time", "count"]
 
 
 @pytest.mark.requires_parsers
@@ -234,7 +234,7 @@ def test_local_file_backend_docx(
         )
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    results = _local_file_backend("hello", max_results=1)
+    results = _local_file_backend("hello", 1)
     assert results and results[0]["title"] == "sample.docx"
 
 
@@ -257,5 +257,5 @@ def test_local_file_backend_pdf(
         )
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    results = _local_file_backend("hello", max_results=1)
+    results = _local_file_backend("hello", 1)
     assert results and results[0]["title"] == "sample.pdf"

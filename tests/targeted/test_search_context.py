@@ -1,6 +1,10 @@
 """Tests for SearchContext entity extraction and query expansion."""
 
+from __future__ import annotations
+
 import types
+
+import pytest
 
 from tests.helpers.modules import ensure_stub_module
 
@@ -27,7 +31,9 @@ _dummy_cfg = types.SimpleNamespace(
 )
 
 
-def test_add_to_history_extracts_entities(monkeypatch):
+def test_add_to_history_extracts_entities(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Entities from queries and results are tracked for expansion."""
     monkeypatch.setattr(
         "autoresearch.search.context.get_config", lambda: _dummy_cfg
@@ -38,7 +44,7 @@ def test_add_to_history_extracts_entities(monkeypatch):
         assert ctx.entities["gamma"] == 1
 
 
-def test_expand_query_uses_entities(monkeypatch):
+def test_expand_query_uses_entities(monkeypatch: pytest.MonkeyPatch) -> None:
     """Frequently seen entities are appended to new queries."""
     monkeypatch.setattr(
         "autoresearch.search.context.get_config", lambda: _dummy_cfg

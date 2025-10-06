@@ -1,5 +1,7 @@
 """Tests for lightweight helpers in :mod:`autoresearch.storage`."""
 
+from __future__ import annotations
+
 from tests.helpers.modules import ensure_stub_module
 
 ensure_stub_module(
@@ -12,13 +14,21 @@ ensure_stub_module(
 )
 
 from autoresearch import storage  # noqa: E402
+from autoresearch.distributed.broker import PersistClaimMessage, StorageQueueProtocol
 
 
 class DummyManager(storage.StorageManager):
     """Minimal delegate for testing injection."""
 
 
-def test_delegate_injection():
+class DummyQueue:
+    """Minimal storage queue satisfying :class:`StorageQueueProtocol`."""
+
+    def put(self, item: PersistClaimMessage) -> None:  # pragma: no cover - no-op
+        del item
+
+
+def test_delegate_injection() -> None:
     """`set_delegate` registers a custom `StorageManager` implementation."""
     storage.set_delegate(DummyManager)
     try:
@@ -27,9 +37,9 @@ def test_delegate_injection():
         storage.set_delegate(None)
 
 
-def test_message_queue_assignment():
+def test_message_queue_assignment() -> None:
     """`set_message_queue` updates the global queue reference."""
-    queue = object()
+    queue: StorageQueueProtocol = DummyQueue()
     storage.set_message_queue(queue)
     try:
         assert storage._message_queue is queue

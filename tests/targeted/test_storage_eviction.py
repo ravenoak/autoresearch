@@ -23,10 +23,12 @@ def test_initialize_storage_idempotent() -> None:
     initialize_storage(db_path=":memory:", context=ctx, state=st)
     db_backend = ctx.db_backend
     assert isinstance(db_backend, DuckDBStorageBackend)
+    assert db_backend._conn is not None
     first = db_backend._conn.execute("show tables").fetchall()
     initialize_storage(db_path=":memory:", context=ctx, state=st)
     db_backend_second = ctx.db_backend
     assert isinstance(db_backend_second, DuckDBStorageBackend)
+    assert db_backend_second._conn is not None
     second = db_backend_second._conn.execute("show tables").fetchall()
     assert first == second
     StorageManager.teardown(remove_db=True, context=ctx, state=st)
