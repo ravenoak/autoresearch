@@ -33,15 +33,17 @@ def mock_llm_adapter() -> Iterator[MagicMock]:
 def mock_state() -> QueryState:
     """Create a mock query state for testing."""
     state = QueryState(query="Test query")
-    state.claims = [
-        {"id": "1", "type": "thesis", "content": "This is a thesis claim"},
-        {"id": "2", "type": "antithesis", "content": "This is an antithesis claim"},
-        {
-            "id": "3",
-            "type": "research_findings",
-            "content": "These are research findings",
-        },
-    ]
+    state.claims.extend(
+        [
+            {"id": "1", "type": "thesis", "content": "This is a thesis claim"},
+            {"id": "2", "type": "antithesis", "content": "This is an antithesis claim"},
+            {
+                "id": "3",
+                "type": "research_findings",
+                "content": "These are research findings",
+            },
+        ]
+    )
     return state
 
 

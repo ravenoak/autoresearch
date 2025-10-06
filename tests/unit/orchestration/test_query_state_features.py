@@ -7,6 +7,7 @@ from collections.abc import Iterator
 import pytest
 
 from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.state_registry import QueryStateRegistry
 
@@ -131,3 +132,26 @@ def test_query_state_registry_update_refreshes_snapshots() -> None:
     assert cloned_config.gate_policy_enabled is False
     assert cloned_state._lock.acquire(blocking=False)
     cloned_state._lock.release()
+
+
+def test_query_state_claims_auto_normalize_and_preserve_order() -> None:
+    """Reasoning collections coerce inputs into frozen steps deterministically."""
+
+    state = QueryState(query="normalize")
+    state.claims.append({"text": "first"})
+    state.claims.extend(["second"])
+    state.claims.insert(0, {"text": "zero"})
+    state.claims[1] = {"text": "first-updated"}
+    state.claims += [{"text": "third"}]
+
+    assert [step["text"] for step in state.claims] == [
+        "zero",
+        "first-updated",
+        "second",
+        "third",
+    ]
+    assert all(isinstance(step, FrozenReasoningStep) for step in state.claims)
+
+    cloned = state.claims.copy()
+    assert isinstance(cloned, type(state.claims))
+    assert [step["text"] for step in cloned] == [step["text"] for step in state.claims]

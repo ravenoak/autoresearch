@@ -21,7 +21,7 @@ def simple_state():
         "excluded_areas": [],
     }
     state = QueryState(query="example")
-    state.claims = [{"id": "1", "type": "thesis", "content": "c"}]
+    state.claims.extend([{"id": "1", "type": "thesis", "content": "c"}])
     state.cycle = 1
     return state
 

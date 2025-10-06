@@ -16,10 +16,12 @@ def stored_query_state(bdd_context: BehaviorContext, monkeypatch):
     """Create and register a query state with baseline claim audits."""
 
     state = QueryState(query="Reverify scenario")
-    state.claims = [
-        {"id": "c1", "content": "Claim one"},
-        {"id": "c2", "content": "Claim two"},
-    ]
+    state.claims.extend(
+        [
+            {"id": "c1", "content": "Claim one"},
+            {"id": "c2", "content": "Claim two"},
+        ]
+    )
     state.claim_audits = [
         {
             "claim_id": "c1",

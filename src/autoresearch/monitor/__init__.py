@@ -18,6 +18,7 @@ from ..config.loader import ConfigLoader
 from ..logging_utils import get_logger
 from ..orchestration import metrics as orch_metrics
 from ..orchestration.orchestrator import Orchestrator
+from ..orchestration.reasoning_payloads import normalize_reasoning_step
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter
 from ..resource_monitor import ResourceMonitor
@@ -230,7 +231,7 @@ def graph(
 @monitor_app.command("run")
 def run() -> None:
     """Start the interactive monitor."""
-    from ..main import Prompt
+    from ..main import Prompt  # Local import to avoid circular dependency
 
     console = Console()
     config = _loader.load_config()
@@ -262,7 +263,7 @@ def run() -> None:
             state.error_count = getattr(config, "max_errors", 3)
             abort_flag["stop"] = True
         elif feedback:
-            state.claims.append({"type": "feedback", "text": feedback})
+            state.claims.append(normalize_reasoning_step({"type": "feedback", "text": feedback}))
 
     while True:
         query = Prompt.ask("Enter query (q to quit)")

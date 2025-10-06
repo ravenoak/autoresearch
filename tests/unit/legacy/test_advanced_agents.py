@@ -33,21 +33,25 @@ def mock_config() -> ConfigModel:
 @pytest.fixture
 def medical_state() -> QueryState:
     state = QueryState(query="How does a doctor treat flu?")
-    state.claims = [
-        {"id": "1", "type": "thesis", "content": "Doctors prescribe medicine"},
-        {"id": "2", "type": "research_findings", "content": "Studies on flu"},
-    ]
+    state.claims.extend(
+        [
+            {"id": "1", "type": "thesis", "content": "Doctors prescribe medicine"},
+            {"id": "2", "type": "research_findings", "content": "Studies on flu"},
+        ]
+    )
     return state
 
 
 @pytest.fixture
 def dialogue_state() -> QueryState:
     state = QueryState(query="Discuss climate change")
-    state.claims = [
-        {"id": "1", "agent": "A", "type": "thesis", "content": "It is warming"},
-        {"id": "2", "agent": "B", "type": "antithesis", "content": "However it cools"},
-        {"id": "3", "agent": "A", "type": "research_findings", "content": "Data shows trends"},
-    ]
+    state.claims.extend(
+        [
+            {"id": "1", "agent": "A", "type": "thesis", "content": "It is warming"},
+            {"id": "2", "agent": "B", "type": "antithesis", "content": "However it cools"},
+            {"id": "3", "agent": "A", "type": "research_findings", "content": "Data shows trends"},
+        ]
+    )
     return state
 
 
