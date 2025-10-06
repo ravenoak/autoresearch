@@ -6,7 +6,6 @@ assessment, and the overall ranking functionality.
 
 import os
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -340,9 +339,9 @@ def test_rank_results_patched_bm25_function(
     mock_config.search.source_credibility_weight = 0.0
     mock_get_config.return_value = mock_config
 
-    captured: Dict[str, Any] = {}
+    captured: dict[str, object] = {}
 
-    def fake_bm25(query: str, documents: List[Dict[str, Any]]) -> List[float]:
+    def fake_bm25(query: str, documents: list[dict[str, object]]) -> list[float]:
         captured["query"] = query
         captured["documents"] = documents
         return [0.1] * len(documents)

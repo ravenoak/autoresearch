@@ -5,7 +5,7 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
 from types import MethodType
-from typing import Any, Callable, Dict, List, Sequence, Tuple
+from collections.abc import Callable, Iterator, Sequence
 from unittest.mock import patch
 
 import numpy as np
@@ -22,7 +22,12 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 
-def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[float]:
+SearchDocument = dict[str, object]
+BackendResults = list[SearchDocument]
+BackendResultMap = dict[str, BackendResults]
+
+
+def assert_bm25_signature(query: str, documents: BackendResults) -> list[float]:
     """Ensure BM25 stub receives ``(query, documents)`` in that order."""
     assert isinstance(query, str)
     assert isinstance(documents, list)
@@ -31,12 +36,12 @@ def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[f
 
 @contextmanager
 def property_search(
-    cache: Any,
+    cache: SearchCache,
     cfg: ConfigModel,
     *,
     embedding_vector: Sequence[float] | None = None,
-    transformer_factory: Callable[[], Any] | None = None,
-) -> Any:
+    transformer_factory: Callable[[], object] | None = None,
+) -> Iterator[Search]:
     """Yield a temporary :class:`Search` instance with property stubs applied."""
 
     with ExitStack() as stack:
@@ -85,7 +90,7 @@ def property_search(
 def _skip_ontology_reasoner(monkeypatch: pytest.MonkeyPatch) -> None:
     """Bypass heavy ontology reasoning in tests."""
 
-    def _disable_reasoner(*_: Any, **__: Any) -> None:
+    def _disable_reasoner(*_: object, **__: object) -> None:
         return None
 
     monkeypatch.setattr(
@@ -104,9 +109,9 @@ def test_search_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
         staticmethod(assert_bm25_signature),
     )
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["count"] += 1
         return [{"title": "Python", "url": "https://python.org"}]
 
@@ -166,7 +171,7 @@ def test_cache_lifecycle(tmp_path: Path) -> None:
 def test_setup_thread_safe(tmp_path: Path) -> None:
     """Ensure multiple setup calls from threads share the same database."""
     cache = SearchCache(str(tmp_path / "cache.json"))
-    results: List[Any] = []
+    results: list[object] = []
 
     def worker() -> None:
         results.append(cache.setup())
@@ -193,13 +198,13 @@ def test_cache_is_backend_specific(monkeypatch: pytest.MonkeyPatch) -> None:
         staticmethod(assert_bm25_signature),
     )
 
-    calls: Dict[str, int] = {"b1": 0, "b2": 0}
+    calls: dict[str, int] = {"b1": 0, "b2": 0}
 
-    def backend1(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend1(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["b1"] += 1
         return [{"title": "B1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend2(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["b2"] += 1
         return [{"title": "B2", "url": "u2"}]
 
@@ -282,13 +287,13 @@ def test_cache_is_backend_specific_without_embeddings(
         staticmethod(_no_transformer),
     )
 
-    calls: Dict[str, int] = {"b1": 0, "b2": 0}
+    calls: dict[str, int] = {"b1": 0, "b2": 0}
 
-    def backend1(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend1(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["b1"] += 1
         return [{"title": "B1", "url": "u1"}]
 
-    def backend2(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend2(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["b2"] += 1
         return [{"title": "B2", "url": "u2"}]
 
@@ -347,9 +352,9 @@ def test_cache_key_normalizes_queries(monkeypatch: pytest.MonkeyPatch) -> None:
         staticmethod(lambda: None),
     )
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["count"] += 1
         return [
             {
@@ -397,9 +402,9 @@ def test_cache_key_respects_embedding_flags(monkeypatch: pytest.MonkeyPatch) -> 
         staticmethod(lambda: None),
     )
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["count"] += 1
         return [{"title": "embedding", "url": "https://example.com"}]
 
@@ -451,11 +456,11 @@ def test_legacy_cache_entries_upgrade_on_hit(
     cfg.search.use_semantic_similarity = semantic
     cfg.search.embedding_backends = []
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
     payload = [{"title": "cached", "url": "https://cached"}]
-    storage_hints: Tuple[str, ...] = ("external",)
+    storage_hints: tuple[str, ...] = ("external",)
 
-    def backend(text: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(text: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["count"] += 1
         return payload
 
@@ -543,9 +548,9 @@ def test_v2_cache_entries_upgrade_on_hit(
 ) -> None:
     cache = SearchCache()
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
 
-    def backend(text: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(text: str, max_results: int = 5) -> list[dict[str, str]]:
         del text, max_results
         calls["count"] += 1
         return [{"title": "cached", "url": "https://cached"}]
@@ -560,7 +565,7 @@ def test_v2_cache_entries_upgrade_on_hit(
     cfg.search.embedding_backends = []
 
     payload = [{"title": "cached", "url": "https://cached"}]
-    storage_hints: Tuple[str, ...] = (storage_hint,)
+    storage_hints: tuple[str, ...] = (storage_hint,)
 
     with property_search(cache, cfg) as search_default:
         search_default.backends = {"legacy": backend}
@@ -697,7 +702,7 @@ def test_v2_cache_entries_upgrade_on_hit(
 )
 def test_cache_key_primary_reflects_hybrid_flags(
     query: str,
-    embedding_backends: List[str],
+    embedding_backends: list[str],
 ) -> None:
     search = Search()
 
@@ -754,16 +759,16 @@ def test_cache_key_primary_reflects_hybrid_flags(
 )
 def test_sequential_hybrid_sequences_respect_cache_fingerprint(
     query: str,
-    toggles: List[Tuple[bool, bool]],
+    toggles: list[tuple[bool, bool]],
 ) -> None:
     cache = SearchCache()
 
     assume(len(set(toggles)) < len(toggles))
 
-    calls: Dict[str, int] = {"default": 0, "alt": 0}
+    calls: dict[str, int] = {"default": 0, "alt": 0}
 
-    def backend_factory(label: str) -> Callable[[str, int], List[Dict[str, str]]]:
-        def _backend(q: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend_factory(label: str) -> Callable[[str, int], list[dict[str, str]]]:
+        def _backend(q: str, max_results: int = 5) -> list[dict[str, str]]:
             del q, max_results
             calls[label] += 1
             return [{"title": "seq", "url": "https://seq"}]
@@ -777,8 +782,8 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
     cfg.search.adaptive_k.enabled = False
     cfg.search.embedding_backends = []
 
-    default_fingerprints: Dict[Tuple[bool, bool], str] = {}
-    alt_fingerprints: Dict[Tuple[bool, bool], str] = {}
+    default_fingerprints: dict[tuple[bool, bool], str] = {}
+    alt_fingerprints: dict[tuple[bool, bool], str] = {}
     vector = np.array([0.2, 0.4], dtype=float)
 
     alt_namespace = "alt-sequence"
@@ -885,16 +890,16 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
 )
 def test_interleaved_storage_paths_share_cache(
     vector_seed: bool,
-    storage_sources: List[str],
+    storage_sources: list[str],
 ) -> None:
     cache = SearchCache()
-    calls: Dict[str, int] = {"backend": 0, "duckdb": 0}
+    calls: dict[str, int] = {"backend": 0, "duckdb": 0}
 
-    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["backend"] += 1
         return [{"title": "primary", "url": "https://primary"}]
 
-    def duckdb_backend(embedding: np.ndarray, max_results: int = 5) -> List[Dict[str, str]]:
+    def duckdb_backend(embedding: np.ndarray, max_results: int = 5) -> list[dict[str, str]]:
         del embedding, max_results
         calls["duckdb"] += 1
         return [{"title": "duckdb", "url": "https://duckdb"}]
@@ -933,11 +938,11 @@ def test_interleaved_storage_paths_share_cache(
             self: Search,
             query: str,
             query_embedding: np.ndarray | None,
-            backend_results: Dict[str, List[Dict[str, Any]]],
+            backend_results: BackendResultMap,
             max_results: int,
-        ) -> Dict[str, List[Dict[str, Any]]]:
+        ) -> BackendResultMap:
             del self, query_embedding, backend_results, max_results
-            docs: List[Dict[str, Any]] = []
+            docs: BackendResults = []
             if vector_seed:
                 docs.append(
                     {
@@ -1018,9 +1023,9 @@ def test_context_aware_query_expansion_uses_cache(
         staticmethod(assert_bm25_signature),
     )
 
-    calls: Dict[str, int] = {"count": 0}
+    calls: dict[str, int] = {"count": 0}
 
-    def backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
         calls["count"] += 1
         return [{"title": "Python", "url": "https://python.org"}]
 
@@ -1029,7 +1034,7 @@ def test_context_aware_query_expansion_uses_cache(
             return query + " expanded"
 
         def add_to_history(
-            self, query: str, results: List[Dict[str, str]]
+            self, query: str, results: list[dict[str, str]]
         ) -> None:  # pragma: no cover - no-op
             del query, results
 
@@ -1042,11 +1047,11 @@ def test_context_aware_query_expansion_uses_cache(
         def summarize_retrieval_outcome(
             self,
             query: str,
-            results: List[Dict[str, Any]],
+            results: BackendResults,
             *,
             fetch_limit: int,
-            by_backend: Dict[str, List[Dict[str, Any]]],
-        ) -> Dict[str, Any]:  # pragma: no cover - deterministic stub
+            by_backend: BackendResultMap,
+        ) -> dict[str, object]:  # pragma: no cover - deterministic stub
             del query, fetch_limit, by_backend
             count = len(results)
             return {
@@ -1055,15 +1060,15 @@ def test_context_aware_query_expansion_uses_cache(
                 "result_count": count,
             }
 
-        def record_fetch_plan(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover
+        def record_fetch_plan(self, *args: object, **kwargs: object) -> None:  # pragma: no cover
             del args, kwargs
 
         def record_scout_observation(
             self,
             query: str,
-            results: List[Dict[str, Any]],
+            results: BackendResults,
             *,
-            by_backend: Dict[str, List[Dict[str, Any]]],
+            by_backend: BackendResultMap,
         ) -> None:  # pragma: no cover - no-op
             del query, results, by_backend
 

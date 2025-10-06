@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
 
 import pytest
 
@@ -16,7 +15,7 @@ from pydantic import Field
 class ConfigWithVerification(ConfigModel):
     """ConfigModel subclass that preserves verification overrides for tests."""
 
-    verification: Dict[str, Any] = Field(default_factory=dict)  # type: ignore[assignment]
+    verification: dict[str, object] = Field(default_factory=dict)  # type: ignore[assignment]
 
 
 @pytest.fixture(autouse=True)
@@ -39,7 +38,9 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
 
     attempts: list[ClaimAuditStatus] = []
 
-    def fake_execute(self: Any, query_state: QueryState, config: ConfigModel) -> dict[str, Any]:
+    def fake_execute(
+        self: object, query_state: QueryState, config: ConfigModel
+    ) -> dict[str, object]:
         base_claims = [
             claim
             for claim in query_state.claims
@@ -68,9 +69,9 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
         fake_execute,
     )
 
-    persisted: list[dict[str, Any]] = []
+    persisted: list[dict[str, object]] = []
 
-    def record_persist(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def record_persist(claim: dict[str, object], partial_update: bool = False) -> None:
         persisted.append({"claim": dict(claim), "partial_update": partial_update})
 
     monkeypatch.setattr(
@@ -81,7 +82,7 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
 
     monkeypatch.setattr(
         "autoresearch.search.Search.external_lookup",
-        lambda *args, **kwargs: [],
+        lambda *_args: [],
     )
 
     response = run_reverification(state_id, options=ReverifyOptions(max_retries=2))
@@ -120,15 +121,15 @@ def test_reverify_supplies_fact_checker_defaults(
     )
     state_id = QueryStateRegistry.register(state, ConfigModel())
 
-    init_calls: List[Dict[str, Any]] = []
-    execute_calls: List[str] = []
+    init_calls: list[dict[str, object]] = []
+    execute_calls: list[str] = []
 
     class DummyFactChecker:
-        def __init__(self, **kwargs: Any) -> None:
+        def __init__(self, **kwargs: object) -> None:
             init_calls.append(dict(kwargs))
             self.enabled = kwargs.get("enabled", True)
 
-        def execute(self, query_state: QueryState, config: ConfigModel) -> dict[str, Any]:
+        def execute(self, query_state: QueryState, config: ConfigModel) -> dict[str, object]:
             execute_calls.append(query_state.query)
             return {"claims": [], "claim_audits": []}
 
@@ -161,18 +162,18 @@ def test_reverify_respects_fact_checker_opt_out(monkeypatch: pytest.MonkeyPatch)
     )
     state_id = QueryStateRegistry.register(state, config)
 
-    init_calls: List[Dict[str, Any]] = []
+    init_calls: list[dict[str, object]] = []
 
     class DisabledFactChecker:
-        def __init__(self, **kwargs: Any) -> None:
+        def __init__(self, **kwargs: object) -> None:
             init_calls.append(dict(kwargs))
             self.enabled = False
 
-        def execute(self, query_state: QueryState, config: ConfigModel) -> dict[str, Any]:
+        def execute(self, query_state: QueryState, config: ConfigModel) -> dict[str, object]:
             raise AssertionError("FactChecker should not execute when disabled")
 
     monkeypatch.setattr(reverify_module, "FactChecker", DisabledFactChecker)
-    persist_calls: list[dict[str, Any]] = []
+    persist_calls: list[dict[str, object]] = []
     monkeypatch.setattr(
         reverify_module.StorageManager,
         "persist_claim",
