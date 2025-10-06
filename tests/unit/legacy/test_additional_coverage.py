@@ -22,7 +22,7 @@ from autoresearch.streamlit_app import st as streamlit_st
 from autoresearch.streamlit_app import track_agent_performance
 from autoresearch.typing.http import HTTPAdapter
 
-from .typing_helpers import (
+from tests.unit.typing_helpers import (
     build_summary_fixture,
     make_llm_pool_config,
     make_psutil_stub,

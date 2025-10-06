@@ -17,7 +17,7 @@ from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
 
-from .typing_helpers import make_runtime_config, make_search_config
+from tests.unit.typing_helpers import make_runtime_config, make_search_config
 
 
 def test_log_sources(monkeypatch):

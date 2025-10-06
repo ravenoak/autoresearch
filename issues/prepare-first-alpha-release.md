@@ -6,9 +6,15 @@ As of **October 6, 2025 at 04:53 UTC** `uv run mypy --strict src tests` report
 green after the latest merges.【4fb61a†L1-L2】 A full
 `uv run --extra test pytest` sweep at the same timestamp halts during
 collection with 19 errors triggered by duplicated imports that precede
-`from __future__ import annotations` and missing `tests/scripts` shim files
-referenced by the legacy harness.【8e089f†L1-L118】 These failures prevent the
-suite from exercising the orchestrator regressions recorded below.
+`from __future__ import annotations` and missing
+`tests/unit/legacy/typing_helpers.py`, `tests/scripts/check_env.py`,
+`tests/scripts/distributed_perf_sim.py`, `tests/scripts/download_duckdb_extensions.py`,
+and `tests/baseline/evaluation/scheduler_benchmark.json` references in the legacy
+harness.【364b98†L1-L60】 These failures prevent the suite from exercising the
+orchestrator regressions recorded below. After restoring those fixtures, a
+targeted `uv run --extra test pytest tests/unit/legacy -k cache` run now
+collects successfully and fails on the known cache assertion, confirming the
+imports resolve again.【f1459e†L1-L131】
 
 As of **October 6, 2025 at 04:41 UTC** the merged search, cache, and AUTO-mode
 telemetry PRs introduced lint regressions: `uv run task verify` now fails
@@ -22,7 +28,10 @@ partial log is archived for the next run after lint repairs.
 【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 The refreshed preflight plan now records **PR-S1**, **PR-S2**, and **PR-R0** as
 merged while prioritising lint cleanup and the coverage rerun before TestPyPI
-reactivation.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
+reactivation.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】 Updated scheduler
+baseline data generated on **October 6, 2025 at 15:04 UTC** captures current
+throughput floors with provenance metadata for audit reuse.
+【F:baseline/evaluation/scheduler_benchmark.json†L1-L15】
 
 As of **October 5, 2025 at 15:43 UTC** reasoning payloads and orchestration
 helpers now normalise claims into concrete dictionaries before tests consume
@@ -76,9 +85,18 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - [ ] Land **PR-L0** – reorder `from __future__ import annotations`, drop
   duplicated imports, and rerun `uv run task check` to confirm lint passes
   before pytest collection resumes.
-- [ ] Land **PR-L1** – restore the legacy helper scripts expected under
-  `tests/scripts/` (or redirect imports to `scripts/`), backfill the scheduler
-  benchmark fixtures, and document the provenance inside `baseline/`.
+- [x] Land **PR-L1** – redirect legacy imports to the repository `scripts/`
+  modules, switch to the shared unit typing helpers, and refresh the scheduler
+  benchmark baseline with provenance metadata.【F:tests/unit/legacy/test_check_env_warnings.py†L13-L22】
+  【F:tests/unit/legacy/test_distributed_perf_sim_script.py†L10-L52】
+  【F:tests/unit/legacy/test_distributed_perf_compare.py†L41-L68】
+  【F:tests/unit/legacy/test_download_duckdb_extensions.py†L11-L19】
+  【F:tests/unit/legacy/test_scheduling_resource_benchmark.py†L11-L52】
+  【F:tests/unit/legacy/test_orchestrator_perf_sim.py†L12-L49】
+  【F:tests/unit/legacy/test_additional_coverage.py†L25-L32】
+  【F:tests/unit/legacy/test_failure_scenarios.py†L12-L33】
+  【F:tests/unit/legacy/test_more_coverage.py†L20-L40】
+  【F:baseline/evaluation/scheduler_benchmark.json†L1-L15】
 - [x] Land **PR-R1** – relocate reasoning warning banners into structured
   telemetry and update behaviour coverage to assert clean answers.
   【F:src/autoresearch/orchestration/state.py†L132-L206】

@@ -7,8 +7,9 @@ import subprocess
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 SPEC = importlib.util.spec_from_file_location(
-    "distributed_perf_sim", Path(__file__).parents[2] / "scripts" / "distributed_perf_sim.py"
+    "distributed_perf_sim", REPO_ROOT / "scripts" / "distributed_perf_sim.py"
 )
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError("Unable to load distributed_perf_sim module")
@@ -24,7 +25,7 @@ def test_latency_decreases_with_workers() -> None:
 
 def test_cli_execution(tmp_path: Path) -> None:
     """CLI invocation returns JSON and writes a plot."""
-    script = Path(__file__).parents[2] / "scripts" / "distributed_perf_sim.py"
+    script = REPO_ROOT / "scripts" / "distributed_perf_sim.py"
     out = subprocess.check_output(
         [
             "uv",
@@ -47,7 +48,7 @@ def test_cli_execution(tmp_path: Path) -> None:
 
 def test_cli_requires_arguments() -> None:
     """Missing flags produce a helpful error."""
-    script = Path(__file__).parents[2] / "scripts" / "distributed_perf_sim.py"
+    script = REPO_ROOT / "scripts" / "distributed_perf_sim.py"
     proc = subprocess.run(["uv", "run", str(script)], stderr=subprocess.PIPE)
     assert proc.returncode != 0
     assert b"required" in proc.stderr

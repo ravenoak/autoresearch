@@ -10,9 +10,10 @@ from typing import Any
 
 import pytest
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location(
     "check_env",
-    Path(__file__).resolve().parents[2] / "scripts" / "check_env.py",
+    REPO_ROOT / "scripts" / "check_env.py",
 )
 if spec is None or spec.loader is None:
     raise RuntimeError("Unable to load check_env module")
