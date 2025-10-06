@@ -6,12 +6,18 @@ import json
 import re
 import sys
 import string
-import unicodedata
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from pydantic import BaseModel, ValidationError
+from .output.formatter import (
+    escape_markdown_text as _escape_markdown_text,
+    fenced_block as _fenced_block,
+    indent_block_lines as _indent_block_lines,
+    max_backtick_run as _max_backtick_run,
+    prepare_markdown_text as _prepare_markdown_text,
+)
 from .models import QueryResponse
 from .errors import ValidationError as AutoresearchValidationError
 from .config import ConfigLoader
@@ -949,84 +955,14 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
-_BLOCK_WHITESPACE = {"\n", "\r", "\t"}
-
-
-def _indent_block_lines(text: str, indent: str) -> str:
-    """Indent ``text`` for Markdown code blocks without losing control bytes."""
-
-    if text == "":
-        return indent
-    segments = text.splitlines(keepends=True)
-    if not segments:
-        segments = [""]
-    indented: list[str] = []
-    for segment in segments:
-        if segment:
-            indented.append(f"{indent}{segment}")
-        else:
-            indented.append(indent)
-    return "".join(indented)
-
-
-def _escape_markdown_text(value: str) -> tuple[str, bool]:
-    """Escape control characters for safe Markdown rendering."""
-
-    sanitized_chars: list[str] = []
-    needs_block = False
-    for char in value:
-        if char == "\n":
-            sanitized_chars.append(char)
-            needs_block = True
-            continue
-        if char == "\r":
-            sanitized_chars.append("\\u000d")
-            needs_block = True
-            continue
-        if char == "\t":
-            sanitized_chars.append("\\u0009")
-            needs_block = True
-            continue
-        code_point = ord(char)
-        category = unicodedata.category(char)
-        if category in {"Cc", "Cf"} or code_point == 0x7F:
-            sanitized_chars.append(f"\\u{code_point:04x}")
-            needs_block = True
-        else:
-            sanitized_chars.append(char)
-    sanitized = "".join(sanitized_chars)
-    if sanitized and not sanitized.strip():
-        sanitized = "".join(f"\\u{ord(char):04x}" for char in value)
-        needs_block = True
-    return sanitized, needs_block
-
-
-def _prepare_markdown_text(
-    value: Any, *, block_multiline: bool = False
-) -> tuple[str, bool, bool]:
-    """Return sanitized text, block flag, and placeholder marker."""
-
-    if value is None:
-        return "—", False, True
-    text = str(value)
-    if text == "":
-        return "—", False, True
-    sanitized, needs_block = _escape_markdown_text(text)
-    if block_multiline and any(ch in text for ch in ("\n", "\r", "\t")):
-        needs_block = True
-    if sanitized == "":
-        return "—", needs_block, True
-    return sanitized, needs_block, False
-
-
 def _markdown_value_lines(value: Any) -> list[str]:
     """Return Markdown lines for a single value with sanitisation."""
 
     sanitized, needs_block, is_placeholder = _prepare_markdown_text(value)
-    if needs_block:
-        return ["```text", sanitized, "```"]
     if is_placeholder:
         return ["—"]
+    if needs_block:
+        return _fenced_block("", sanitized)
     return [sanitized]
 
 
@@ -1041,10 +977,7 @@ def _format_list_markdown(items: Iterable[Any]) -> str:
         if is_placeholder:
             continue
         if needs_block:
-            block_body = _indent_block_lines(sanitized, "  ")
-            lines.append("- ```text")
-            lines.append(block_body)
-            lines.append("  ```")
+            lines.extend(_fenced_block("- ", sanitized))
         else:
             lines.append(f"- {sanitized}")
     return "\n".join(lines)
@@ -1089,10 +1022,7 @@ def _format_reasoning_markdown(reasoning: Iterable[str]) -> str:
         if is_placeholder:
             continue
         if needs_block:
-            block_body = _indent_block_lines(sanitized, "   ")
-            lines.append(f"{idx}. ```text")
-            lines.append(block_body)
-            lines.append("   ```")
+            lines.extend(_fenced_block(f"{idx}. ", sanitized))
         else:
             lines.append(f"{idx}. {sanitized}")
     return "\n".join(lines)
@@ -1118,10 +1048,7 @@ def _format_metrics_markdown(metrics: Mapping[str, Any]) -> str:
         label = str(key)
         if needs_block:
             lines.append(f"- **{label}**:")
-            block_body = _indent_block_lines(sanitized, "  ")
-            lines.append("  ```text")
-            lines.append(block_body)
-            lines.append("  ```")
+            lines.extend(_fenced_block("  ", sanitized))
         else:
             display = "—" if is_placeholder else sanitized
             lines.append(f"- **{label}**: {display}")
@@ -1561,9 +1488,7 @@ def _render_markdown(payload: DepthPayload) -> str:
     parts.append("## Raw Response")
     if payload.raw_response is not None:
         raw_json = json.dumps(payload.raw_response, indent=2, ensure_ascii=False)
-        parts.append("```json")
-        parts.append(raw_json)
-        parts.append("```")
+        parts.extend(_fenced_block("", raw_json, language="json"))
     if note := payload.notes.get("raw_response"):
         parts.append(f"> {note}")
 

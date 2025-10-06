@@ -86,12 +86,12 @@ for unknown formats.
 
 BDD scenarios and unit tests exercise Markdown, JSON, and graph renderers.
 The refreshed property suite verifies that control characters, zero-width
-spaces, and whitespace-only strings survive JSON round-trips and render in
-Markdown as fenced blocks with `\uXXXX` escapes. The behaviour feature now
-asserts that the CLI surfaces the escaped blocks instead of truncating or
-silently dropping characters. On 2025-10-05, `pytest
-tests/unit/test_output_formatter_property.py` and the updated behaviour
-scenario passed under `uv run --extra test pytest`.
+spaces, whitespace-only strings, and backtick-heavy payloads survive JSON
+round-trips and render in Markdown inside dynamically sized fences with
+`\uXXXX` escapes. The behaviour feature now asserts that the CLI surfaces the
+escaped blocks instead of truncating or silently dropping characters. On
+2025-10-05, `pytest tests/unit/test_output_formatter.py` and the updated
+behaviour scenario passed under `uv run --extra test pytest`.
 
 ## Traceability
 
@@ -100,8 +100,8 @@ scenario passed under `uv run --extra test pytest`.
   - [src/autoresearch/output_format.py][m1]
 - Tests
   - [tests/behavior/features/output_formatting.feature][t1]
-  - [tests/unit/test_output_formatter_property.py][t2]
+  - [tests/unit/test_output_formatter.py][t2]
 
 [m1]: ../../src/autoresearch/output_format.py
 [t1]: ../../tests/behavior/features/output_formatting.feature
-[t2]: ../../tests/unit/test_output_formatter_property.py
+[t2]: ../../tests/unit/test_output_formatter.py

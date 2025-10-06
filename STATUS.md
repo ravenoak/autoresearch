@@ -59,12 +59,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Updated the typing guidelines to describe the new targeted exclusions, typed
   fixture patterns, and strict CI hook so contributors follow the normalisation
   approach when extending the test suite.【F:docs/dev/typing-strictness.md†L1-L59】
-- `OutputFormatter` now wraps control characters, zero-width spaces, and
-  whitespace-only strings in fenced Markdown blocks while leaving JSON payloads
-  byte-for-byte intact; the expanded Hypothesis strategy exercises these edge
-  cases and passes under `uv run --extra test pytest
-  tests/unit/test_output_formatter_property.py`.
-  【F:src/autoresearch/output_format.py†L880-L1469】【F:tests/unit/test_output_formatter_property.py†L21-L146】【b982c8†L1-L5】
+- `OutputFormatter` now wraps control characters, zero-width spaces, backtick
+  runs, and whitespace-only strings in fenced Markdown blocks while leaving JSON
+  payloads byte-for-byte intact; the expanded Hypothesis strategy exercises
+  these edge cases and passes under `uv run --extra test pytest
+  tests/unit/test_output_formatter.py`.
+  【F:src/autoresearch/output_format.py†L880-L1469】【F:tests/unit/test_output_formatter.py†L1-L181】【b982c8†L1-L5】
 - Behaviour coverage gained a "Markdown escapes control characters" scenario
   that formats a stub response with control bytes and asserts the CLI emits
   `\uXXXX` escapes inside fenced blocks, ensuring terminal viewers never drop

@@ -51,11 +51,12 @@ The default Markdown renderer highlights the TL;DR, answer, citations, and claim
 verification table. Enable the trace depth to surface the full reasoning log,
 raw JSON payload, and the audit table that now mirrors the CLI schema.
 
-Control and format characters are rendered using escaped `\uXXXX` sequences
-inside fenced code blocks so that whitespace-only values, carriage returns, and
-other control bytes survive a round-trip back to the original payload. The
-property tests in `tests/unit/test_output_formatter_property.py` cover
-whitespace-only and control-heavy strings to guard against regressions.
+Control and format characters render inside dynamically sized `text` code
+fences or through escaped `\uXXXX` sequences. This preserves whitespace-only
+values, carriage returns, and embedded backtick runs without allowing Markdown
+to terminate the block early. The property tests in
+`tests/unit/test_output_formatter.py` cover whitespace-only, control-heavy, and
+backtick-rich strings to guard against regressions.
 
 ```bash
 autoresearch search "What is quantum computing?" --output markdown
@@ -83,7 +84,7 @@ autoresearch search "What is quantum computing?" --depth trace --output json \
 Every control character is preserved via JSON string escapes, so
 `json.loads(OutputFormatter.render(..., "json"))` round-trips exactly to the
 source response. The regression property tests listed above assert this
-behaviour across control-character seeds.
+behaviour across control-character and whitespace-heavy seeds.
 
 ### Plain text
 
