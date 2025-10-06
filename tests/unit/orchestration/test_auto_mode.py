@@ -30,8 +30,17 @@ class DummySynthesizer:
     def execute(self, state: QueryState, config: ConfigModel) -> dict[str, Any]:
         self.calls.append(state.cycle)
         return {
-            "results": {"final_answer": "scout"},
-            "claims": [{"type": "synthesis", "content": "scout"}],
+            "results": {
+                "final_answer": "scout\n⚠️ Unsupported claims remain after retries",
+            },
+            "claims": [
+                {
+                    "id": "claim-1",
+                    "type": "synthesis",
+                    "content": "scout",
+                    "audit_status": "unsupported",
+                }
+            ],
         }
 
 
@@ -107,6 +116,12 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
     response = orchestrator.run_query("auto exit", config)
 
     assert response.answer == "scout"
+    assert not response.answer.lstrip().startswith("⚠️")
+    assert response.warnings, "Structured warnings should accompany unsupported claims"
+    warning_messages = {
+        str(entry.get("message", "")) for entry in response.warnings if isinstance(entry, Mapping)
+    }
+    assert any("unsupported" in message.lower() for message in warning_messages)
     assert len(synth.calls) == config.auto_scout_samples + 1
     assert config.reasoning_mode == ReasoningMode.AUTO
     auto_meta = response.metrics.get("auto_mode", {})
@@ -188,6 +203,8 @@ def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
     assert len(synth.calls) == config.auto_scout_samples + 1
     assert loop_calls == list(range(decision.target_loops))
     assert response.answer == f"debate-{loop_calls[-1]}"
+    assert not response.answer.lstrip().startswith("⚠️")
+    assert response.warnings, "Warnings should be preserved during debate escalation"
     assert config.reasoning_mode == ReasoningMode.AUTO
     auto_meta = response.metrics.get("auto_mode", {})
     assert auto_meta.get("outcome") == "escalated"
