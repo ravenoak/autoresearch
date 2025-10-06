@@ -2,6 +2,12 @@ from collections.abc import Mapping
 from typing import Any, Dict, List
 
 import pytest
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
+
+import pytest
 
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
@@ -9,18 +15,19 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
+from autoresearch.orchestration.state import QueryState
 
 
 class DummySynthesizer:
     """Minimal synthesizer stub for AUTO mode tests."""
 
     def __init__(self) -> None:
-        self.calls: List[int] = []
+        self.calls: list[int] = []
 
-    def can_execute(self, state, config) -> bool:  # noqa: ANN001 - signature mirrors agent API
+    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         return True
 
-    def execute(self, state, config) -> Dict[str, Any]:  # noqa: ANN001 - signature mirrors agent API
+    def execute(self, state: QueryState, config: ConfigModel) -> dict[str, Any]:
         self.calls.append(state.cycle)
         return {
             "results": {"final_answer": "scout"},
@@ -83,9 +90,11 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: synth)
 
-    def fake_gate(**kwargs):  # noqa: ANN001 - matches evaluate_scout_gate_policy kwargs
+    def fake_gate(**kwargs: Any) -> ScoutGateDecision:
         decision = _decision(False, 1)
-        kwargs["state"].metadata["scout_gate"] = decision.__dict__
+        state = kwargs.get("state")
+        assert state is not None
+        state.metadata["scout_gate"] = decision.__dict__
         return decision
 
     monkeypatch.setattr(OrchestrationUtils, "evaluate_scout_gate_policy", fake_gate)
@@ -143,28 +152,30 @@ def test_auto_mode_escalates_to_debate_when_gate_requires_loops(
 
     decision = _decision(True, 3)
 
-    def fake_gate(**kwargs):  # noqa: ANN001 - matches evaluate_scout_gate_policy kwargs
-        kwargs["state"].metadata["scout_gate"] = decision.__dict__
+    def fake_gate(**kwargs: Any) -> ScoutGateDecision:
+        state = kwargs.get("state")
+        assert state is not None
+        state.metadata["scout_gate"] = decision.__dict__
         return decision
 
     monkeypatch.setattr(OrchestrationUtils, "evaluate_scout_gate_policy", fake_gate)
 
-    loop_calls: List[int] = []
+    loop_calls: list[int] = []
 
     def fake_cycle(
         loop: int,
         loops: int,
-        agents,
+        agents: Any,
         primus_index: int,
         max_errors: int,
-        state,
-        config_obj,
-        metrics,
-        callbacks_map,
-        agent_factory,
-        storage_manager,
-        tracer,
-        cb_manager,
+        state: QueryState,
+        config_obj: ConfigModel,
+        metrics: OrchestrationMetrics,
+        callbacks_map: Any,
+        agent_factory: Any,
+        storage_manager: Any,
+        tracer: Any,
+        cb_manager: Any,
     ) -> int:
         loop_calls.append(loop)
         state.results["final_answer"] = f"debate-{loop}"

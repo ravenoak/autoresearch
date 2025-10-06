@@ -268,7 +268,7 @@ strict = true
 warn_unused_configs = true
 no_implicit_optional = true
 mypy_path = ["typings"]
-exclude = "(?x)(^tests/(?:ui|unit)/)"
+exclude = "(?x)(^tests/unit/legacy/)"
 
 [[tool.mypy.overrides]]
 module = ["tests.behavior.steps.*"]

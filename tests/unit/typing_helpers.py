@@ -162,34 +162,35 @@ def build_summary_fixture(
         strategy=routing_strategy,
     )
 
-    summary_kwargs: dict[str, object] = {
-        "dataset": dataset,
-        "run_id": run_id,
-        "started_at": started,
-        "completed_at": completed,
-        "total_examples": total_examples,
-        "config_signature": config_signature,
-        "accuracy": accuracy,
-        "citation_coverage": citation_coverage,
-        "contradiction_rate": contradiction_rate,
-        "avg_latency_seconds": avg_latency_seconds,
-        "avg_tokens_input": avg_tokens_input,
-        "avg_tokens_output": avg_tokens_output,
-        "avg_tokens_total": avg_tokens_total,
-        "avg_cycles_completed": avg_cycles_completed,
-        "gate_debate_rate": gate_debate_rate,
-        "gate_exit_rate": gate_exit_rate,
-        "gated_example_ratio": gated_example_ratio,
-        "planner": planner_metrics,
-        "routing": routing_metrics,
-        "duckdb_path": duckdb_path,
-        "example_parquet": example_parquet,
-        "summary_parquet": summary_parquet,
-        "example_csv": example_csv,
-        "summary_csv": summary_csv,
-    }
-    summary_kwargs.update(overrides)
-    return EvaluationSummary(**summary_kwargs)
+    summary = EvaluationSummary(
+        dataset=dataset,
+        run_id=run_id,
+        started_at=started,
+        completed_at=completed,
+        total_examples=total_examples,
+        config_signature=config_signature,
+        accuracy=accuracy,
+        citation_coverage=citation_coverage,
+        contradiction_rate=contradiction_rate,
+        avg_latency_seconds=avg_latency_seconds,
+        avg_tokens_input=avg_tokens_input,
+        avg_tokens_output=avg_tokens_output,
+        avg_tokens_total=avg_tokens_total,
+        avg_cycles_completed=avg_cycles_completed,
+        gate_debate_rate=gate_debate_rate,
+        gate_exit_rate=gate_exit_rate,
+        gated_example_ratio=gated_example_ratio,
+        planner=planner_metrics,
+        routing=routing_metrics,
+        duckdb_path=duckdb_path,
+        example_parquet=example_parquet,
+        summary_parquet=summary_parquet,
+        example_csv=example_csv,
+        summary_csv=summary_csv,
+    )
+    for key, value in overrides.items():
+        setattr(summary, key, value)
+    return summary
 
 
 @dataclass(slots=True)

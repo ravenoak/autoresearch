@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import List
 
+from __future__ import annotations
+
+from types import SimpleNamespace
+
 import pytest
 
 from autoresearch.config.models import (
@@ -17,7 +21,7 @@ from autoresearch.search.context import SearchContext
 
 def _build_config(
     *,
-    backends: List[str],
+    backends: list[str],
     max_results: int,
     rewrite_cfg: QueryRewriteConfig,
     adaptive_cfg: AdaptiveKConfig,
@@ -52,7 +56,7 @@ def _build_config(
 
 
 @pytest.fixture
-def isolated_search(monkeypatch):
+def isolated_search(monkeypatch: pytest.MonkeyPatch) -> Search:
     """Return a fresh Search instance with storage side effects disabled."""
 
     class _StorageStub:
@@ -77,7 +81,9 @@ def isolated_search(monkeypatch):
     return search
 
 
-def test_external_lookup_triggers_query_rewrite(monkeypatch, isolated_search):
+def test_external_lookup_triggers_query_rewrite(
+    monkeypatch: pytest.MonkeyPatch, isolated_search: Search
+) -> None:
     config = _build_config(
         backends=["stub"],
         max_results=2,
@@ -128,7 +134,9 @@ def test_external_lookup_triggers_query_rewrite(monkeypatch, isolated_search):
         assert markers.get("coverage_gap", 0.0) > 0.0
 
 
-def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search):
+def test_external_lookup_adaptive_k_increases_fetch(
+    monkeypatch: pytest.MonkeyPatch, isolated_search: Search
+) -> None:
     config = _build_config(
         backends=["stub"],
         max_results=2,
@@ -167,7 +175,9 @@ def test_external_lookup_adaptive_k_increases_fetch(monkeypatch, isolated_search
         assert not rewrites
 
 
-def test_query_strategy_markers_disabled(monkeypatch, isolated_search):
+def test_query_strategy_markers_disabled(
+    monkeypatch: pytest.MonkeyPatch, isolated_search: Search
+) -> None:
     config = _build_config(
         backends=["stub"],
         max_results=2,
@@ -196,7 +206,9 @@ def test_query_strategy_markers_disabled(monkeypatch, isolated_search):
         assert strategy == {}
 
 
-def test_self_critique_markers_disabled(monkeypatch, isolated_search):
+def test_self_critique_markers_disabled(
+    monkeypatch: pytest.MonkeyPatch, isolated_search: Search
+) -> None:
     config = _build_config(
         backends=["stub"],
         max_results=2,

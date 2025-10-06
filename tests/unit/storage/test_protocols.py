@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from __future__ import annotations
+
+from pathlib import Path
+from typing import cast
 
 import rdflib
 
 from autoresearch.storage_backends import init_rdf_store
-from autoresearch.storage_typing import GraphProtocol, to_json_dict
+from autoresearch.storage_typing import GraphProtocol, RDFTriple, to_json_dict
 
 
 def test_to_json_dict_returns_copy() -> None:
@@ -21,10 +25,13 @@ def test_init_rdf_store_supports_protocol(tmp_path: Path) -> None:
     store = init_rdf_store("memory", str(tmp_path / "rdf"))
     assert isinstance(store, GraphProtocol)
 
-    triple = (
-        rdflib.URIRef("urn:test:subject"),
-        rdflib.URIRef("urn:test:predicate"),
-        rdflib.Literal("value"),
+    triple = cast(
+        RDFTriple,
+        (
+            rdflib.URIRef("urn:test:subject"),
+            rdflib.URIRef("urn:test:predicate"),
+            rdflib.Literal("value"),
+        ),
     )
     store.add(triple)
     results = list(store.triples((None, None, None)))

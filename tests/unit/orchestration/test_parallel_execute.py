@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from types import TracebackType
+from typing import Any, Optional, Type
 
 import pytest
 
@@ -15,30 +16,35 @@ from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 
 
 class DummyTracer:
-    def start_as_current_span(self, name: str):
-        class Span:
-            def __enter__(self) -> "Span":
-                return self
+    class _Span:
+        def __enter__(self) -> "DummyTracer._Span":
+            return self
 
-            def __exit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - no cleanup
-                return None
+        def __exit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc: Optional[BaseException],
+            tb: Optional[TracebackType],
+        ) -> None:  # pragma: no cover - no cleanup
+            return None
 
-            def set_attribute(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
-                return None
+        def set_attribute(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
+            return None
 
-            def add_event(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
-                return None
+        def add_event(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
+            return None
 
-        return Span()
+    def start_as_current_span(self, name: str) -> "DummyTracer._Span":
+        return DummyTracer._Span()
 
 
 class DummySynthesizer:
-    def execute(self, state, config):  # pragma: no cover - simple passthrough
+    def execute(self, state: Any, config: ConfigModel) -> dict[str, str]:  # pragma: no cover - simple passthrough
         return {"answer": "combined"}
 
 
 @pytest.fixture(autouse=True)
-def patch_parallel(monkeypatch):
+def patch_parallel(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.parallel.setup_tracing", lambda *_: None
     )
@@ -76,28 +82,30 @@ class SelectorOrchestrator:
         raise OrchestrationError("unknown")
 
 
-def test_execute_parallel_query_error_and_timeout(monkeypatch):
+def test_execute_parallel_query_error_and_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
         SelectorOrchestrator,
     )
 
     config = ConfigModel()
-    resp_err = execute_parallel_query("q", config, [["good"], ["bad"]], timeout=1.0)
+    resp_err = execute_parallel_query("q", config, [["good"], ["bad"]], timeout=1)
     meta_err = resp_err.metrics["parallel_execution"]
     assert meta_err["successful_groups"] == 1
     assert meta_err["error_groups"] == 1
     assert meta_err["timeout_groups"] == 0
 
     config2 = ConfigModel()
-    resp_timeout = execute_parallel_query("q", config2, [["good"], ["slow"]], timeout=0.1)
+    resp_timeout = execute_parallel_query("q", config2, [["good"], ["slow"]], timeout=1)
     meta_timeout = resp_timeout.metrics["parallel_execution"]
     assert meta_timeout["successful_groups"] == 1
     assert meta_timeout["error_groups"] == 0
     assert meta_timeout["timeout_groups"] == 1
 
 
-def test_execute_parallel_query_all_fail(monkeypatch):
+def test_execute_parallel_query_all_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
         SelectorOrchestrator,
@@ -107,10 +115,12 @@ def test_execute_parallel_query_all_fail(monkeypatch):
     groups = [["bad"], ["bad"]]
 
     with pytest.raises(OrchestrationError):
-        execute_parallel_query("q", config, groups, timeout=0.3)
+        execute_parallel_query("q", config, groups, timeout=1)
 
 
-def test_execute_parallel_query_reasoning_normalization(monkeypatch):
+def test_execute_parallel_query_reasoning_normalization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
         SelectorOrchestrator,
@@ -119,8 +129,8 @@ def test_execute_parallel_query_reasoning_normalization(monkeypatch):
     config = ConfigModel()
     groups = [["good"], ["good"]]
 
-    first = execute_parallel_query("q", config, groups, timeout=1.0)
-    second = execute_parallel_query("q", config, list(reversed(groups)), timeout=1.0)
+    first = execute_parallel_query("q", config, groups, timeout=1)
+    second = execute_parallel_query("q", config, list(reversed(groups)), timeout=1)
 
     for payload in first.reasoning:
         assert isinstance(payload, FrozenReasoningStep)

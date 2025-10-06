@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from threading import RLock
 
 import pytest
@@ -12,7 +13,7 @@ from autoresearch.orchestration.state_registry import QueryStateRegistry
 
 
 @pytest.fixture(autouse=True)
-def clear_state_registry() -> None:
+def clear_state_registry() -> Iterator[None]:
     """Reset the in-memory registry before and after each test."""
 
     QueryStateRegistry._store.clear()

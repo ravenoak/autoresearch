@@ -7,6 +7,21 @@ import autoresearch.search.core as search_core
 from autoresearch.search.context import SearchContext
 from autoresearch.search.core import Search
 from tests.helpers import make_config_model
+from __future__ import annotations
+
+import sys
+from collections.abc import Sequence
+from types import ModuleType, SimpleNamespace
+from typing import Any, cast
+from unittest.mock import patch
+
+import pytest
+
+from autoresearch.search import context as ctx
+from autoresearch.search import core as search_core
+from autoresearch.search.context import SearchContext
+from autoresearch.search.core import Search
+from tests.helpers import make_config_model
 
 
 @patch(
@@ -21,7 +36,7 @@ from tests.helpers import make_config_model
         }
     ),
 )
-def test_query_expansion_converges():
+def test_query_expansion_converges() -> None:
     """Assume repeated query expansion stabilizes once entity counts stop changing.
 
     After recording a single query and its entities, expanding the same query twice
@@ -34,7 +49,7 @@ def test_query_expansion_converges():
         assert first == second
 
 
-def test_reset_instance_creates_new_singleton():
+def test_reset_instance_creates_new_singleton() -> None:
     """Assume SearchContext enforces a singleton; resetting replaces it.
 
     After calling reset_instance a subsequent get_instance returns a new object,
@@ -47,7 +62,7 @@ def test_reset_instance_creates_new_singleton():
 
 
 @patch("autoresearch.search.context.SPACY_AVAILABLE", True)
-def test_extract_entities_with_spacy(monkeypatch):
+def test_extract_entities_with_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume spaCy is available to tag entities.
 
     A dummy nlp object exposes a single ORG entity, which increments the
@@ -55,15 +70,17 @@ def test_extract_entities_with_spacy(monkeypatch):
     """
     dummy_ent = SimpleNamespace(text="Acme", label_="ORG")
 
-    def dummy_nlp(text):
+    def dummy_nlp(text: str) -> SimpleNamespace:
         return SimpleNamespace(ents=[dummy_ent])
     ctx = SearchContext.new_for_tests()
-    ctx.nlp = dummy_nlp
+    ctx.nlp = cast(Any, dummy_nlp)
     ctx._extract_entities("Acme")
     assert ctx.entities["acme"] == 1
 
 
-def test_build_topic_model_with_insufficient_docs(monkeypatch):
+def test_build_topic_model_with_insufficient_docs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume topic modeling requires at least two documents.
 
     With only one query recorded, build_topic_model leaves topic_model unset,
@@ -79,7 +96,7 @@ def test_build_topic_model_with_insufficient_docs(monkeypatch):
         assert ctx.topic_model is None
 
 
-def test_try_imports_disabled(monkeypatch):
+def test_try_imports_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     """Assume optional NLP libraries stay unloaded when context is off.
 
     Disabling context-aware search causes all import helpers to return False
@@ -98,7 +115,9 @@ def test_try_imports_disabled(monkeypatch):
     assert not ctx.SENTENCE_TRANSFORMERS_AVAILABLE
 
 
-def test_try_import_sentence_transformers_success(monkeypatch):
+def test_try_import_sentence_transformers_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume sentence-transformers loads when dependencies are present.
 
     Injecting a dummy module simulates a successful import and flips the
@@ -117,28 +136,31 @@ def test_try_import_sentence_transformers_success(monkeypatch):
     assert ctx.SENTENCE_TRANSFORMERS_AVAILABLE
 
 
-def test_search_embedding_protocol_prefers_embed(monkeypatch):
+def test_search_embedding_protocol_prefers_embed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume fastembed-style classes are accepted via the embedding protocol."""
 
     cfg = make_config_model()
-    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
-    monkeypatch.setattr(search_core, "SentenceTransformer", None)
-    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
+    search_module = cast(Any, search_core)
+    monkeypatch.setattr(search_module, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_module, "SentenceTransformer", None)
+    monkeypatch.setattr(search_module, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeFastEmbed:
         last_input: object | None = None
 
-        def embed(self, sentences):
+        def embed(self, sentences: Sequence[str]) -> list[list[float]]:
             type(self).last_input = sentences
             return [[1.0, 2.0]]
 
-        def encode(self, sentences):  # pragma: no cover - defensive
+        def encode(self, sentences: Sequence[str]) -> list[list[float]]:  # pragma: no cover - defensive
             raise AssertionError("encode should not be used when embed exists")
 
     monkeypatch.setattr(
-        search_core,
+        search_module,
         "_resolve_sentence_transformer_cls",
         lambda: FakeFastEmbed,
     )
@@ -153,26 +175,29 @@ def test_search_embedding_protocol_prefers_embed(monkeypatch):
     assert FakeFastEmbed.last_input == ["theta"]
 
 
-def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
+def test_search_embedding_protocol_falls_back_to_encode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume sentence-transformers fallback loads when fastembed is unavailable."""
 
     cfg = make_config_model()
-    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
-    monkeypatch.setattr(search_core, "SentenceTransformer", None)
-    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
-    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
+    search_module = cast(Any, search_core)
+    monkeypatch.setattr(search_module, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_module, "SentenceTransformer", None)
+    monkeypatch.setattr(search_module, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_module, "_resolve_sentence_transformer_cls", lambda: None)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeSentenceTransformer:
         last_input: object | None = None
 
-        def encode(self, sentences):
+        def encode(self, sentences: Sequence[str]) -> list[list[float]]:
             type(self).last_input = sentences
             return [[3.0, 4.0, 5.0]]
 
     module = ModuleType("sentence_transformers")
-    module.SentenceTransformer = FakeSentenceTransformer
+    setattr(module, "SentenceTransformer", FakeSentenceTransformer)
     monkeypatch.setitem(sys.modules, "sentence_transformers", module)
 
     search = Search()
@@ -185,31 +210,38 @@ def test_search_embedding_protocol_falls_back_to_encode(monkeypatch):
     assert FakeSentenceTransformer.last_input == ["omega"]
 
 
-def test_search_sentence_transformer_fallback_cached(monkeypatch):
+def test_search_sentence_transformer_fallback_cached(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume the sentence-transformers fallback caches the imported class once."""
 
     cfg = make_config_model()
-    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
-    monkeypatch.setattr(search_core, "SentenceTransformer", None)
-    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
+    search_module = cast(Any, search_core)
+    monkeypatch.setattr(search_module, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_module, "SentenceTransformer", None)
+    monkeypatch.setattr(search_module, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     fastembed_mod = ModuleType("fastembed")
     fastembed_text_mod = ModuleType("fastembed.text")
     monkeypatch.setitem(sys.modules, "fastembed", fastembed_mod)
     monkeypatch.setitem(sys.modules, "fastembed.text", fastembed_text_mod)
-    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", search_core._resolve_sentence_transformer_cls)
+    monkeypatch.setattr(
+        search_module,
+        "_resolve_sentence_transformer_cls",
+        search_core._resolve_sentence_transformer_cls,
+    )
 
     class DummySentenceTransformer:
         last_input: object | None = None
 
-        def encode(self, sentences):
+        def encode(self, sentences: Sequence[str]) -> list[list[float]]:
             type(self).last_input = sentences
             return [[9.0, 8.0]]
 
     module = ModuleType("sentence_transformers")
-    module.SentenceTransformer = DummySentenceTransformer
+    setattr(module, "SentenceTransformer", DummySentenceTransformer)
     monkeypatch.setitem(sys.modules, "sentence_transformers", module)
 
     search = Search()
@@ -223,29 +255,32 @@ def test_search_sentence_transformer_fallback_cached(monkeypatch):
     assert search_core._SENTENCE_TRANSFORMER_FALLBACK_ERROR is None
 
 
-def test_search_embedding_backend_switches_without_reset(monkeypatch):
+def test_search_embedding_backend_switches_without_reset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Assume swapping embedding providers flushes cached instances automatically."""
 
     cfg = make_config_model()
-    monkeypatch.setattr(search_core, "_get_runtime_config", lambda: cfg)
-    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
-    monkeypatch.setattr(search_core, "SentenceTransformer", None)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
-    monkeypatch.setattr(search_core, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
+    search_module = cast(Any, search_core)
+    monkeypatch.setattr(search_module, "_get_runtime_config", lambda: cfg)
+    monkeypatch.setattr(search_module, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_module, "SentenceTransformer", None)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ATTEMPTED", False)
+    monkeypatch.setattr(search_module, "_SENTENCE_TRANSFORMER_FALLBACK_ERROR", None)
 
     class FakeFastEmbed:
-        def embed(self, sentences):
+        def embed(self, sentences: Sequence[str]) -> list[list[float]]:
             return [[1.0]]
 
-        def encode(self, sentences):  # pragma: no cover - defensive
+        def encode(self, sentences: Sequence[str]) -> list[list[float]]:  # pragma: no cover - defensive
             raise AssertionError("encode should not run for fastembed fakes")
 
     class FakeSentenceTransformer:
-        def encode(self, sentences):
+        def encode(self, sentences: Sequence[str]) -> list[list[float]]:
             return [[2.0]]
 
     monkeypatch.setattr(
-        search_core,
+        search_module,
         "_resolve_sentence_transformer_cls",
         lambda: FakeFastEmbed,
     )
@@ -255,11 +290,11 @@ def test_search_embedding_backend_switches_without_reset(monkeypatch):
     assert isinstance(first_model, FakeFastEmbed)
 
     module = ModuleType("sentence_transformers")
-    module.SentenceTransformer = FakeSentenceTransformer
+    setattr(module, "SentenceTransformer", FakeSentenceTransformer)
     monkeypatch.setitem(sys.modules, "sentence_transformers", module)
-    monkeypatch.setattr(search_core, "SentenceTransformer", None)
-    monkeypatch.setattr(search_core, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
-    monkeypatch.setattr(search_core, "_resolve_sentence_transformer_cls", lambda: None)
+    monkeypatch.setattr(search_module, "SentenceTransformer", None)
+    monkeypatch.setattr(search_module, "SENTENCE_TRANSFORMERS_AVAILABLE", False)
+    monkeypatch.setattr(search_module, "_resolve_sentence_transformer_cls", lambda: None)
 
     second_model = search.get_sentence_transformer()
     assert isinstance(second_model, FakeSentenceTransformer)

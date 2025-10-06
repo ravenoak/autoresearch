@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from __future__ import annotations
+
 from typing import Any
 
 import pytest
@@ -85,10 +87,14 @@ def test_query_state_normalises_socratic_checks_and_overview() -> None:
 
     assert warnings == []
     task_graph = state.task_graph
+    assert task_graph is not None
     research = next(task for task in task_graph["tasks"] if task["id"] == "research")
     assert research["dependency_depth"] == 1
     assert any(entry.startswith("risks:") for entry in research["socratic_checks"])
-    telemetry = state.metadata["planner"]["telemetry"]
+    planner_metadata = state.metadata.get("planner")
+    assert isinstance(planner_metadata, dict)
+    telemetry = planner_metadata.get("telemetry")
+    assert isinstance(telemetry, dict)
     assert telemetry["dependency_overview"][0]["task"] == "research"
     assert telemetry["tasks"][0]["dependency_depth"] == 0
 
@@ -125,11 +131,13 @@ def test_task_coordinator_uses_depth_and_affinity() -> None:
 
     coordinator = TaskCoordinator(state)
     next_task = coordinator.schedule_next(preferred_tool="analysis")
+    assert next_task is not None
     assert next_task["id"] == "root"
 
     coordinator.start_task("root")
     coordinator.complete_task("root")
     next_task_after_root = coordinator.schedule_next(preferred_tool="analysis")
+    assert next_task_after_root is not None
     assert next_task_after_root["id"] == "followup"
     snapshot = coordinator._build_graph_node("followup").to_snapshot()
     assert snapshot["dependency_depth"] == 1

@@ -1,4 +1,7 @@
 import pytest
+from __future__ import annotations
+
+import pytest
 
 from autoresearch.search import Search
 from autoresearch.search import http as search_http
@@ -12,7 +15,9 @@ def test_http_session_retries_and_reuse() -> None:
     session2 = Search.get_http_session()
     assert session1 is session2
     adapter = session1.get_adapter("https://")
-    assert adapter.max_retries.total >= 3
+    retries = getattr(adapter, "max_retries", None)
+    assert retries is not None
+    assert getattr(retries, "total", 0) >= 3
     Search.close_http_session()
 
 

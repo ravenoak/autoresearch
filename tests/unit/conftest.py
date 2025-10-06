@@ -6,7 +6,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 @pytest.fixture
-def orchestrator_factory():
+def orchestrator_factory() -> Callable[[], Orchestrator]:
     """Return a factory for creating fresh ``Orchestrator`` instances."""
 
     def _factory() -> Orchestrator:
