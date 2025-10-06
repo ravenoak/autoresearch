@@ -344,6 +344,17 @@ tasks:
       Installs all optional extras unless EXTRAS overrides them.
       Include "gpu" to use wheels/gpu.
 
+  coverage:minimal:
+    cmds:
+      - task: coverage
+        vars:
+          EXTRAS: ""
+      - echo "[coverage] generating HTML report"
+      - uv run coverage html
+    desc: |
+      Run coverage with only the baseline dev-minimal and test extras.
+      Generates the HTML report under htmlcov/ for archival snapshots.
+
   verify:preflight:
     cmds:
       - uv run python scripts/check_full_verify_prereqs.py --extras "nlp ui vss git distributed analysis llm parsers gpu"
