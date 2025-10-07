@@ -1,3 +1,13 @@
+As of **2025-10-07 at 16:42 UTC** the strict gate remains green while pytest
+collection still fails. `uv run mypy --strict src tests` reports “Success: no
+issues found in 797 source files,” confirming PR-L0a’s freeze fixes held through
+the latest refactors.【0aff6f†L1-L1】 A paired `uv run --extra test pytest -q`
+run errors out on six modules because duplicated imports precede
+`from __future__ import annotations`, raising SyntaxError and preventing the
+suite from exercising cache determinism.【2fa019†L1-L65】 We will land PR-L0b to
+restore import ordering, follow with PR-T0 to add regression guards, and then
+resume PR-S3’s cache work.
+
 As of **2025-10-07 at 16:29 UTC** the strict gate regressed: `uv run mypy
 --strict src tests` now fails on AUTO mode scout snapshots and unused ignores
 inside the regression suite.【1fc7a3†L1-L5】 `_snapshot_scout_sample` now freezes
