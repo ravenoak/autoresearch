@@ -19,6 +19,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 7, 2025
+- Ran `uv run mypy --strict src tests` at **16:42 UTC** and the sweep still
+  reports “Success: no issues found in 797 source files,” confirming PR-L0a’s
+  freeze fixes held through the latest merges.【0aff6f†L1-L1】 A paired
+  `uv run --extra test pytest -q` run now halts during collection because six
+  modules import standard-library packages before `from __future__ import
+  annotations`, triggering SyntaxError. We will land PR-L0b to restore the
+  import ordering before attempting another verify sweep.【2fa019†L1-L65】
 - Reran `uv run mypy --strict src tests` at **05:48 UTC** and the sweep still
   reports “Success: no issues found in 797 source files,” confirming the strict
   gate stays green while we focus on pytest regressions.【6bfb2b†L1-L1】 A

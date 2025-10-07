@@ -7,9 +7,24 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 7, 2025 at 16:29 UTC** the strict gate regressed: `uv run mypy
---strict src tests` now fails on AUTO mode sample hydration and unused ignores
-within the regression suite.【1fc7a3†L1-L5】 `_snapshot_scout_sample` now freezes
+As of **October 7, 2025 at 16:42 UTC** the strict typing gate remains green:
+`uv run mypy --strict src tests` reports “Success: no issues found in 797 source
+files.”【0aff6f†L1-L1】 This confirms PR-L0a held after the latest refactors and
+allows us to focus on test hygiene and coverage work without reopening the
+typing backlog.
+
+The same window’s full-suite pytest sweep (`uv run --extra test pytest -q`)
+still halts during collection: six modules raise
+`SyntaxError: from __future__ imports must occur at the beginning of the file`
+because duplicated standard-library imports precede
+`from __future__ import annotations`.【2fa019†L1-L65】 These errors align with the
+lint fallout captured in the verify logs and keep the suite from exercising the
+known cache determinism regression. We must ship a short lint-and-hygiene PR
+before behaviour or coverage evidence can move forward.
+
+Earlier, at **16:29 UTC**, the strict gate briefly regressed when AUTO-mode
+claim hydration stored non-string answers without freezing them and tests relied
+on unused ignores.【1fc7a3†L1-L5】 `_snapshot_scout_sample` now freezes
 non-string answers while the AUTO mode tests cast telemetry to
 `FrozenReasoningStep` tuples so strict mode recognises the immutability
 assertions ahead of the refreshed sweep.【F:src/autoresearch/orchestration/orchestrator.py†L108-L134】
@@ -68,38 +83,42 @@ mirrors the same checklist with the refreshed evidence snapshot.
   payload normalisers and orchestrator merge logic to keep telemetry
   serialisable.【F:src/autoresearch/orchestration/reasoning_payloads.py†L1-L166】
   【F:src/autoresearch/orchestration/parallel.py†L191-L210】
-- [ ] Deliver **PR-O1** – finish output formatter fidelity work so control
-  characters and whitespace remain intact across JSON and markdown outputs.
-- [ ] Deliver **PR-R1** – confirm warning banners stay in structured telemetry
-  while answers remain clean in CLI and API flows.
-- [ ] Deliver **PR-P1** – recalibrate scheduler benchmarks with merged claim
-  hydration and deterministic cache behaviour.
-- [ ] Deliver **PR-L0** – restore test module hygiene by removing duplicated
-  imports, ensuring each file keeps `from __future__ import annotations` at the
-  top, and capturing a green `uv run task check` log for the release dossier.
-- [ ] Deliver **PR-L1** – reintroduce the legacy helper scripts under
-  `tests/scripts/` (or rewire imports to the production copies), regenerate the
-  scheduler benchmark fixture from current baselines, and document provenance in
-  `baseline/` so pytest collection can progress.
-- [ ] Deliver **PR-S3** – enforce cache-hit canonicalisation across
-  `Search.external_lookup` and hybrid enrichment so
-  `test_external_lookup_uses_cache` observes a single backend call, then expand
-  property coverage around namespace and alias churn.
-- [ ] Deliver **PR-V1** – once lint and collection succeed, capture fresh
-  `task verify` and `task coverage` logs without GPU extras, restoring the
-  release evidence trail ahead of the tag proposal.
-- [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
-  mypy and pytest, then rerun coverage without GPU extras unless explicitly
-  required and publish the new logs through the release dossier.
-- [ ] Resume TestPyPI dry runs once verify and coverage are green, then close
-  the remaining [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
-  milestones before proposing the tag.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 - [x] Deliver **PR-A1** – specialist agents now normalise `FrozenReasoningStep`
   payloads before prompt construction and the orchestration regression suite
   exercises `ReasoningCollection` in-place additions, maintaining strict typing
   guarantees.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
   【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
   【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
+- [ ] Deliver **PR-L0b** – restore test module hygiene by moving
+  `from __future__ import annotations` to the top of each affected file,
+  deduplicate imports, and capture a green `uv run task check` log for the
+  release dossier.
+- [ ] Deliver **PR-T0** – confirm every legacy and distributed test exercises
+  the restored helpers, add regression coverage to prevent duplicate import
+  drift, and document the pytest collection guardrails.
+- [ ] Deliver **PR-S3** – enforce cache-hit canonicalisation across
+  `Search.external_lookup` and hybrid enrichment so
+  `test_external_lookup_uses_cache` observes a single backend call, then expand
+  property coverage around namespace and alias churn.
+- [ ] Deliver **PR-L0c** – repair lingering lint fallout (unused imports,
+  newline violations) and document the lint baseline before running verify.
+- [ ] Deliver **PR-V1** – once lint and collection succeed, capture fresh
+  `task verify` and `task coverage` logs without GPU extras, restoring the
+  release evidence trail ahead of the tag proposal.
+- [ ] Deliver **PR-B1** – expand behaviour coverage for cache hits, warning
+  banner isolation, and formatter fidelity once PR-S3 lands.
+- [ ] Deliver **PR-E1** – synchronise STATUS.md, TASK_PROGRESS.md, the
+  preflight dossier, and the alpha issue with the fresh verify and coverage
+  evidence.
+- [ ] Deliver **PR-P1** – recalibrate scheduler benchmarks with merged claim
+  hydration and deterministic cache behaviour.
+- [ ] Resume TestPyPI dry runs once verify and coverage are green, then close
+  the remaining [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
+  milestones before proposing the tag.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+- [ ] Deliver **PR-O1** – finish output formatter fidelity work so control
+  characters and whitespace remain intact across JSON and markdown outputs.
+- [ ] Deliver **PR-R1** – confirm warning banners stay in structured telemetry
+  while answers remain clean in CLI and API flows.
 
 ### High-impact release slices (dialectical synthesis)
 
@@ -109,9 +128,14 @@ mirrors the same checklist with the refreshed evidence snapshot.
   obscuring hybrid telemetry because existing diagnostics already capture raw
   and canonical queries; PR-S3 will enforce single-call behaviour while adding
   property coverage for namespace churn.【7821ab†L1031-L1034】
+- **Import hygiene vs. test throughput:** The full-suite pytest run halts on
+  SyntaxError because duplicate imports precede `from __future__` directives.
+  Moving the directive to the top via PR-L0b marginally slows review but keeps
+  the quick gate honest. PR-T0 then codifies the regression guard so future
+  contributors cannot reintroduce the ordering slip.
 - **Lint hygiene vs. delivery speed:** Verify continues to halt in `flake8`
   even though the quick gate is green, so the next lint repair must isolate the
-  highest-churn modules (search, cache, AUTO telemetry) and land as PR-L0
+  highest-churn modules (search, cache, AUTO telemetry) and land as PR-L0c
   before verify can progress. This keeps scope small enough for rapid review
   while clearing the gate that blocks coverage.
 - **Evidence freshness vs. runtime cost:** Coverage remains tied to the earlier

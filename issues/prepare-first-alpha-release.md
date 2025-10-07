@@ -1,6 +1,14 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 7, 2025 at 16:42 UTC** strict typing remains green while pytest
+collection still fails. `uv run mypy --strict src tests` reports “Success: no
+issues found in 797 source files,” but `uv run --extra test pytest -q` halts on
+six modules that import standard-library packages before `from __future__ import
+annotations`, yielding SyntaxError and preventing the cache determinism
+regression from running.【0aff6f†L1-L1】【2fa019†L1-L65】 We will land PR-L0b to
+restore import ordering, add PR-T0 regression guards, and then resume PR-S3.
+
 As of **October 7, 2025 at 04:38 UTC** `uv run task check` now clears `flake8`
 and the repo-wide strict sweep before `check_spec_tests.py` fails on missing
 doc-to-test anchors, so synchronising the specs with `SPEC_COVERAGE.md` is the
@@ -140,9 +148,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   【27806b†L1-L1】【7b397e†L1-L9】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
-- [ ] Land **PR-L0** – reorder `from __future__ import annotations`, drop
-  duplicated imports, and rerun `uv run task check` to confirm lint passes
-  before pytest collection resumes.
+- [ ] Land **PR-L0b** – move `from __future__ import annotations` to the top of
+  each failing test module, deduplicate standard-library imports, and rerun
+  `uv run task check` to confirm the quick gate is green again.
 - [x] Land **PR-L1** – redirect legacy imports to the repository `scripts/`
   modules, switch to the shared unit typing helpers, and refresh the scheduler
   benchmark baseline with provenance metadata.【F:tests/unit/legacy/test_check_env_warnings.py†L13-L22】
@@ -164,9 +172,14 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - [x] Land **PR-A1** – normalise `FrozenReasoningStep` payloads inside
   specialist agents and adjust orchestration regression tests so
   `ReasoningCollection` in-place additions remain type-safe.
+- [ ] Land **PR-T0** – add regression coverage that fails when duplicate
+  imports precede `from __future__ import annotations`, document the guard, and
+  wire it into CI.
 - [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
   mypy and pytest again, then capture fresh verify and coverage logs for the
   release dossier.
+- [ ] Land **PR-L0c** – finish the lint cleanup (unused imports, newline
+  violations) that still blocks `task verify` from entering mypy and pytest.
 - [ ] Land **PR-V1** – once lint and collection pass, rerun `task verify` and
   `task coverage` without GPU extras, archive the October logs, and update the
   release dossier before the sign-off review.
