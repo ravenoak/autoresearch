@@ -6,14 +6,17 @@ from pathlib import Path
 import autoresearch
 
 
+ROOT = Path(__file__).resolve().parents[3]
+
+
 def test_init_version_matches_pyproject():
-    pyproject = Path(__file__).parents[2] / "pyproject.toml"
+    pyproject = ROOT / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text())
     assert autoresearch.__version__ == data["project"]["version"]
 
 
 def test_release_date_matches_pyproject():
-    pyproject = Path(__file__).parents[2] / "pyproject.toml"
+    pyproject = ROOT / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text())
     release_date = data["tool"]["autoresearch"]["release_date"]
     assert autoresearch.__release_date__ == release_date

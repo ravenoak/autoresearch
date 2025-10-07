@@ -92,7 +92,7 @@ tasks:
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
-      - uv run pytest -c /dev/null tests/unit/test_version.py tests/unit/test_cli_help.py -q
+      - uv run pytest -c /dev/null tests/unit/legacy/test_version.py tests/unit/legacy/test_cli_help.py -q
     desc: "Run lint, type check, and selected fast tests"
   unit:
     cmds:

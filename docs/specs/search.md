@@ -103,21 +103,56 @@ and hybrid queries and exposes a CLI entry point. See the
 - Modules
   - [src/autoresearch/search/][m1]
 - Tests
-  - [tests/behavior/features/hybrid_search.feature][t1]
-  - [tests/behavior/features/local_sources.feature][t2]
-  - [tests/behavior/features/search_cli.feature][t3]
-  - [tests/behavior/features/storage_search_integration.feature][t4]
-  - [tests/behavior/features/vector_search_performance.feature][t5]
-  - [tests/integration/test_config_hot_reload_components.py][t6]
-  - [tests/integration/test_search_storage.py][t7]
-  - [tests/integration/test_search_regression.py][t8]
+  - [tests/behavior/features/hybrid_search.feature][t100]
+  - [tests/behavior/features/local_sources.feature][t101]
+  - [tests/behavior/features/search_cli.feature][t102]
+  - [tests/behavior/features/storage_search_integration.feature][t103]
+  - [tests/behavior/features/vector_search_performance.feature][t104]
+  - [tests/integration/test_config_hot_reload_components.py][t41]
+  - [tests/integration/test_search_regression.py][t105]
+  - [tests/integration/test_search_storage.py][t106]
+  - [tests/unit/legacy/test_search.py][t127]
+  - [tests/unit/legacy/test_search.py][t128]
+  - [tests/unit/legacy/test_search_parsers.py][t133]
+  - [tests/unit/legacy/test_relevance_ranking.py][t134]
+  - [tests/unit/legacy/test_relevance_ranking.py][t135]
+  - [tests/unit/legacy/test_property_bm25_normalization.py][t136]
+  - [tests/unit/legacy/test_ranking_idempotence.py][t138]
+  - [tests/unit/legacy/test_property_search_ranking.py][t140]
+  - [tests/unit/legacy/test_search.py][t141]
+  - [tests/unit/legacy/test_search_parsers.py][t129]
+  - [tests/unit/legacy/test_search_parsers.py][t130]
+  - [tests/unit/legacy/test_search_parsers.py][t131]
+  - [tests/unit/legacy/test_search_parsers.py][t132]
+  - [tests/unit/legacy/test_search_parsers.py][t142]
+  - [tests/unit/legacy/test_search_parsers.py][t143]
+  - [tests/unit/legacy/test_search_parsers.py][t144]
+  - [tests/unit/legacy/test_search_parsers.py][t145]
 
 [m1]: ../../src/autoresearch/search/
-[t1]: ../../tests/behavior/features/hybrid_search.feature
-[t2]: ../../tests/behavior/features/local_sources.feature
-[t3]: ../../tests/behavior/features/search_cli.feature
-[t4]: ../../tests/behavior/features/storage_search_integration.feature
-[t5]: ../../tests/behavior/features/vector_search_performance.feature
-[t6]: ../../tests/integration/test_config_hot_reload_components.py
-[t7]: ../../tests/integration/test_search_storage.py
-[t8]: ../../tests/integration/test_search_regression.py
+
+[t100]: ../../tests/behavior/features/hybrid_search.feature
+[t101]: ../../tests/behavior/features/local_sources.feature
+[t102]: ../../tests/behavior/features/search_cli.feature
+[t103]: ../../tests/behavior/features/storage_search_integration.feature
+[t104]: ../../tests/behavior/features/vector_search_performance.feature
+[t41]: ../../tests/integration/test_config_hot_reload_components.py
+[t105]: ../../tests/integration/test_search_regression.py
+[t106]: ../../tests/integration/test_search_storage.py
+[t127]: ../../tests/unit/legacy/test_search.py
+[t128]: ../../tests/unit/legacy/test_search.py
+[t133]: ../../tests/unit/legacy/test_search_parsers.py
+[t134]: ../../tests/unit/legacy/test_relevance_ranking.py
+[t135]: ../../tests/unit/legacy/test_relevance_ranking.py
+[t136]: ../../tests/unit/legacy/test_property_bm25_normalization.py
+[t138]: ../../tests/unit/legacy/test_ranking_idempotence.py
+[t140]: ../../tests/unit/legacy/test_property_search_ranking.py
+[t141]: ../../tests/unit/legacy/test_search.py
+[t129]: ../../tests/unit/legacy/test_search_parsers.py
+[t130]: ../../tests/unit/legacy/test_search_parsers.py
+[t131]: ../../tests/unit/legacy/test_search_parsers.py
+[t132]: ../../tests/unit/legacy/test_search_parsers.py
+[t142]: ../../tests/unit/legacy/test_search_parsers.py
+[t143]: ../../tests/unit/legacy/test_search_parsers.py
+[t144]: ../../tests/unit/legacy/test_search_parsers.py
+[t145]: ../../tests/unit/legacy/test_search_parsers.py

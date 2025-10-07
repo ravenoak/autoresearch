@@ -58,11 +58,22 @@ Unit tests cover nominal and edge cases for these routines.
 - Modules
   - [src/autoresearch/resource_monitor.py][m1]
 - Tests
-  - [tests/unit/test_resource_monitor_gpu.py][t1]
-  - [tests/integration/test_monitor_metrics.py][t2]
+  - [tests/integration/test_monitor_metrics.py][t81]
+  - [tests/unit/legacy/test_main_monitor_commands.py][t82]
+  - [tests/unit/legacy/test_monitor_cli.py][t83]
+  - [tests/unit/legacy/test_monitor_metrics_init.py][t84]
+  - [tests/unit/legacy/test_node_health_monitor_property.py][t85]
+  - [tests/unit/legacy/test_resource_monitor_gpu.py][t99]
+  - [tests/unit/legacy/test_system_monitor.py][t86]
 
 [m1]: ../../src/autoresearch/resource_monitor.py
-[t1]: ../../tests/unit/test_resource_monitor_gpu.py
-[t2]: ../../tests/integration/test_monitor_metrics.py
 [rm]: ../algorithms/resource_monitor.md
 [sim]: ../../scripts/resource_monitor_bounds.py
+
+[t81]: ../../tests/integration/test_monitor_metrics.py
+[t82]: ../../tests/unit/legacy/test_main_monitor_commands.py
+[t83]: ../../tests/unit/legacy/test_monitor_cli.py
+[t84]: ../../tests/unit/legacy/test_monitor_metrics_init.py
+[t85]: ../../tests/unit/legacy/test_node_health_monitor_property.py
+[t99]: ../../tests/unit/legacy/test_resource_monitor_gpu.py
+[t86]: ../../tests/unit/legacy/test_system_monitor.py

@@ -54,7 +54,7 @@ detailed in [Token Budget Adaptation][tb-derivation].
 > **A:** We frame the property as *piecewise monotonic*: once any positive
 > usage has been observed, larger deltas cannot decrease the suggested
 > budget. The regression suite in
-> [tests/unit/test_heuristic_properties.py][tb-tests]
+> [tests/unit/legacy/test_heuristic_properties.py][tb-tests]
 > now covers both the zero-usage fallback and the positive-usage
 > monotonicity guarantee.
 
@@ -89,9 +89,9 @@ confirming convergence to `round_with_margin(50, 0.2) = 60`.
 
 ## Verification
 
-- [tests/unit/test_metrics_token_budget_spec.py][t1] checks expansion,
+- [tests/unit/legacy/test_metrics_token_budget_spec.py][t1] checks expansion,
   shrinkage, rounding, and bounds after spikes.
-- [tests/unit/test_token_budget_convergence.py][t2] reproduces the
+- [tests/unit/legacy/test_token_budget_convergence.py][t2] reproduces the
   simulation above and asserts convergence for constant workloads.
 
 ## Algorithms
@@ -117,15 +117,15 @@ recorded usage scaled by the margin.
 - Scripts
   - [scripts/token_budget_convergence.py][s1]
 - Tests
-  - [tests/unit/test_metrics_token_budget_spec.py][t1]
-  - [tests/unit/test_token_budget_convergence.py][t2]
-  - [tests/unit/test_heuristic_properties.py][tb-tests]
+  - [tests/unit/legacy/test_metrics_token_budget_spec.py][t1]
+  - [tests/unit/legacy/test_token_budget_convergence.py][t2]
+  - [tests/unit/legacy/test_heuristic_properties.py][tb-tests]
 
 [m1]: ../../src/autoresearch/orchestration/metrics.py
 [s1]: ../../scripts/token_budget_convergence.py
-[t1]: ../../tests/unit/test_metrics_token_budget_spec.py
-[t2]: ../../tests/unit/test_token_budget_convergence.py
+[t1]: ../../tests/unit/legacy/test_metrics_token_budget_spec.py
+[t2]: ../../tests/unit/legacy/test_token_budget_convergence.py
 [tb-derivation]: ../algorithms/token_budgeting.md#bounds-and-derivation
 [tb-counterexample]: ../algorithms/token_budgeting.md#counterexample
-[tb-tests]: ../../tests/unit/test_heuristic_properties.py
+[tb-tests]: ../../tests/unit/legacy/test_heuristic_properties.py
 

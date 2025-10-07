@@ -27,10 +27,13 @@ dispatcher guarantees fair agent utilization, preserving the invariants.
 ## Traceability
 
 - Code: [src/autoresearch/orchestrator_perf.py][m1]
-- Tests:
-  - [tests/unit/test_orchestrator_perf_sim.py][t1]
-  - [tests/unit/test_scheduler_benchmark.py][t2]
+- Tests
+  - [tests/integration/test_orchestrator_performance.py][t94]
+  - [tests/unit/legacy/test_orchestrator_perf_sim.py][t95]
+  - [tests/unit/legacy/test_scheduler_benchmark.py][t96]
 
 [m1]: ../../src/autoresearch/orchestrator_perf.py
-[t1]: ../../tests/unit/test_orchestrator_perf_sim.py
-[t2]: ../../tests/unit/test_scheduler_benchmark.py
+
+[t94]: ../../tests/integration/test_orchestrator_performance.py
+[t95]: ../../tests/unit/legacy/test_orchestrator_perf_sim.py
+[t96]: ../../tests/unit/legacy/test_scheduler_benchmark.py

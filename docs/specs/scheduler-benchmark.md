@@ -34,7 +34,7 @@ matches the invariants exercised in the unit tests.
 ## Traceability
 
 - Code: [src/autoresearch/scheduler_benchmark.py][m1]
-- Tests: [tests/unit/test_scheduler_benchmark.py][t1]
+- Tests: [tests/unit/legacy/test_scheduler_benchmark.py][t1]
 
 [m1]: ../../src/autoresearch/scheduler_benchmark.py
-[t1]: ../../tests/unit/test_scheduler_benchmark.py
+[t1]: ../../tests/unit/legacy/test_scheduler_benchmark.py

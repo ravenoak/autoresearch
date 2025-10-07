@@ -205,7 +205,7 @@ uv venv
 source .venv/bin/activate
 uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
-uv run pytest tests/unit/test_version.py -q
+uv run pytest tests/unit/legacy/test_version.py -q
 ```
 
 This workflow installs the `[test]` extras and records the DuckDB vector
@@ -531,4 +531,3 @@ long time or fail on low-memory machines.
 - You can omit heavy extras by syncing only the groups you need,
   e.g. `uv sync --extra dev-minimal` when rapid setup is more important
   than optional features.
-

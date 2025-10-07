@@ -53,12 +53,12 @@ teardown.
 - Scripts
   - [scripts/oxigraph_backend_sim.py][s1]
 - Tests
-  - [tests/unit/test_duckdb_storage_backend.py][t1]
-  - [tests/unit/test_duckdb_storage_backend_extended.py][t2]
+  - [tests/unit/legacy/test_duckdb_storage_backend.py][t1]
+  - [tests/unit/legacy/test_duckdb_storage_backend_extended.py][t2]
   - [tests/integration/test_rdf_persistence.py][t3]
 
 [m1]: ../../src/autoresearch/storage_backends.py
 [s1]: ../../scripts/oxigraph_backend_sim.py
-[t1]: ../../tests/unit/test_duckdb_storage_backend.py
-[t2]: ../../tests/unit/test_duckdb_storage_backend_extended.py
+[t1]: ../../tests/unit/legacy/test_duckdb_storage_backend.py
+[t2]: ../../tests/unit/legacy/test_duckdb_storage_backend_extended.py
 [t3]: ../../tests/integration/test_rdf_persistence.py

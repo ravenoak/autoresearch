@@ -37,7 +37,7 @@ partial implementation fails runtime checks.
 - Modules
   - [src/autoresearch/interfaces.py][m1]
 - Tests
-  - [tests/unit/test_interfaces.py][t1]
+  - [tests/unit/legacy/test_interfaces.py][t1]
 
 [m1]: ../../src/autoresearch/interfaces.py
-[t1]: ../../tests/unit/test_interfaces.py
+[t1]: ../../tests/unit/legacy/test_interfaces.py

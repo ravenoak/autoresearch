@@ -93,19 +93,19 @@ for mistyped commands.
 ## Proof Obligations
 
 - `find_similar_commands` and `parse_agent_groups` behaviors are asserted in
-  fuzziness and parsing tests within [tests/unit/test_cli_helpers.py][t1].
+  fuzziness and parsing tests within [tests/unit/legacy/test_cli_helpers.py][t1].
 - `require_api_key` guard rails are verified through missing and present header
-  simulations in [tests/unit/test_cli_helpers.py][t1].
+  simulations in [tests/unit/legacy/test_cli_helpers.py][t1].
 - `report_missing_tables` rendering paths and `handle_command_not_found`
   suggestion flows are exercised end-to-end in
-  [tests/unit/test_cli_helpers.py][t1].
+  [tests/unit/legacy/test_cli_helpers.py][t1].
 
 ## Traceability
 
 - Modules
   - [src/autoresearch/cli_helpers.py][m1]
 - Tests
-  - [tests/unit/test_cli_helpers.py][t1]
+  - [tests/unit/legacy/test_cli_helpers.py][t1]
 
 [m1]: ../../src/autoresearch/cli_helpers.py
-[t1]: ../../tests/unit/test_cli_helpers.py
+[t1]: ../../tests/unit/legacy/test_cli_helpers.py

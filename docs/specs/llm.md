@@ -106,7 +106,7 @@ Core routines enforce invariants by validating inputs and state.
 [m3]: ../../src/autoresearch/llm/token_counting.py
 [m4]: ../../src/autoresearch/llm/registry.py
 [m5]: ../../src/autoresearch/llm/capabilities.py
-[t1]: ../../tests/unit/test_agents_llm.py
-[t2]: ../../tests/unit/test_llm_adapter.py
-[t3]: ../../tests/unit/test_llm_capabilities.py
-[t4]: ../../tests/unit/test_token_usage.py
+[t1]: ../../tests/unit/legacy/test_agents_llm.py
+[t2]: ../../tests/unit/legacy/test_llm_adapter.py
+[t3]: ../../tests/unit/legacy/test_llm_capabilities.py
+[t4]: ../../tests/unit/legacy/test_token_usage.py

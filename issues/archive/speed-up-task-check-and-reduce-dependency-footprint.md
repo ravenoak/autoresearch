@@ -4,7 +4,7 @@
 `task check` previously installed heavy ML packages via `uv sync --extra dev --extra test`
 and ran the entire unit suite, which led to long startup times and timeouts in
 constrained environments. It now syncs only the `dev-minimal` extra and runs
-`pytest` against `tests/unit/test_version.py` and `tests/unit/test_cli_help.py`
+`pytest` against `tests/unit/legacy/test_version.py` and `tests/unit/legacy/test_cli_help.py`
 for quick smoke validation.
 
 ## Dependencies

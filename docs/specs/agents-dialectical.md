@@ -118,7 +118,7 @@ and deviations, supplying reproducible evidence for the convergence claim.[s2]
 [m3]: ../../src/autoresearch/agents/dialectical/fact_checker.py
 [s1]: ../../scripts/dialectical_coordination_demo.py
 [s2]: ../../tests/analysis/dialectical_cycle_analysis.py
-[t1]: ../../tests/unit/test_property_dialectical_coordination.py
+[t1]: ../../tests/unit/legacy/test_property_dialectical_coordination.py
 [t2]: ../../tests/analysis/test_dialectical_cycle_property.py
-[t3]: ../../tests/unit/test_synthesizer_agent_modes.py
-[t4]: ../../tests/unit/test_agents_llm.py
+[t3]: ../../tests/unit/legacy/test_synthesizer_agent_modes.py
+[t4]: ../../tests/unit/legacy/test_agents_llm.py

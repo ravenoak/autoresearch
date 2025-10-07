@@ -62,9 +62,46 @@ unchanged, proving convergence under the configured rate ``R``.
 - Modules
   - [src/autoresearch/api/middleware.py][m1]
 - Tests
-  - [tests/unit/test_property_api_rate_limit_bounds.py][t1]
+  - [tests/analysis/test_api_stream_order_sim.py][t15]
+  - [tests/analysis/test_api_streaming_sim.py][t16]
+  - [tests/integration/test_api.py][t17]
+  - [tests/integration/test_api_additional.py][t18]
+  - [tests/integration/test_api_auth.py][t19]
+  - [tests/integration/test_api_auth_middleware.py][t20]
+  - [tests/integration/test_api_auth_permissions.py][t21]
+  - [tests/integration/test_api_docs.py][t22]
+  - [tests/integration/test_api_hot_reload.py][t23]
+  - [tests/integration/test_api_streaming.py][t24]
+  - [tests/integration/test_api_streaming_webhook.py][t25]
+  - [tests/integration/test_api_versioning.py][t26]
+  - [tests/unit/legacy/test_api.py][t27]
+  - [tests/unit/legacy/test_api_auth_deps.py][t28]
+  - [tests/unit/legacy/test_api_auth_middleware.py][t29]
+  - [tests/unit/legacy/test_api_error_handling.py][t30]
+  - [tests/unit/legacy/test_api_imports.py][t31]
+  - [tests/unit/legacy/test_property_api_rate_limit_bounds.py][t33]
+  - [tests/unit/legacy/test_webhooks_logging.py][t32]
 
 [m1]: ../../src/autoresearch/api/middleware.py
-[t1]: ../../tests/unit/test_property_api_rate_limit_bounds.py
 
 [alg]: ../algorithms/api_rate_limiting.md
+
+[t15]: ../../tests/analysis/test_api_stream_order_sim.py
+[t16]: ../../tests/analysis/test_api_streaming_sim.py
+[t17]: ../../tests/integration/test_api.py
+[t18]: ../../tests/integration/test_api_additional.py
+[t19]: ../../tests/integration/test_api_auth.py
+[t20]: ../../tests/integration/test_api_auth_middleware.py
+[t21]: ../../tests/integration/test_api_auth_permissions.py
+[t22]: ../../tests/integration/test_api_docs.py
+[t23]: ../../tests/integration/test_api_hot_reload.py
+[t24]: ../../tests/integration/test_api_streaming.py
+[t25]: ../../tests/integration/test_api_streaming_webhook.py
+[t26]: ../../tests/integration/test_api_versioning.py
+[t27]: ../../tests/unit/legacy/test_api.py
+[t28]: ../../tests/unit/legacy/test_api_auth_deps.py
+[t29]: ../../tests/unit/legacy/test_api_auth_middleware.py
+[t30]: ../../tests/unit/legacy/test_api_error_handling.py
+[t31]: ../../tests/unit/legacy/test_api_imports.py
+[t33]: ../../tests/unit/legacy/test_property_api_rate_limit_bounds.py
+[t32]: ../../tests/unit/legacy/test_webhooks_logging.py

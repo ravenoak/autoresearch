@@ -108,10 +108,10 @@ execution.[t2]
 
 ## Simulation Expectations
 
-Running ``uv run pytest tests/unit/test_specialized_agents.py`` yields mocked
+Running ``uv run pytest tests/unit/legacy/test_specialized_agents.py`` yields mocked
 LLM responses such as ``"Mock response from LLM"`` for each agent, confirming the
 prompt wiring and metadata schema.[t1] Executing
-``uv run pytest tests/unit/test_advanced_agents.py`` validates domain routing,
+``uv run pytest tests/unit/legacy/test_advanced_agents.py`` validates domain routing,
 moderation conflict detection, and user preference handling with deterministic
 fixtures.[t2]
 
@@ -136,5 +136,5 @@ fixtures.[t2]
 [m5]: ../../src/autoresearch/agents/specialized/domain_specialist.py
 [m6]: ../../src/autoresearch/agents/specialized/moderator.py
 [m7]: ../../src/autoresearch/agents/specialized/user_agent.py
-[t1]: ../../tests/unit/test_specialized_agents.py
-[t2]: ../../tests/unit/test_advanced_agents.py
+[t1]: ../../tests/unit/legacy/test_specialized_agents.py
+[t2]: ../../tests/unit/legacy/test_advanced_agents.py

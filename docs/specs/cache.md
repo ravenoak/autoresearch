@@ -25,7 +25,7 @@ establishing correctness.
 ## Simulation Expectations
 
 Unit tests insert and retrieve multiple queries across backends and validate
-cache hits and misses. On 2025-09-07, `pytest tests/unit/test_cache.py`
+cache hits and misses. On 2025-09-07, `pytest tests/unit/legacy/test_cache.py`
 reported five passing tests.
 
 ## Traceability
@@ -34,7 +34,10 @@ reported five passing tests.
 - Modules
   - [src/autoresearch/cache.py][m1]
 - Tests
-  - [tests/unit/test_cache.py][t1]
+  - [tests/unit/legacy/test_cache.py][t34]
+  - [tests/unit/legacy/test_relevance_ranking.py][t135]
 
 [m1]: ../../src/autoresearch/cache.py
-[t1]: ../../tests/unit/test_cache.py
+
+[t34]: ../../tests/unit/legacy/test_cache.py
+[t135]: ../../tests/unit/legacy/test_relevance_ranking.py

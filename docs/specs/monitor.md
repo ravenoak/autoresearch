@@ -125,16 +125,16 @@ that wraps `NodeHealthMonitor` for Redis and Ray health reporting.
 
 ## Proof Sketch
 
-- `tests/unit/test_monitor_metrics_init.py` confirms the Typer callback
+- `tests/unit/legacy/test_monitor_metrics_init.py` confirms the Typer callback
   initialises counters before commands run.
-- `tests/unit/test_monitor_cli.py` verifies the `metrics` command prints CPU,
+- `tests/unit/legacy/test_monitor_cli.py` verifies the `metrics` command prints CPU,
   memory, GPU, and counter data, and that `run` routes callbacks and honours
   feedback.
-- `tests/unit/test_main_monitor_commands.py` exercises the CLI wiring and
+- `tests/unit/legacy/test_main_monitor_commands.py` exercises the CLI wiring and
   ensures `monitor start` and `monitor serve` shut down their monitors on exit.
-- `tests/unit/test_system_monitor.py` confirms `SystemMonitor` captures CPU and
+- `tests/unit/legacy/test_system_monitor.py` confirms `SystemMonitor` captures CPU and
   memory percentages and exposes them through gauges.
-- `tests/unit/test_node_health_monitor_property.py` shows gauge updates match
+- `tests/unit/legacy/test_node_health_monitor_property.py` shows gauge updates match
   Redis and Ray health outcomes.
 - `tests/integration/test_monitor_metrics.py` covers Prometheus scraping,
   resource sampling tables, and counter increments across the CLI and HTTP
@@ -163,12 +163,13 @@ unavailable.
 - Scripts
   - [scripts/monitor_cli_reliability.py][s1]
 - Tests
-  - [tests/unit/test_main_monitor_commands.py][t1]
-  - [tests/unit/test_monitor_cli.py][t2]
-  - [tests/unit/test_monitor_metrics_init.py][t3]
-  - [tests/unit/test_node_health_monitor_property.py][t4]
-  - [tests/unit/test_system_monitor.py][t5]
-  - [tests/integration/test_monitor_metrics.py][t6]
+  - [tests/integration/test_monitor_metrics.py][t81]
+  - [tests/unit/legacy/test_main_monitor_commands.py][t82]
+  - [tests/unit/legacy/test_monitor_cli.py][t83]
+  - [tests/unit/legacy/test_monitor_metrics_init.py][t84]
+  - [tests/unit/legacy/test_node_health_monitor_property.py][t85]
+  - [tests/unit/legacy/test_system_monitor.py][t86]
+  - [tests/unit/legacy/test_resource_monitor_gpu.py][t99]
 
 [m1]: ../../src/autoresearch/monitor/__init__.py
 [m2]: ../../src/autoresearch/monitor/cli.py
@@ -177,9 +178,11 @@ unavailable.
 [m5]: ../../src/autoresearch/monitor/system_monitor.py
 [m6]: ../../src/autoresearch/resource_monitor.py
 [s1]: ../../scripts/monitor_cli_reliability.py
-[t1]: ../../tests/unit/test_main_monitor_commands.py
-[t2]: ../../tests/unit/test_monitor_cli.py
-[t3]: ../../tests/unit/test_monitor_metrics_init.py
-[t4]: ../../tests/unit/test_node_health_monitor_property.py
-[t5]: ../../tests/unit/test_system_monitor.py
-[t6]: ../../tests/integration/test_monitor_metrics.py
+
+[t81]: ../../tests/integration/test_monitor_metrics.py
+[t82]: ../../tests/unit/legacy/test_main_monitor_commands.py
+[t83]: ../../tests/unit/legacy/test_monitor_cli.py
+[t84]: ../../tests/unit/legacy/test_monitor_metrics_init.py
+[t85]: ../../tests/unit/legacy/test_node_health_monitor_property.py
+[t86]: ../../tests/unit/legacy/test_system_monitor.py
+[t99]: ../../tests/unit/legacy/test_resource_monitor_gpu.py

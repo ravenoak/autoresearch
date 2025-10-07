@@ -26,7 +26,7 @@ Unit tests cover nominal and edge cases for these routines.
 - Modules
   - [src/autoresearch/cli_backup.py][m1]
 - Tests
-  - [tests/unit/test_cli_backup_extra.py][t1]
+  - [tests/unit/legacy/test_cli_backup_extra.py][t1]
 
 [m1]: ../../src/autoresearch/cli_backup.py
-[t1]: ../../tests/unit/test_cli_backup_extra.py
+[t1]: ../../tests/unit/legacy/test_cli_backup_extra.py
