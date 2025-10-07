@@ -7,12 +7,16 @@ See `docs/specification.md` and
 
 import json
 import re
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.strategies import SearchStrategy
 
-from autoresearch.output_format import OutputFormatter
+from autoresearch.output_format import (
+    OutputFormatter,
+    _PLACEHOLDER_EMPTY_MARKER,
+    _PLACEHOLDER_NULL_MARKER,
+)
 from autoresearch.models import QueryResponse
 
 
@@ -20,6 +24,20 @@ _CONTROL_CODEPOINTS = [*range(0x00, 0x20), 0x7F]
 _FORMAT_CODEPOINTS = [0x200B, 0xFEFF]
 _ESCAPE_PATTERN = re.compile("\\\\u([0-9a-fA-F]{4})")
 _FENCE_PATTERN = re.compile(r"^(?P<prefix>[^`]*)(?P<fence>`{3,})(?P<language>[A-Za-z0-9]*)$")
+
+_PLACEHOLDER_MAP = {
+    _PLACEHOLDER_NULL_MARKER: None,
+    _PLACEHOLDER_EMPTY_MARKER: "",
+}
+
+
+def _strip_placeholder_marker(text: str) -> Tuple[str, Optional[str]]:
+    """Remove placeholder markers appended by the formatter."""
+
+    for marker in _PLACEHOLDER_MAP:
+        if text.endswith(marker):
+            return text[: -len(marker)], marker
+    return text, None
 
 
 def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
@@ -117,20 +135,28 @@ def _extract_block(section: str) -> str:
     return ""
 
 
-def _decode_value(section: str) -> str:
+def _decode_value(section: str) -> Optional[str]:
     """Decode a scalar value section back to its original text."""
 
     block = _extract_block(section)
     if block:
-        return _decode_sanitized(block)
+        stripped, marker = _strip_placeholder_marker(block)
+        decoded = _decode_sanitized(stripped)
+        if marker is not None:
+            return _PLACEHOLDER_MAP[marker]
+        return decoded
     text = section
     if text.startswith("\n"):
         text = text[1:]
     text = text.rstrip("\n")
-    return _decode_sanitized(text)
+    stripped, marker = _strip_placeholder_marker(text)
+    decoded = _decode_sanitized(stripped)
+    if marker is not None:
+        return _PLACEHOLDER_MAP[marker]
+    return decoded
 
 
-def _decode_bullets(section: str) -> list[str]:
+def _decode_bullets(section: str) -> List[Optional[str]]:
     """Decode a Markdown bullet list back to the original sequence."""
 
     lines = section.splitlines(keepends=True)
@@ -155,25 +181,31 @@ def _decode_bullets(section: str) -> list[str]:
                 content = line[len(prefix) :]
                 if content.endswith("\n"):
                     content = content[:-1]
-                items.append(_decode_sanitized(content))
+                stripped, marker = _strip_placeholder_marker(content)
+                decoded = _decode_sanitized(stripped)
+                items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
                 idx += 1
                 continue
             body = _strip_indent_preserving("".join(block_lines), indent)
             if body.endswith("\n"):
                 body = body[:-1]
             idx = lookahead + 1
-            items.append(_decode_sanitized(body))
+            stripped, marker = _strip_placeholder_marker(body)
+            decoded = _decode_sanitized(stripped)
+            items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
             continue
         if line.startswith("- "):
             content = line[2:]
             if content.endswith("\n"):
                 content = content[:-1]
-            items.append(_decode_sanitized(content))
+            stripped, marker = _strip_placeholder_marker(content)
+            decoded = _decode_sanitized(stripped)
+            items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
         idx += 1
     return items
 
 
-def _decode_numbered(section: str) -> list[str]:
+def _decode_numbered(section: str) -> List[Optional[str]]:
     """Decode a numbered Markdown list back to the original sequence."""
 
     lines = section.splitlines(keepends=True)
@@ -202,20 +234,26 @@ def _decode_numbered(section: str) -> list[str]:
                 content = line.split(". ", 1)[1]
                 if content.endswith("\n"):
                     content = content[:-1]
-                items.append(_decode_sanitized(content))
+                stripped, marker = _strip_placeholder_marker(content)
+                decoded = _decode_sanitized(stripped)
+                items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
                 idx += 1
                 continue
             body = _strip_indent_preserving("".join(block_lines), indent)
             if body.endswith("\n"):
                 body = body[:-1]
             idx = lookahead + 1
-            items.append(_decode_sanitized(body))
+            stripped, marker = _strip_placeholder_marker(body)
+            decoded = _decode_sanitized(stripped)
+            items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
             continue
         if ". " in line:
             content = line.split(". ", 1)[1]
             if content.endswith("\n"):
                 content = content[:-1]
-            items.append(_decode_sanitized(content))
+            stripped, marker = _strip_placeholder_marker(content)
+            decoded = _decode_sanitized(stripped)
+            items.append(_PLACEHOLDER_MAP[marker] if marker else decoded)
         idx += 1
     return items
 
@@ -263,10 +301,24 @@ def _section(markdown: str, header: str) -> str:
     citations=["```"],
     reasoning=["```"],
 )
+@example(
+    answer="tab\tanchor",
+    citations=[None, "dual\nline"],
+    reasoning=["```\nblock\n```", None],
+)
+@example(
+    answer="pre```\ncode\n```post",
+    citations=["fence````wrap", "multi\n```\nclose"],
+    reasoning=["step1", "wrap```\ninner\n```tail"],
+)
 @given(
     answer=_edge_text(),
-    citations=st.lists(_edge_text(max_size=15), min_size=1, max_size=3),
-    reasoning=st.lists(_edge_text(max_size=15), min_size=1, max_size=3),
+    citations=st.lists(
+        st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3
+    ),
+    reasoning=st.lists(
+        st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3
+    ),
 )
 def test_output_formatter_json_markdown(answer, citations, reasoning, capsys):
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})
