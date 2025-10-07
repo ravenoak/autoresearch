@@ -52,7 +52,7 @@ propagate so operators see actionable traces.
   the outcome. When the probe raises it checks for the `vss_stub` marker via
   `information_schema.tables`.
 - Callers can disable verbose logging to silence normal success messages.
-- `tests/unit/test_vss_extension_loader.py` exercises filesystem loads,
+- `tests/unit/legacy/test_vss_extension_loader.py` exercises filesystem loads,
   install fallbacks, stub creation, strict mode, and non-DuckDB propagation to
   ensure the verification contract stays intact.[t3]
 
@@ -101,16 +101,16 @@ access.[t1][t2]
 - Modules
   - [src/autoresearch/extensions.py][m1]
 - Tests
-  - [tests/unit/test_duckdb_storage_backend.py][t1]
-  - [tests/unit/test_duckdb_storage_backend_extended.py][t2]
-  - [tests/unit/test_vss_extension_loader.py][t3]
+  - [tests/unit/legacy/test_duckdb_storage_backend.py][t1]
+  - [tests/unit/legacy/test_duckdb_storage_backend_extended.py][t2]
+  - [tests/unit/legacy/test_vss_extension_loader.py][t3]
 - Simulations
   - [scripts/smoke_test.py][s1]
   - [scripts/download_duckdb_extensions.py][s2]
 
 [m1]: ../../src/autoresearch/extensions.py
-[t1]: ../../tests/unit/test_duckdb_storage_backend.py
-[t2]: ../../tests/unit/test_duckdb_storage_backend_extended.py
-[t3]: ../../tests/unit/test_vss_extension_loader.py
+[t1]: ../../tests/unit/legacy/test_duckdb_storage_backend.py
+[t2]: ../../tests/unit/legacy/test_duckdb_storage_backend_extended.py
+[t3]: ../../tests/unit/legacy/test_vss_extension_loader.py
 [s1]: ../../scripts/smoke_test.py
 [s2]: ../../scripts/download_duckdb_extensions.py

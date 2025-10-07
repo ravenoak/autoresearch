@@ -258,13 +258,13 @@ policies before data reaches other modules.
   - [src/autoresearch/config/models.py][m3]
   - [src/autoresearch/config/validators.py][m4]
 - Tests
-  - [tests/unit/test_config_env_file.py][t1]
-  - [tests/unit/test_config_errors.py][t2]
-  - [tests/unit/test_config_loader_defaults.py][t3]
-  - [tests/unit/test_config_profiles.py][t4]
-  - [tests/unit/test_config_reload.py][t5]
-  - [tests/unit/test_config_validation_errors.py][t6]
-  - [tests/unit/test_config_watcher_cleanup.py][t7]
+  - [tests/unit/legacy/test_config_env_file.py][t1]
+  - [tests/unit/legacy/test_config_errors.py][t2]
+  - [tests/unit/legacy/test_config_loader_defaults.py][t3]
+  - [tests/unit/legacy/test_config_profiles.py][t4]
+  - [tests/unit/legacy/test_config_reload.py][t5]
+  - [tests/unit/legacy/test_config_validation_errors.py][t6]
+  - [tests/unit/legacy/test_config_watcher_cleanup.py][t7]
   - [tests/behavior/features/configuration_hot_reload.feature][t8]
   - [tests/integration/test_config_hot_reload_components.py][t9]
   - [tests/analysis/test_config_hot_reload_sim.py][t10]
@@ -276,13 +276,13 @@ policies before data reaches other modules.
 [m2]: ../../src/autoresearch/config/loader.py
 [m3]: ../../src/autoresearch/config/models.py
 [m4]: ../../src/autoresearch/config/validators.py
-[t1]: ../../tests/unit/test_config_env_file.py
-[t2]: ../../tests/unit/test_config_errors.py
-[t3]: ../../tests/unit/test_config_loader_defaults.py
-[t4]: ../../tests/unit/test_config_profiles.py
-[t5]: ../../tests/unit/test_config_reload.py
-[t6]: ../../tests/unit/test_config_validation_errors.py
-[t7]: ../../tests/unit/test_config_watcher_cleanup.py
+[t1]: ../../tests/unit/legacy/test_config_env_file.py
+[t2]: ../../tests/unit/legacy/test_config_errors.py
+[t3]: ../../tests/unit/legacy/test_config_loader_defaults.py
+[t4]: ../../tests/unit/legacy/test_config_profiles.py
+[t5]: ../../tests/unit/legacy/test_config_reload.py
+[t6]: ../../tests/unit/legacy/test_config_validation_errors.py
+[t7]: ../../tests/unit/legacy/test_config_watcher_cleanup.py
 [t8]: ../../tests/behavior/features/configuration_hot_reload.feature
 [t9]: ../../tests/integration/test_config_hot_reload_components.py
 [t10]: ../../tests/analysis/test_config_hot_reload_sim.py

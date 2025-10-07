@@ -200,24 +200,25 @@ and documentation rendering.
   - [scripts/api_stream_order_sim.py][s1]
   - [scripts/api_auth_credentials_sim.py][s2]
 - Tests
-  - [tests/unit/test_api.py][t1]
-  - [tests/unit/test_api_error_handling.py][t2]
-  - [tests/unit/test_api_imports.py][t3]
-  - [tests/unit/test_api_auth_middleware.py][t4]
-  - [tests/unit/test_api_auth_deps.py][t5]
-  - [tests/unit/test_webhooks_logging.py][t12]
-  - [tests/integration/test_api.py][t14]
-  - [tests/integration/test_api_additional.py][t15]
-  - [tests/integration/test_api_auth.py][t6]
-  - [tests/integration/test_api_auth_middleware.py][t7]
-  - [tests/integration/test_api_auth_permissions.py][t16]
-  - [tests/integration/test_api_docs.py][t9]
-  - [tests/integration/test_api_streaming.py][t8]
-  - [tests/integration/test_api_streaming_webhook.py][t10]
-  - [tests/integration/test_api_versioning.py][t17]
-  - [tests/integration/test_api_hot_reload.py][t18]
-  - [tests/analysis/test_api_streaming_sim.py][t11]
-  - [tests/analysis/test_api_stream_order_sim.py][t13]
+  - [tests/analysis/test_api_stream_order_sim.py][t15]
+  - [tests/analysis/test_api_streaming_sim.py][t16]
+  - [tests/integration/test_api.py][t17]
+  - [tests/integration/test_api_additional.py][t18]
+  - [tests/integration/test_api_auth.py][t19]
+  - [tests/integration/test_api_auth_middleware.py][t20]
+  - [tests/integration/test_api_auth_permissions.py][t21]
+  - [tests/integration/test_api_docs.py][t22]
+  - [tests/integration/test_api_hot_reload.py][t23]
+  - [tests/integration/test_api_streaming.py][t24]
+  - [tests/integration/test_api_streaming_webhook.py][t25]
+  - [tests/integration/test_api_versioning.py][t26]
+  - [tests/unit/legacy/test_api.py][t27]
+  - [tests/unit/legacy/test_api_auth_deps.py][t28]
+  - [tests/unit/legacy/test_api_auth_middleware.py][t29]
+  - [tests/unit/legacy/test_api_error_handling.py][t30]
+  - [tests/unit/legacy/test_api_imports.py][t31]
+  - [tests/unit/legacy/test_webhooks_logging.py][t32]
+  - [tests/unit/legacy/test_property_api_rate_limit_bounds.py][t33]
 
 [m1]: ../../src/autoresearch/api/__init__.py
 [m2]: ../../src/autoresearch/api/auth_middleware.py
@@ -225,23 +226,25 @@ and documentation rendering.
 [m4]: ../../src/autoresearch/api/routing.py
 [m5]: ../../src/autoresearch/api/streaming.py
 [m6]: ../../src/autoresearch/api/utils.py
-[t1]: ../../tests/unit/test_api.py
-[t2]: ../../tests/unit/test_api_error_handling.py
-[t3]: ../../tests/unit/test_api_imports.py
-[t4]: ../../tests/unit/test_api_auth_middleware.py
-[t5]: ../../tests/unit/test_api_auth_deps.py
-[t6]: ../../tests/integration/test_api_auth.py
-[t7]: ../../tests/integration/test_api_auth_middleware.py
-[t8]: ../../tests/integration/test_api_streaming.py
-[t9]: ../../tests/integration/test_api_docs.py
-[t10]: ../../tests/integration/test_api_streaming_webhook.py
-[t11]: ../../tests/analysis/test_api_streaming_sim.py
-[t12]: ../../tests/unit/test_webhooks_logging.py
-[t13]: ../../tests/analysis/test_api_stream_order_sim.py
-[t14]: ../../tests/integration/test_api.py
-[t15]: ../../tests/integration/test_api_additional.py
-[t16]: ../../tests/integration/test_api_auth_permissions.py
-[t17]: ../../tests/integration/test_api_versioning.py
-[t18]: ../../tests/integration/test_api_hot_reload.py
+[t15]: ../../tests/analysis/test_api_stream_order_sim.py
+[t16]: ../../tests/analysis/test_api_streaming_sim.py
+[t17]: ../../tests/integration/test_api.py
+[t18]: ../../tests/integration/test_api_additional.py
 [s1]: ../../scripts/api_stream_order_sim.py
 [s2]: ../../scripts/api_auth_credentials_sim.py
+
+[t19]: ../../tests/integration/test_api_auth.py
+[t20]: ../../tests/integration/test_api_auth_middleware.py
+[t21]: ../../tests/integration/test_api_auth_permissions.py
+[t22]: ../../tests/integration/test_api_docs.py
+[t23]: ../../tests/integration/test_api_hot_reload.py
+[t24]: ../../tests/integration/test_api_streaming.py
+[t25]: ../../tests/integration/test_api_streaming_webhook.py
+[t26]: ../../tests/integration/test_api_versioning.py
+[t27]: ../../tests/unit/legacy/test_api.py
+[t28]: ../../tests/unit/legacy/test_api_auth_deps.py
+[t29]: ../../tests/unit/legacy/test_api_auth_middleware.py
+[t30]: ../../tests/unit/legacy/test_api_error_handling.py
+[t31]: ../../tests/unit/legacy/test_api_imports.py
+[t32]: ../../tests/unit/legacy/test_webhooks_logging.py
+[t33]: ../../tests/unit/legacy/test_property_api_rate_limit_bounds.py

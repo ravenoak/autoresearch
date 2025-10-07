@@ -18,7 +18,7 @@ On September 3, 2025, `task verify` again failed during coverage, raising a
 command required manual interruption.
 
 In a fresh environment without the Go Task CLI, running
-`uv run pytest tests/unit/test_version.py -q` raised
+`uv run pytest tests/unit/legacy/test_version.py -q` raised
 `ImportError: No module named 'pytest_bdd'`, showing the `[test]` extras were
 missing and coverage could not start.
 Invoking `uv run task check` on the same system failed with
@@ -26,8 +26,8 @@ Invoking `uv run task check` on the same system failed with
 
 On September 3, 2025, running `task check` produced `error: unexpected argument '-' found`.
 Exporting `.venv/bin` to `PATH` and executing `flake8`, `mypy`,
-`scripts/check_spec_tests.py`, and `pytest -c /dev/null tests/unit/test_version.py
-tests/unit/test_cli_help.py -q` succeeded, indicating the hang stems from the Taskfile layout
+`scripts/check_spec_tests.py`, and `pytest -c /dev/null tests/unit/legacy/test_version.py
+tests/unit/legacy/test_cli_help.py -q` succeeded, indicating the hang stems from the Taskfile layout
 rather than test failures.
 
 On September 5, 2025, running `task verify` after installing all extras produced no output

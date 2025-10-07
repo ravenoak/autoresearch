@@ -97,10 +97,10 @@ Representative output combining both insights:
   - [scripts/api_auth_verification_sim.py][s2]
 - Tests
   - [tests/analysis/test_api_auth_sim.py][t1]
-  - [tests/unit/test_api_auth_middleware.py][t2]
+  - [tests/unit/legacy/test_api_auth_middleware.py][t2]
 
 [s1]: ../../scripts/api_auth_sim.py
 [s2]: ../../scripts/api_auth_verification_sim.py
 [t1]: ../../tests/analysis/test_api_auth_sim.py
-[t2]: ../../tests/unit/test_api_auth_middleware.py
+[t2]: ../../tests/unit/legacy/test_api_auth_middleware.py
 [1]: https://docs.python.org/3/library/secrets.html#secrets.compare_digest

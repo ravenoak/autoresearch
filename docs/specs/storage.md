@@ -118,8 +118,8 @@ including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 `ram_budget_enforcement_sim.py` [s3], and `storage_concurrency_sim.py` [s4].
 The `metrics_dropout` scenario in `storage_eviction_sim.py` [s1] replays
 Hypothesis seed `170090525894866085979644260693064061602`. This keeps
-`tests/unit/test_storage_eviction.py` [t3] and
-`tests/unit/test_storage_eviction_sim.py` [t7] aligned on the regression.
+`tests/unit/legacy/test_storage_eviction.py` [t3] and
+`tests/unit/legacy/test_storage_eviction_sim.py` [t7] aligned on the regression.
 
 ## Simulation Benchmarks
 
@@ -176,12 +176,12 @@ and `0.31 OPS` [t5r].
 - Tests
   - [tests/behavior/features/storage_search_integration.feature][t1]
   - [tests/integration/test_search_storage.py][t2]
-  - [tests/unit/test_storage_eviction.py][t3]
+  - [tests/unit/legacy/test_storage_eviction.py][t3]
   - [tests/integration/test_storage_eviction.py][t4]
   - [tests/integration/test_storage_duckdb_fallback.py][t5]
   - [tests/targeted/test_storage_eviction.py][t6]
-  - [tests/unit/test_storage_eviction_sim.py][t7]
-  - [tests/unit/test_storage_manager_concurrency.py][t125]
+  - [tests/unit/legacy/test_storage_eviction_sim.py][t7]
+  - [tests/unit/legacy/test_storage_manager_concurrency.py][t125]
   - [tests/integration/storage/test_simulation_benchmarks.py][t8]
   - [tests/integration/test_rdf_persistence.py][t9]
 
@@ -198,13 +198,13 @@ and `0.31 OPS` [t5r].
 [b1]: ../algorithms/storage.md#duckdb-fallback-benchmark
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
 [t2]: ../../tests/integration/test_search_storage.py
-[t3]: ../../tests/unit/test_storage_eviction.py
+[t3]: ../../tests/unit/legacy/test_storage_eviction.py
 [t4]: ../../tests/integration/test_storage_eviction.py
 [t5]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t5r]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t6]: ../../tests/targeted/test_storage_eviction.py
-[t7]: ../../tests/unit/test_storage_eviction_sim.py
-[t125]: ../../tests/unit/test_storage_manager_concurrency.py
+[t7]: ../../tests/unit/legacy/test_storage_eviction_sim.py
+[t125]: ../../tests/unit/legacy/test_storage_manager_concurrency.py
 [t8]: ../../tests/integration/storage/test_simulation_benchmarks.py
 [t9]: ../../tests/integration/test_rdf_persistence.py
 

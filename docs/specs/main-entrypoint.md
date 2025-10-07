@@ -18,7 +18,7 @@ script.
 
 ## Proof Sketch
 
-`tests/unit/test_main_module.py` patches `app` and confirms it runs when the
+`tests/unit/legacy/test_main_module.py` patches `app` and confirms it runs when the
 module is executed as `__main__`.
 
 ## Simulation Expectations
@@ -29,7 +29,7 @@ module is executed as `__main__`.
 ## Traceability
 
 - Code: [src/autoresearch/__main__.py][m1]
-- Tests: [tests/unit/test_main_module.py][t1]
+- Tests: [tests/unit/legacy/test_main_module.py][t1]
 
 [m1]: ../../src/autoresearch/__main__.py
-[t1]: ../../tests/unit/test_main_module.py
+[t1]: ../../tests/unit/legacy/test_main_module.py

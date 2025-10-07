@@ -57,7 +57,7 @@ with `U` still above the target `T ≈ 2.13` MB. `_enforce_ram_budget` now fills
 missing candidates directly from the graph and reevaluates both the RAM bound
 and the deterministic node limit on every iteration. Regression coverage lives
 in the strengthened property test in
-`tests/unit/test_storage_eviction.py` and the new `stale_lru` scenario in
+`tests/unit/legacy/test_storage_eviction.py` and the new `stale_lru` scenario in
 `scripts/storage_eviction_sim.py`.
 
 ### Counterexample: metrics dropout
@@ -69,7 +69,7 @@ from `ram_budget_mb`. The prior implementation broke out after the first
 eviction, leaving the graph above the cap. `_enforce_ram_budget` now keeps
 removing nodes until the deterministic limit holds even without fresh metrics.
 The regression is covered by the seeded property in
-`tests/unit/test_storage_eviction.py` and the `metrics_dropout` scenario in
+`tests/unit/legacy/test_storage_eviction.py` and the `metrics_dropout` scenario in
 `scripts/storage_eviction_sim.py`.
 
 These arguments assume each node consumes at least `s_min > 0` MB, so the
@@ -92,5 +92,5 @@ evictors, and edge cases such as zero, negative, exact, under-budget,
 stale-LRU, and metrics-dropout usage.
 
 [analysis-test]: ../../tests/analysis/test_storage_eviction.py
-[unit-test]: ../../tests/unit/test_storage_eviction.py
+[unit-test]: ../../tests/unit/legacy/test_storage_eviction.py
 [sim-script]: ../../scripts/storage_eviction_sim.py

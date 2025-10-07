@@ -1,3 +1,20 @@
+As of **2025-10-07 at 05:09 UTC** `uv run task check` is green again with
+the regenerated spec anchors and docx stub fallback; log captured at
+`baseline/logs/task-check-20251007T050924Z.log` documents flake8, mypy,
+spec linting, manifest reconciliation, and the CLI smoke tests completing
+successfully. The stub now short-circuits `python-docx` when `lxml`'s C
+extension is unavailable, keeping cross-platform quick gates stable while the
+strict suite runs under manylinux wheels.
+
+As of **2025-10-07 at 04:54 UTC** a focused `uv run --extra test pytest
+tests/unit/legacy -k cache` sweep still fails on
+`test_external_lookup_uses_cache`, confirming the search cache regression
+remains live despite the namespace-aware key builder. The new log at
+`baseline/logs/pytest-cache-regression-20251007T045438Z.log` documents the
+`backend.call_count == 3` assertion and Hybrid enrichment traces, so the next
+slice will harden `Search.external_lookup` to respect canonical cache keys
+before behaviour and coverage sweeps resume.
+
 As of **2025-10-07 at 04:38 UTC** the latest `uv run task check` sweep clears
 `flake8` and the repo-wide strict gate before `check_spec_tests.py` halts on
 missing doc-to-test anchors, so reconciling the specs with

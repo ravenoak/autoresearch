@@ -140,6 +140,7 @@ test = [
     "fakeredis >=2.25.0",
     "pdfminer-six >=20250506", # Date-based release with security fixes
     "python-docx >=1.2.0",
+    "lxml >=4.9,<6",
     "pytest-httpx >=0.35.0",
     "pytest-bdd >=8.1.0",
     "pytest-benchmark >=4.0.0",

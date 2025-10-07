@@ -66,6 +66,6 @@ enforced after idle periods.
 - [`test_heuristic_properties.py`][piecewise-tests]
 
 [impl]: ../../src/autoresearch/token_budget.py
-[tests]: ../../tests/unit/test_metrics_token_budget_spec.py
-[piecewise-tests]: ../../tests/unit/test_heuristic_properties.py
+[tests]: ../../tests/unit/legacy/test_metrics_token_budget_spec.py
+[piecewise-tests]: ../../tests/unit/legacy/test_heuristic_properties.py
 

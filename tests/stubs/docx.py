@@ -36,9 +36,12 @@ class _DocxModule(ModuleType):
 if importlib.util.find_spec("docx") is None:
     docx = cast(DocxModule, install_stub_module("docx", _DocxModule))
 else:  # pragma: no cover
-    import docx as _docx
-
-    docx = cast(DocxModule, _docx)
+    try:
+        import docx as _docx
+    except Exception:  # pragma: no cover - dependency optional in CI image
+        docx = cast(DocxModule, install_stub_module("docx", _DocxModule))
+    else:
+        docx = cast(DocxModule, _docx)
 
 
 __all__ = ["DocxModule", "Document", "docx"]

@@ -20,7 +20,7 @@
 ## Proof Sketch
 
 `tests/integration/test_a2a_interface.py` asserts that `pydantic.root_model`
-exists. `tests/unit/test_distributed.py` imports distributed symbols,
+exists. `tests/unit/legacy/test_distributed.py` imports distributed symbols,
 triggering `__getattr__` without errors.
 
 ## Simulation Expectations
@@ -33,8 +33,8 @@ triggering `__getattr__` without errors.
 - Code: [src/autoresearch/__init__.py][m1]
 - Tests:
   - [tests/integration/test_a2a_interface.py][t1]
-  - [tests/unit/test_distributed.py][t2]
+  - [tests/unit/legacy/test_distributed.py][t2]
 
 [m1]: ../../src/autoresearch/__init__.py
 [t1]: ../../tests/integration/test_a2a_interface.py
-[t2]: ../../tests/unit/test_distributed.py
+[t2]: ../../tests/unit/legacy/test_distributed.py

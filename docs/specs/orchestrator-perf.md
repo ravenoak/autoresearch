@@ -60,12 +60,15 @@ Adjust these variables before running ``pytest`` or
 
 - Code: [src/autoresearch/orchestrator_perf.py][m1]
 - Script: [scripts/orchestrator_perf_sim.py][m2]
-- Tests:
-  - [tests/unit/test_orchestrator_perf_sim.py][t1]
-  - [tests/integration/test_orchestrator_performance.py][t2]
+- Tests
+  - [tests/integration/test_orchestrator_performance.py][t94]
+  - [tests/unit/legacy/test_orchestrator_perf_sim.py][t95]
+  - [tests/unit/legacy/test_scheduler_benchmark.py][t96]
 
 [1]: https://en.wikipedia.org/wiki/M/M/c_queue
 [m1]: ../../src/autoresearch/orchestrator_perf.py
 [m2]: ../../scripts/orchestrator_perf_sim.py
-[t1]: ../../tests/unit/test_orchestrator_perf_sim.py
-[t2]: ../../tests/integration/test_orchestrator_performance.py
+
+[t94]: ../../tests/integration/test_orchestrator_performance.py
+[t95]: ../../tests/unit/legacy/test_orchestrator_perf_sim.py
+[t96]: ../../tests/unit/legacy/test_scheduler_benchmark.py

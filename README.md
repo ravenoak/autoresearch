@@ -155,7 +155,7 @@ uv venv
 source .venv/bin/activate
 uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
-uv run pytest tests/unit/test_version.py -q
+uv run pytest tests/unit/legacy/test_version.py -q
 ```
 
 The `[test]` extra installs dependencies like `pytest-bdd`, which `task check`
@@ -166,7 +166,8 @@ run `pytest` succeed without `task`.
 
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset
-(`test_version` and `test_cli_help`) for fast feedback. `task verify` runs the
+(`tests/unit/legacy/test_version.py` and
+`tests/unit/legacy/test_cli_help.py`) for fast feedback. `task verify` runs the
 full suite and installs the `dev-minimal` and `test` extras by default.
 Pass `EXTRAS="dev-minimal test distributed analysis"` or similar when invoking
 the command to include heavy groups.

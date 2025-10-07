@@ -18,7 +18,7 @@ CLI utilities for consistent formatting and accessibility.
 
 The parser resolves defaults for empty input, accepts user overrides, and
 outputs alphabetical help text. The simulation in
-[tests/unit/test_cli_utils_extra.py][t1] exercises these paths and
+[tests/unit/legacy/test_cli_utils_extra.py][t1] exercises these paths and
 confirms all invariants.
 
 ## Simulation Expectations
@@ -32,7 +32,7 @@ cases.
 - Modules
   - [src/autoresearch/cli_utils.py][m1]
 - Tests
-  - [tests/unit/test_cli_utils_extra.py][t1]
+  - [tests/unit/legacy/test_cli_utils_extra.py][t1]
 
 [m1]: ../../src/autoresearch/cli_utils.py
-[t1]: ../../tests/unit/test_cli_utils_extra.py
+[t1]: ../../tests/unit/legacy/test_cli_utils_extra.py

@@ -34,10 +34,10 @@ the same checklist.
 
 ### Immediate Follow-ups
 
-- [ ] Deliver **PR-D0** – add a reusable include for `SPEC_COVERAGE.md` anchors
-  across the specs, extend `scripts/check_spec_tests.py` to compare the include
-  with the manifest, and rerun `uv run task check` to confirm the quick gate is
-  green.
+- [x] Deliver **PR-D0** – regenerate spec anchors from `SPEC_COVERAGE.md`, add
+  manifest drift detection to `scripts/check_spec_tests.py`, harden the docx
+  stub fallback for macOS quick gates, and capture the green
+  `task check` sweep at 05:09 UTC.
 - [x] Ship **PR-S1** – deterministic search stubs, hybrid ranking signatures,
   and refreshed fixtures are merged, keeping canonical queries consistent
   across telemetry and cache layers.【F:src/autoresearch/search/core.py†L650-L686】

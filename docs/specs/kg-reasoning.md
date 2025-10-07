@@ -167,9 +167,9 @@ contradictions influence orchestrator heuristics.
 - Modules
   - [src/autoresearch/kg_reasoning.py][m1]
 - Tests
-  - [tests/unit/test_kg_reasoning.py][t1]
+  - [tests/unit/legacy/test_kg_reasoning.py][t1]
   - [tests/integration/test_knowledge_graph_pipeline.py][t2]
 
 [m1]: ../../src/autoresearch/kg_reasoning.py
-[t1]: ../../tests/unit/test_kg_reasoning.py
+[t1]: ../../tests/unit/legacy/test_kg_reasoning.py
 [t2]: ../../tests/integration/test_knowledge_graph_pipeline.py

@@ -188,24 +188,27 @@ violations, providing an executable witness for the proof sketch.
   - [src/autoresearch/distributed/coordinator.py][m3]
   - [src/autoresearch/distributed/executors.py][m4]
 - Tests
-  - [tests/unit/test_distributed.py][t1]
-  - [tests/unit/test_distributed_extra.py][t2]
-  - [tests/unit/distributed/test_coordination_properties.py][t3]
-  - [tests/integration/test_distributed_agent_storage.py][t4]
-  - [tests/benchmark/test_orchestrator_distributed_sim.py][t5]
-  - [tests/analysis/test_distributed_coordination.py][t6]
+  - [tests/analysis/test_distributed_coordination.py][t56]
+  - [tests/benchmark/test_orchestrator_distributed_sim.py][t57]
+  - [tests/integration/test_distributed_agent_storage.py][t58]
+  - [tests/unit/distributed/test_coordination_properties.py][t59]
+  - [tests/unit/legacy/test_distributed.py][t2]
+  - [tests/unit/legacy/test_distributed_extra.py][t60]
+  - [tests/unit/legacy/test_distributed_executors.py][t137]
 
 [m1]: ../../src/autoresearch/distributed/__init__.py
 [m2]: ../../src/autoresearch/distributed/broker.py
 [m3]: ../../src/autoresearch/distributed/coordinator.py
 [m4]: ../../src/autoresearch/distributed/executors.py
-[t1]: ../../tests/unit/test_distributed.py
-[t2]: ../../tests/unit/test_distributed_extra.py
-[t3]: ../../tests/unit/distributed/test_coordination_properties.py
-[t4]: ../../tests/integration/test_distributed_agent_storage.py
-[t5]: ../../tests/benchmark/test_orchestrator_distributed_sim.py
-[t6]: ../../tests/analysis/test_distributed_coordination.py
+[t2]: ../../tests/unit/legacy/test_distributed.py
 [s1]: ../../scripts/distributed_coordination_formulas.py
 [s2]: ../../scripts/distributed_coordination_sim.py
 [s3]: ../../scripts/distributed_recovery_benchmark.py
 [s4]: ../../scripts/orchestrator_distributed_sim.py
+
+[t56]: ../../tests/analysis/test_distributed_coordination.py
+[t57]: ../../tests/benchmark/test_orchestrator_distributed_sim.py
+[t58]: ../../tests/integration/test_distributed_agent_storage.py
+[t59]: ../../tests/unit/distributed/test_coordination_properties.py
+[t60]: ../../tests/unit/legacy/test_distributed_extra.py
+[t137]: ../../tests/unit/legacy/test_distributed_executors.py

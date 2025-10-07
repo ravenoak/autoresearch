@@ -24,6 +24,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `flake8` and `mypy --strict` before `check_spec_tests.py` aborts on missing
   doc-to-test links, so spec coverage alignment is the gating failure for a
   green quick gate.【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】
+- Regenerated spec anchors and hardened the docx stub at **05:09 UTC** so
+  `uv run task check` now runs to completion while targeting manylinux wheels;
+  the passing sweep lives at
+  `baseline/logs/task-check-20251007T050924Z.log`.【F:tests/stubs/docx.py†L1-L40】【F:baseline/logs/task-check-20251007T050924Z.log†L1-L189】
 - Specialised agents now coerce `FrozenReasoningStep` payloads into plain
   dictionaries before prompt generation, keeping strict typing green while
   preserving deterministic reasoning order in summariser and critic flows.
@@ -35,11 +39,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   via another `ReasoningCollection` instance so strict typing recognises the
   in-place addition path, keeping the state-copy invariant intact while
   verifying deterministic ordering.【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
-- Next action: dedicate **PR-D0** to reconcile `docs/specs/*` with the
-  canonical test manifest captured in `SPEC_COVERAGE.md`, reusing anchors from
-  the coverage table to avoid manual drift. Once those references land, rerun
-  `task check` to confirm the quick gate is green and unblock the full verify
-  sweep.
+- Next action: focus on **PR-S3** to restore cache determinism so
+  `tests/unit/legacy/test_relevance_ranking.py::test_external_lookup_uses_cache`
+  stops issuing triple backend calls, then resume the verify/coverage sweeps
+  once the quick gate remains stable.
 
 ## October 6, 2025
 - Reran `uv run mypy --strict src tests` at **04:53 UTC** and the sweep still
@@ -901,7 +904,7 @@ harness.py†L63-L404】【F:tests/unit/test_additional_coverage.py†L160-L242�
 - Attempting `apt-get install -y task` returned "Unable to locate package task".
 - Executing `scripts/codex_setup.sh` did not expose the `task` CLI; commands
   run via `uv run task` instead.
-- `uv run --extra test pytest tests/unit/test_version.py -q` runs two tests in
+- `uv run --extra test pytest tests/unit/legacy/test_version.py -q` runs two tests in
   0.33s, demonstrating minimal coverage without Task.
 - `uvx pre-commit run --all-files` succeeds.
 - Installed `pytest-bdd`, `hypothesis`, and `freezegun`; `uv run pytest -q`
@@ -970,7 +973,7 @@ harness.py†L63-L404】【F:tests/unit/test_additional_coverage.py†L160-L242�
  - `task verify` installs optional extras and currently fails at
    `tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key`, so
    integration tests do not run.
-- `uv run pytest tests/unit/test_version.py -q` passes without
+- `uv run pytest tests/unit/legacy/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
 - `uv run mkdocs build` completes after installing `mkdocs-material` and
   `mkdocstrings`, though numerous missing-link warnings remain.
@@ -1304,7 +1307,7 @@ extras are absent, so CPU-only workflows no longer emit warning noise when
 
 Running tests without first executing `scripts/setup.sh` or `task install`
 leaves the Go Task CLI unavailable. `uv run task check` then fails with
-`command not found: task`, and `uv run pytest tests/unit/test_version.py -q`
+`command not found: task`, and `uv run pytest tests/unit/legacy/test_version.py -q`
 raises `ImportError: No module named 'pytest_bdd'`.
 
 Install the test extras with `uv pip install -e ".[test]"` before invoking
@@ -1319,7 +1322,7 @@ uv venv
 source .venv/bin/activate
 uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
-uv run pytest tests/unit/test_version.py -q
+uv run pytest tests/unit/legacy/test_version.py -q
 ```
 
 This installs the `[test]` extras, records the DuckDB VSS extension path, and
