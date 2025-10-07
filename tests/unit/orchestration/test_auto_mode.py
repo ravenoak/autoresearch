@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -11,6 +11,7 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 from autoresearch.orchestration.state import QueryState
 
 
@@ -133,30 +134,33 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
         assert isinstance(sample, Mapping)
         assert sample.get("index") == index
         assert sample.get("answer") == "scout"
-        claims = sample.get("claims")
-        assert isinstance(claims, tuple)
-        assert claims, "scout samples must preserve non-empty claim payloads"
+        claims_obj = sample.get("claims")
+        assert isinstance(claims_obj, tuple)
+        assert claims_obj, "scout samples must preserve non-empty claim payloads"
+        claims = cast(tuple[FrozenReasoningStep, ...], claims_obj)
         first_claim = claims[0]
         assert isinstance(first_claim, Mapping)
         assert len(first_claim) > 0
         assert first_claim.get("content") == "scout"
         with pytest.raises(TypeError):
             first_claim["content"] = "mutated"  # type: ignore[index]
-        sample_warnings = sample.get("warnings")
+        sample_warnings_obj = sample.get("warnings")
         if index == 0:
-            assert isinstance(sample_warnings, tuple)
-            assert sample_warnings, "scout samples should expose warning telemetry"
+            assert isinstance(sample_warnings_obj, tuple)
+            assert sample_warnings_obj, "scout samples should expose warning telemetry"
+            sample_warnings = cast(tuple[Mapping[str, Any], ...], sample_warnings_obj)
             with pytest.raises(TypeError):
                 sample_warnings[0]["message"] = "mutated"  # type: ignore[index]
         else:
-            assert sample_warnings in (None, ())
+            assert sample_warnings_obj in (None, ())
     assert auto_meta.get("scout_sample_count") == len(samples)
     assert auto_meta.get("scout_agreement") == 1.0
     assert response.metrics.get("scout_samples") == samples
     assert isinstance(response.metrics.get("scout_samples"), tuple)
-    auto_warnings = auto_meta.get("warnings")
-    assert isinstance(auto_warnings, tuple)
-    assert auto_warnings
+    auto_warnings_obj = auto_meta.get("warnings")
+    assert isinstance(auto_warnings_obj, tuple)
+    assert auto_warnings_obj
+    auto_warnings = cast(tuple[Mapping[str, Any], ...], auto_warnings_obj)
     assert auto_warnings == samples[0].get("warnings")
     canonical_auto_warnings = []
     for entry in auto_warnings:

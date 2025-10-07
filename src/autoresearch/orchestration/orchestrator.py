@@ -114,10 +114,20 @@ def _snapshot_scout_sample(sample_state: "QueryState", sample_index: int) -> Map
     )
 
     answer_value = sample_state.results.get("final_answer")
+    answer_snapshot: str | Mapping[str, Any] | tuple[Any, ...] | None
     if isinstance(answer_value, str):
         answer_snapshot = _strip_warning_banners(answer_value)
+    elif answer_value is None:
+        answer_snapshot = None
+    elif isinstance(answer_value, Mapping):
+        answer_snapshot = cast(Mapping[str, Any], _freeze_payload(answer_value))
+    elif isinstance(answer_value, Sequence) and not isinstance(
+        answer_value,
+        (str, bytes, bytearray),
+    ):
+        answer_snapshot = cast(tuple[Any, ...], _freeze_payload(answer_value))
     else:
-        answer_snapshot = answer_value
+        answer_snapshot = str(answer_value)
 
     payload: dict[str, Any] = {
         "index": sample_index,
@@ -384,6 +394,13 @@ class Orchestrator:
             )
             scout_state.metadata["auto_mode"] = auto_meta
 
+            scout_answer_value = auto_meta.get("scout_answer")
+            if isinstance(scout_answer_value, str):
+                sanitized_scout_answer = _strip_warning_banners(scout_answer_value)
+                if sanitized_scout_answer != scout_answer_value:
+                    auto_meta["scout_answer"] = sanitized_scout_answer
+                scout_state.results["final_answer"] = sanitized_scout_answer
+
             if not decision.should_debate:
                 auto_meta["outcome"] = "direct_exit"
                 config.reasoning_mode = original_mode_setting
@@ -437,6 +454,27 @@ class Orchestrator:
                 primus_index=primus_index,
                 coalitions=config_params.get("coalitions", {}),
             )
+            preserved_claims = [
+                normalize_reasoning_step(claim)
+                for claim in scout_state.claims
+                if len(claim)
+            ]
+            if preserved_claims:
+                state.claims.extend(preserved_claims)
+            preserved_warnings = _freeze_warning_entries(
+                cast(
+                    Sequence[Any] | None,
+                    scout_state.metadata.get("warnings")
+                    if isinstance(scout_state.metadata, Mapping)
+                    else None,
+                )
+            )
+            if not preserved_warnings and scout_samples_view:
+                sample_warnings = scout_samples_view[0].get("warnings")
+                if isinstance(sample_warnings, tuple):
+                    preserved_warnings = cast(tuple[Mapping[str, Any], ...], sample_warnings)
+            if preserved_warnings:
+                state.metadata["warnings"] = preserved_warnings
             if gate_snapshot is not None:
                 state.metadata["scout_gate"] = gate_snapshot
             for key, value in preserved_metadata.items():

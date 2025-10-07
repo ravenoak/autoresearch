@@ -1,13 +1,25 @@
+As of **2025-10-07 at 16:29 UTC** the strict gate regressed: `uv run mypy
+--strict src tests` now fails on AUTO mode scout snapshots and unused ignores
+inside the regression suite.【1fc7a3†L1-L5】 `_snapshot_scout_sample` now freezes
+non-string answers and the AUTO mode tests cast retrieved telemetry to
+`FrozenReasoningStep` tuples so strict mode recognises the immutability
+assertions.【F:src/autoresearch/orchestration/orchestrator.py†L108-L134】
+【F:tests/unit/orchestration/test_auto_mode.py†L1-L191】 A follow-up strict sweep
+at **16:34 UTC** succeeds and the targeted AUTO mode regression suite passes,
+documenting PR-L0a as complete before cache determinism work resumes.
+【27806b†L1-L1】【7b397e†L1-L9】 The preflight dossier now tracks the remaining
+cache, lint, and evidence slices as short reviews.
+
 As of **2025-10-07 at 05:48 UTC** `uv run mypy --strict src tests` still reports
 “Success: no issues found in 797 source files”, keeping the strict gate green
-while we triage pytest regressions.【6bfb2b†L1-L1】 A focused
-`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
-external_lookup_uses_cache` run during the same window fails with
-`backend.call_count == 3`, so cache determinism remains the highest-impact
-regression before verify can progress.【7821ab†L1031-L1034】 The refreshed
-preflight plan now sequences PR-L0 (lint parity), PR-S3 (cache guardrails),
-PR-V1 (verify/coverage refresh), PR-B1 (behaviour hardening), and PR-E1
-(evidence sync) as short, high-leverage slices to unblock the alpha gate.
+while we triage pytest regressions.【6bfb2b†L1-L1】 A focused `uv run --extra test
+pytest tests/unit/legacy/test_relevance_ranking.py -k external_lookup_uses_cache`
+run during the same window fails with `backend.call_count == 3`, so cache
+determinism remains the highest-impact regression before verify can progress.
+【7821ab†L1031-L1034】 The refreshed preflight plan now sequences PR-L0 (lint
+parity), PR-S3 (cache guardrails), PR-V1 (verify/coverage refresh), PR-B1
+(behaviour hardening), and PR-E1 (evidence sync) as short, high-leverage slices
+to unblock the alpha gate.
 
 As of **2025-10-07 at 05:09 UTC** `uv run task check` is green again with
 the regenerated spec anchors and docx stub fallback; log captured at
