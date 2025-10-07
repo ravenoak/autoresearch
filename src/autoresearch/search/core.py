@@ -884,10 +884,15 @@ class Search:
         use_semantic_similarity: bool,
         query_embedding: np.ndarray | None,
         storage_hints: Sequence[str] | None = None,
+        normalized_query: str | None = None,
     ) -> CacheKey:
         """Compose cache key candidates across backend and embedding knobs."""
 
-        normalized = self._normalise_cache_query(query)
+        normalized = (
+            normalized_query
+            if normalized_query is not None
+            else self._normalise_cache_query(query)
+        )
         signature = tuple(sorted(embedding_backends)) or ("__none__",)
         flags: list[str] = []
         if hybrid_query:
@@ -1819,6 +1824,7 @@ class Search:
                 use_semantic_similarity=cfg.search.use_semantic_similarity,
                 query_embedding=query_embedding,
                 storage_hints=storage_hints,
+                normalized_query=cache_query,
             )
 
             cached = self._get_cached_documents(
@@ -2235,26 +2241,53 @@ class Search:
 
         cfg = _get_runtime_config()
 
+        provided_executed_query: str | None = None
+        provided_canonical_query: str | None = None
+        provided_raw_canonical_query: str | None = None
+
         if isinstance(query, dict):
-            text_query = str(query.get("text", ""))
+            text_value = query.get("text")
+            raw_value = query.get("raw_query")
+            executed_value = query.get("executed_query")
+            canonical_value = query.get("canonical_query")
+            raw_canonical_value = query.get("raw_canonical_query")
             query_embedding = query.get("embedding")
+
+            text_query = str(text_value or raw_value or executed_value or "")
+            raw_query = str(raw_value or text_query)
+
+            if executed_value:
+                provided_executed_query = str(executed_value)
+            if canonical_value:
+                provided_canonical_query = self._normalise_cache_query(
+                    str(canonical_value)
+                )
+            if raw_canonical_value:
+                provided_raw_canonical_query = self._normalise_cache_query(
+                    str(raw_canonical_value)
+                )
         else:
             text_query = str(query)
             query_embedding = None
-
-        raw_query = text_query
+            raw_query = text_query
 
         context = SearchContext.get_instance()
 
         context_cfg = cfg.search.context_aware
-        search_query = text_query.strip()
+        base_search_query = provided_executed_query or text_query
+        search_query = base_search_query.strip()
         if not search_query:
-            search_query = text_query
-        if context_cfg.enabled:
+            search_query = base_search_query
+        if context_cfg.enabled and provided_executed_query is None:
             expanded_query = context.expand_query(text_query)
             if expanded_query != text_query:
                 log.info(f"Using context-aware expanded query: '{expanded_query}'")
                 search_query = expanded_query
+
+        raw_canonical_base = (
+            provided_raw_canonical_query or self._normalise_cache_query(raw_query)
+        )
+        canonical_hint = provided_canonical_query
 
         adaptive_cfg = cfg.search.adaptive_k
         rewrite_cfg = cfg.search.query_rewrite
@@ -2306,6 +2339,11 @@ class Search:
             embedding_lookup_invoked = False
 
             current_query = search_query
+            if canonical_hint is not None:
+                current_canonical_query = canonical_hint
+                canonical_hint = None
+            else:
+                current_canonical_query = self._normalise_cache_query(current_query)
 
             def _record_embedding_backend(
                 name: str, docs: Sequence[Dict[str, Any]] | None
@@ -2320,6 +2358,7 @@ class Search:
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
                     storage_hints=storage_hints,
+                    normalized_query=current_canonical_query,
                 )
                 if not docs:
                     results_by_backend.setdefault(name, [])
@@ -2371,6 +2410,7 @@ class Search:
                         use_semantic_similarity=cfg.search.use_semantic_similarity,
                         query_embedding=np_query_embedding,
                         storage_hints=storage_hints,
+                        normalized_query=current_canonical_query,
                     )
                     cached_embedding = self._get_cached_documents(
                         cache_key,
@@ -2421,6 +2461,7 @@ class Search:
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
                     storage_hints=storage_hints,
+                    normalized_query=current_canonical_query,
                 )
                 cached = self._get_cached_documents(
                     cache_key,
@@ -2569,6 +2610,7 @@ class Search:
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
                     storage_hints=("storage-vector", "duckdb-seed"),
+                    normalized_query=current_canonical_query,
                 )
                 self._cache_documents(
                     duckdb_cache_key,
@@ -2684,8 +2726,8 @@ class Search:
                     by_backend=results_by_backend,
                 )
 
-                canonical_query = self._normalise_cache_query(current_query)
-                raw_canonical_query = self._normalise_cache_query(raw_query)
+                canonical_query = current_canonical_query
+                raw_canonical_query = raw_canonical_base
                 bundle = ExternalLookupResult(
                     query=canonical_query,
                     raw_query=raw_query,
@@ -2724,6 +2766,7 @@ class Search:
                 use_semantic_similarity=cfg.search.use_semantic_similarity,
                 query_embedding=np_query_embedding,
                 storage_hints=("fallback",),
+                normalized_query=current_canonical_query,
             )
             self._cache_documents(
                 fallback_cache_key,
@@ -2773,8 +2816,8 @@ class Search:
                     continue
 
             executed_query = current_query
-            canonical_query = self._normalise_cache_query(executed_query)
-            raw_canonical_query = self._normalise_cache_query(raw_query)
+            canonical_query = current_canonical_query
+            raw_canonical_query = raw_canonical_base
             bundle = ExternalLookupResult(
                 query=canonical_query,
                 raw_query=raw_query,

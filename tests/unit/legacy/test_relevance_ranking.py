@@ -14,7 +14,12 @@ import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from autoresearch.cache import SearchCache
-from autoresearch.config.models import ContextAwareSearchConfig, SearchConfig
+from autoresearch.config.models import (
+    AdaptiveKConfig,
+    ContextAwareSearchConfig,
+    QueryRewriteConfig,
+    SearchConfig,
+)
 from autoresearch.errors import ConfigError
 from autoresearch.search import Search
 from autoresearch.search.core import RANKING_BUCKET_SCALE
@@ -415,8 +420,11 @@ def test_rank_results_sorted(mock_config, data):
 
 
 @settings(deadline=None, max_examples=10)
-@given(texts=st.lists(st.text(min_size=1), min_size=1, max_size=5))
-def test_external_lookup_uses_cache(texts):
+@given(
+    texts=st.lists(st.text(min_size=1), min_size=1, max_size=5),
+    namespace=st.sampled_from([None, "team-alpha"]),
+)
+def test_external_lookup_uses_cache(texts, namespace):
     """External lookups reuse cached results per the cache documentation.
 
     Coverage traces to ``docs/algorithms/cache.md`` and ``SPEC_COVERAGE.md``.
@@ -426,10 +434,10 @@ def test_external_lookup_uses_cache(texts):
         for i, t in enumerate(texts)
     ]
     backend = MagicMock(return_value=results)
+    raw_query = "  Mixed Case Query  "
+
     with TemporaryDirectory() as tmpdir:
         cache = SearchCache(db_path=os.path.join(tmpdir, "cache.json"))
-        search = Search(cache=cache)
-        search.backends = {"mock": backend}
         cfg = MagicMock()
         cfg.search = SearchConfig(
             backends=["mock"],
@@ -441,13 +449,28 @@ def test_external_lookup_uses_cache(texts):
             semantic_similarity_weight=0.0,
             source_credibility_weight=1.0,
             context_aware=ContextAwareSearchConfig(enabled=False),
+            query_rewrite=QueryRewriteConfig(enabled=False),
+            adaptive_k=AdaptiveKConfig(enabled=False),
+            cache_namespace=namespace,
         )
+
         with patch("autoresearch.search.core.get_config", return_value=cfg):
-            first = search.external_lookup("query")
-            second = search.external_lookup("query")
+            search = Search(cache=cache)
+            search.backends = {"mock": backend}
+
+            bundle = search.external_lookup(raw_query, max_results=3, return_handles=True)
+            canonical_payload = {
+                "text": raw_query,
+                "raw_query": bundle.raw_query,
+                "executed_query": bundle.executed_query,
+                "canonical_query": bundle.query,
+                "raw_canonical_query": bundle.raw_canonical_query,
+            }
+            second = search.external_lookup(canonical_payload, max_results=3)
 
     assert backend.call_count == 1
-    assert second == first
+    assert list(bundle) == bundle.results
+    assert second == bundle.results
 
 
 @patch("autoresearch.search.core.get_config")
