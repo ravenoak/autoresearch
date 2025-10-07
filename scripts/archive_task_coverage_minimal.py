@@ -115,9 +115,16 @@ def _copy_coverage_outputs(timestamp: str) -> None:
             stale_htmlcov = existing_snapshot / "htmlcov"
             if stale_htmlcov.exists():
                 shutil.rmtree(stale_htmlcov)
+                print(f"Removed stale coverage dossier: {stale_htmlcov}")
 
-    shutil.copy2(coverage_file, baseline_dir / "coverage.xml")
-    shutil.copy2(coverage_file, archive_dir / f"{timestamp}.xml")
+    baseline_xml = baseline_dir / "coverage.xml"
+    snapshot_xml = archive_dir / f"{timestamp}.xml"
+
+    shutil.copy2(coverage_file, baseline_xml)
+    shutil.copy2(coverage_file, snapshot_xml)
+
+    _validate_coverage_xml(baseline_xml)
+    _validate_coverage_xml(snapshot_xml)
 
     htmlcov_src = project_root / "htmlcov"
     if not htmlcov_src.exists():
@@ -139,6 +146,14 @@ def main() -> None:
     _validate_log_tail(log_path)
     _validate_coverage_xml(Path("coverage.xml"))
     _copy_coverage_outputs(timestamp)
+
+    baseline_xml = Path("baseline") / "coverage.xml"
+    snapshot_xml = Path("baseline") / "archive" / f"{timestamp}.xml"
+    print(
+        "Archived minimal coverage snapshot "
+        f"{timestamp}: log={log_path}, baseline_xml={baseline_xml}, "
+        f"archive_xml={snapshot_xml}"
+    )
 
 
 if __name__ == "__main__":

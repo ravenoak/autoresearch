@@ -8,6 +8,7 @@ import pytest
 
 from scripts.archive_task_coverage_minimal import (
     _EXPECTED_LOG_TAIL,
+    _copy_coverage_outputs,
     _validate_coverage_xml,
     _validate_log_tail,
 )
@@ -67,3 +68,20 @@ def test_validate_coverage_xml_requires_line_rate(tmp_path: Path) -> None:
         _validate_coverage_xml(coverage_file)
 
     assert "missing required line-rate" in str(excinfo.value)
+
+
+def test_copy_coverage_outputs_rejects_invalid_line_rate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "baseline" / "archive").mkdir(parents=True)
+    htmlcov_dir = tmp_path / "htmlcov"
+    htmlcov_dir.mkdir()
+    (htmlcov_dir / "index.html").write_text("<html></html>", encoding="utf-8")
+    _write_coverage_xml(tmp_path, "0.5")
+
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(ValueError) as excinfo:
+        _copy_coverage_outputs("20240101T000000Z")
+
+    assert "below the 0.900 requirement" in str(excinfo.value)
