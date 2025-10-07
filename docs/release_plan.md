@@ -18,23 +18,27 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The strict typing gate remains green, but the latest release sweep regressed
-at the lint step. At **2025-10-06 04:53 UTC** `uv run mypy --strict src tests`
-still reports “Success: no issues found in 794 source files”, whereas the
-paired `uv run --extra test pytest` attempt halts during collection with 19
-errors caused by duplicated imports appearing before `from __future__ import
-annotations` and missing helper scripts that previously lived under
-`tests/scripts/`. These structural failures must be cleared before we can
-measure the behaviour regressions tracked in the alpha readiness plan.
-【4fb61a†L1-L2】【8e089f†L1-L118】 At **2025-10-06 04:41 UTC** `uv run task
-verify` exits during `flake8` with unused imports, duplicate definitions,
-misplaced `__future__` imports, and newline violations across the newly merged
-search, cache, and AUTO-mode telemetry changes. Mypy and pytest did not run
-because the lint step fails early.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
-The follow-on **04:41 UTC** `uv run task coverage` attempt began compiling the
-GPU and analysis extras (`hdbscan==0.8.40` is the first build) and was
-aborted to avoid spending the release window on optional wheels; the partial
-log is archived for the next sweep once lint is stable.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+The strict typing gate remains green: at **2025-10-07 05:48 UTC**
+`uv run mypy --strict src tests` reported “Success: no issues found in 797
+source files”, so type coverage is stable while we repair pytest regressions.
+【6bfb2b†L1-L1】 A focused
+`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
+external_lookup_uses_cache` run in the same window still fails with
+`backend.call_count == 3`, keeping cache determinism as the top regression
+before the release sweep can resume.【7821ab†L1031-L1034】 The preflight plan now
+prioritises five short PRs—PR-L0 (lint parity), PR-S3 (cache guardrails), PR-V1
+(verify/coverage refresh), PR-B1 (behaviour hardening), and PR-E1 (evidence
+sync)—to restore end-to-end readiness.【F:docs/v0.1.0a1_preflight_plan.md†L1-L320】
+
+Verify still halts inside `flake8`: at **2025-10-06 04:41 UTC**
+`uv run task verify` exits with unused imports, duplicate definitions, misplaced
+`__future__` imports, and newline violations across the merged search, cache,
+and AUTO-mode telemetry modules. Mypy and pytest do not run until lint is
+restored.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】 The paired
+`uv run task coverage` attempt at the same timestamp began compiling GPU and
+analysis extras (`hdbscan==0.8.40` is the first build) and was aborted to avoid
+spending the release window on optional wheels; the partial log is archived for
+the follow-up sweep once lint is stable.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 
 The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now marks
 PR-S1 (deterministic search stubs), PR-S2 (namespace-aware cache keys), and

@@ -19,6 +19,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 7, 2025
+- Reran `uv run mypy --strict src tests` at **05:48 UTC** and the sweep still
+  reports “Success: no issues found in 797 source files,” confirming the strict
+  gate stays green while we focus on pytest regressions.【6bfb2b†L1-L1】 A
+  targeted cache test at the same time fails with `backend.call_count == 3`,
+  keeping cache determinism as the highest priority before verify can progress.
+  【7821ab†L1031-L1034】 The updated preflight plan highlights PR-L0, PR-S3,
+  PR-V1, PR-B1, and PR-E1 as the next short slices toward the alpha release.
+  【F:docs/v0.1.0a1_preflight_plan.md†L1-L320】
 - Captured a fresh `uv run task check` sweep at **04:38 UTC** and archived the
   log at `baseline/logs/task-check-20251007T0438Z.log`. The run now clears
   `flake8` and `mypy --strict` before `check_spec_tests.py` aborts on missing

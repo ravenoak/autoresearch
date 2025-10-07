@@ -1,3 +1,14 @@
+As of **2025-10-07 at 05:48 UTC** `uv run mypy --strict src tests` still reports
+“Success: no issues found in 797 source files”, keeping the strict gate green
+while we triage pytest regressions.【6bfb2b†L1-L1】 A focused
+`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
+external_lookup_uses_cache` run during the same window fails with
+`backend.call_count == 3`, so cache determinism remains the highest-impact
+regression before verify can progress.【7821ab†L1031-L1034】 The refreshed
+preflight plan now sequences PR-L0 (lint parity), PR-S3 (cache guardrails),
+PR-V1 (verify/coverage refresh), PR-B1 (behaviour hardening), and PR-E1
+(evidence sync) as short, high-leverage slices to unblock the alpha gate.
+
 As of **2025-10-07 at 05:09 UTC** `uv run task check` is green again with
 the regenerated spec anchors and docx stub fallback; log captured at
 `baseline/logs/task-check-20251007T050924Z.log` documents flake8, mypy,
