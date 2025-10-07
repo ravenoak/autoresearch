@@ -26,6 +26,10 @@ Feature: Adaptive Output Formatting
     When I format a response containing control characters as markdown
     Then the markdown output should fence escaped control sequences
 
+  Scenario: TTY output escapes control characters
+    When I run `autoresearch search "Test formatting"` in TTY mode with control characters
+    Then the CLI markdown output should include escaped control sequences
+
   Scenario: Graph output format
     When I run `autoresearch search "Test formatting" --output graph`
     Then the output should include "Knowledge Graph"

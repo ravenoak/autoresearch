@@ -17,6 +17,33 @@ def run_in_terminal(query, monkeypatch, bdd_context: BehaviorContext, cli_runner
     bdd_context["terminal_result"] = result
 
 
+@when(
+    parsers.parse(
+        'I run `autoresearch search "{query}"` in TTY mode with control characters'
+    )
+)
+def run_tty_with_control_characters(
+    query, monkeypatch, bdd_context: BehaviorContext, cli_runner
+):
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+
+    def fake_run_query(*_args, **_kwargs):
+        return QueryResponse(
+            query=query,
+            answer="Escaped\x01answer with zero-width\u200b",
+            citations=["Reference\x02"],
+            reasoning=["Reasoning\x03 step"],
+            metrics={"format": "markdown"},
+        )
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+        staticmethod(fake_run_query),
+    )
+    result = cli_runner.invoke(cli_app, ["search", query])
+    bdd_context["control_tty_result"] = result
+
+
 @then(
     "the output should be in Markdown with sections `# Answer`, `## Citations`, `## Reasoning`, and `## Metrics`"
 )
@@ -114,6 +141,24 @@ def check_control_markdown(bdd_context: BehaviorContext):
 
     answer_section = markdown.split("## Answer", 1)[1]
     assert "```text" in answer_section.split("##", 1)[0]
+
+
+@then("the CLI markdown output should include escaped control sequences")
+def check_cli_control_output(bdd_context: BehaviorContext):
+    result = bdd_context["control_tty_result"]
+    output = result.stdout
+
+    assert result.exit_code == 0
+    assert "# Answer" in output
+    assert "```text" in output
+
+    for raw in ("\x01", "\x02", "\x03", "\u200b"):
+        assert raw not in output
+    for escaped in ("\\u0001", "\\u0002", "\\u0003", "\\u200b"):
+        assert escaped in output
+
+    answer_section = output.split("# Answer", 1)[1].split("##", 1)[0]
+    assert "```text" in answer_section
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output graph`'))
