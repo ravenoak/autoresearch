@@ -6,12 +6,13 @@ concise summaries that capture the essential points while maintaining
 accuracy and context.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...orchestration.reasoning_payloads import FrozenReasoningStep
 from ...logging_utils import get_logger
 
 log = get_logger(__name__)
@@ -34,11 +35,16 @@ class SummarizerAgent(Agent):
         content_to_summarize = []
 
         # Include all claims from the state
-        for claim in state.claims:
+        for claim_step in state.claims:
+            payload = (
+                claim_step.to_dict()
+                if isinstance(claim_step, FrozenReasoningStep)
+                else dict(claim_step)
+            )
             content_to_summarize.append(
                 {
-                    "type": claim.get("type", "unknown"),
-                    "content": claim.get("content", "No content"),
+                    "type": payload.get("type", "unknown"),
+                    "content": payload.get("content", "No content"),
                 }
             )
 
@@ -62,9 +68,9 @@ class SummarizerAgent(Agent):
         summary = adapter.generate(prompt, model=model)
 
         # Create and return the result
-        claim = self.create_claim(summary, "summary")
+        summary_claim = self.create_claim(summary, "summary")
         result = self.create_result(
-            claims=[claim],
+            claims=[summary_claim],
             metadata={
                 "phase": DialoguePhase.SUMMARY,
                 "summarized_items": len(content_to_summarize),

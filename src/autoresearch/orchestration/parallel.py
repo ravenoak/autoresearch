@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse

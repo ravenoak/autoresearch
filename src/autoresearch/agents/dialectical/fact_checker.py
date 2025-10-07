@@ -395,7 +395,7 @@ class FactChecker(Agent):
         if planner_snapshot:
             aggregate_provenance["planner"] = dict(planner_snapshot)
 
-        claim = self.create_claim(
+        verification_claim = self.create_claim(
             verification,
             "verification",
             metadata={"query_variations": query_variations},
@@ -418,7 +418,7 @@ class FactChecker(Agent):
             metadata_payload["planner_provenance"] = dict(planner_snapshot)
 
         return self.create_result(
-            claims=[claim],
+            claims=[verification_claim],
             metadata=metadata_payload,
             results={"verification": verification},
             sources=sources,

@@ -6,12 +6,13 @@ identifying strengths and weaknesses, and providing constructive feedback
 to improve the quality of the research.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...orchestration.reasoning_payloads import FrozenReasoningStep
 from ...logging_utils import get_logger
 
 log = get_logger(__name__)
@@ -31,16 +32,28 @@ class CriticAgent(Agent):
         model = self.get_model(config)
 
         # Find research findings or other claims to evaluate
-        claims_to_evaluate = []
-        for claim in state.claims:
+        claims_to_evaluate: list[dict[str, Any]] = []
+        for claim_step in state.claims:
+            payload = (
+                claim_step.to_dict()
+                if isinstance(claim_step, FrozenReasoningStep)
+                else dict(claim_step)
+            )
             # Include research findings and thesis/synthesis claims
-            claim_type = claim.get("type", "")
+            claim_type = payload.get("type", "")
             if claim_type in ["research_findings", "thesis", "synthesis"]:
-                claims_to_evaluate.append(claim)
+                claims_to_evaluate.append(payload)
 
         if not claims_to_evaluate:
             # If no specific claims to evaluate, use all claims
-            claims_to_evaluate = state.claims
+            claims_to_evaluate = [
+                (
+                    claim_step.to_dict()
+                    if isinstance(claim_step, FrozenReasoningStep)
+                    else dict(claim_step)
+                )
+                for claim_step in state.claims
+            ]
 
         # Extract content from claims
         claims_text = "\n\n".join(
@@ -57,9 +70,9 @@ class CriticAgent(Agent):
         critique = adapter.generate(prompt, model=model)
 
         # Create and return the result
-        claim = self.create_claim(critique, "critique")
+        critique_claim = self.create_claim(critique, "critique")
         result = self.create_result(
-            claims=[claim],
+            claims=[critique_claim],
             metadata={
                 "phase": DialoguePhase.CRITIQUE,
                 "evaluated_claims": [c.get("id") for c in claims_to_evaluate],
