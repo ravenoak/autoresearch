@@ -1,7 +1,3 @@
-import asyncio
-from autoresearch.monitor import metrics as monitor_metrics
-from __future__ import annotations
-
 from __future__ import annotations
 
 import asyncio

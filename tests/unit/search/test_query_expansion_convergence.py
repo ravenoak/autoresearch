@@ -1,12 +1,3 @@
-import sys
-from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
-
-import autoresearch.search.context as ctx
-import autoresearch.search.core as search_core
-from autoresearch.search.context import SearchContext
-from autoresearch.search.core import Search
-from tests.helpers import make_config_model
 from __future__ import annotations
 
 import sys
