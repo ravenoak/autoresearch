@@ -7,7 +7,10 @@ from collections.abc import Iterator
 import pytest
 
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
+from autoresearch.orchestration.reasoning_payloads import (
+    FrozenReasoningStep,
+    ReasoningCollection,
+)
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.state_registry import QueryStateRegistry
 
@@ -142,7 +145,7 @@ def test_query_state_claims_auto_normalize_and_preserve_order() -> None:
     state.claims.extend(["second"])
     state.claims.insert(0, {"text": "zero"})
     state.claims[1] = {"text": "first-updated"}
-    state.claims += [{"text": "third"}]
+    state.claims += ReasoningCollection([{"text": "third"}])
 
     assert [step["text"] for step in state.claims] == [
         "zero",

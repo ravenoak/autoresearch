@@ -1,0 +1,224 @@
+task: [check] uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  --extra dev-minimal \
+  --extra test \
+  
+
+Resolved 328 packages in 6ms
+Uninstalled 29 packages in 102ms
+Installed 29 packages in 53ms
+ ~ aiohttp==3.12.15
+ ~ cffi==2.0.0
+ ~ charset-normalizer==3.4.3
+ ~ cryptography==46.0.1
+ ~ duckdb==1.3.2
+ ~ frozenlist==1.7.0
+ ~ jiter==0.11.0
+ ~ kuzu==0.11.2
+ ~ lazy-object-proxy==1.12.0
+ ~ markupsafe==3.0.2
+ ~ multidict==6.6.4
+ ~ numpy==2.3.3
+ ~ orjson==3.11.3
+ ~ ormsgpack==1.10.0
+ ~ propcache==0.3.2
+ ~ protobuf==6.32.1
+ ~ psutil==7.1.0
+ ~ pydantic-core==2.33.2
+ ~ pyoxigraph==0.5.0
+ ~ pyyaml==6.0.3
+ ~ regex==2025.9.18
+ ~ rpds-py==0.27.1
+ ~ sqlalchemy==2.0.43
+ ~ tiktoken==0.11.0
+ ~ watchfiles==1.1.0
+ ~ wrapt==1.17.3
+ ~ xxhash==3.5.0
+ ~ yarl==1.20.1
+ ~ zstandard==0.25.0
+task: [check] task check-env EXTRAS=""
+task: [check-env] task --version
+3.45.4
+task: [check-env] uv run python scripts/check_env.py
+Uninstalled 29 packages in 98ms
+Installed 29 packages in 50ms
+Verifying extras: dev-minimal, test
+Python 3.12.11
+Go Task 3.45.4
+uv 0.8.23
+a2a-sdk 0.3.7
+black 25.9.0
+duckdb 1.3.2
+fakeredis 2.31.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.2
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+redis 6.4.0
+responses 0.25.8
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20250822
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+task: [check] uv run flake8 src
+task: [check] task mypy-strict
+task: [mypy-strict] uv run mypy --strict src tests
+Success: no issues found in 797 source files
+task: [check] task lint-specs
+task: [lint-specs] uv run python scripts/lint_specs.py
+task: [check] task check-release-metadata
+task: [check-release-metadata] uv run python scripts/check_release_metadata.py
+Release metadata aligned: version=0.1.0a1, date=Unreleased
+task: [check] uv run python scripts/check_spec_tests.py
+Spec files with missing test references:
+- docs/specs/error-utils.md
+  ../../tests/unit/test_error_utils_additional.py
+- docs/specs/storage.md
+  ../../tests/unit/test_storage_eviction.py
+  ../../tests/unit/test_storage_eviction_sim.py
+  ../../tests/unit/test_storage_manager_concurrency.py
+- docs/specs/resource-monitor.md
+  ../../tests/unit/test_resource_monitor_gpu.py
+- docs/specs/examples.md
+  ../../tests/unit/test_examples_package.py
+- docs/specs/a2a-interface.md
+  ../../tests/unit/test_a2a_interface.py
+  ../../tests/unit/test_a2a_concurrency_sim.py
+- docs/specs/extensions.md
+  ../../tests/unit/test_duckdb_storage_backend.py
+  ../../tests/unit/test_duckdb_storage_backend_extended.py
+  ../../tests/unit/test_vss_extension_loader.py
+- docs/specs/api_rate_limiting.md
+  ../../tests/unit/test_property_api_rate_limit_bounds.py
+- docs/specs/api.md
+  ../../tests/unit/test_api.py
+  ../../tests/unit/test_api_error_handling.py
+  ../../tests/unit/test_api_imports.py
+  ../../tests/unit/test_api_auth_middleware.py
+  ../../tests/unit/test_api_auth_deps.py
+  ../../tests/unit/test_webhooks_logging.py
+- docs/specs/orchestrator_scheduling.md
+  ../../tests/unit/test_orchestrator_perf_sim.py
+  ../../tests/unit/test_scheduler_benchmark.py
+- docs/specs/cli-utils.md
+  ../../tests/unit/test_cli_utils_extra.py
+- docs/specs/orchestrator-perf.md
+  ../../tests/unit/test_orchestrator_perf_sim.py
+- docs/specs/distributed.md
+  ../../tests/unit/test_distributed.py
+  ../../tests/unit/test_distributed_extra.py
+- docs/specs/main-entrypoint.md
+  ../../tests/unit/test_main_module.py
+- docs/specs/kg-reasoning.md
+  ../../tests/unit/test_kg_reasoning.py
+- docs/specs/streamlit-ui.md
+  ../../tests/unit/test_streamlit_ui_helpers.py
+- docs/specs/errors.md
+  ../../tests/unit/test_config_errors.py
+  ../../tests/unit/test_config_validation_errors.py
+  ../../tests/unit/test_errors.py
+- docs/specs/scheduler-benchmark.md
+  ../../tests/unit/test_scheduler_benchmark.py
+- docs/specs/streamlit-app.md
+  ../../tests/unit/test_streamlit_app_edgecases.py
+- docs/specs/main.md
+  ../../tests/unit/test_main_backup_commands.py
+  ../../tests/unit/test_main_cli.py
+  ../../tests/unit/test_main_config_commands.py
+- docs/specs/config.md
+  ../../tests/unit/test_config_env_file.py
+  ../../tests/unit/test_config_errors.py
+  ../../tests/unit/test_config_loader_defaults.py
+  ../../tests/unit/test_config_profiles.py
+  ../../tests/unit/test_config_reload.py
+  ../../tests/unit/test_config_validation_errors.py
+  ../../tests/unit/test_config_watcher_cleanup.py
+- docs/specs/monitor.md
+  ../../tests/unit/test_main_monitor_commands.py
+  ../../tests/unit/test_monitor_cli.py
+  ../../tests/unit/test_monitor_metrics_init.py
+  ../../tests/unit/test_node_health_monitor_property.py
+  ../../tests/unit/test_system_monitor.py
+- docs/specs/agents-specialized.md
+  ../../tests/unit/test_specialized_agents.py
+  ../../tests/unit/test_advanced_agents.py
+- docs/specs/storage-backends.md
+  ../../tests/unit/test_duckdb_storage_backend.py
+  ../../tests/unit/test_duckdb_storage_backend_extended.py
+- docs/specs/cli-backup.md
+  ../../tests/unit/test_cli_backup_extra.py
+- docs/specs/models.md
+  ../../tests/unit/test_models_docstrings.py
+- docs/specs/interfaces.md
+  ../../tests/unit/test_interfaces.py
+- docs/specs/mcp-interface.md
+  ../../tests/unit/test_mcp_interface.py
+- docs/specs/metrics.md
+  ../../tests/unit/test_metrics_token_budget_spec.py
+  ../../tests/unit/test_token_budget_convergence.py
+  ../../tests/unit/test_heuristic_properties.py
+- docs/specs/token-budget.md
+  ../../tests/unit/test_metrics_token_budget_spec.py
+  ../../tests/unit/test_heuristic_properties.py
+- docs/specs/llm.md
+  ../../tests/unit/test_agents_llm.py
+  ../../tests/unit/test_llm_adapter.py
+  ../../tests/unit/test_llm_capabilities.py
+  ../../tests/unit/test_token_usage.py
+- docs/specs/cache.md
+  ../../tests/unit/test_cache.py
+- docs/specs/error-recovery.md
+  ../../tests/unit/test_error_recovery.py
+- docs/specs/logging-utils.md
+  ../../tests/unit/test_logging_utils.py
+  ../../tests/unit/test_logging_utils_env.py
+- docs/specs/agents.md
+  ../../tests/unit/test_advanced_agents.py
+  ../../tests/unit/test_agents_llm.py
+  ../../tests/unit/test_specialized_agents.py
+- docs/specs/config-utils.md
+  ../../tests/unit/test_config_env_file.py
+  ../../tests/unit/test_config_errors.py
+  ../../tests/unit/test_config_loader_defaults.py
+  ../../tests/unit/test_config_profiles.py
+  ../../tests/unit/test_config_reload.py
+  ../../tests/unit/test_config_utils.py
+  ../../tests/unit/test_config_validation_errors.py
+  ../../tests/unit/test_config_validators_additional.py
+  ../../tests/unit/test_config_watcher_cleanup.py
+  ../../tests/unit/test_streamlit_app_edgecases.py
+  ../../tests/unit/test_streamlit_utils.py
+- docs/specs/visualization.md
+  ../../tests/unit/test_visualization.py
+- docs/specs/cli-helpers.md
+  ../../tests/unit/test_cli_helpers.py
+- docs/specs/test-tools.md
+  ../../tests/unit/test_test_tools.py
+- docs/specs/agents-dialectical.md
+  ../../tests/unit/test_property_dialectical_coordination.py
+  ../../tests/unit/test_synthesizer_agent_modes.py
+  ../../tests/unit/test_agents_llm.py
+- docs/specs/api_authentication.md
+  ../../tests/unit/test_api_auth_middleware.py
+- docs/specs/data-analysis.md
+  ../../tests/unit/test_data_analysis.py
+  ../../tests/unit/test_kuzu_polars.py
+- docs/specs/storage-backup.md
+  ../../tests/unit/test_storage_backup.py
+- docs/specs/autoresearch.md
+  ../../tests/unit/test_distributed.py
+- docs/algorithms/storage_eviction.md
+  ../../tests/unit/test_storage_eviction.py
+task: Failed to run task "check": exit status 1

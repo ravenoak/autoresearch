@@ -7,11 +7,18 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 6, 2025 at 14:38 UTC** the refreshed `uv run task check` sweep
-reaches flake8 and mypy cleanly before `check_spec_tests.py` halts on the
-long-standing documentation/test mapping backlog; lint fallout is resolved and
-spec coverage remapping is now the gate to a green run.
-【F:baseline/logs/task-check-20251006T143809Z.log†L1-L160】 The prior
+As of **October 7, 2025 at 04:38 UTC** `uv run task check` clears `flake8` and
+the repo-wide strict sweep before `check_spec_tests.py` fails on missing
+specification anchors, so synchronising `docs/specs/*` with
+`SPEC_COVERAGE.md` is now the sole quick-gate blocker.
+【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】 Specialist agents now
+coerce `FrozenReasoningStep` payloads into dictionaries prior to prompt
+generation and the orchestration regression extends `ReasoningCollection`
+in-place operations, keeping strict typing green while preserving deterministic
+reasoning order.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
+【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
+【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
+【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】 The prior
 **04:41 UTC** `uv run task verify` log still captures `flake8` failures across
 search, cache, and AUTO-mode telemetry modules, so the verify gate remains
 closed until those files receive the same hygiene pass.
@@ -20,13 +27,17 @@ closed until those files receive the same hygiene pass.
 (`hdbscan==0.8.40` is the first build) and was aborted to preserve the
 evaluation window, so coverage remains pegged to the earlier 92.4 % evidence
 until the lint cleanup lands.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
-The updated preflight plan records PR-S1, PR-S2, and PR-R0 as merged while
-promoting lint repair, coverage reruns, and TestPyPI reactivation as the next
-gates, and the alpha ticket mirrors the same checklist.
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】【F:issues/prepare-first-alpha-release.md†L1-L64】
+The updated preflight plan records PR-S1, PR-S2, PR-R0, and PR-A1 as merged
+while introducing PR-D0 for spec/test reconciliation; the alpha ticket mirrors
+the same checklist.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L240】【F:issues/prepare-first-alpha-release.md†L1-L140】
 
 ### Immediate Follow-ups
 
+- [ ] Deliver **PR-D0** – add a reusable include for `SPEC_COVERAGE.md` anchors
+  across the specs, extend `scripts/check_spec_tests.py` to compare the include
+  with the manifest, and rerun `uv run task check` to confirm the quick gate is
+  green.
 - [x] Ship **PR-S1** – deterministic search stubs, hybrid ranking signatures,
   and refreshed fixtures are merged, keeping canonical queries consistent
   across telemetry and cache layers.【F:src/autoresearch/search/core.py†L650-L686】
@@ -61,6 +72,12 @@ gates, and the alpha ticket mirrors the same checklist.
 - [ ] Resume TestPyPI dry runs once verify and coverage are green, then close
   the remaining [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones before proposing the tag.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+- [x] Deliver **PR-A1** – specialist agents now normalise `FrozenReasoningStep`
+  payloads before prompt construction and the orchestration regression suite
+  exercises `ReasoningCollection` in-place additions, maintaining strict typing
+  guarantees.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
+  【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
+  【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
 
 ## Deep Research Enhancement Program
 

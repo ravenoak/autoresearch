@@ -1,3 +1,18 @@
+As of **2025-10-07 at 04:38 UTC** the latest `uv run task check` sweep clears
+`flake8` and the repo-wide strict gate before `check_spec_tests.py` halts on
+missing doc-to-test anchors, so reconciling the specs with
+`SPEC_COVERAGE.md` is the only blocker for a green quick gate.
+【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】 Specialised agents now
+normalise `FrozenReasoningStep` payloads into dictionaries when generating
+prompts, and the orchestration regression suite extends `ReasoningCollection`
+with another `ReasoningCollection` instance so mypy no longer flags
+`+=` assignments.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
+【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
+【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
+【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】 The next
+work item is **PR-D0**, which links each spec document to the canonical test
+manifest and refreshes `docs/v0.1.0a1_preflight_plan.md` with the new evidence.
+
 As of **2025-10-06 at 15:23 UTC** targeted AUTO-mode pytest and behaviour runs
 confirm scout claim snapshots persist through the reducer and warning banners no
 longer leak into final answers. Follow-up cache fixture work remains outstanding

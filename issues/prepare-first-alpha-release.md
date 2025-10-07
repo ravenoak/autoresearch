@@ -1,6 +1,19 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 7, 2025 at 04:38 UTC** `uv run task check` now clears `flake8`
+and the repo-wide strict sweep before `check_spec_tests.py` fails on missing
+doc-to-test anchors, so synchronising the specs with `SPEC_COVERAGE.md` is the
+remaining quick-gate blocker.【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】
+Specialised agents coerce `FrozenReasoningStep` payloads into dictionaries
+before prompt generation and the orchestration regression extends
+`ReasoningCollection` in-place operations, keeping strict typing green while
+preserving deterministic reasoning order.
+【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
+【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
+【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
+【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
+
 As of **October 6, 2025 at 04:53 UTC** `uv run mypy --strict src tests` reports
 “Success: no issues found in 794 source files”, verifying the strict gate stays
 green after the latest merges.【4fb61a†L1-L2】 A full
@@ -80,6 +93,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   function-scoped Hypothesis fixture, and backfill regression coverage so
   cached queries avoid repeated backend calls.【F:tests/unit/legacy/test_cache.py†L503-L608】
   【F:tests/unit/legacy/test_cache.py†L779-L879】【F:tests/unit/legacy/test_cache.py†L883-L1010】
+- [ ] Land **PR-D0** – embed a reusable `SPEC_COVERAGE.md` include inside each
+  spec, update `scripts/check_spec_tests.py` to assert the manifest stays in
+  sync, and rerun `uv run task check` to confirm the quick gate is green.
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
 - [ ] Land **PR-L0** – reorder `from __future__ import annotations`, drop
@@ -103,6 +119,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L685-L723】
 - [ ] Land **PR-P1** – normalise parallel reasoning merges and recalibrate
   scheduler benchmarks against recorded baselines.
+- [x] Land **PR-A1** – normalise `FrozenReasoningStep` payloads inside
+  specialist agents and adjust orchestration regression tests so
+  `ReasoningCollection` in-place additions remain type-safe.
 - [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
   mypy and pytest again, then capture fresh verify and coverage logs for the
   release dossier.

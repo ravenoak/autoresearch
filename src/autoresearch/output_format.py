@@ -12,10 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from pydantic import BaseModel, ValidationError
 from .output.formatter import (
-    escape_markdown_text as _escape_markdown_text,
     fenced_block as _fenced_block,
-    indent_block_lines as _indent_block_lines,
-    max_backtick_run as _max_backtick_run,
     prepare_markdown_text as _prepare_markdown_text,
 )
 from .models import QueryResponse

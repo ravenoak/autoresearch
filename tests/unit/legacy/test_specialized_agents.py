@@ -11,6 +11,7 @@ from autoresearch.agents.specialized.researcher import ResearcherAgent
 from autoresearch.agents.specialized.critic import CriticAgent
 from autoresearch.agents.specialized.summarizer import SummarizerAgent
 from autoresearch.agents.specialized.planner import PlannerAgent
+from autoresearch.llm.adapters import LLMAdapter
 from autoresearch.orchestration.state import QueryState
 from autoresearch.agents.feedback import FeedbackEvent
 from autoresearch.config.models import ConfigModel
@@ -226,8 +227,12 @@ def test_planner_agent_execute(
 def test_planner_agent_parses_json_plan(mock_config: ConfigModel) -> None:
     """Planner normalises JSON plans into the state task graph."""
 
-    class StubAdapter:
-        def generate(self, prompt: str, model: str | None = None) -> str:
+    class StubAdapter(LLMAdapter):
+        available_models = ["stub"]
+
+        def generate(
+            self, prompt: str, model: str | None = None, **_: object
+        ) -> str:
             return json.dumps(
                 {
                     "tasks": [

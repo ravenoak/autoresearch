@@ -18,6 +18,29 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 7, 2025
+- Captured a fresh `uv run task check` sweep at **04:38 UTC** and archived the
+  log at `baseline/logs/task-check-20251007T0438Z.log`. The run now clears
+  `flake8` and `mypy --strict` before `check_spec_tests.py` aborts on missing
+  doc-to-test links, so spec coverage alignment is the gating failure for a
+  green quick gate.【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】
+- Specialised agents now coerce `FrozenReasoningStep` payloads into plain
+  dictionaries before prompt generation, keeping strict typing green while
+  preserving deterministic reasoning order in summariser and critic flows.
+  Behaviour-friendly claim snapshots also flow through fact checker results.
+  【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
+  【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
+  【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
+- Updated the orchestration feature regression to extend `ReasoningCollection`
+  via another `ReasoningCollection` instance so strict typing recognises the
+  in-place addition path, keeping the state-copy invariant intact while
+  verifying deterministic ordering.【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
+- Next action: dedicate **PR-D0** to reconcile `docs/specs/*` with the
+  canonical test manifest captured in `SPEC_COVERAGE.md`, reusing anchors from
+  the coverage table to avoid manual drift. Once those references land, rerun
+  `task check` to confirm the quick gate is green and unblock the full verify
+  sweep.
+
 ## October 6, 2025
 - Reran `uv run mypy --strict src tests` at **04:53 UTC** and the sweep still
   reports “Success: no issues found in 794 source files”, confirming the strict
