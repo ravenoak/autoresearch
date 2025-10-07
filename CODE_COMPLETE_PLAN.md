@@ -7,30 +7,37 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
-As of **October 7, 2025 at 04:38 UTC** `uv run task check` clears `flake8` and
-the repo-wide strict sweep before `check_spec_tests.py` fails on missing
-specification anchors, so synchronising `docs/specs/*` with
-`SPEC_COVERAGE.md` is now the sole quick-gate blocker.
-【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】 Specialist agents now
-coerce `FrozenReasoningStep` payloads into dictionaries prior to prompt
-generation and the orchestration regression extends `ReasoningCollection`
-in-place operations, keeping strict typing green while preserving deterministic
-reasoning order.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
-【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
-【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
-【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】 The prior
-**04:41 UTC** `uv run task verify` log still captures `flake8` failures across
-search, cache, and AUTO-mode telemetry modules, so the verify gate remains
-closed until those files receive the same hygiene pass.
+As of **October 7, 2025 at 05:48 UTC** `uv run mypy --strict src tests` still
+reports “Success: no issues found in 797 source files,” confirming the strict
+gate remains green after the latest orchestration and cache refactors.
+【6bfb2b†L1-L1】 A targeted
+`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
+external_lookup_uses_cache` run during the same window continues to fail with
+`backend.call_count == 3`, keeping cache determinism as the highest-impact
+regression blocking a green suite before verify and coverage can resume.
+【7821ab†L1031-L1034】
+
+Earlier at **04:38 UTC** `uv run task check` cleared `flake8` and the strict
+sweep before `check_spec_tests.py` flagged missing specification anchors,
+leaving spec/test drift as the quick-gate blocker until the regenerated
+includes landed.【F:baseline/logs/task-check-20251007T0438Z.log†L1-L165】 The
+follow-up **05:09 UTC** sweep with refreshed anchors and the docx stub now
+captures a fully green quick gate while keeping macOS contributors on the stub
+path when `lxml` wheels are unavailable.
+【F:baseline/logs/task-check-20251007T050924Z.log†L1-L189】【F:tests/stubs/docx.py†L1-L40】
+The prior **04:41 UTC** `uv run task verify` log still captures `flake8`
+failures across search, cache, and AUTO-mode telemetry modules, so the verify
+gate remains closed until those files receive the same hygiene pass.
 【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】 The paired
 `uv run task coverage` sweep begins compiling GPU-heavy extras
 (`hdbscan==0.8.40` is the first build) and was aborted to preserve the
 evaluation window, so coverage remains pegged to the earlier 92.4 % evidence
 until the lint cleanup lands.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
-The updated preflight plan records PR-S1, PR-S2, PR-R0, and PR-A1 as merged
-while introducing PR-D0 for spec/test reconciliation; the alpha ticket mirrors
-the same checklist.
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L240】【F:issues/prepare-first-alpha-release.md†L1-L140】
+The updated preflight plan records PR-S1, PR-S2, PR-R0, PR-D0, and PR-A1 as
+merged while introducing new follow-up slices for lint repair, cache
+determinism, verify/coverage evidence, and telemetry polish; the alpha ticket
+mirrors the same checklist with the refreshed evidence snapshot.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L240】【F:issues/prepare-first-alpha-release.md†L1-L210】
 
 ### Immediate Follow-ups
 
@@ -63,6 +70,10 @@ the same checklist.
   `tests/scripts/` (or rewire imports to the production copies), regenerate the
   scheduler benchmark fixture from current baselines, and document provenance in
   `baseline/` so pytest collection can progress.
+- [ ] Deliver **PR-S3** – enforce cache-hit canonicalisation across
+  `Search.external_lookup` and hybrid enrichment so
+  `test_external_lookup_uses_cache` observes a single backend call, then expand
+  property coverage around namespace and alias churn.
 - [ ] Deliver **PR-V1** – once lint and collection succeed, capture fresh
   `task verify` and `task coverage` logs without GPU extras, restoring the
   release evidence trail ahead of the tag proposal.
@@ -78,6 +89,24 @@ the same checklist.
   guarantees.【F:src/autoresearch/agents/specialized/summarizer.py†L9-L78】
   【F:src/autoresearch/agents/specialized/critic.py†L9-L101】
   【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
+
+### High-impact release slices (dialectical synthesis)
+
+- **Cache determinism vs. telemetry breadth:** The failing
+  `test_external_lookup_uses_cache` run demonstrates backend calls still fire on
+  cache hits. The benefit of tightening canonicalisation outweighs the risk of
+  obscuring hybrid telemetry because existing diagnostics already capture raw
+  and canonical queries; PR-S3 will enforce single-call behaviour while adding
+  property coverage for namespace churn.【7821ab†L1031-L1034】
+- **Lint hygiene vs. delivery speed:** Verify continues to halt in `flake8`
+  even though the quick gate is green, so the next lint repair must isolate the
+  highest-churn modules (search, cache, AUTO telemetry) and land as PR-L0
+  before verify can progress. This keeps scope small enough for rapid review
+  while clearing the gate that blocks coverage.
+- **Evidence freshness vs. runtime cost:** Coverage remains tied to the earlier
+  92.4 % run because the last attempt was aborted mid-install. Once PR-L0 and
+  PR-S3 land, PR-V1 can rerun verify and coverage without the GPU extra to
+  balance evidence freshness with runtime limits.
 
 ## Deep Research Enhancement Program
 

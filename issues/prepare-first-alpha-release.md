@@ -14,6 +14,17 @@ preserving deterministic reasoning order.
 【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
 【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
 
+As of **October 7, 2025 at 05:48 UTC** `uv run mypy --strict src tests` still
+reports “Success: no issues found in 797 source files,” so the strict gate stays
+green while we focus on pytest regressions.【6bfb2b†L1-L1】 A targeted
+`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
+external_lookup_uses_cache` run during the same window continues to fail with
+`backend.call_count == 3`, confirming cache determinism remains the top
+regression before verify can progress.【7821ab†L1031-L1034】 The updated preflight
+plan now sequences PR-L0 (lint parity), PR-S3 (cache guardrails), PR-V1 (verify
+and coverage refresh), PR-B1 (behaviour hardening), and PR-E1 (evidence sync) as
+short, high-impact slices.
+
 As of **October 7, 2025 at 05:09 UTC** the regenerated spec anchors and docx
 stub fallback keep `uv run task check` green end-to-end, with the sweep
 archived at `baseline/logs/task-check-20251007T050924Z.log`. The stub now
@@ -139,6 +150,15 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - [ ] Land **PR-V1** – once lint and collection pass, rerun `task verify` and
   `task coverage` without GPU extras, archive the October logs, and update the
   release dossier before the sign-off review.
+- [ ] Land **PR-S3** – enforce canonical cache hits so
+  `tests/unit/legacy/test_relevance_ranking.py::test_external_lookup_uses_cache`
+  observes a single backend call, then expand property coverage for namespace
+  churn.
+- [ ] Land **PR-B1** – expand behaviour coverage for AUTO-mode cache hits,
+  warning banner isolation, and formatter fidelity after PR-S3 lands.
+- [ ] Land **PR-E1** – synchronise STATUS.md, TASK_PROGRESS.md,
+  CODE_COMPLETE_PLAN.md, the preflight plan, and this ticket with new verify and
+  coverage logs after PR-V1 completes.
 - [ ] Schedule and run the release sign-off review after the suite and
   coverage gates return to green.
 
