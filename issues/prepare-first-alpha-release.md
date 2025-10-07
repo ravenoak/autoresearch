@@ -14,6 +14,21 @@ preserving deterministic reasoning order.
 【F:src/autoresearch/agents/dialectical/fact_checker.py†L360-L426】
 【F:tests/unit/orchestration/test_query_state_features.py†L140-L160】
 
+As of **October 7, 2025 at 16:29 UTC** the strict typing gate regressed:
+`uv run mypy --strict src tests` fails on AUTO mode sample hydration because
+non-string answers bypass `_freeze_payload` and tests mask immutability probes
+with unused ignores.【1fc7a3†L1-L5】 Hardened sample snapshots now coerce
+non-string payloads through `_freeze_payload`, and the AUTO mode regression
+suite casts retrieved telemetry to `FrozenReasoningStep` tuples so strict mode
+observes the runtime immutability checks.【F:src/autoresearch/orchestration/orchestrator.py†L108-L134】
+【F:tests/unit/orchestration/test_auto_mode.py†L1-L191】 A follow-up
+`uv run mypy --strict src tests` sweep at **16:34 UTC** returns success, and the
+targeted AUTO mode regression suite now passes with warnings preserved during
+debate escalation.【27806b†L1-L1】【7b397e†L1-L9】 The preflight plan now tracks
+short-scope slices PR-L0a (strict gate parity), PR-S3 (cache determinism),
+PR-L0b (lint parity), and PR-V1 (evidence refresh) so reviewers can land
+iterative improvements without waiting for the full verify gate.
+
 As of **October 7, 2025 at 05:48 UTC** `uv run mypy --strict src tests` still
 reports “Success: no issues found in 797 source files,” so the strict gate stays
 green while we focus on pytest regressions.【6bfb2b†L1-L1】 A targeted
@@ -118,6 +133,11 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   `task check` sweep at 05:09 UTC.
   【F:scripts/check_spec_tests.py†L1-L140】【F:tests/stubs/docx.py†L1-L40】
   【F:docs/specs/search.md†L103-L144】【F:baseline/logs/task-check-20251007T050924Z.log†L1-L189】
+- [x] Land **PR-L0a** – freeze AUTO mode scout answers, tighten regression
+  typing, and capture a green strict sweep for release evidence.
+  【F:src/autoresearch/orchestration/orchestrator.py†L108-L134】
+  【F:tests/unit/orchestration/test_auto_mode.py†L1-L191】
+  【27806b†L1-L1】【7b397e†L1-L9】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
 - [ ] Land **PR-L0** – reorder `from __future__ import annotations`, drop

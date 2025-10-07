@@ -7,6 +7,17 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
+As of **October 7, 2025 at 16:29 UTC** the strict gate regressed: `uv run mypy
+--strict src tests` now fails on AUTO mode sample hydration and unused ignores
+within the regression suite.【1fc7a3†L1-L5】 `_snapshot_scout_sample` now freezes
+non-string answers while the AUTO mode tests cast telemetry to
+`FrozenReasoningStep` tuples so strict mode recognises the immutability
+assertions ahead of the refreshed sweep.【F:src/autoresearch/orchestration/orchestrator.py†L108-L134】
+【F:tests/unit/orchestration/test_auto_mode.py†L1-L191】 A follow-up strict run at
+**16:34 UTC** succeeds while the targeted AUTO mode regression suite now passes,
+providing evidence for PR-L0a completion before we resume cache determinism
+work.【27806b†L1-L1】【7b397e†L1-L9】
+
 As of **October 7, 2025 at 05:48 UTC** `uv run mypy --strict src tests` still
 reports “Success: no issues found in 797 source files,” confirming the strict
 gate remains green after the latest orchestration and cache refactors.
