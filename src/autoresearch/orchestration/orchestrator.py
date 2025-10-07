@@ -9,6 +9,7 @@ is exercised by unit and integration tests under ``tests/``.
 from __future__ import annotations
 
 import asyncio
+from types import MappingProxyType
 from typing import Any, Dict, List, Mapping, Sequence, cast
 
 import rdflib
@@ -38,6 +39,56 @@ from .types import CallbackMap, CycleCallback, TracerProtocol
 log = get_logger(__name__)
 
 
+def _freeze_payload(value: Any) -> Any:
+    """Return ``value`` with mappings and sequences converted into immutable views."""
+
+    if isinstance(value, FrozenReasoningStep):
+        return value
+    if isinstance(value, Mapping):
+        return MappingProxyType({str(key): _freeze_payload(val) for key, val in value.items()})
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return tuple(_freeze_payload(item) for item in value)
+    return value
+
+
+def _freeze_warning_entries(
+    warnings: Sequence[Any] | None,
+) -> tuple[Mapping[str, Any], ...]:
+    """Normalise warning telemetry into immutable mapping snapshots."""
+
+    if not warnings:
+        return ()
+
+    frozen_warnings: list[Mapping[str, Any]] = []
+    for warning in warnings:
+        if isinstance(warning, Mapping):
+            frozen_entry = cast(Mapping[str, Any], _freeze_payload(warning))
+            frozen_warnings.append(frozen_entry)
+    return tuple(frozen_warnings)
+
+
+def _strip_warning_banners(answer: str) -> str:
+    """Remove trailing warning banners prefixed with the caution glyph."""
+
+    if not answer:
+        return answer
+
+    lines = answer.splitlines()
+    trimmed = list(lines)
+
+    while trimmed:
+        candidate = trimmed[-1]
+        if not candidate.strip():
+            trimmed.pop()
+            continue
+        if candidate.lstrip().startswith("⚠️"):
+            trimmed.pop()
+            continue
+        break
+
+    return "\n".join(trimmed).rstrip()
+
+
 def _snapshot_scout_sample(sample_state: "QueryState", sample_index: int) -> Mapping[str, Any]:
     """Return an immutable snapshot of a scout sample for telemetry.
 
@@ -55,13 +106,28 @@ def _snapshot_scout_sample(sample_state: "QueryState", sample_index: int) -> Map
         if len(normalized):
             normalized_claims.append(normalized)
 
-    return FrozenReasoningStep(
-        {
-            "index": sample_index,
-            "answer": sample_state.results.get("final_answer"),
-            "claims": tuple(normalized_claims),
-        }
+    warnings_snapshot = _freeze_warning_entries(
+        cast(
+            Sequence[Any] | None,
+            sample_state.metadata.get("warnings") if isinstance(sample_state.metadata, Mapping) else None,
+        )
     )
+
+    answer_value = sample_state.results.get("final_answer")
+    if isinstance(answer_value, str):
+        answer_snapshot = _strip_warning_banners(answer_value)
+    else:
+        answer_snapshot = answer_value
+
+    payload: dict[str, Any] = {
+        "index": sample_index,
+        "answer": answer_snapshot,
+        "claims": tuple(normalized_claims),
+    }
+    if warnings_snapshot:
+        payload["warnings"] = warnings_snapshot
+
+    return MappingProxyType(payload)
 
 
 def _reduce_auto_mode_metadata(
@@ -321,7 +387,42 @@ class Orchestrator:
             if not decision.should_debate:
                 auto_meta["outcome"] = "direct_exit"
                 config.reasoning_mode = original_mode_setting
-                return scout_state.synthesize()
+                response = scout_state.synthesize()
+
+                raw_answer = cast(str, scout_state.results.get("final_answer", response.answer))
+                sanitized_answer = _strip_warning_banners(raw_answer)
+                response.answer = sanitized_answer
+                scout_state.results["final_answer"] = sanitized_answer
+                auto_meta["scout_answer"] = sanitized_answer
+
+                warning_entries = _freeze_warning_entries(response.warnings)
+                scout_state.metadata["warnings"] = warning_entries
+                if warning_entries:
+                    auto_meta["warnings"] = warning_entries
+                else:
+                    auto_meta.pop("warnings", None)
+
+                existing_samples = tuple(
+                    cast(
+                        Sequence[Mapping[str, Any]],
+                        scout_state.metadata.get("scout_samples", ()),
+                    )
+                )
+                refreshed_samples: tuple[Mapping[str, Any], ...]
+                if existing_samples:
+                    tail = existing_samples[1:]
+                    refreshed_samples = (_snapshot_scout_sample(scout_state, 0), *tail)
+                else:
+                    refreshed_samples = (_snapshot_scout_sample(scout_state, 0),)
+
+                scout_state.metadata["scout_samples"] = refreshed_samples
+                auto_meta["scout_samples"] = refreshed_samples
+                auto_meta["scout_sample_count"] = len(refreshed_samples)
+
+                response.metrics["auto_mode"] = auto_meta
+                response.metrics["scout_samples"] = refreshed_samples
+
+                return response
 
             auto_meta["outcome"] = "escalated"
             auto_meta["escalation_mode"] = ReasoningMode.DIALECTICAL.value

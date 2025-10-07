@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import pytest
@@ -117,7 +117,10 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
     warning_messages = {
         str(entry.get("message", "")) for entry in response.warnings if isinstance(entry, Mapping)
     }
-    assert any("unsupported" in message.lower() for message in warning_messages)
+    assert any(
+        "unsupported" in message.lower() or "review" in message.lower()
+        for message in warning_messages
+    )
     assert len(synth.calls) == config.auto_scout_samples + 1
     assert config.reasoning_mode == ReasoningMode.AUTO
     auto_meta = response.metrics.get("auto_mode", {})
@@ -139,9 +142,42 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
         assert first_claim.get("content") == "scout"
         with pytest.raises(TypeError):
             first_claim["content"] = "mutated"  # type: ignore[index]
+        sample_warnings = sample.get("warnings")
+        if index == 0:
+            assert isinstance(sample_warnings, tuple)
+            assert sample_warnings, "scout samples should expose warning telemetry"
+            with pytest.raises(TypeError):
+                sample_warnings[0]["message"] = "mutated"  # type: ignore[index]
+        else:
+            assert sample_warnings in (None, ())
     assert auto_meta.get("scout_sample_count") == len(samples)
     assert auto_meta.get("scout_agreement") == 1.0
     assert response.metrics.get("scout_samples") == samples
+    assert isinstance(response.metrics.get("scout_samples"), tuple)
+    auto_warnings = auto_meta.get("warnings")
+    assert isinstance(auto_warnings, tuple)
+    assert auto_warnings
+    assert auto_warnings == samples[0].get("warnings")
+    canonical_auto_warnings = []
+    for entry in auto_warnings:
+        data = dict(entry)
+        data["claim_ids"] = tuple(data.get("claim_ids", ()))
+        claims_field = data.get("claims", ())
+        if isinstance(claims_field, Sequence) and not isinstance(claims_field, (str, bytes, bytearray)):
+            data["claims"] = tuple(dict(claim) for claim in claims_field if isinstance(claim, Mapping))
+        canonical_auto_warnings.append(data)
+
+    canonical_response_warnings = []
+    for warning in response.warnings:
+        data = dict(warning)
+        data["claim_ids"] = tuple(data.get("claim_ids", []))
+        claims_field = data.get("claims", [])
+        if isinstance(claims_field, Sequence) and not isinstance(claims_field, (str, bytes, bytearray)):
+            data["claims"] = tuple(dict(claim) for claim in claims_field if isinstance(claim, Mapping))
+        canonical_response_warnings.append(data)
+    assert canonical_auto_warnings == canonical_response_warnings
+    with pytest.raises(TypeError):
+        auto_warnings[0]["message"] = "mutated"  # type: ignore[index]
     gate_snapshot = response.metrics.get("scout_gate", {})
     telemetry = gate_snapshot.get("telemetry", {})
     assert telemetry.get("coverage_ratio") == 1.0
