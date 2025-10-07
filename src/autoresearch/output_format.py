@@ -97,7 +97,7 @@ class DepthPayload:
     key_findings: list[str]
     citations: list[Any]
     claim_audits: list[dict[str, Any]]
-    reasoning: list[str]
+    reasoning: list[Any]
     metrics: dict[str, Any]
     raw_response: Optional[dict[str, Any]]
     task_graph: Optional[dict[str, Any]]
@@ -368,11 +368,14 @@ def _truncation_message(section: str, shown: int, total: int, depth: OutputDepth
     )
 
 
-def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
-    """Normalise reasoning steps into display strings."""
+def _stringify_reasoning(reasoning: Iterable[Any]) -> List[Any]:
+    """Normalise reasoning steps into display-friendly entries."""
 
-    steps: List[str] = []
+    steps: List[Any] = []
     for step in reasoning:
+        if step is None:
+            steps.append(None)
+            continue
         if isinstance(step, str):
             if step == "":
                 continue
@@ -392,7 +395,7 @@ def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
             else:
                 steps.append(json.dumps(step, ensure_ascii=False))
             continue
-        steps.append(str(step))
+        steps.append(step)
     return steps
 
 
@@ -940,11 +943,19 @@ def build_depth_payload(
     )
 
 
+_PLACEHOLDER_NULL_MARKER = "<!-- autoresearch:null -->"
+_PLACEHOLDER_EMPTY_MARKER = "<!-- autoresearch:empty -->"
+
+
 def _json_safe(value: Any) -> Any:
     """Convert values into JSON-serialisable structures."""
 
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
+    if isinstance(value, BaseModel):
+        return _json_safe(value.model_dump(mode="json"))
+    if isinstance(value, Path):
+        return str(value)
     if isinstance(value, Mapping):
         return {str(k): _json_safe(v) for k, v in value.items()}
     if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
@@ -968,15 +979,23 @@ def _format_list_markdown(items: Iterable[Any]) -> str:
 
     lines: list[str] = []
     for item in items:
-        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
-            item, block_multiline=True
-        )
-        if is_placeholder:
-            continue
+        annotation = ""
+        if item is None:
+            sanitized = "—"
+            needs_block = False
+            is_placeholder = True
+            annotation = _PLACEHOLDER_NULL_MARKER
+        else:
+            sanitized, needs_block, is_placeholder = _prepare_markdown_text(
+                item, block_multiline=True
+            )
+            if is_placeholder:
+                annotation = _PLACEHOLDER_EMPTY_MARKER
         if needs_block:
             lines.extend(_fenced_block("- ", sanitized))
         else:
-            lines.append(f"- {sanitized}")
+            display = sanitized if not is_placeholder else "—"
+            lines.append(f"- {display}{annotation}")
     return "\n".join(lines)
 
 
@@ -1008,27 +1027,43 @@ def _format_citations_plain(citations: Iterable[Any]) -> str:
     return _format_list_plain(citations)
 
 
-def _format_reasoning_markdown(reasoning: Iterable[str]) -> str:
+def _format_reasoning_markdown(reasoning: Iterable[Any]) -> str:
     """Format reasoning trace for markdown output."""
 
     lines: list[str] = []
     for idx, step in enumerate(reasoning, start=1):
-        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
-            step, block_multiline=True
-        )
-        if is_placeholder:
-            continue
-        if needs_block:
-            lines.extend(_fenced_block(f"{idx}. ", sanitized))
+        annotation = ""
+        if step is None:
+            sanitized = "—"
+            needs_block = False
+            is_placeholder = True
+            annotation = _PLACEHOLDER_NULL_MARKER
         else:
-            lines.append(f"{idx}. {sanitized}")
+            sanitized, needs_block, is_placeholder = _prepare_markdown_text(
+                step, block_multiline=True
+            )
+            if is_placeholder:
+                annotation = _PLACEHOLDER_EMPTY_MARKER
+        if needs_block:
+            block_lines = _fenced_block(f"{idx}. ", sanitized)
+            if annotation:
+                block_lines[-1] = f"{block_lines[-1]}{annotation}"
+            lines.extend(block_lines)
+        else:
+            display = sanitized if not is_placeholder else "—"
+            lines.append(f"{idx}. {display}{annotation}")
     return "\n".join(lines)
 
 
-def _format_reasoning_plain(reasoning: Iterable[str]) -> str:
+def _format_reasoning_plain(reasoning: Iterable[Any]) -> str:
     """Format reasoning trace for plain text output."""
 
-    values = [f"{idx + 1}. {step}" for idx, step in enumerate(reasoning)]
+    values: list[str] = []
+    for idx, step in enumerate(reasoning):
+        if step is None:
+            values.append(f"{idx + 1}. —")
+        else:
+            values.append(f"{idx + 1}. {step}")
     return "\n".join(values)
 
 
