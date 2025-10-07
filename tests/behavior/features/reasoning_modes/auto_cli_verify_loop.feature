@@ -42,3 +42,10 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     And the CLI key findings should omit unsupported claims
     And the CLI answer should remain free of warning prefixes
     And the CLI response should expose structured unsupported warnings
+
+  Scenario: AUTO cache hit preserves sanitized answers without warning banners
+    When I run the AUTO reasoning CLI for query "unsupported debate rehearsal"
+    And I rerun the AUTO reasoning CLI for query "unsupported debate rehearsal" using cached results
+    Then the CLI answer should remain free of warning prefixes
+    And the CLI response should expose structured unsupported warnings
+    And the AUTO metrics should indicate a cached answer reuse

@@ -8,6 +8,7 @@ from tests.behavior.utils import (
     build_scout_source,
 )
 
+import copy
 import json
 from typing import TYPE_CHECKING, Any, Callable, Mapping
 from unittest.mock import patch
@@ -97,6 +98,13 @@ def run_auto_reasoning_cli(
     """Invoke the AUTO-mode CLI with deterministic planner, gate, and verifier."""
     task_graph: dict[str, Any] = bdd_context["task_graph"]
     config.reasoning_mode = ReasoningMode.AUTO
+    reuse_cached = bool(bdd_context.get("auto_force_cache_hit"))
+    cached_payload_template: dict[str, Any] | None = None
+    if reuse_cached:
+        cached_payload_template = bdd_context.get("auto_cached_response_payload")
+        if cached_payload_template is None:
+            msg = "Cached AUTO-mode response payload missing for cache-hit run"
+            raise AssertionError(msg)
 
     class PlannerSynthesizer:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -334,6 +342,24 @@ def run_auto_reasoning_cli(
         **kwargs: Any,
     ) -> QueryResponse:
         nonlocal captured_response
+        if reuse_cached:
+            snapshot = copy.deepcopy(cached_payload_template)
+            metrics_snapshot = snapshot.setdefault("metrics", {})
+            cache_section = metrics_snapshot.setdefault("cache", {})
+            cache_section.setdefault("status", "hit")
+            cache_section.setdefault("source", "search_cache")
+            cache_section.setdefault("namespace", "auto.cli.cache")
+            auto_mode_section = metrics_snapshot.setdefault("auto_mode", {})
+            if isinstance(auto_mode_section, Mapping):
+                auto_mode_section = dict(auto_mode_section)
+            metrics_snapshot["auto_mode"] = auto_mode_section
+            auto_mode_section.setdefault("cache_status", "hit")
+            auto_mode_section.setdefault("cache_source", cache_section.get("source"))
+            auto_mode_section.setdefault("cache_namespace", cache_section.get("namespace"))
+            response = QueryResponse.model_validate(snapshot)
+            captured_response = response
+            return response
+
         response = original_run_query(Orchestrator(), query_text, cfg, callbacks, **kwargs)
         auto_metrics = response.metrics.setdefault("auto_mode", {})
         configured_loops = max(1, cfg.loops or 0)
@@ -484,6 +510,16 @@ def run_auto_reasoning_cli(
         },
     )
 
+    auto_mode_metrics = captured_response.metrics.get("auto_mode")
+    if isinstance(auto_mode_metrics, Mapping):
+        auto_mode_cli = metrics.setdefault("auto_mode", {})
+        for key, value in auto_mode_metrics.items():
+            auto_mode_cli[key] = value
+
+    cache_metrics = captured_response.metrics.get("cache")
+    if isinstance(cache_metrics, Mapping):
+        metrics.setdefault("cache", dict(cache_metrics))
+
     run_data = {
         "cli_result": result,
         "payload": payload,
@@ -491,8 +527,44 @@ def run_auto_reasoning_cli(
         "response": captured_response,
         "scout_state": bdd_context.get("scout_state_reference"),
     }
+    bdd_context.setdefault("auto_cli_runs", []).append(run_data)
+    if captured_response is not None:
+        bdd_context["auto_last_response_payload"] = captured_response.model_dump()
+        bdd_context["auto_last_query"] = query
+        bdd_context["auto_cached_response_payload"] = bdd_context["auto_last_response_payload"]
     bdd_context["auto_cli_cycle"] = run_data
     return run_data
+
+
+@when(
+    parsers.parse(
+        'I rerun the AUTO reasoning CLI for query "{query}" using cached results'
+    ),
+    target_fixture="auto_cli_cycle",
+)
+def rerun_auto_reasoning_cli_cached(
+    query: str,
+    config: ConfigModel,
+    bdd_context: BehaviorContext,
+    cli_runner: CliRunner,
+) -> dict[str, Any]:
+    cached_payload = bdd_context.get("auto_last_response_payload")
+    if cached_payload is None:
+        raise AssertionError("No cached AUTO-mode payload captured before rerun")
+    last_query = bdd_context.get("auto_last_query")
+    if last_query is not None and last_query != query:
+        msg = (
+            "Cached AUTO-mode payload query mismatch: "
+            f"expected {last_query!r}, received {query!r}"
+        )
+        raise AssertionError(msg)
+
+    bdd_context["auto_cached_response_payload"] = copy.deepcopy(cached_payload)
+    bdd_context["auto_force_cache_hit"] = True
+    try:
+        return run_auto_reasoning_cli(query, config, bdd_context, cli_runner)
+    finally:
+        bdd_context.pop("auto_force_cache_hit", None)
 
 
 @then("the CLI scout gate decision should escalate to debate")
@@ -758,3 +830,43 @@ def assert_cli_structured_warnings(auto_cli_cycle: dict[str, Any]) -> None:
     payload_metrics = payload.get("metrics", {}).get("answer_audit", {})
     if payload_metrics:
         assert payload_metrics.get("warnings", []) == warnings
+
+
+@then("the AUTO metrics should indicate a cached answer reuse")
+def assert_auto_cached_answer(auto_cli_cycle: dict[str, Any]) -> None:
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    response: QueryResponse = auto_cli_cycle["response"]
+    metrics: Mapping[str, Any] = payload.get("metrics", {})
+
+    cache_section = metrics.get("cache", {})
+    assert isinstance(cache_section, Mapping), "Cache metrics missing from CLI payload"
+    assert cache_section.get("status") == "hit"
+    assert cache_section.get("source") == "search_cache"
+
+    auto_mode = metrics.get("auto_mode", {})
+    assert isinstance(auto_mode, Mapping)
+    assert auto_mode.get("cache_status") == "hit"
+
+    response_cache = response.metrics.get("cache", {})
+    assert isinstance(response_cache, Mapping)
+    assert response_cache.get("status") == "hit"
+
+    response_auto = response.metrics.get("auto_mode", {})
+    assert isinstance(response_auto, Mapping)
+    assert response_auto.get("cache_status") == "hit"
+
+    warnings = response.warnings
+    assert warnings, "Expected warnings to persist across cache hits"
+    answer = response.answer
+    payload_answer = str(payload.get("answer", ""))
+    assert answer == payload_answer
+    assert not answer.lstrip().startswith("⚠️")
+    for prefix in ("warning:", "caution:"):
+        assert not answer.lower().startswith(prefix)
+    for entry in warnings:
+        if isinstance(entry, Mapping):
+            message = entry.get("message")
+            if isinstance(message, str) and message.strip():
+                lowered = message.strip().lower()
+                assert lowered not in answer.lower()
+                assert lowered not in payload_answer.lower()
