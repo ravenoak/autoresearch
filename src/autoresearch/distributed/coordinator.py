@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import contextlib
 import multiprocessing
-from multiprocessing.managers import ListProxy, SyncManager
 from multiprocessing.synchronize import Event
 from typing import Any, cast
 
@@ -92,11 +91,12 @@ class ResultAggregator(multiprocessing.Process):
         queue: Message queue carrying result dictionaries.
     """
 
-    def __init__(self, queue: MessageQueueProtocol) -> None:
+    def __init__(self, queue: MessageQueueProtocol, child_conn: multiprocessing.connection.Connection) -> None:
         super().__init__(daemon=True)
         self._queue = queue
-        self._manager: SyncManager = multiprocessing.Manager()
-        self.results = cast(ListProxy[AgentResultMessage], self._manager.list())
+        self._child_conn = child_conn
+        self._parent_conn: multiprocessing.connection.Connection | None = None
+        self._results: list[AgentResultMessage] = []
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         try:
@@ -109,11 +109,40 @@ class ResultAggregator(multiprocessing.Process):
                 if action == "stop":
                     break
                 if action == "agent_result":
-                    self.results.append(cast(AgentResultMessage, msg))
+                    result_msg = cast(AgentResultMessage, msg)
+                    self._child_conn.send(result_msg)
         finally:
             with contextlib.suppress(Exception):
                 self._queue.close()
                 self._queue.join_thread()
+                self._child_conn.close()
+
+    def get_results(self) -> list[AgentResultMessage]:
+        """Get all available results from the aggregator."""
+        results = []
+        if self._parent_conn is not None:
+            while self._parent_conn.poll():
+                try:
+                    results.append(self._parent_conn.recv())
+                except EOFError:
+                    break
+        return results
+
+    @property
+    def results(self) -> list[AgentResultMessage]:
+        """Get current results (for backward compatibility)."""
+        # If parent_conn is not set (for testing), return internal results
+        if self._parent_conn is None:
+            return self._results
+        # Drain the queue and return all available results
+        current_results = self.get_results()
+        self._results.extend(current_results)
+        return self._results
+
+    @results.setter
+    def results(self, value: list[AgentResultMessage] | Any) -> None:
+        """Set results (for testing compatibility)."""
+        self._results = list(value) if value else []
 
 
 def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, BrokerType]:
@@ -168,6 +197,9 @@ def start_result_aggregator(config: ConfigModel) -> tuple[ResultAggregator, Brok
 
     dist_cfg = config.distributed_config
     broker = get_message_broker(getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None))
-    aggregator = ResultAggregator(broker.queue)
+    # Create pipe for result communication
+    parent_conn, child_conn = multiprocessing.Pipe()
+    aggregator = ResultAggregator(broker.queue, child_conn)
+    aggregator._parent_conn = parent_conn  # Store parent end in main process
     aggregator.start()
     return aggregator, broker

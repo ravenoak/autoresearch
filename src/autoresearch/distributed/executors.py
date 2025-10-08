@@ -223,7 +223,7 @@ class RayExecutor:
         state = QueryState(query=query, primus_index=getattr(self.config, "primus_start", 0))
         for loop in range(self.config.loops):
             if self.result_aggregator:
-                self.result_aggregator.results[:] = []
+                self.result_aggregator.get_results()  # Clear any pending results
         remote_executor: RemoteFunction[AgentResultMessage] = _execute_agent_remote
         futures: list[RayObjectRef[AgentResultMessage]] = [
             remote_executor.remote(
@@ -240,8 +240,7 @@ class RayExecutor:
         remote_results = cast(list[AgentResultMessage], ray.get(futures))
         results: list[AgentResultMessage]
         if self.result_aggregator:
-            results = list(self.result_aggregator.results)
-            self.result_aggregator.results[:] = []
+            results = self.result_aggregator.get_results()
         else:
             results = remote_results
 
@@ -306,7 +305,7 @@ class ProcessExecutor:
         ctx = multiprocessing.get_context("spawn")
         for loop in range(self.config.loops):
             if self.result_aggregator:
-                self.result_aggregator.results[:] = []
+                self.result_aggregator.get_results()  # Clear any pending results
             with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
                 results: list[AgentResultMessage] = pool.starmap(
                     _execute_agent_process,
@@ -323,11 +322,9 @@ class ProcessExecutor:
                 )
             aggregated: list[AgentResultMessage]
             if self.result_aggregator:
-                aggregated = list(self.result_aggregator.results)
+                aggregated = self.result_aggregator.get_results()
             else:
                 aggregated = results
-            if self.result_aggregator:
-                self.result_aggregator.results[:] = []
             for res in aggregated:
                 state.update(res["result"])
                 if self.broker:
