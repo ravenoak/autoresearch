@@ -18,6 +18,20 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 8, 2025
+- Normalised the cache helpers to use Python 3.12 generics and tightened the
+  import grouping so `src/autoresearch/cache.py` and the search cache adapters
+  expose consistent tuple/list types without relying on legacy typing aliases.
+  【F:src/autoresearch/cache.py†L1-L237】【F:src/autoresearch/search/cache.py†L1-L78】
+- Extended the `tests/conftest.pyi` stub with the
+  `enforce_future_annotations_import_order` helper signature so `task check`
+  reaches pytest after the mypy stage.【F:tests/conftest.pyi†L1-L11】
+- Archived clean lint and quick-gate sweeps at
+  `baseline/logs/flake8-pre-20251008T052638Z.log`,
+  `baseline/logs/flake8-post-20251008T052920Z.log`, and
+  `baseline/logs/task-check-20251008T052920Z.log`, confirming the cache and
+  orchestration style cleanup leaves the fast gate green.【F:baseline/logs/flake8-pre-20251008T052638Z.log†L1-L1】【F:baseline/logs/flake8-post-20251008T052920Z.log†L1-L1】【F:baseline/logs/task-check-20251008T052920Z.log†L1-L12】
+
 ## October 7, 2025
 - Ran `uv run mypy --strict src tests` at **16:42 UTC** and the sweep still
   reports “Success: no issues found in 797 source files,” confirming PR-L0a’s

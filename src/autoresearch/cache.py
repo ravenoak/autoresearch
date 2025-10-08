@@ -9,15 +9,15 @@ backwards compatibility, and thin wrapper functions mirror the original API.
 
 from __future__ import annotations
 
+import json
 import os
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from hashlib import blake2b
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
-
-import json
+from typing import Any, cast
 
 from tinydb import TinyDB, Query
 
@@ -28,9 +28,9 @@ _db_path: Path = Path(os.getenv("TINYDB_PATH", "cache.json"))
 class SearchCache:
     """TinyDB-backed cache that can be instantiated per test or service."""
 
-    def __init__(self, db_path: Optional[str] = None, *, namespace: str | None = None) -> None:
+    def __init__(self, db_path: str | None = None, *, namespace: str | None = None) -> None:
         self._db_lock = Lock()
-        self._db: Optional[TinyDB] = None
+        self._db: TinyDB | None = None
         self._namespace = namespace or "__default__"
         # Use a per-instance ephemeral path under pytest to avoid cross-test leakage
         if db_path is None and os.environ.get("PYTEST_CURRENT_TEST"):
@@ -43,7 +43,7 @@ class SearchCache:
         # Eagerly initialise so the file exists for tests
         self.setup()
 
-    def setup(self, db_path: Optional[str] = None) -> TinyDB:
+    def setup(self, db_path: str | None = None) -> TinyDB:
         """Initialise the TinyDB instance if needed."""
         with self._db_lock:
             path = Path(db_path) if db_path is not None else self._db_path
@@ -72,7 +72,7 @@ class SearchCache:
         self,
         query: str,
         backend: str,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         *,
         namespace: str | None = None,
     ) -> None:
@@ -97,7 +97,7 @@ class SearchCache:
         backend: str,
         *,
         namespace: str | None = None,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """Retrieve cached search results for a query/backend pair."""
         db = self.get_db()
         ns = self._resolve_namespace(namespace)
@@ -106,9 +106,9 @@ class SearchCache:
             & (Query().query == query)
             & (Query().backend == backend)
         )
-        row = cast(Optional[Dict[str, Any]], db.get(condition))
+        row = cast(dict[str, Any] | None, db.get(condition))
         if row:
-            results_raw = cast(List[Dict[str, Any]], row.get("results", []))
+            results_raw = cast(list[dict[str, Any]], row.get("results", []))
             return deepcopy(results_raw)
         return None
 
@@ -125,7 +125,7 @@ class SearchCache:
         table = db.table("_default")
         table.remove(Query().namespace == ns)
 
-    def namespaced(self, namespace: str | None) -> "SearchCache | _SearchCacheView":
+    def namespaced(self, namespace: str | None) -> SearchCache | _SearchCacheView:
         """Return a view of this cache that isolates entries to ``namespace``."""
 
         if not namespace:
@@ -139,13 +139,13 @@ class CacheKey:
 
     primary: str
     legacy: str
-    aliases: Tuple[str, ...] = ()
-    fingerprint: Optional[str] = None
+    aliases: tuple[str, ...] = ()
+    fingerprint: str | None = None
 
-    def candidates(self) -> Tuple[str, ...]:
+    def candidates(self) -> tuple[str, ...]:
         """Return key variants to attempt during cache lookups."""
 
-        seen: List[str] = []
+        seen: list[str] = []
         for candidate in (self.primary, *self.aliases, self.legacy):
             if candidate in seen:
                 continue
@@ -245,7 +245,7 @@ class _SearchCacheView:
         self._namespace = namespace
 
     def cache_results(
-        self, query: str, backend: str, results: List[Dict[str, Any]]
+        self, query: str, backend: str, results: list[dict[str, Any]]
     ) -> None:
         self._base.cache_results(
             query,
@@ -256,7 +256,7 @@ class _SearchCacheView:
 
     def get_cached_results(
         self, query: str, backend: str
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         return self._base.get_cached_results(
             query,
             backend,
@@ -266,7 +266,7 @@ class _SearchCacheView:
     def clear(self) -> None:
         self._base.clear(namespace=self._namespace)
 
-    def setup(self, db_path: Optional[str] = None) -> TinyDB:
+    def setup(self, db_path: str | None = None) -> TinyDB:
         return self._base.setup(db_path)
 
     def teardown(self, remove_file: bool = False) -> None:
@@ -275,7 +275,7 @@ class _SearchCacheView:
     def get_db(self) -> TinyDB:
         return self._base.get_db()
 
-    def namespaced(self, namespace: str | None) -> "SearchCache | _SearchCacheView":
+    def namespaced(self, namespace: str | None) -> SearchCache | _SearchCacheView:
         return self._base.namespaced(namespace)
 
     @property
@@ -303,7 +303,7 @@ def get_cache() -> SearchCache:
 # Backwards compatible functional API
 
 
-def setup(db_path: Optional[str] = None) -> TinyDB:  # pragma: no cover - legacy
+def setup(db_path: str | None = None) -> TinyDB:  # pragma: no cover - legacy
     return get_cache().setup(db_path)
 
 
@@ -315,11 +315,11 @@ def get_db() -> TinyDB:  # pragma: no cover - legacy
     return get_cache().get_db()
 
 
-def cache_results(query: str, backend: str, results: List[Dict[str, Any]]) -> None:
+def cache_results(query: str, backend: str, results: list[dict[str, Any]]) -> None:
     get_cache().cache_results(query, backend, results)
 
 
-def get_cached_results(query: str, backend: str) -> Optional[List[Dict[str, Any]]]:
+def get_cached_results(query: str, backend: str) -> list[dict[str, Any]] | None:
     return get_cache().get_cached_results(query, backend)
 
 

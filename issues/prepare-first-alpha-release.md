@@ -1,6 +1,15 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 05:29 UTC** the search/cache lint cleanup swapped the
+legacy typing aliases for Python 3.12 generics, tightened cache slot helpers,
+and extended the collection hygiene stub so `uv run task check` reaches pytest
+with the guard exported. The paired flake8 pre/post sweeps and the refreshed
+quick gate log are archived at
+`baseline/logs/flake8-pre-20251008T052638Z.log`,
+`baseline/logs/flake8-post-20251008T052920Z.log`, and
+`baseline/logs/task-check-20251008T052920Z.log`, giving PR-L0c coverage for the
+recent search, cache, and orchestrator merges.【F:src/autoresearch/cache.py†L1-L237】【F:src/autoresearch/search/cache.py†L1-L78】【F:tests/conftest.pyi†L1-L11】【F:baseline/logs/flake8-pre-20251008T052638Z.log†L1-L1】【F:baseline/logs/flake8-post-20251008T052920Z.log†L1-L1】【F:baseline/logs/task-check-20251008T052920Z.log†L1-L12】
 As of **October 8, 2025 at 05:05 UTC** the quick gate remains green: a fresh
 `uv run task check` sweep passes end-to-end, and the log is archived at
 `baseline/logs/task-check-20251008T050445Z.log` for reference alongside the
