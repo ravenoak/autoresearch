@@ -321,6 +321,8 @@ PARSERS_AVAILABLE = _module_available("pdfminer")
 LLM_AVAILABLE = _module_available("fastembed")
 UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("spacy")
+
+
 def _gpu_available() -> bool:
     """Check if GPU dependencies (BERTopic) are actually available."""
     try:
@@ -329,6 +331,7 @@ def _gpu_available() -> bool:
         return hasattr(BERTopic, '__version__') and BERTopic.__version__ != "0.0"
     except Exception:
         return False
+
 
 GPU_AVAILABLE = _gpu_available()
 

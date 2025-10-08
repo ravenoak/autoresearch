@@ -1,6 +1,17 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 03:58 UTC** the lint fallout around misplaced future
+imports is cleared: every module called out in the October 6 verify log now
+starts with `from __future__ import annotations`, and the redundant pytest
+imports added in follow-up merges have been removed.
+【F:tests/unit/distributed/test_coordination_properties.py†L1-L13】
+【F:tests/unit/monitor/test_metrics_endpoint.py†L1-L15】
+【F:tests/unit/storage/test_backup_scheduler.py†L1-L15】
+【F:tests/unit/api/test_api_llm.py†L1-L12】【F:tests/unit/api/test_routes.py†L1-L24】
+`uv run flake8 tests` now returns cleanly, and the refreshed quick-gate sweep is
+archived at `baseline/logs/task-check-20251008T035856Z.log` for release
+evidence.【49c894†L1-L2】【F:baseline/logs/task-check-20251008T035856Z.log†L1-L36】
 As of **October 7, 2025 at 16:42 UTC** strict typing remains green while pytest
 collection still fails. `uv run mypy --strict src tests` reports “Success: no
 issues found in 797 source files,” but `uv run --extra test pytest -q` halts on
@@ -148,9 +159,13 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   【27806b†L1-L1】【7b397e†L1-L9】
 - [ ] Land **PR-O1** – preserve OutputFormatter fidelity for control
   characters and whitespace across JSON and markdown outputs.
-- [ ] Land **PR-L0b** – move `from __future__ import annotations` to the top of
+- [x] Land **PR-L0b** – move `from __future__ import annotations` to the top of
   each failing test module, deduplicate standard-library imports, and rerun
   `uv run task check` to confirm the quick gate is green again.
+  【F:tests/unit/distributed/test_coordination_properties.py†L1-L13】
+  【F:tests/unit/monitor/test_metrics_endpoint.py†L1-L15】
+  【F:tests/unit/storage/test_backup_scheduler.py†L1-L15】
+  【49c894†L1-L2】【F:baseline/logs/task-check-20251008T035856Z.log†L1-L36】
 - [x] Land **PR-L1** – redirect legacy imports to the repository `scripts/`
   modules, switch to the shared unit typing helpers, and refresh the scheduler
   benchmark baseline with provenance metadata.【F:tests/unit/legacy/test_check_env_warnings.py†L13-L22】
