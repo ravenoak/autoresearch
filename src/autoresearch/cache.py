@@ -18,11 +18,15 @@ from hashlib import blake2b
 from pathlib import Path
 from threading import Lock
 from typing import Any, cast
+import re
 
 from tinydb import TinyDB, Query
 
 
 _db_path: Path = Path(os.getenv("TINYDB_PATH", "cache.json"))
+
+
+_WHITESPACE_PATTERN = re.compile(r"\s+")
 
 
 class SearchCache:
@@ -156,14 +160,15 @@ class CacheKey:
 def hash_cache_dimensions(
     *,
     namespace: str | None,
-    normalized_query: str,
+    canonical_query: str,
     embedding_signature: Sequence[str],
     hybrid_flags: Sequence[str],
     storage_hints: Sequence[str],
 ) -> str:
-    """Return a hash fingerprint for the shared cache dimensions."""
+    """Return a hash fingerprint derived from the canonical query dimensions."""
 
     ns = namespace or "__default__"
+    normalized_query = canonicalize_query_text(canonical_query)
     payload = {
         "flags": sorted(hybrid_flags) if hybrid_flags else ["none"],
         "namespace": ns,
@@ -188,6 +193,7 @@ def build_cache_key(
     """Return hashed and legacy cache keys for search result caching."""
 
     ns = namespace or "__default__"
+    canonical_query = canonicalize_query_text(normalized_query)
     emb_segment = ",".join(sorted(embedding_signature)) or "__none__"
     flag_segment = ",".join(sorted(hybrid_flags)) if hybrid_flags else "none"
     embedding_state_value = embedding_state or "none"
@@ -195,7 +201,7 @@ def build_cache_key(
     legacy = "|".join(
         (
             f"backend={backend}",
-            f"query={normalized_query}",
+            f"query={canonical_query}",
             f"emb_backends={emb_segment}",
             f"embedding={embedding_state_value}",
             f"flags={flag_segment}",
@@ -204,7 +210,7 @@ def build_cache_key(
 
     fingerprint = hash_cache_dimensions(
         namespace=ns,
-        normalized_query=normalized_query,
+        canonical_query=canonical_query,
         embedding_signature=embedding_signature,
         hybrid_flags=hybrid_flags,
         storage_hints=storage_hints,
@@ -225,7 +231,7 @@ def build_cache_key(
         "embedding": embedding_state_value,
         "flags": sorted(hybrid_flags) if hybrid_flags else ["none"],
         "namespace": ns,
-        "query": normalized_query,
+        "query": canonical_query,
         "storage": sorted(storage_hints) if storage_hints else ["none"],
         "signature": sorted(embedding_signature),
     }
@@ -235,6 +241,13 @@ def build_cache_key(
     aliases = (alias,) if alias != primary else ()
 
     return CacheKey(primary=primary, legacy=legacy, aliases=aliases, fingerprint=fingerprint)
+
+
+def canonicalize_query_text(query: str) -> str:
+    """Return the canonical representation for query-derived cache keys."""
+
+    collapsed = _WHITESPACE_PATTERN.sub(" ", query.strip())
+    return collapsed.lower()
 
 
 class _SearchCacheView:

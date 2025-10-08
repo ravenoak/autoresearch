@@ -52,7 +52,10 @@ and hybrid queries and exposes a CLI entry point. See the
 
 ## Cache Contract
 
-- `autoresearch.cache.hash_cache_dimensions` hashes the normalized query,
+- `autoresearch.cache.canonicalize_query_text` collapses whitespace and
+  lowercases queries before fingerprinting so cache keys ignore superficial
+  formatting differences.
+- `autoresearch.cache.hash_cache_dimensions` hashes the canonical query,
   namespace, embedding signature, hybrid toggles, and storage hints into a
   deterministic fingerprint shared by all cache consumers.
 - `autoresearch.cache.build_cache_key` combines the fingerprint with backend
@@ -63,6 +66,9 @@ and hybrid queries and exposes a CLI entry point. See the
   the primary hash, all aliases, and the legacy key, upgrading any legacy or v2
   hits to the new fingerprint so sequential requests survive hybrid toggles,
   storage hint changes, and historical cache snapshots.
+- Hybrid enrichment pushes canonical and raw canonical query text to the
+  diagnostics context so embedding augmentation remains deterministic for every
+  query variant that resolves to the same canonical form.
 
 ## Public API
 

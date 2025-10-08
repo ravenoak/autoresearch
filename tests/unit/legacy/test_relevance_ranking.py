@@ -457,16 +457,37 @@ def test_external_lookup_uses_cache(texts, namespace):
         with patch("autoresearch.search.core.get_config", return_value=cfg):
             search = Search(cache=cache)
             search.backends = {"mock": backend}
+            observed_fingerprints: set[str] = set()
+            original_cache_documents = search._cache_documents
 
-            bundle = search.external_lookup(raw_query, max_results=3, return_handles=True)
-            canonical_payload = {
-                "text": raw_query,
-                "raw_query": bundle.raw_query,
-                "executed_query": bundle.executed_query,
-                "canonical_query": bundle.query,
-                "raw_canonical_query": bundle.raw_canonical_query,
-            }
-            second = search.external_lookup(canonical_payload, max_results=3)
+            def _record_cache_documents(cache_key, *args, **kwargs):
+                if cache_key.fingerprint is not None:
+                    observed_fingerprints.add(cache_key.fingerprint)
+                return original_cache_documents(cache_key, *args, **kwargs)
+
+            search._cache_documents = _record_cache_documents
+            try:
+                bundle = search.external_lookup(
+                    raw_query, max_results=3, return_handles=True
+                )
+                canonical_payload = {
+                    "text": raw_query,
+                    "raw_query": bundle.raw_query,
+                    "executed_query": bundle.executed_query,
+                    "canonical_query": bundle.query,
+                    "raw_canonical_query": bundle.raw_canonical_query,
+                }
+                second = search.external_lookup(canonical_payload, max_results=3)
+            finally:
+                search._cache_documents = original_cache_documents
+
+    canonical_forms = {
+        Search._normalise_cache_query(raw_query),
+        bundle.query,
+        Search._normalise_cache_query(bundle.executed_query),
+    }
+    assert backend.call_count == len(canonical_forms)
+    assert backend.call_count == len(observed_fingerprints)
 
     assert backend.call_count == 1
     assert list(bundle) == bundle.results
