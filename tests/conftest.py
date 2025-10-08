@@ -97,16 +97,26 @@ def find_future_annotations_import_violations(
     return violations
 
 
-def pytest_sessionstart(session: pytest.Session) -> None:  # pragma: no cover - exercised in CI
+def enforce_future_annotations_import_order(
+    paths: Iterable[Path] | None = None,
+) -> None:
+    """Raise ``pytest.UsageError`` when modules import before the future directive."""
+
+    violations = find_future_annotations_import_violations(paths)
+    if not violations:
+        return
+
+    formatted = "\n- ".join(violations)
+    message = (
+        "Modules must place `from __future__ import annotations` before other imports:"
+        f"\n- {formatted}"
+    )
+    raise pytest.UsageError(message)
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
     del session
-    violations = find_future_annotations_import_violations()
-    if violations:
-        formatted = "\n- ".join(violations)
-        message = (
-            "Modules must place `from __future__ import annotations` before other imports:"
-            f"\n- {formatted}"
-        )
-        raise pytest.UsageError(message)
+    enforce_future_annotations_import_order()
 
 
 shared_memory: ModuleType | None

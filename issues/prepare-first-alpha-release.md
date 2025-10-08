@@ -5,11 +5,11 @@ As of **October 8, 2025 at 05:05 UTC** the quick gate remains green: a fresh
 `uv run task check` sweep passes end-to-end, and the log is archived at
 `baseline/logs/task-check-20251008T050445Z.log` for reference alongside the
 verify fallout noted below.【F:baseline/logs/task-check-20251008T050445Z.log†L1-L59】
-As of **October 8, 2025 at 04:21 UTC** the collection hygiene guard now runs
-during every pytest invocation, failing fast when imports precede
-`from __future__ import annotations`. Unit coverage exercises both failing and
-passing scenarios and the test README documents the policy so contributors know
-how to remediate violations.【F:tests/conftest.py†L1-L132】【F:tests/unit/test_collection_hygiene.py†L1-L34】【F:tests/README.md†L37-L42】
+As of **October 8, 2025 at 05:10 UTC** the collection hygiene guard exposes an
+`enforce_future_annotations_import_order` helper, has unit tests asserting the
+resulting `pytest.UsageError`, documents the workflow, and now runs as part of
+the quick-gate smoke suite so regressions surface in `uv run task check`.
+【F:tests/conftest.py†L1-L140】【F:tests/unit/test_collection_hygiene.py†L1-L52】【F:tests/README.md†L33-L44】【F:Taskfile.yml†L58-L72】
 
 As of **October 8, 2025 at 03:58 UTC** the lint fallout around misplaced future
 imports is cleared: every module called out in the October 6 verify log now
