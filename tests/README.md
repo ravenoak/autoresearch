@@ -36,12 +36,10 @@ artifacts are created under `tmp_path` and cleaned automatically.
 
 ## Import hygiene guard
 
-- `tests/unit/legacy/test_future_import_hygiene.py` enforces that any module
-  containing `from __future__ import annotations` places it immediately after
-  the optional module docstring.
-- When creating new modules, add the future import before other imports to keep
-  pytest collection green; the quick gate fails fast if a standard-library
-  import appears before the `__future__` directive.
-- Run `uv run --extra test pytest -k future_import_hygiene -q` to validate the
-  guard locally before committing.
+- `tests/conftest.py` runs a collection-time check that fails when a module
+  imports anything before `from __future__ import annotations`.
+- `tests/unit/test_collection_hygiene.py` provides unit coverage by simulating
+  both offending and valid modules.
+- `uv run task check` triggers the guard through its pytest smoke tests; run
+  `uv run pytest tests/unit/test_collection_hygiene.py -q` for a focused audit.
 
