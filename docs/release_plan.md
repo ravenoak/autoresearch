@@ -40,6 +40,23 @@ analysis extras (`hdbscan==0.8.40` is the first build) and was aborted to avoid
 spending the release window on optional wheels; the partial log is archived for
 the follow-up sweep once lint is stable.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 
+On **2025-10-08 at 15:11 UTC** the full `uv run task release:alpha` sweep
+advanced through lint, strict typing, spec linting, release metadata checks,
+and packaging, then halted during the coverage stage when the concurrent
+handling check in `tests/unit/legacy/test_a2a_interface.py` failed its timing
+assertion. The transcript and checksum live at
+`baseline/logs/release-alpha-dry-run-20251008T151148Z.log` and
+`baseline/logs/release-alpha-dry-run-20251008T151148Z.sha256` for follow-up
+triage.【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
+To confirm the TestPyPI stage still works end-to-end, we separately invoked
+`uv run python scripts/publish_dev.py --dry-run` at **15:15 UTC**; the command
+built both the sdist and wheel artefacts and recorded the dry-run skip along
+with a checksum. The artefacts live under
+`baseline/logs/testpypi-dry-run-20251008T151539Z.*` for reuse during the next
+release attempt.【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】
+The paired checksum document captures the log digest for auditors.
+【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+
 The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now marks
 PR-S1 (deterministic search stubs), PR-S2 (namespace-aware cache keys), and
 PR-R0 (AUTO-mode claim hydration) as complete while promoting lint repair,
@@ -156,9 +173,12 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
   resume once verify and coverage pass.
   【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
-- [ ] Dry-run publish to TestPyPI is now the next gate; re-enable the dry run
-  once packaging telemetry is audited against the fresh verify and coverage
-  evidence.
+- [x] Dry-run publish to TestPyPI is back online. The
+  `release:alpha` invocation on **2025-10-08** still fails during coverage, but
+  the standalone `scripts/publish_dev.py --dry-run` run produced fresh artefacts
+  and hashes at `baseline/logs/release-alpha-dry-run-20251008T151148Z.*` and
+  `baseline/logs/testpypi-dry-run-20251008T151539Z.*`, so maintainers can keep
+  the TestPyPI stage enabled while we repair the coverage regression.
   【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
   【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
   【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L7-L10】

@@ -1,0 +1,208 @@
+[release:alpha] syncing dependencies
+[release:alpha] running flake8
+[release:alpha] running mypy
+Success: no issues found in 803 source files
+[release:alpha] linting specs
+[release:alpha] checking release metadata
+Release metadata aligned: version=0.1.0a1, date=Unreleased
+[release:alpha] running task verify
+3.45.4
+Verifying extras: analysis, build, dev-minimal, distributed, git, llm, nlp, parsers, test, ui, vss
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+GitPython 3.1.45
+a2a-sdk 0.3.8
+black 25.9.0
+build 1.3.0
+cibuildwheel 3.2.0
+dspy-ai 3.0.3
+duckdb 1.3.2
+duckdb-extension-vss 1.3.2
+fakeredis 2.32.0
+fastembed 0.7.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.3
+lxml 5.4.0
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+pillow 11.3.0
+polars 1.34.0
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+ray 2.49.2
+redis 6.4.0
+responses 0.25.8
+spacy 3.8.7
+streamlit 1.50.0
+tomli-w 1.2.0
+twine 6.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20251001
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+[verify][lint] flake8 passed
+Success: no issues found in 803 source files
+[verify][mypy] strict suite passed
+[verify][lint] spec lint passed
+Release metadata aligned: version=0.1.0a1, date=Unreleased
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: cov-7.0.0, bdd-8.1.0, anyio-4.11.0, httpx-0.35.0, hypothesis-6.140.3, benchmark-5.1.0, langsmith-0.4.32
+collecting ... collected 1188 items / 25 deselected / 1163 selected
+
+tests/unit/api/test_api_llm.py::test_get_available_adapters PASSED                                                       [  0%]
+tests/unit/api/test_routes.py::test_router_builds_correctly PASSED                                                       [  0%]
+tests/unit/api/test_routes.py::test_router_builds_with_monitoring_enabled PASSED                                         [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_storage_defaults PASSED                                                     [  0%]
+tests/unit/config/test_loader_types.py::test_minimum_resident_nodes_default_without_warning PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/config/test_loader_types.py::test_config_model_deep_copy_preserves_storage_settings PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_storage_coordinator_initialization PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_result_aggregator_initialization PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_publish_claim_functionality PASSED      [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_storage_coordinator_returns_correct_types PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_result_aggregator_returns_correct_types PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_processing_integration PASSED   [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_error_handling_in_message_processing PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_concurrent_message_processing PASSED    [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_lifecycle_management PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_aggregator_lifecycle_management PASSED  [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_queue_protocol_compliance PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_broker_type_enum_values PASSED          [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_with_different_database_paths PASSED [  2%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  2%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  2%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  3%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  3%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  3%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  3%]
+tests/unit/legacy/test_a2a_concurrency_sim.py::test_simulation_counts PASSED                                             [  3%]
+tests/unit/legacy/test_a2a_interface.py::test_a2a_message_accepts_sdk_message PASSED                                     [  3%]
+tests/unit/legacy/test_a2a_interface.py::test_runtime_requirements_raise PASSED                                          [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_init PASSED                                              [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_start PASSED                                             [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_stop PASSED                                              [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_query PASSED                                      [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_capabilities PASSED                   [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_config PASSED                         [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_set_config PASSED                         [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_unknown PASSED                            [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_info PASSED                                       [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent FAILED                           [  4%]
+
+=========================================================== FAILURES ===========================================================
+________________________________________ TestA2AInterface.test_handle_query_concurrent _________________________________________
+
+self = <test_a2a_interface.TestA2AInterface object at 0x7f6523bd2630>
+mock_a2a_server = <MagicMock name='A2AServer()' id='140071980339600'>
+make_a2a_message = <function make_a2a_message.<locals>._make at 0x7f651a9d0ae0>
+
+    def test_handle_query_concurrent(self, mock_a2a_server, make_a2a_message):
+        """Ensure concurrent queries return distinct results."""
+        interface = A2AInterface()
+    
+        calls: list[tuple[float, float]] = []
+    
+        class DummyOrchestrator:
+            def run_query(self, query: str, config: object) -> MagicMock:
+                start = time.perf_counter()
+                time.sleep(0.05)
+                end = time.perf_counter()
+                calls.append((start, end))
+                resp = MagicMock()
+                resp.answer = f"{query}-answer"
+                return resp
+    
+        interface.orchestrator = DummyOrchestrator()
+    
+        async def run_queries() -> list[dict[str, object]]:
+            msgs = [make_a2a_message(query=f"q{i}") for i in range(3)]
+            return await asyncio.gather(*(interface._handle_query(m) for m in msgs))
+    
+        results = asyncio.run(run_queries())
+    
+        assert len(results) == 3
+        for i, res in enumerate(results):
+            assert res["status"] == "success"
+            msg = Message.model_validate(res["message"])
+            assert get_message_text(msg) == f"q{i}-answer"
+    
+        calls_sorted = sorted(calls, key=lambda x: x[0])
+        assert calls_sorted[0][1] > calls_sorted[1][0]
+>       assert calls_sorted[1][1] > calls_sorted[2][0]
+E       assert 40835.921090152 > 40835.923495667
+
+/workspace/autoresearch/tests/unit/legacy/test_a2a_interface.py:261: AssertionError
+----------------------------------------------------- Captured stderr call -----------------------------------------------------
+{"text": "2025-10-08 15:14:51.412 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:01:22.208664", "seconds": 82.208664}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4790, "name": "MainProcess"}, "thread": {"id": 140072867285888, "name": "MainThread"}, "time": {"repr": "2025-10-08 15:14:51.412883+00:00", "timestamp": 1759936491.412883}}}
+------------------------------------------------------ Captured log call -------------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+--------------------------------------------------- Captured stderr teardown ---------------------------------------------------
+{"text": "2025-10-08 15:14:51.761 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:01:22.557727", "seconds": 82.557727}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 4790, "name": "MainProcess"}, "thread": {"id": 140072867285888, "name": "MainThread"}, "time": {"repr": "2025-10-08 15:14:51.761946+00:00", "timestamp": 1759936491.761946}}}
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+======================================================= warnings summary =======================================================
+tests/unit/legacy/test_future_import_hygiene.py:30
+  /workspace/autoresearch/tests/unit/legacy/test_future_import_hygiene.py:30: PytestUnknownMarkWarning: Unknown pytest.mark.quick - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.quick
+
+tests/unit/legacy/test_main_config_commands.py:5
+  /workspace/autoresearch/tests/unit/legacy/test_main_config_commands.py:5: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/networkx/readwrite/json_graph/node_link.py:145: FutureWarning: 
+  The default value will be `edges="edges" in NetworkX 3.6.
+  
+  To make this warning go away, explicitly set the edges kwarg, e.g.:
+  
+    nx.node_link_data(G, edges="links") to preserve current behavior, or
+    nx.node_link_data(G, edges="edges") for forward compatibility.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+7.16s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+5.40s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_storage_coordinator_returns_correct_types
+3.82s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_lifecycle_management
+3.58s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_processing_integration
+3.44s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_concurrent_message_processing
+3.33s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_error_handling_in_message_processing
+2.71s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+2.14s setup    tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_storage_coordinator_initialization
+1.54s setup    tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_publish_claim_functionality
+1.18s setup    tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_result_aggregator_initialization
+=================================================== short test summary info ====================================================
+FAILED tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent - assert 40835.921090152 > 40835.923495667
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed, 50 passed, 25 deselected, 3 warnings in 64.50s (0:01:04) ==============================
