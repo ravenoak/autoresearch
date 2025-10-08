@@ -1,3 +1,14 @@
+As of **2025-10-08 at 15:03 UTC** the release gate stays red: the latest
+`uv run task verify EXTRAS="dev-minimal test"` sweep halts when Hypothesis marks
+`tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+as flaky, so we still have no passing end-to-end evidence for the cache fixes.
+【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】 The paired
+`uv run task coverage EXTRAS="dev-minimal test"` attempt aborts minutes later
+when the collection hygiene guard flags `tests/conftest.py`, preventing pytest
+from producing coverage artefacts or a refreshed percentage summary.
+【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】 We must stabilise the
+cache property and future-import guard before rerunning the release sweep.
+
 As of **2025-10-07 at 16:42 UTC** the strict gate remains green while pytest
 collection still fails. `uv run mypy --strict src tests` reports “Success: no
 issues found in 797 source files,” confirming PR-L0a’s freeze fixes held through

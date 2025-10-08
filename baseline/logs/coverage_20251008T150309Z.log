@@ -1,0 +1,498 @@
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: bdd-8.1.0, anyio-4.11.0, cov-7.0.0, langsmith-0.4.32, httpx-0.35.0, hypothesis-6.140.3, benchmark-5.1.0
+collecting ... collected 1186 items / 25 deselected / 1 skipped / 1161 selected
+
+tests/unit/api/test_api_llm.py::test_get_available_adapters PASSED                                                       [  0%]
+tests/unit/api/test_routes.py::test_router_builds_correctly PASSED                                                       [  0%]
+tests/unit/api/test_routes.py::test_router_builds_with_monitoring_enabled PASSED                                         [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_storage_defaults PASSED                                                     [  0%]
+tests/unit/config/test_loader_types.py::test_minimum_resident_nodes_default_without_warning PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/config/test_loader_types.py::test_config_model_deep_copy_preserves_storage_settings PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_mapping_payloads PASSED       [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_rejects_incompatible_payloads PASSED  [  1%]
+tests/unit/distributed/test_coordination_properties.py::test_storage_queue_adapter_accepts_broker_queue PASSED           [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_storage_coordinator_initialization PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_result_aggregator_initialization PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_publish_claim_functionality PASSED      [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_storage_coordinator_returns_correct_types PASSED [  1%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_result_aggregator_returns_correct_types PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_processing_integration PASSED   [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_error_handling_in_message_processing PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_concurrent_message_processing PASSED    [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_lifecycle_management PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_aggregator_lifecycle_management PASSED  [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_queue_protocol_compliance PASSED [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_broker_type_enum_values PASSED          [  2%]
+tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_with_different_database_paths PASSED [  2%]
+tests/unit/evaluation/test_harness_typing.py::test_open_duckdb_closes_connection PASSED                                  [  2%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  2%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  3%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  3%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  3%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  3%]
+tests/unit/legacy/test_a2a_concurrency_sim.py::test_simulation_counts PASSED                                             [  3%]
+tests/unit/legacy/test_a2a_interface.py::test_a2a_message_accepts_sdk_message PASSED                                     [  3%]
+tests/unit/legacy/test_a2a_interface.py::test_runtime_requirements_raise PASSED                                          [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_init PASSED                                              [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_start PASSED                                             [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_stop PASSED                                              [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_query PASSED                                      [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_capabilities PASSED                   [  3%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_config PASSED                         [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_set_config PASSED                         [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_command_unknown PASSED                            [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_info PASSED                                       [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent PASSED                           [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClient::test_init PASSED                                                 [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClient::test_query_agent PASSED                                          [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClient::test_get_agent_capabilities PASSED                               [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClient::test_get_agent_config PASSED                                     [  4%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClient::test_set_agent_config PASSED                                     [  4%]
+tests/unit/legacy/test_a2a_interface.py::test_get_a2a_client PASSED                                                      [  4%]
+tests/unit/legacy/test_a2a_interface.py::test_requires_a2a_decorator_available PASSED                                    [  4%]
+tests/unit/legacy/test_a2a_interface.py::test_requires_a2a_decorator_not_available PASSED                                [  5%]
+tests/unit/legacy/test_a2a_interface.py::test_handle_query_exception PASSED                                              [  5%]
+tests/unit/legacy/test_a2a_interface.py::test_handle_set_config_invalid PASSED                                           [  5%]
+tests/unit/legacy/test_a2a_interface.py::test_dispatch_simulation_invariants PASSED                                      [  5%]
+tests/unit/legacy/test_a2a_interface.py::test_simulation_event_order PASSED                                              [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_init PASSED                                         [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_query_agent PASSED                                  [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_capabilities PASSED                       [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_config PASSED                             [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_set_agent_config PASSED                             [  5%]
+tests/unit/legacy/test_a2a_interface.py::TestA2AClientExtended::test_query_agent_error PASSED                            [  5%]
+tests/unit/legacy/test_a2a_mcp_handshake.py::test_handshake_success PASSED                                               [  6%]
+tests/unit/legacy/test_a2a_mcp_handshake.py::test_handshake_timeout PASSED                                               [  6%]
+tests/unit/legacy/test_a2a_mcp_handshake.py::test_handshake_recovery PASSED                                              [  6%]
+tests/unit/legacy/test_a2a_mcp_handshake.py::test_handshake_server_failure PASSED                                        [  6%]
+tests/unit/legacy/test_additional_algorithm_docs.py::test_algorithm_docs_exist PASSED                                    [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_log_release_tokens_invalid_json PASSED                               [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_circuit_breaker_transitions PASSED                                   [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_circuit_breaker_recovery PASSED                                      [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_circuit_breaker_success_decrements PASSED                            [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_http_session_reuse_and_close PASSED                                  [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_llm_pool_session_reuse PASSED                                        [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_llm_pool_adapter_failure PASSED                                      [  6%]
+tests/unit/legacy/test_additional_coverage.py::test_set_get_delegate PASSED                                              [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_pop_low_score_missing_confidence PASSED                              [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_output_formatter_invalid PASSED                                      [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_streamlit_metrics PASSED                                             [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_render_evaluation_summary_joins_artifacts PASSED                     [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_render_evaluation_summary_formats_planner_and_routing PASSED         [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_format_percentage_variants PASSED                                    [  7%]
+tests/unit/legacy/test_additional_coverage.py::test_cli_utils_format_helpers_importable PASSED                           [  7%]
+tests/unit/legacy/test_advanced_agents.py::test_domain_specialist_execute PASSED                                         [  7%]
+tests/unit/legacy/test_advanced_agents.py::test_domain_specialist_can_execute PASSED                                     [  7%]
+tests/unit/legacy/test_advanced_agents.py::test_moderator_execute PASSED                                                 [  7%]
+tests/unit/legacy/test_advanced_agents.py::test_moderator_can_execute PASSED                                             [  8%]
+tests/unit/legacy/test_advanced_agents.py::test_user_agent_execute PASSED                                                [  8%]
+tests/unit/legacy/test_advanced_agents.py::test_user_agent_can_execute PASSED                                            [  8%]
+tests/unit/legacy/test_advanced_agents.py::test_planner_metadata PASSED                                                  [  8%]
+tests/unit/legacy/test_agent_communication.py::test_message_exchange_and_feedback PASSED                                 [  8%]
+tests/unit/legacy/test_agent_communication.py::test_coalition_management_in_state PASSED                                 [  8%]
+tests/unit/legacy/test_agent_communication.py::test_agent_registry_coalitions PASSED                                     [  8%]
+tests/unit/legacy/test_agent_communication.py::test_orchestrator_handles_coalitions PASSED                               [  8%]
+tests/unit/legacy/test_agent_communication.py::test_message_protocols PASSED                                             [  8%]
+tests/unit/legacy/test_agent_registry.py::test_register_and_get_cached_instance PASSED                                   [  8%]
+tests/unit/legacy/test_agent_registry.py::test_get_unknown_agent_raises PASSED                                           [  8%]
+tests/unit/legacy/test_agent_registry.py::test_reset_instances PASSED                                                    [  8%]
+tests/unit/legacy/test_agents_dialectical.py::test_fact_checker_audit_provenance PASSED                                  [  9%]
+tests/unit/legacy/test_agents_dialectical.py::test_synthesizer_support_audit_provenance PASSED                           [  9%]
+tests/unit/legacy/test_agents_llm.py::test_synthesizer_with_injected_adapter PASSED                                      [  9%]
+tests/unit/legacy/test_agents_llm.py::test_contrarian_with_injected_adapter PASSED                                       [  9%]
+tests/unit/legacy/test_agents_llm.py::test_fact_checker_with_injected_adapter PASSED                                     [  9%]
+tests/unit/legacy/test_agents_llm.py::test_agent_factory_with_injected_adapter PASSED                                    [  9%]
+tests/unit/legacy/test_agents_llm.py::test_synthesizer_dynamic PASSED                                                    [  9%]
+tests/unit/legacy/test_agents_llm.py::test_contrarian_dynamic PASSED                                                     [  9%]
+tests/unit/legacy/test_agents_llm.py::test_fact_checker_sources PASSED                                                   [  9%]
+tests/unit/legacy/test_algorithm_docs.py::test_algorithm_docs_exist PASSED                                               [  9%]
+tests/unit/legacy/test_algorithm_docs.py::test_core_docstrings_reference_docs PASSED                                     [  9%]
+tests/unit/legacy/test_api.py::test_dynamic_limit PASSED                                                                 [  9%]
+tests/unit/legacy/test_api.py::test_api_key_roles PASSED                                                                 [ 10%]
+tests/unit/legacy/test_api.py::test_batch_query_invalid_page PASSED                                                      [ 10%]
+tests/unit/legacy/test_api.py::test_fallback_no_limit PASSED                                                             [ 10%]
+tests/unit/legacy/test_api.py::test_fallback_multiple_ips PASSED                                                         [ 10%]
+tests/unit/legacy/test_api.py::test_request_log_thread_safety PASSED                                                     [ 10%]
+tests/unit/legacy/test_api.py::test_query_failure_includes_socratic_reasoning PASSED                                     [ 10%]
+tests/unit/legacy/test_api_auth_deps.py::test_require_permission_allows PASSED                                           [ 10%]
+tests/unit/legacy/test_api_auth_deps.py::test_require_permission_auth_missing PASSED                                     [ 10%]
+tests/unit/legacy/test_api_auth_deps.py::test_require_permission_forbidden PASSED                                        [ 10%]
+tests/unit/legacy/test_api_auth_middleware.py::test_resolve_role_valid_key PASSED                                        [ 10%]
+tests/unit/legacy/test_api_auth_middleware.py::test_resolve_role_invalid_key PASSED                                      [ 10%]
+tests/unit/legacy/test_api_auth_middleware.py::test_resolve_role_missing_key PASSED                                      [ 11%]
+tests/unit/legacy/test_api_auth_middleware.py::test_dispatch_invalid_token PASSED                                        [ 11%]
+tests/unit/legacy/test_api_auth_middleware.py::test_dispatch_valid_token PASSED                                          [ 11%]
+tests/unit/legacy/test_api_error_handling.py::test_query_endpoint_runtime_error PASSED                                   [ 11%]
+tests/unit/legacy/test_api_error_handling.py::test_query_endpoint_invalid_response PASSED                                [ 11%]
+tests/unit/legacy/test_api_error_handling.py::test_simulate_api_auth_error_rates PASSED                                  [ 11%]
+tests/unit/legacy/test_api_errors.py::test_handle_rate_limit_response PASSED                                             [ 11%]
+tests/unit/legacy/test_api_errors.py::test_handle_rate_limit_text PASSED                                                 [ 11%]
+tests/unit/legacy/test_api_imports.py::test_no_unused_imports PASSED                                                     [ 11%]
+tests/unit/legacy/test_api_lifespan.py::test_lifespan_startup_shutdown PASSED                                            [ 11%]
+tests/unit/legacy/test_api_rate_limit.py::test_initial_burst_and_refill PASSED                                           [ 11%]
+tests/unit/legacy/test_api_rate_limit.py::test_partial_refill PASSED                                                     [ 11%]
+tests/unit/legacy/test_api_rate_limit.py::test_clock_drift PASSED                                                        [ 12%]
+tests/unit/legacy/test_api_rate_limit.py::test_invalid_parameters PASSED                                                 [ 12%]
+tests/unit/legacy/test_api_token_utils.py::test_generate_bearer_token_unique PASSED                                      [ 12%]
+tests/unit/legacy/test_api_token_utils.py::test_verify_bearer_token PASSED                                               [ 12%]
+tests/unit/legacy/test_backup_manager.py::test_create_and_restore_backup PASSED                                          [ 12%]
+tests/unit/legacy/test_backup_manager.py::test_backup_scheduler_start_stop PASSED                                        [ 12%]
+tests/unit/legacy/test_bm25_scoring.py::test_calculate_bm25_scores_real_documents PASSED                                 [ 12%]
+tests/unit/legacy/test_budgeting.py::test_apply_adaptive_token_budget_paths PASSED                                       [ 12%]
+tests/unit/legacy/test_budgeting_module.py::test_budget_scaled_by_loops_and_capped PASSED                                [ 12%]
+tests/unit/legacy/test_budgeting_module.py::test_budget_increased_when_too_low PASSED                                    [ 12%]
+tests/unit/legacy/test_budgeting_module.py::test_budget_unchanged_when_within_bounds PASSED                              [ 12%]
+tests/unit/legacy/test_budgeting_module.py::test_budget_noop_when_missing PASSED                                         [ 13%]
+tests/unit/legacy/test_cache.py::test_search_uses_cache PASSED                                                           [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_lifecycle PASSED                                                             [ 13%]
+tests/unit/legacy/test_cache.py::test_setup_thread_safe PASSED                                                           [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_is_backend_specific PASSED                                                   [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_is_backend_specific_without_embeddings PASSED                                [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_key_normalizes_queries PASSED                                                [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_key_respects_embedding_flags PASSED                                          [ 13%]
+tests/unit/legacy/test_cache.py::test_legacy_cache_entries_upgrade_on_hit PASSED                                         [ 13%]
+tests/unit/legacy/test_cache.py::test_v2_cache_entries_upgrade_on_hit PASSED                                             [ 13%]
+tests/unit/legacy/test_cache.py::test_cache_key_primary_reflects_hybrid_flags PASSED                                     [ 13%]
+tests/unit/legacy/test_cache.py::test_sequential_hybrid_sequences_respect_cache_fingerprint PASSED                       [ 13%]
+tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache PASSED                                       [ 14%]
+tests/unit/legacy/test_cache.py::test_context_aware_query_expansion_uses_cache PASSED                                    [ 14%]
+tests/unit/legacy/test_cache_deepcopy.py::test_cache_results_are_deepcopied PASSED                                       [ 14%]
+tests/unit/legacy/test_cache_deepcopy.py::test_get_cache_returns_singleton PASSED                                        [ 14%]
+tests/unit/legacy/test_cache_extra.py::test_get_db_after_teardown PASSED                                                 [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_missing_package_metadata_raises PASSED                                [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_missing_pytest_bdd_raises PASSED                                      [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_missing_go_task_raises PASSED                                         [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_missing_uv_raises_version_error PASSED                                [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_task_command_failure PASSED                                           [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_main_reports_missing_metadata PASSED                                  [ 14%]
+tests/unit/legacy/test_check_env_warnings.py::test_env_metadata_provider PASSED                                          [ 14%]
+tests/unit/legacy/test_circuit_breaker_module.py::test_state_transitions PASSED                                          [ 15%]
+tests/unit/legacy/test_circuit_breaker_module.py::test_recovery PASSED                                                   [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_format_size_units PASSED                                                [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_create_error PASSED                                              [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_create_missing_tables PASSED                                     [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_create_success PASSED                                            [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_restore_cancelled PASSED                                         [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_restore_error PASSED                                             [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_list_no_backups PASSED                                           [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_list_success PASSED                                              [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_recover_invalid_timestamp PASSED                                 [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py::test_backup_recover_error PASSED                                             [ 16%]
+tests/unit/legacy/test_cli_help.py::test_cli_help_no_ansi PASSED                                                         [ 16%]
+tests/unit/legacy/test_cli_help.py::test_search_help_includes_interactive PASSED                                         [ 16%]
+tests/unit/legacy/test_cli_help.py::test_search_help_includes_visualize PASSED                                           [ 16%]
+tests/unit/legacy/test_cli_help.py::test_search_loops_option PASSED                                                      [ 16%]
+tests/unit/legacy/test_cli_help.py::test_search_help_includes_ontology_flags PASSED                                      [ 16%]
+tests/unit/legacy/test_cli_help.py::test_visualize_help_includes_layout PASSED                                           [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_find_similar_commands_basic PASSED                                           [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_find_similar_commands_default_threshold PASSED                               [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_parse_agent_groups_parses_nested_lists PASSED                                [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_find_similar_commands_respects_threshold PASSED                              [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_parse_agent_groups_discards_empty_groups PASSED                              [ 16%]
+tests/unit/legacy/test_cli_helpers.py::test_require_api_key_missing_header PASSED                                        [ 17%]
+tests/unit/legacy/test_cli_helpers.py::test_require_api_key_accepts_present_header PASSED                                [ 17%]
+tests/unit/legacy/test_cli_helpers.py::test_report_missing_tables_sorts_and_prints PASSED                                [ 17%]
+tests/unit/legacy/test_cli_helpers.py::test_report_missing_tables_uses_console PASSED                                    [ 17%]
+tests/unit/legacy/test_cli_helpers.py::test_handle_command_not_found_suggests_similar PASSED                             [ 17%]
+tests/unit/legacy/test_cli_helpers.py::test_install_help_text_in_readme PASSED                                           [ 17%]
+tests/unit/legacy/test_cli_utils.py::test_attach_cli_hooks_exposes_attributes PASSED                                     [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_error_suggestion PASSED                                            [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py::test_verbosity_roundtrip PASSED                                               [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py::test_set_verbosity_sets_env PASSED                                            [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[quiet] PASSED                       [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[normal] PASSED                      [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_error_emits_at_quiet_threshold[verbose] PASSED                     [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_error_suppressed_when_threshold_higher PASSED                      [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_warning_respects_minimum[quiet-False] PASSED                       [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_warning_respects_minimum[normal-True] PASSED                       [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_print_warning_respects_minimum[verbose-True] PASSED                      [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_ascii_and_table_empty PASSED                                             [ 18%]
+tests/unit/legacy/test_cli_utils_extra.py::test_format_functions PASSED                                                  [ 18%]
+tests/unit/legacy/test_cli_visualize.py::test_ascii_bar_graph_basic PASSED                                               [ 18%]
+tests/unit/legacy/test_cli_visualize.py::test_summary_table_render PASSED                                                [ 18%]
+tests/unit/legacy/test_cli_visualize.py::test_search_visualize_option PASSED                                             [ 18%]
+tests/unit/legacy/test_coalition_execution.py::test_coalition_agents_run_together PASSED                                 [ 18%]
+tests/unit/legacy/test_coalition_execution.py::test_configmodel_from_dict_allows_coalitions PASSED                       [ 19%]
+tests/unit/legacy/test_config_env_file.py::test_config_spec_exists PASSED                                                [ 19%]
+tests/unit/legacy/test_config_env_file.py::test_env_file_parsing PASSED                                                  [ 19%]
+tests/unit/legacy/test_config_errors.py::test_config_spec_exists PASSED                                                  [ 19%]
+tests/unit/legacy/test_config_errors.py::test_load_config_file_error PASSED                                              [ 19%]
+tests/unit/legacy/test_config_errors.py::test_notify_observers_error PASSED                                              [ 19%]
+tests/unit/legacy/test_config_errors.py::test_watch_config_files_error PASSED                                            [ 19%]
+tests/unit/legacy/test_config_errors.py::test_watch_config_reload_error PASSED                                           [ 19%]
+tests/unit/legacy/test_config_errors.py::test_reset_instance_error PASSED                                                [ 19%]
+tests/unit/legacy/test_config_hot_reload_sim.py::test_config_hot_reload_sim PASSED                                       [ 19%]
+tests/unit/legacy/test_config_hot_reload_sim.py::test_invalid_update_logged PASSED                                       [ 19%]
+tests/unit/legacy/test_config_loader_defaults.py::test_config_spec_exists PASSED                                         [ 19%]
+tests/unit/legacy/test_config_loader_defaults.py::test_invalid_env_falls_back_to_defaults PASSED                         [ 20%]
+tests/unit/legacy/test_config_loader_defaults.py::test_validate_without_config_file PASSED                               [ 20%]
+tests/unit/legacy/test_config_profiles.py::test_config_spec_exists PASSED                                                [ 20%]
+tests/unit/legacy/test_config_profiles.py::test_config_profiles_default PASSED                                           [ 20%]
+tests/unit/legacy/test_config_profiles.py::test_config_profiles_switch PASSED                                            [ 20%]
+tests/unit/legacy/test_config_profiles.py::test_config_profiles_invalid PASSED                                           [ 20%]
+tests/unit/legacy/test_config_profiles.py::test_config_profiles_merge PASSED                                             [ 20%]
+tests/unit/legacy/test_config_reload.py::test_config_spec_exists PASSED                                                  [ 20%]
+tests/unit/legacy/test_config_reload.py::test_config_reload_on_change PASSED                                             [ 20%]
+tests/unit/legacy/test_config_utils.py::test_config_spec_exists PASSED                                                   [ 20%]
+tests/unit/legacy/test_config_utils.py::test_module_docstring_mentions_spec PASSED                                       [ 20%]
+tests/unit/legacy/test_config_utils.py::test_apply_preset_returns_configuration PASSED                                   [ 21%]
+tests/unit/legacy/test_config_utils.py::test_apply_preset_unknown_name PASSED                                            [ 21%]
+tests/unit/legacy/test_config_utils.py::test_validate_config_success PASSED                                              [ 21%]
+tests/unit/legacy/test_config_utils.py::test_validate_config_failure PASSED                                              [ 21%]
+tests/unit/legacy/test_config_validation_errors.py::test_config_spec_exists PASSED                                       [ 21%]
+tests/unit/legacy/test_config_validation_errors.py::test_invalid_rdf_backend PASSED                                      [ 21%]
+tests/unit/legacy/test_config_validation_errors.py::test_weights_must_sum_to_one PASSED                                  [ 21%]
+tests/unit/legacy/test_config_validation_errors.py::test_default_config_loads_without_error PASSED                       [ 21%]
+tests/unit/legacy/test_config_validators_additional.py::test_config_spec_exists PASSED                                   [ 21%]
+tests/unit/legacy/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct0] PASSED                 [ 21%]
+tests/unit/legacy/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct1] PASSED                 [ 21%]
+tests/unit/legacy/test_config_validators_additional.py::test_reasoning_mode_invalid PASSED                               [ 21%]
+tests/unit/legacy/test_config_validators_additional.py::test_token_budget_valid[None] PASSED                             [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_token_budget_valid[10] PASSED                               [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_token_budget_invalid[0] PASSED                              [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_token_budget_invalid[-5] PASSED                             [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_valid[LRU] PASSED                           [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_valid[score] PASSED                         [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_valid[hybrid] PASSED                        [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_valid[priority] PASSED                      [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_valid[adaptive] PASSED                      [ 22%]
+tests/unit/legacy/test_config_validators_additional.py::test_eviction_policy_invalid PASSED                              [ 22%]
+tests/unit/legacy/test_config_watcher_cleanup.py::test_config_spec_exists PASSED                                         [ 22%]
+tests/unit/legacy/test_config_watcher_cleanup.py::test_cli_watcher_cleanup PASSED                                        [ 22%]
+tests/unit/legacy/test_config_watcher_cleanup.py::test_api_watcher_cleanup PASSED                                        [ 23%]
+tests/unit/legacy/test_config_watcher_cleanup.py::test_cli_watcher_cleanup_error PASSED                                  [ 23%]
+tests/unit/legacy/test_config_watcher_cleanup.py::test_api_watcher_cleanup_error PASSED                                  [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_orchestrator_parse_config_basic PASSED                           [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_search_stub_backend[legacy] PASSED                               [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_search_stub_backend[vss-enabled] PASSED                          [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_search_stub_backend_return_handles_fallback PASSED               [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_search_stub_duckduckgo_canonical_query PASSED                    [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_search_stub_local_file_canonical_query PASSED                    [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_planner_execute PASSED                                           [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_storage_setup_teardown PASSED                                    [ 23%]
+tests/unit/legacy/test_core_modules_additional.py::test_storage_setup_without_kuzu PASSED                                [ 24%]
+tests/unit/legacy/test_data_analysis.py::test_metrics_dataframe_enabled SKIPPED (analysis extra not installed)           [ 24%]
+tests/unit/legacy/test_data_analysis.py::test_metrics_dataframe_disabled PASSED                                          [ 24%]
+tests/unit/legacy/test_data_analysis.py::test_metrics_dataframe_polars_missing PASSED                                    [ 24%]
+tests/unit/legacy/test_data_analysis.py::test_metrics_dataframe_reload_without_polars PASSED                             [ 24%]
+tests/unit/legacy/test_data_analysis_polars.py::test_metrics_dataframe_summary SKIPPED (analysis extra not installed)    [ 24%]
+tests/unit/legacy/test_distributed.py::test_get_message_broker_invalid PASSED                                            [ 24%]
+tests/unit/legacy/test_distributed.py::test_publish_claim_inmemory SKIPPED (multiprocessing Manager unsupported in this
+environment)                                                                                                             [ 24%]
+tests/unit/legacy/test_distributed_broker.py::test_get_message_broker_memory SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 24%]
+tests/unit/legacy/test_distributed_broker.py::test_get_message_broker_invalid PASSED                                     [ 24%]
+tests/unit/legacy/test_distributed_broker.py::test_redis_broker_requires_dependency PASSED                               [ 24%]
+tests/unit/legacy/test_distributed_broker.py::test_ray_broker_publish PASSED                                             [ 24%]
+tests/unit/legacy/test_distributed_broker_import_error.py::test_redis_broker_missing_dependency PASSED                   [ 25%]
+tests/unit/legacy/test_distributed_coordination_benchmark.py::test_benchmark_scales SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 25%]
+tests/unit/legacy/test_distributed_coordination_benchmark.py::test_benchmark_survives_worker_crash SKIPPED               [ 25%]
+tests/unit/legacy/test_distributed_coordination_props.py::test_leader_is_minimum PASSED                                  [ 25%]
+tests/unit/legacy/test_distributed_coordination_props.py::test_message_ordering_preserved SKIPPED (multiprocessing
+Manager unsupported in this environment)                                                                                 [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_execute_agent_process_records_queue PASSED                         [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_execute_agent_remote SKIPPED (Real Ray clusters require package-
+level agent registration; serialization is covered by test_query_state_ray_round_trip.)                                  [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_ray_executor_cycle_callback SKIPPED (RayExecutor callback test
+relies on the local stub runtime.)                                                                                       [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_process_executor_uses_local_queue PASSED                           [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_query_state_cloudpickle_round_trip SKIPPED (could not import
+'cloudpickle': No module named 'cloudpickle')                                                                            [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_query_state_ray_round_trip PASSED                                  [ 25%]
+tests/unit/legacy/test_distributed_executors.py::test_publish_claim_enqueues_typed_message PASSED                        [ 26%]
+tests/unit/legacy/test_distributed_extra.py::test_get_message_broker_default SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 26%]
+tests/unit/legacy/test_distributed_extra.py::test_redis_queue_roundtrip SKIPPED (multiprocessing Manager unsupported in
+this environment)                                                                                                        [ 26%]
+tests/unit/legacy/test_distributed_perf_compare.py::test_compare_matches_theory_within_tolerance PASSED                  [ 26%]
+tests/unit/legacy/test_distributed_perf_sim_script.py::test_latency_decreases_with_workers PASSED                        [ 26%]
+tests/unit/legacy/test_distributed_perf_sim_script.py::test_cli_execution PASSED                                         [ 26%]
+tests/unit/legacy/test_distributed_perf_sim_script.py::test_cli_requires_arguments PASSED                                [ 26%]
+tests/unit/legacy/test_distributed_redis.py::test_get_message_broker_redis_roundtrip PASSED                              [ 26%]
+tests/unit/legacy/test_distributed_redis.py::test_get_message_broker_redis_missing PASSED                                [ 26%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_download_extension_network_fallback PASSED                    [ 26%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_download_extension_creates_stub_when_offline PASSED           [ 26%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_download_extension_offline_without_duckdb PASSED              [ 26%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_download_extension_fallback_path PASSED                       [ 27%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_offline_fallback_skips_samefile_copy PASSED                   [ 27%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_setup_sh_ignores_smoke_failure_with_stub PASSED               [ 27%]
+tests/unit/legacy/test_download_duckdb_extensions.py::test_load_offline_env_sets_vector_extension_path PASSED            [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_init PASSED                             [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_default_path PASSED          [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_custom_path PASSED           [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_connection_error PASSED      [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_table_creation_failure PASSED     [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_missing_extension_continues PASSED [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_create_tables PASSED                    [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version PASSED        [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version PASSED               [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version_no_version PASSED    [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_update_schema_version PASSED            [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_run_migrations PASSED                   [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_true PASSED                     [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_false PASSED                    [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_close PASSED                            [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_clear PASSED                            [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend_concurrency.py::test_concurrent_setup_is_idempotent PASSED                 [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend_concurrency.py::test_initialize_schema_version_failure PASSED              [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend_concurrency.py::test_persist_claims_concurrent PASSED                      [ 28%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_extension_not_loaded PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_error PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim PASSED   [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_minimal PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_error PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search PASSED   [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_vss_not_available PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_error PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection PASSED  [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection_not_initialized PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_full_replace PASSED [ 29%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_partial PASSED [ 30%]
+tests/unit/legacy/test_error_recovery.py::test_retry_with_backoff_succeeds_on_first_try PASSED                           [ 30%]
+tests/unit/legacy/test_error_recovery.py::test_retry_with_backoff_retries_until_success PASSED                           [ 30%]
+tests/unit/legacy/test_error_recovery.py::test_retry_with_backoff_raises_after_max_retries PASSED                        [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_error_info_to_dict_and_str PASSED                                 [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_formatters PASSED                                                 [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_timeout_sets_warning PASSED                                       [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_redacted_context_preserved PASSED                                 [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_get_error_info[exc0-Check your configuration file] PASSED         [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_get_error_info[exc1-API key] PASSED                               [ 30%]
+tests/unit/legacy/test_error_utils_additional.py::test_get_error_info[exc2-5] PASSED                                     [ 30%]
+tests/unit/legacy/test_errors.py::test_error_hierarchy PASSED                                                            [ 31%]
+tests/unit/legacy/test_errors.py::test_error_messages PASSED                                                             [ 31%]
+tests/unit/legacy/test_errors.py::test_error_with_cause PASSED                                                           [ 31%]
+tests/unit/legacy/test_errors.py::test_timeout_error PASSED                                                              [ 31%]
+tests/unit/legacy/test_errors.py::test_not_found_error PASSED                                                            [ 31%]
+tests/unit/legacy/test_eviction.py::test_ram_eviction_skips_without_metrics PASSED                                       [ 31%]
+tests/unit/legacy/test_eviction.py::test_ram_eviction PASSED                                                             [ 31%]
+tests/unit/legacy/test_eviction.py::test_score_eviction PASSED                                                           [ 31%]
+tests/unit/legacy/test_eviction.py::test_lru_eviction_order PASSED                                                       [ 31%]
+tests/unit/legacy/test_eviction.py::test_lru_eviction_sequence PASSED                                                    [ 31%]
+tests/unit/legacy/test_eviction.py::test_lru_eviction_with_vss_two_passes PASSED                                         [ 31%]
+tests/unit/legacy/test_eviction.py::test_lru_eviction_with_vss_fallback_preserves_survivors PASSED                       [ 31%]
+tests/unit/legacy/test_eviction.py::test_lru_eviction_respects_minimum_survivors PASSED                                  [ 32%]
+tests/unit/legacy/test_eviction.py::test_deterministic_override_clamped_to_minimum PASSED                                [ 32%]
+tests/unit/legacy/test_eviction.py::test_initialize_storage_in_memory PASSED                                             [ 32%]
+tests/unit/legacy/test_eviction.py::test_initialize_storage_file_path PASSED                                             [ 32%]
+tests/unit/legacy/test_examples_package.py::test_sample_configuration PASSED                                             [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_nlp_marker SKIPPED (nlp extra not installed)                              [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_ui_marker PASSED                                                          [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_vss_marker PASSED                                                         [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_git_marker PASSED                                                         [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_distributed_marker PASSED                                                 [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_analysis_marker SKIPPED (analysis extra not installed)                    [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_llm_marker PASSED                                                         [ 32%]
+tests/unit/legacy/test_extras_markers.py::test_parsers_marker PASSED                                                     [ 33%]
+tests/unit/legacy/test_extras_markers.py::test_gpu_marker SKIPPED (gpu extra not installed)                              [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_prompt_registry_unknown PASSED                                             [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_prompt_render_missing_variable PASSED                                      [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_check_agent_can_execute_false PASSED                                       [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_external_lookup_unknown_backend PASSED                                     [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_vector_search_vss_unavailable PASSED                                       [ 33%]
+tests/unit/legacy/test_failure_paths.py::test_query_endpoint_validation_error PASSED                                     [ 33%]
+tests/unit/legacy/test_failure_scenarios.py::test_external_lookup_network_failure PASSED                                 [ 33%]
+tests/unit/legacy/test_failure_scenarios.py::test_external_lookup_unknown_backend PASSED                                 [ 33%]
+tests/unit/legacy/test_failure_scenarios.py::test_external_lookup_fallback PASSED                                        [ 33%]
+tests/unit/legacy/test_failure_scenarios.py::test_external_lookup_fallback_templated_query PASSED                        [ 34%]
+tests/unit/legacy/test_failure_scenarios.py::test_get_message_broker_invalid PASSED                                      [ 34%]
+tests/unit/legacy/test_failure_scenarios.py::test_redis_broker_init_failure PASSED                                       [ 34%]
+tests/unit/legacy/test_formattemplate_property.py::test_formattemplate_render PASSED                                     [ 34%]
+tests/unit/legacy/test_future_import_hygiene.py::test_future_annotations_import_is_first FAILED                          [ 34%]
+
+=========================================================== FAILURES ===========================================================
+___________________________________________ test_future_annotations_import_is_first ____________________________________________
+
+    @pytest.mark.quick
+    def test_future_annotations_import_is_first() -> None:
+        """Ensure the annotations future import appears before other statements."""
+    
+        for module_path in _iter_python_modules(REPO_ROOT):
+            source = module_path.read_text(encoding="utf-8")
+            if "from __future__ import annotations" not in source:
+                continue
+    
+            try:
+                module = ast.parse(source)
+            except SyntaxError as exc:  # pragma: no cover - surfaces invalid layout
+                pytest.fail(
+                    f"{module_path.relative_to(REPO_ROOT)} failed to parse: {exc}"
+                )
+    
+            idx = _first_non_docstring_node(module.body)
+            if idx >= len(module.body):
+                continue
+    
+            node = module.body[idx]
+            if not (
+                isinstance(node, ast.ImportFrom)
+                and node.module == "__future__"
+                and any(alias.name == "annotations" for alias in node.names)
+            ):
+>               pytest.fail(
+                    "`from __future__ import annotations` must be the first "
+                    "executable statement in "
+                    f"{module_path.relative_to(REPO_ROOT)}"
+                )
+E               Failed: `from __future__ import annotations` must be the first executable statement in tests/conftest.py
+
+/workspace/autoresearch/tests/unit/legacy/test_future_import_hygiene.py:56: Failed
+--------------------------------------------------- Captured stderr teardown ---------------------------------------------------
+{"text": "2025-10-08 15:03:57.336 | INFO     | autoresearch.logging_utils:emit:113 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:00:44.563036", "seconds": 44.563036}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 113, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5554, "name": "MainProcess"}, "thread": {"id": 140677278485376, "name": "MainThread"}, "time": {"repr": "2025-10-08 15:03:57.336177+00:00", "timestamp": 1759935837.336177}}}
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+======================================================= warnings summary =======================================================
+tests/unit/legacy/test_future_import_hygiene.py:30
+  /workspace/autoresearch/tests/unit/legacy/test_future_import_hygiene.py:30: PytestUnknownMarkWarning: Unknown pytest.mark.quick - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.quick
+
+tests/unit/legacy/test_main_config_commands.py:5
+  /workspace/autoresearch/tests/unit/legacy/test_main_config_commands.py:5: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/networkx/readwrite/json_graph/node_link.py:145: FutureWarning: 
+  The default value will be `edges="edges" in NetworkX 3.6.
+  
+  To make this warning go away, explicitly set the edges kwarg, e.g.:
+  
+    nx.node_link_data(G, edges="links") to preserve current behavior, or
+    nx.node_link_data(G, edges="edges") for forward compatibility.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+3.25s call     tests/unit/legacy/test_cache.py::test_sequential_hybrid_sequences_respect_cache_fingerprint
+2.19s call     tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache
+1.83s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_concurrent_message_processing
+1.75s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_error_handling_in_message_processing
+1.70s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_lifecycle_management
+1.59s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_storage_coordinator_returns_correct_types
+1.58s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_message_processing_integration
+1.57s call     tests/unit/legacy/test_cache.py::test_v2_cache_entries_upgrade_on_hit
+1.39s call     tests/unit/legacy/test_cache.py::test_legacy_cache_entries_upgrade_on_hit
+0.93s setup    tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_storage_coordinator_initialization
+=================================================== short test summary info ====================================================
+FAILED tests/unit/legacy/test_future_import_hygiene.py::test_future_annotations_import_is_first - Failed: `from __future__ import annotations` must be the first executable statement in tests/conftest.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================ 1 failed, 383 passed, 16 skipped, 25 deselected, 3 warnings in 42.14s =============================
