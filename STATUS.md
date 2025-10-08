@@ -19,6 +19,20 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 8, 2025
+- Re-ran `uv run task release:alpha` at **15:11 UTC**; the sweep cleared lint,
+  strict typing, spec linting, release metadata checks, and packaging before
+  coverage stopped on the concurrent A2A interface timing assertion. The log
+  and checksum are archived at
+  `baseline/logs/release-alpha-dry-run-20251008T151148Z.*` for diagnosis.
+  【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
+- Confirmed the TestPyPI stage by running `uv run python scripts/publish_dev.py`
+  `--dry-run` at **15:15 UTC**. The command built the sdist and wheel, skipped
+  upload, and recorded artefacts plus a checksum at
+  `baseline/logs/testpypi-dry-run-20251008T151539Z.*`, so maintainers should
+  keep the stage enabled for upcoming rehearsals.
+  【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】 The checksum
+  log documents the digest for compliance tracking.
+  【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
 - Archived a fresh `uv run task verify EXTRAS="dev-minimal test"` sweep at
   **15:01 UTC**; the run fails when Hypothesis reports
   `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`

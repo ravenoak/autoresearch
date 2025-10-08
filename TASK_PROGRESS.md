@@ -1,3 +1,19 @@
+As of **2025-10-08 at 15:15 UTC** the TestPyPI stage is confirmed while the
+release sweep still fails. `uv run task release:alpha` at **15:11 UTC** cleared
+lint, strict typing, spec linting, metadata checks, and packaging before
+pytest’s coverage leg hit the concurrent A2A interface regression. The
+transcript and checksum sit at
+`baseline/logs/release-alpha-dry-run-20251008T151148Z.*` for owners to triage.
+【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
+To keep TestPyPI rehearsals unblocked we ran `uv run python
+scripts/publish_dev.py --dry-run` at **15:15 UTC**, producing fresh build
+artefacts and a checksum under
+`baseline/logs/testpypi-dry-run-20251008T151539Z.*`; maintainers agreed to keep
+the stage enabled while coverage is repaired.
+【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】 The checksum log
+captures the digest for the release dossier.
+【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+
 As of **2025-10-08 at 15:03 UTC** the release gate stays red: the latest
 `uv run task verify EXTRAS="dev-minimal test"` sweep halts when Hypothesis marks
 `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
