@@ -1,8 +1,6 @@
 # mypy: ignore-errors
 """Tests for the API routes compatibility shim."""
 
-import pytest
-
 from autoresearch.api.routes import router
 from autoresearch.config import ConfigLoader
 

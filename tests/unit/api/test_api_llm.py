@@ -1,8 +1,6 @@
 # mypy: ignore-errors
 """Tests for the API LLM utilities."""
 
-import pytest
-
 from autoresearch.api.llm import get_available_adapters
 
 
