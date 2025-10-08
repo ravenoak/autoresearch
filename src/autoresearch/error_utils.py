@@ -5,10 +5,12 @@ all interfaces (CLI, GUI, API, A2A/MCP). It includes functions for formatting er
 messages with actionable suggestions and code examples.
 """
 
-from typing import Dict, Any, Optional, Tuple, List
-import traceback
+from __future__ import annotations
+
 import logging
+import traceback
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 from .errors import (
     AutoresearchError,

@@ -34,3 +34,14 @@ unless their respective extras are installed.
 No external databases or network services need to be running. Temporary
 artifacts are created under `tmp_path` and cleaned automatically.
 
+## Import hygiene guard
+
+- `tests/unit/legacy/test_future_import_hygiene.py` enforces that any module
+  containing `from __future__ import annotations` places it immediately after
+  the optional module docstring.
+- When creating new modules, add the future import before other imports to keep
+  pytest collection green; the quick gate fails fast if a standard-library
+  import appears before the `__future__` directive.
+- Run `uv run --extra test pytest -k future_import_hygiene -q` to validate the
+  guard locally before committing.
+

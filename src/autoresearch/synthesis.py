@@ -5,7 +5,9 @@ rationales based on claims extracted from various sources. These functions
 are used by the orchestration system to format the final output for users.
 """
 
-from typing import List, Dict
+from __future__ import annotations
+
+from typing import Dict, List
 
 from .logging_utils import get_logger
 

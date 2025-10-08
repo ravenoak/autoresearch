@@ -5,6 +5,8 @@ shared across the orchestration stack. See ``docs/algorithms/models.md`` for
 the canonical schema definitions, hot-reload behaviour, and validation rules.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
