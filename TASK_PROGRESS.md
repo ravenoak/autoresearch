@@ -13,6 +13,9 @@ the stage enabled while coverage is repaired.
 【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】 The checksum log
 captures the digest for the release dossier.
 【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+Reviewers must acknowledge the refreshed documentation set (STATUS.md,
+TASK_PROGRESS.md, and the preflight dossier) in the alpha ticket before we
+propose the `0.1.0a1` tag.【F:issues/prepare-first-alpha-release.md†L11-L20】
 
 As of **2025-10-08 at 15:03 UTC** the release gate stays red: the latest
 `uv run task verify EXTRAS="dev-minimal test"` sweep halts when Hypothesis marks

@@ -7,6 +7,28 @@ aspects of the system, from core functionality to testing and documentation.
 
 ## Status
 
+As of **October 8, 2025 at 15:11 UTC** the latest `uv run task release:alpha`
+rehearsal advanced through lint, strict typing, spec linting, metadata checks,
+and packaging before pytest’s coverage leg failed on the concurrent A2A timing
+assertion. The transcript and checksum live at
+`baseline/logs/release-alpha-dry-run-20251008T151148Z.*` for triage.
+【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
+Five minutes later, `uv run python scripts/publish_dev.py --dry-run` rebuilt the
+sdist and wheel, confirmed the TestPyPI stage, and recorded matching logs and a
+checksum under `baseline/logs/testpypi-dry-run-20251008T151539Z.*` so the next
+release attempt can reuse the artefacts.【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+
+As of **October 8, 2025 at 15:03 UTC** `uv run task verify EXTRAS="dev-minimal
+test"` still halts when Hypothesis flags
+`tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+as flaky, and the paired `uv run task coverage EXTRAS="dev-minimal test"`
+attempt aborts when the collection hygiene guard re-flags
+`tests/conftest.py`.【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】
+The release checklist therefore requires reviewer acknowledgements of the
+documentation updates (STATUS.md, TASK_PROGRESS.md, and the preflight dossier)
+before proposing the `0.1.0a1` tag, and those sign-offs will be tracked inside
+the alpha ticket.【F:issues/prepare-first-alpha-release.md†L11-L20】
+
 As of **October 7, 2025 at 16:42 UTC** the strict typing gate remains green:
 `uv run mypy --strict src tests` reports “Success: no issues found in 797 source
 files.”【0aff6f†L1-L1】 This confirms PR-L0a held after the latest refactors and

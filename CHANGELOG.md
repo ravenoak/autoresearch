@@ -42,7 +42,7 @@ Reference issues by slugged filename (for example,
   `task verify` (14:28 UTC) and `task coverage` (14:30 UTC) logs that show the
   current strict typing and Pydantic blockers while TestPyPI stays deferred.
   【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:docs/release_plan.md†L11-L24】
-  【F:ROADMAP.md†L33-L60】【F:STATUS.md†L21-L69】【F:TASK_PROGRESS.md†L1-L11】
+  【F:ROADMAP.md†L33-L60】【F:STATUS.md†L21-L65】【F:TASK_PROGRESS.md†L1-L18】
   【F:docs/specification.md†L60-L83】【F:docs/pseudocode.md†L78-L119】
   【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
   【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】

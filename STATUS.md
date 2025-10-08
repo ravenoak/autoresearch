@@ -59,6 +59,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `baseline/logs/flake8-post-20251008T052920Z.log`, and
   `baseline/logs/task-check-20251008T052920Z.log`, confirming the cache and
   orchestration style cleanup leaves the fast gate green.【F:baseline/logs/flake8-pre-20251008T052638Z.log†L1-L1】【F:baseline/logs/flake8-post-20251008T052920Z.log†L1-L1】【F:baseline/logs/task-check-20251008T052920Z.log†L1-L12】
+- Recorded the requirement for reviewers to acknowledge the refreshed
+  documentation (STATUS.md, TASK_PROGRESS.md, preflight dossier) before
+  proposing `0.1.0a1`; the alpha ticket will store those sign-offs for the
+  release dossier.【F:issues/prepare-first-alpha-release.md†L11-L20】
 
 ## October 7, 2025
 - Ran `uv run mypy --strict src tests` at **16:42 UTC** and the sweep still
