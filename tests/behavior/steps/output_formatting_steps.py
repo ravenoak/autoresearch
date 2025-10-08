@@ -1,9 +1,11 @@
 # mypy: ignore-errors
 # flake8: noqa
 import json
+import sys
+import types
 
 from autoresearch.models import QueryResponse
-from autoresearch.output_format import OutputFormatter
+from autoresearch.output_format import OutputDepth, OutputFormatter, build_depth_payload
 from tests.behavior.context import BehaviorContext
 from pytest_bdd import parsers, scenario, then, when
 
@@ -172,6 +174,76 @@ def check_graph_output(bdd_context: BehaviorContext):
     result = bdd_context["graph_flag_result"]
     assert "Knowledge Graph" in result.stdout
     assert result.stderr == ""
+
+
+@when("I build a depth payload requesting graph exports via aliases")
+def build_depth_payload_with_aliases(monkeypatch, bdd_context: BehaviorContext):
+    class DummyPipeline:
+        def export_artifacts(self):
+            return {
+                "graph_json": "{\"nodes\": [], \"edges\": []}",
+                "graphml": "<graphml />",
+            }
+
+    module = types.ModuleType("autoresearch.knowledge")
+    module.SessionGraphPipeline = DummyPipeline
+    monkeypatch.setitem(sys.modules, "autoresearch.knowledge", module)
+
+    class DummyLoader:
+        def __init__(self):
+            self.config = types.SimpleNamespace(
+                user_preferences={
+                    "graph_export_formats": ["GraphJSON", "graphml", "graph_json"],
+                    "graph_exports_enabled": True,
+                    "graph_preview_enabled": True,
+                    "prefetch_graph_exports": True,
+                }
+            )
+
+    monkeypatch.setattr("autoresearch.output_format.ConfigLoader", DummyLoader)
+
+    response = QueryResponse(
+        query="graph alias rehearsal",
+        answer="Graph summary ready.",
+        citations=[],
+        reasoning=[],
+        metrics={
+            "knowledge_graph": {
+                "summary": {
+                    "entity_count": 2,
+                    "relation_count": 1,
+                    "contradictions": [],
+                    "multi_hop_paths": [],
+                },
+                "exports": {"graphml": True, "graph_json": True},
+            }
+        },
+    )
+
+    payload = build_depth_payload(
+        response,
+        depth=OutputDepth.TRACE,
+        graph_preview_enabled=True,
+        graph_exports_enabled=True,
+        graph_export_formats=["GraphJSON", "graph_json", "GRAPHML", "graphml"],
+        prefetch_graph_exports=True,
+    )
+
+    bdd_context["graph_depth_payload"] = payload
+
+
+@then(
+    "the graph export payload should include canonical formats `graph_json` and `graphml`"
+)
+def assert_graph_export_canonical(bdd_context: BehaviorContext):
+    payload = bdd_context["graph_depth_payload"]
+    exports = payload.graph_exports
+    artifacts = payload.graph_export_payloads
+
+    assert set(exports.keys()) == {"graph_json", "graphml"}
+    assert all(exports.values()), "Graph export availability flags must be true"
+    assert set(artifacts.keys()) == {"graph_json", "graphml"}
+    assert all(isinstance(value, str) and value for value in artifacts.values())
 
 
 @scenario("../features/output_formatting.feature", "Default TTY output")

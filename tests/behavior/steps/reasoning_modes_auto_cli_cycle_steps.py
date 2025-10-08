@@ -10,7 +10,7 @@ from tests.behavior.utils import (
 
 import copy
 import json
-from typing import TYPE_CHECKING, Any, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence
 from unittest.mock import patch
 
 from collections import Counter
@@ -30,6 +30,7 @@ from autoresearch.orchestration.orchestration_utils import (
     OrchestrationUtils,
     ScoutGateDecision,
 )
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 from autoresearch.search.context import SearchContext
 from autoresearch.output_format import OutputDepth, OutputFormatter
 
@@ -40,6 +41,28 @@ if TYPE_CHECKING:
     from autoresearch.orchestration.state import QueryState
 
 scenarios("../features/reasoning_modes/auto_cli_verify_loop.feature")
+
+
+def _clone_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a deep copy of ``payload`` resilient to mapping proxy entries."""
+
+    try:
+        return copy.deepcopy(payload)
+    except TypeError:
+        return _normalise_payload(payload)
+
+
+def _normalise_payload(value: Any) -> Any:
+    """Recursively convert payload entries into JSON-serialisable structures."""
+
+    if isinstance(value, FrozenReasoningStep):
+        return value.to_dict()
+    if isinstance(value, Mapping):
+        return {str(key): _normalise_payload(val) for key, val in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        converted = [_normalise_payload(item) for item in value]
+        return tuple(converted) if isinstance(value, tuple) else converted
+    return value
 
 
 @given(
@@ -100,11 +123,13 @@ def run_auto_reasoning_cli(
     config.reasoning_mode = ReasoningMode.AUTO
     reuse_cached = bool(bdd_context.get("auto_force_cache_hit"))
     cached_payload_template: dict[str, Any] | None = None
+    cached_gate_decision: ScoutGateDecision | None = None
     if reuse_cached:
         cached_payload_template = bdd_context.get("auto_cached_response_payload")
         if cached_payload_template is None:
             msg = "Cached AUTO-mode response payload missing for cache-hit run"
             raise AssertionError(msg)
+        cached_gate_decision = bdd_context.get("auto_cached_gate_decision")
 
     class PlannerSynthesizer:
         def __init__(self, name: str, llm_adapter: object | None = None) -> None:
@@ -341,9 +366,9 @@ def run_auto_reasoning_cli(
         callbacks: Any | None = None,
         **kwargs: Any,
     ) -> QueryResponse:
-        nonlocal captured_response
+        nonlocal captured_response, captured_decision
         if reuse_cached:
-            snapshot = copy.deepcopy(cached_payload_template)
+            snapshot = _clone_payload(cached_payload_template)
             metrics_snapshot = snapshot.setdefault("metrics", {})
             cache_section = metrics_snapshot.setdefault("cache", {})
             cache_section.setdefault("status", "hit")
@@ -358,6 +383,12 @@ def run_auto_reasoning_cli(
             auto_mode_section.setdefault("cache_namespace", cache_section.get("namespace"))
             response = QueryResponse.model_validate(snapshot)
             captured_response = response
+            if cached_gate_decision is not None:
+                captured_decision = cached_gate_decision
+            elif captured_decision is None:
+                cached_decision = bdd_context.get("auto_last_gate_decision")
+                if isinstance(cached_decision, ScoutGateDecision):
+                    captured_decision = cached_decision
             return response
 
         response = original_run_query(Orchestrator(), query_text, cfg, callbacks, **kwargs)
@@ -448,6 +479,8 @@ def run_auto_reasoning_cli(
         msg = "Query response was not captured during AUTO CLI run"
         raise AssertionError(msg)
 
+    bdd_context["auto_last_gate_decision"] = captured_decision
+
     computed_badges = Counter(
         str(audit.get("status", "")).lower() for audit in captured_response.claim_audits
     )
@@ -527,9 +560,12 @@ def run_auto_reasoning_cli(
         "response": captured_response,
         "scout_state": bdd_context.get("scout_state_reference"),
     }
+    alias_map = bdd_context.setdefault("auto_cache_aliases", {})
+    alias_map.setdefault(query, query)
     bdd_context.setdefault("auto_cli_runs", []).append(run_data)
     if captured_response is not None:
-        bdd_context["auto_last_response_payload"] = captured_response.model_dump()
+        raw_payload = captured_response.model_dump()
+        bdd_context["auto_last_response_payload"] = _normalise_payload(raw_payload)
         bdd_context["auto_last_query"] = query
         bdd_context["auto_cached_response_payload"] = bdd_context["auto_last_response_payload"]
     bdd_context["auto_cli_cycle"] = run_data
@@ -552,19 +588,39 @@ def rerun_auto_reasoning_cli_cached(
     if cached_payload is None:
         raise AssertionError("No cached AUTO-mode payload captured before rerun")
     last_query = bdd_context.get("auto_last_query")
-    if last_query is not None and last_query != query:
+    alias_map = bdd_context.setdefault("auto_cache_aliases", {})
+    canonical_query = alias_map.get(query, query)
+    if last_query is not None and last_query != canonical_query:
         msg = (
             "Cached AUTO-mode payload query mismatch: "
             f"expected {last_query!r}, received {query!r}"
         )
         raise AssertionError(msg)
 
-    bdd_context["auto_cached_response_payload"] = copy.deepcopy(cached_payload)
+    alias_map.setdefault(query, canonical_query)
+    cached_gate = bdd_context.get("auto_last_gate_decision")
+    bdd_context["auto_cached_gate_decision"] = cached_gate
+    bdd_context["auto_cached_response_payload"] = _clone_payload(cached_payload)
     bdd_context["auto_force_cache_hit"] = True
     try:
         return run_auto_reasoning_cli(query, config, bdd_context, cli_runner)
     finally:
         bdd_context.pop("auto_force_cache_hit", None)
+        bdd_context.pop("auto_cached_gate_decision", None)
+
+
+@when(
+    parsers.parse('I register AUTO cache alias "{alias}" for the last AUTO query')
+)
+def register_auto_cache_alias(alias: str, bdd_context: BehaviorContext) -> None:
+    """Associate ``alias`` with the most recent AUTO-mode query."""
+
+    last_query = bdd_context.get("auto_last_query")
+    if last_query is None:
+        raise AssertionError("No AUTO-mode query recorded for alias registration")
+    alias_map = bdd_context.setdefault("auto_cache_aliases", {})
+    alias_map.setdefault(last_query, last_query)
+    alias_map[alias] = last_query
 
 
 @then("the CLI scout gate decision should escalate to debate")
@@ -865,8 +921,82 @@ def assert_auto_cached_answer(auto_cli_cycle: dict[str, Any]) -> None:
         assert not answer.lower().startswith(prefix)
     for entry in warnings:
         if isinstance(entry, Mapping):
+                message = entry.get("message")
+                if isinstance(message, str) and message.strip():
+                    lowered = message.strip().lower()
+                    assert lowered not in answer.lower()
+                    assert lowered not in payload_answer.lower()
+
+
+@then("the AUTO warning banners should remain isolated between runs")
+def assert_auto_warning_isolation(bdd_context: BehaviorContext) -> None:
+    """Ensure warning banners from previous AUTO runs do not leak into new runs."""
+
+    runs: list[dict[str, Any]] = bdd_context.get("auto_cli_runs", [])
+    if len(runs) < 2:
+        raise AssertionError("At least two AUTO-mode runs are required for isolation checks")
+
+    previous_run = runs[-2]
+    latest_run = runs[-1]
+    previous_response: QueryResponse = previous_run["response"]
+    latest_response: QueryResponse = latest_run["response"]
+    latest_payload: dict[str, Any] = latest_run["payload"]
+
+    assert previous_response.warnings, "Expected warnings in the prior AUTO-mode run"
+
+    latest_codes = {
+        entry.get("code")
+        for entry in latest_response.warnings
+        if isinstance(entry, Mapping)
+    }
+    assert "answer_audit.unsupported_claims" not in latest_codes, (
+        "Unsupported warnings should not persist into the latest AUTO run"
+    )
+    permitted_codes = {"answer_audit.needs_review_claims"}
+    assert latest_codes.issubset(permitted_codes), (
+        "Latest AUTO warnings contain unexpected codes"
+    )
+
+    payload_warnings = latest_payload.get("warnings") or []
+    if payload_warnings:
+        payload_codes = {
+            entry.get("code")
+            for entry in payload_warnings
+            if isinstance(entry, Mapping)
+        }
+        assert payload_codes.issubset(permitted_codes), (
+            "Latest AUTO payload warnings contain unsupported codes"
+        )
+
+    audit_metrics = latest_response.metrics.get("answer_audit", {})
+    if isinstance(audit_metrics, Mapping):
+        warnings_snapshot = audit_metrics.get("warnings") or []
+        snapshot_codes = {
+            entry.get("code")
+            for entry in warnings_snapshot
+            if isinstance(entry, Mapping)
+        }
+        assert snapshot_codes.issubset(permitted_codes), (
+            "Answer audit warnings leaked unsupported codes into latest metrics"
+        )
+
+    latest_answer = latest_response.answer or ""
+    assert not latest_answer.lstrip().startswith("⚠️"), "Latest AUTO answer still exposes warning prefix"
+
+    warning_messages: list[str] = []
+    for entry in previous_response.warnings:
+        if isinstance(entry, Mapping):
             message = entry.get("message")
             if isinstance(message, str) and message.strip():
-                lowered = message.strip().lower()
-                assert lowered not in answer.lower()
-                assert lowered not in payload_answer.lower()
+                warning_messages.append(message.strip().lower())
+    latest_answer_lower = latest_answer.lower()
+    for message in warning_messages:
+        assert message not in latest_answer_lower, (
+            "Previous warning message leaked into latest AUTO answer"
+        )
+
+    latest_payload_answer = str(latest_payload.get("answer", "")).lower()
+    for message in warning_messages:
+        assert message not in latest_payload_answer, (
+            "Previous warning message leaked into AUTO payload answer"
+        )

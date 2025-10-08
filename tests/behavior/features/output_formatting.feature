@@ -33,3 +33,7 @@ Feature: Adaptive Output Formatting
   Scenario: Graph output format
     When I run `autoresearch search "Test formatting" --output graph`
     Then the output should include "Knowledge Graph"
+
+  Scenario: Graph export aliases produce canonical payloads
+    When I build a depth payload requesting graph exports via aliases
+    Then the graph export payload should include canonical formats `graph_json` and `graphml`
