@@ -1,6 +1,11 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 04:27 UTC** the quick gate remains green:
+`uv run task check` passes end-to-end and the log is archived at
+`baseline/logs/task-check-20251008T042731Z.log` for release evidence.
+【F:baseline/logs/task-check-20251008T042731Z.log†L1-L36】
+
 As of **October 8, 2025 at 03:58 UTC** the lint fallout around misplaced future
 imports is cleared: every module called out in the October 6 verify log now
 starts with `from __future__ import annotations`, and the redundant pytest

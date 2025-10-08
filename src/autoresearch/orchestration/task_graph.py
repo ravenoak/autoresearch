@@ -5,8 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, Sequence, TypedDict
-from typing import Required
+from typing import Any, Dict, Iterable, List, Mapping, Sequence, TypedDict, Required
 
 
 class TaskEdgePayload(TypedDict, total=False):

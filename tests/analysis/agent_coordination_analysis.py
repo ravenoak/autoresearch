@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-from multiprocessing import Lock as create_lock
-from multiprocessing import Process, Value
+from multiprocessing import Lock as create_lock, Process, Value
 from multiprocessing.sharedctypes import Synchronized
 from multiprocessing.synchronize import Lock as SyncLock
 from pathlib import Path

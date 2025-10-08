@@ -20,8 +20,8 @@ from typing import (
     Sequence,
     TypeVar,
     cast,
+    runtime_checkable,
 )
-from typing import runtime_checkable
 
 if TYPE_CHECKING:  # pragma: no cover - imported for typing only
     import duckdb
