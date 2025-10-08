@@ -3325,3 +3325,17 @@ def _duckdb_embedding_backend(
             }
         )
     return formatted
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """Custom pickling to handle WeakSet that can't be pickled."""
+        state = self.__dict__.copy()
+        # Remove the _instances WeakSet as it can't be pickled
+        # The _instances is only used for backend registration propagation
+        # and doesn't need to be preserved across processes
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """Custom unpickling to handle WeakSet restoration."""
+        self.__dict__.update(state)
+        # Re-add this instance to the class _instances WeakSet after unpickling
+        type(self)._instances.add(self)
