@@ -8,7 +8,7 @@ entries.
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
+from collections.abc import Sequence
 
 from ..cache import CacheKey
 
@@ -29,7 +29,7 @@ def _canonical_embedding_backend(embedding_backend: str | None) -> str:
     return embedding_backend or _DEFAULT_EMBEDDING_BACKEND
 
 
-def _canonical_storage_hints(storage_hints: Sequence[str] | None) -> Tuple[str, ...]:
+def _canonical_storage_hints(storage_hints: Sequence[str] | None) -> tuple[str, ...]:
     """Return a sorted tuple of storage hints with a placeholder when absent."""
 
     if not storage_hints:
@@ -58,7 +58,7 @@ def build_cache_slots(
     namespace: str | None,
     embedding_backend: str | None,
     storage_hints: Sequence[str] | None,
-) -> Tuple[str, ...]:
+) -> tuple[str, ...]:
     """Return cache slot candidates for a :class:`CacheKey` with metadata."""
 
     return tuple(
