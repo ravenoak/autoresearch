@@ -237,7 +237,7 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   `tests/unit/legacy/test_relevance_ranking.py::test_external_lookup_uses_cache`
   observes a single backend call, then expand property coverage for namespace
   churn.
-- [ ] Land **PR-B1** – expand behaviour coverage for AUTO-mode cache hits,
+- [x] Land **PR-B1** – expand behaviour coverage for AUTO-mode cache hits,
   warning banner isolation, and formatter fidelity after PR-S3 lands.
 - [ ] Land **PR-E1** – synchronise STATUS.md, TASK_PROGRESS.md,
   CODE_COMPLETE_PLAN.md, the preflight plan, and this ticket with new verify and

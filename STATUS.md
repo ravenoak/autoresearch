@@ -47,6 +47,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   telemetry records the canonical form; the refreshed property regression now
   asserts a single backend call per canonical fingerprint.
   【F:src/autoresearch/cache.py†L1-L237】【F:src/autoresearch/search/core.py†L872-L1484】【F:tests/unit/legacy/test_relevance_ranking.py†L423-L477】
+- Behaviour coverage now walks through canonical AUTO cache hits, isolates
+  warning banners between successive runs, and confirms graph export aliases map
+  to canonical payloads by extending the AUTO CLI cycle feature and output
+  formatting steps with shared fixtures.【F:tests/behavior/features/reasoning_modes/auto_cli_verify_loop.feature†L49-L64】【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L107-L152】【F:tests/behavior/features/output_formatting.feature†L33-L37】【F:tests/behavior/steps/output_formatting_steps.py†L1-L120】
 - Normalised the cache helpers to use Python 3.12 generics and tightened the
   import grouping so `src/autoresearch/cache.py` and the search cache adapters
   expose consistent tuple/list types without relying on legacy typing aliases.

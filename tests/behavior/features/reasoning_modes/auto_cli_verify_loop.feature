@@ -49,3 +49,16 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     Then the CLI answer should remain free of warning prefixes
     And the CLI response should expose structured unsupported warnings
     And the AUTO metrics should indicate a cached answer reuse
+
+  Scenario: AUTO canonical cache hit reuses cached answers across query aliases
+    When I run the AUTO reasoning CLI for query "unsupported debate rehearsal"
+    And I register AUTO cache alias "Unsupported Debate Rehearsal  " for the last AUTO query
+    And I rerun the AUTO reasoning CLI for query "Unsupported Debate Rehearsal  " using cached results
+    Then the CLI answer should remain free of warning prefixes
+    And the AUTO metrics should indicate a cached answer reuse
+
+  Scenario: AUTO warning banners remain isolated between distinct queries
+    When I run the AUTO reasoning CLI for query "unsupported debate rehearsal"
+    And I run the AUTO reasoning CLI for query "cache isolation rehearsal"
+    Then the AUTO warning banners should remain isolated between runs
+    And the CLI answer should remain free of warning prefixes
