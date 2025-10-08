@@ -75,6 +75,7 @@ import requests
 
 from ..cache import CacheKey, SearchCache, _SearchCacheView
 from ..cache import build_cache_key
+from ..cache import canonicalize_query_text
 from ..cache import cache_results as _cache_results
 from ..cache import get_cache
 from ..cache import get_cached_results as _get_cached_results
@@ -871,8 +872,7 @@ class Search:
     def _normalise_cache_query(query: str) -> str:
         """Return a canonical form of ``query`` for cache key construction."""
 
-        collapsed = re.sub(r"\s+", " ", query.strip())
-        return collapsed.lower()
+        return canonicalize_query_text(query)
 
     def _build_cache_key(
         self,
@@ -888,11 +888,10 @@ class Search:
     ) -> CacheKey:
         """Compose cache key candidates across backend and embedding knobs."""
 
-        normalized = (
-            normalized_query
-            if normalized_query is not None
-            else self._normalise_cache_query(query)
-        )
+        if normalized_query is not None:
+            normalized = self._normalise_cache_query(normalized_query)
+        else:
+            normalized = self._normalise_cache_query(query)
         signature = tuple(sorted(embedding_backends)) or ("__none__",)
         flags: list[str] = []
         if hybrid_query:
@@ -1441,6 +1440,8 @@ class Search:
         stage: str,
         raw_query: str,
         executed_query: str,
+        canonical_query: str | None = None,
+        raw_canonical_query: str | None = None,
     ) -> None:
         """Log and enrich documents flowing through hybrid lookups."""
 
@@ -1450,8 +1451,16 @@ class Search:
             return
 
         executed = executed_query or raw_query
-        canonical_query = self._normalise_cache_query(executed)
-        raw_canonical_query = self._normalise_cache_query(raw_query)
+        canonical_base = (
+            self._normalise_cache_query(canonical_query)
+            if canonical_query is not None
+            else self._normalise_cache_query(executed)
+        )
+        raw_canonical_base = (
+            self._normalise_cache_query(raw_canonical_query)
+            if raw_canonical_query is not None
+            else self._normalise_cache_query(raw_query)
+        )
 
         log.debug(
             "Enriching %d documents with embeddings at stage '%s' (query_embedding=%s)",
@@ -1462,8 +1471,8 @@ class Search:
         with _hybrid_stage(stage), _hybrid_query_context(
             raw_query=raw_query,
             executed_query=executed,
-            canonical_query=canonical_query,
-            raw_canonical_query=raw_canonical_query,
+            canonical_query=canonical_base,
+            raw_canonical_query=raw_canonical_base,
         ):
             context = capture_hybrid_call_context()
             log.debug(
@@ -2638,6 +2647,8 @@ class Search:
                     stage="retrieval",
                     raw_query=raw_query,
                     executed_query=current_query,
+                    canonical_query=current_canonical_query,
+                    raw_canonical_query=raw_canonical_base,
                 )
                 ranked_results = self.cross_backend_rank(
                     current_query, results_by_backend, np_query_embedding
@@ -2757,6 +2768,8 @@ class Search:
                 stage="fallback",
                 raw_query=raw_query,
                 executed_query=current_query,
+                canonical_query=current_canonical_query,
+                raw_canonical_query=raw_canonical_base,
             )
             fallback_cache_key = self._build_cache_key(
                 backend="__fallback__",

@@ -19,6 +19,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 8, 2025
+- Locked hybrid enrichment and cache fingerprints to canonical query text so
+  whitespace and case variants reuse identical cache keys while enrichment
+  telemetry records the canonical form; the refreshed property regression now
+  asserts a single backend call per canonical fingerprint.
+  【F:src/autoresearch/cache.py†L1-L237】【F:src/autoresearch/search/core.py†L872-L1484】【F:tests/unit/legacy/test_relevance_ranking.py†L423-L477】
 - Normalised the cache helpers to use Python 3.12 generics and tightened the
   import grouping so `src/autoresearch/cache.py` and the search cache adapters
   expose consistent tuple/list types without relying on legacy typing aliases.
