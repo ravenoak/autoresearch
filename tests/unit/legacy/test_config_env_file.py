@@ -3,7 +3,7 @@ from pathlib import Path
 
 from autoresearch.config.loader import ConfigLoader
 
-SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+SPEC_PATH = Path(__file__).resolve().parents[3] / "docs/algorithms/config_utils.md"
 
 
 def test_config_spec_exists() -> None:

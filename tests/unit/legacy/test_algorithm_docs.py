@@ -23,7 +23,7 @@ DOC_PATHS = {
 def repo_root() -> Path:
     """Return the repository root path."""
 
-    return Path(__file__).resolve().parents[2]
+    return Path(__file__).resolve().parents[3]
 
 
 def test_algorithm_docs_exist() -> None:

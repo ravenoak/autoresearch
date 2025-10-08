@@ -69,7 +69,7 @@ def test_register_backend_and_lookup(monkeypatch):
         )
 
         results = search.external_lookup("x", max_results=1)
-        assert results == [{"title": "t", "url": "u", "backend": "dummy"}]
+        assert results == [{"title": "t", "url": "u", "backend": "dummy", "canonical_url": "u"}]
 
 
 def test_external_lookup_unknown_backend(monkeypatch):

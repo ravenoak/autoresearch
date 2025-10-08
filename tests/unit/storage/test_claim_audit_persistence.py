@@ -30,7 +30,7 @@ def test_persist_claim_audit_payload_updates_backends(tmp_path: Path) -> None:
 
     context = StorageContext(
         graph=graph,
-        kg_graph=nx.MultiDiGraph[Any](),
+        kg_graph=nx.MultiDiGraph(),
         db_backend=_StubBackend(),
         rdf_store=init_rdf_store("memory", str(tmp_path / "rdf")),
     )
