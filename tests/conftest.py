@@ -103,7 +103,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:  # pragma: no cover - 
     if violations:
         formatted = "\n- ".join(violations)
         message = (
-            "Modules must place `from __future__ import annotations` before other imports:"\
+            "Modules must place `from __future__ import annotations` before other imports:"
             f"\n- {formatted}"
         )
         raise pytest.UsageError(message)
