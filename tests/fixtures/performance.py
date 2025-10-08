@@ -34,4 +34,3 @@ def distributed_orchestrator_baseline() -> TypedFixture[Mapping[str, Any]]:
     """Return distributed orchestrator metrics recorded in the baseline suite."""
 
     return _load_baseline("orchestrator_distributed_sim.json")
-

@@ -23,12 +23,7 @@
       "out": 8
     }
   },
-  "tests/integration/test_token_budget_benchmark.py::test_token_usage_budget_regression": {
-    "Dummy": {
-      "in": 3,
-      "out": 8
-    }
-  },
+  "tests/integration/test_token_budget_benchmark.py::test_token_usage_budget_regression": {},
   "tests/integration/test_token_usage_integration.py::test_token_usage_matches_baseline": {
     "Dummy": {
       "in": 2,

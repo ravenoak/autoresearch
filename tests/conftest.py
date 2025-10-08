@@ -309,6 +309,8 @@ def pytest_runtest_setup(item):
         pytest.skip("parsers extra not installed")
     if item.get_closest_marker("requires_nlp") and not NLP_AVAILABLE:
         pytest.skip("nlp extra not installed")
+    if item.get_closest_marker("requires_gpu") and not GPU_AVAILABLE:
+        pytest.skip("gpu extra not installed")
     if item.get_closest_marker("requires_distributed") and not REDIS_AVAILABLE:
         pytest.skip("redis not available")
 
@@ -319,6 +321,16 @@ PARSERS_AVAILABLE = _module_available("pdfminer")
 LLM_AVAILABLE = _module_available("fastembed")
 UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("spacy")
+def _gpu_available() -> bool:
+    """Check if GPU dependencies (BERTopic) are actually available."""
+    try:
+        from bertopic import BERTopic
+        # Check if it's not the stub by checking the version
+        return hasattr(BERTopic, '__version__') and BERTopic.__version__ != "0.0"
+    except Exception:
+        return False
+
+GPU_AVAILABLE = _gpu_available()
 
 # Provide a lightweight Redis service for distributed tests.
 REDIS_URL = "redis://localhost:6379/0"

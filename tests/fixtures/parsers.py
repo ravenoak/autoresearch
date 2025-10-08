@@ -35,6 +35,12 @@ def sample_docx_file(tmp_path: Path) -> Path:
     docx = import_or_skip("docx")
     path = tmp_path / "sample.docx"
     doc = docx.Document()
-    doc.add_paragraph("hello from docx")
+    # Check if the API has changed - try the old way first
+    try:
+        doc.add_paragraph("hello from docx")
+    except AttributeError:
+        # New API might use different method
+        p = doc.add_paragraph()
+        p.add_run("hello from docx")
     doc.save(path)
     return path
