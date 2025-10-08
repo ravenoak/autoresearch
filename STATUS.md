@@ -19,6 +19,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 8, 2025
+- Archived a fresh `uv run task verify EXTRAS="dev-minimal test"` sweep at
+  **15:01 UTC**; the run fails when Hypothesis reports
+  `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+  as flaky, so the verify gate remains red.【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】
+- Kicked off `uv run task coverage EXTRAS="dev-minimal test"` at **15:03 UTC**;
+  pytest aborts on `tests/unit/legacy/test_future_import_hygiene.py` after the
+  collection guard flags `tests/conftest.py`, so coverage artefacts were not
+  regenerated and the dossier still lacks an updated percentage snapshot.
+  【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】
 - Locked hybrid enrichment and cache fingerprints to canonical query text so
   whitespace and case variants reuse identical cache keys while enrichment
   telemetry records the canonical form; the refreshed property regression now

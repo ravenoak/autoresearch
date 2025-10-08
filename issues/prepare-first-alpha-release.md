@@ -1,6 +1,15 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 15:03 UTC** the release sweep remains blocked: the
+latest `uv run task verify EXTRAS="dev-minimal test"` run halts when Hypothesis
+reports `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+as flaky, and the follow-on `uv run task coverage EXTRAS="dev-minimal test"`
+attempt aborts when the collection hygiene guard re-flags `tests/conftest.py`.
+Coverage artefacts and the percentage summary were not regenerated, so the
+alpha dossier still lacks fresh end-to-end evidence.
+【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】
+【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】
 As of **October 8, 2025 at 05:29 UTC** the search/cache lint cleanup swapped the
 legacy typing aliases for Python 3.12 generics, tightened cache slot helpers,
 and extended the collection hygiene stub so `uv run task check` reaches pytest
