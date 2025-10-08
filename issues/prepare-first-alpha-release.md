@@ -1,6 +1,10 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 05:05 UTC** the quick gate remains green: a fresh
+`uv run task check` sweep passes end-to-end, and the log is archived at
+`baseline/logs/task-check-20251008T050445Z.log` for reference alongside the
+verify fallout noted below.【F:baseline/logs/task-check-20251008T050445Z.log†L1-L59】
 As of **October 8, 2025 at 04:21 UTC** the collection hygiene guard now runs
 during every pytest invocation, failing fast when imports precede
 `from __future__ import annotations`. Unit coverage exercises both failing and

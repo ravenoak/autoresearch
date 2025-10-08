@@ -1,0 +1,59 @@
+Script started on 2025-10-08 05:04:45+00:00 [COMMAND="uv run task check" TERM="xterm" COLUMNS="128" LINES="-1"]
+[32mtask: [check] uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  --extra dev-minimal \
+  --extra test \
+  
+
+[0m[2mResolved [1m327 packages[0m [2min 6ms[0m[0m
+[2mAudited [1m176 packages[0m [2min 0.51ms[0m[0m
+[32mtask: [check] task check-env EXTRAS=""
+[0m[32mtask: [check-env] task --version
+[0m3.45.4
+[32mtask: [check-env] uv run python scripts/check_env.py
+[0mVerifying extras: dev-minimal, test
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+a2a-sdk 0.3.8
+black 25.9.0
+duckdb 1.3.2
+fakeredis 2.32.0
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.3
+lxml 5.4.0
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+redis 6.4.0
+responses 0.25.8
+tomli-w 1.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20251001
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+[32mtask: [check] uv run flake8 src
+[0m[32mtask: [check] task mypy-strict
+[0m[32mtask: [mypy-strict] uv run mypy --strict src tests
+[0m[1m[32mSuccess: no issues found in 803 source files(B[m
+[32mtask: [check] task lint-specs
+[0m[32mtask: [lint-specs] uv run python scripts/lint_specs.py
+[0m[32mtask: [check] task check-release-metadata
+[0m[32mtask: [check-release-metadata] uv run python scripts/check_release_metadata.py
+[0mRelease metadata aligned: version=0.1.0a1, date=Unreleased
+[32mtask: [check] uv run python scripts/check_spec_tests.py
+[0m[32mtask: [check] uv run pytest -c /dev/null tests/unit/legacy/test_version.py tests/unit/legacy/test_cli_help.py -q
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                                                                [100%][0m
+[32m[32m[1m9 passed[0m[32m in 1.11s[0m[0m
+
+Script done on 2025-10-08 05:05:01+00:00 [COMMAND_EXIT_CODE="0"]
