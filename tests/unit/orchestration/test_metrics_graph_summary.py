@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
-from __future__ import annotations
-
-from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
 def test_graph_summary_uses_typed_floats() -> None:

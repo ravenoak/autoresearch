@@ -94,6 +94,6 @@ def test_handle_command_not_found_suggests_similar(capsys):
 
 
 def test_install_help_text_in_readme():
-    readme = Path(__file__).resolve().parents[2] / "README.md"
+    readme = Path(__file__).resolve().parents[3] / "README.md"
     text = readme.read_text()
-    assert "dev-minimal` and `test` extras" in text
+    assert "`dev-minimal` and `test` extras" in text

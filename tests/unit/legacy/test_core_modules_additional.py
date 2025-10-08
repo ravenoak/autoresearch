@@ -1,6 +1,6 @@
 # mypy: ignore-errors
 import functools
-import shutil
+import shutil  # noqa: F401 - used in monkeypatch
 import types
 from collections import defaultdict
 from typing import Any

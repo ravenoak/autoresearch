@@ -3,11 +3,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, Sequence
 
-from __future__ import annotations
-
-from types import SimpleNamespace
-from typing import Any, Sequence
-
 import networkx as nx
 import pytest
 

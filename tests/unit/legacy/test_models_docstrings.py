@@ -5,7 +5,7 @@ from pathlib import Path
 
 from autoresearch.models import QueryResponse
 
-SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/models.md"
+SPEC_PATH = Path(__file__).resolve().parents[3] / "docs/algorithms/models.md"
 
 
 def test_models_spec_exists() -> None:

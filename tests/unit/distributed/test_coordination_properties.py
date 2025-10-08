@@ -6,15 +6,6 @@ import random
 import sys
 from pathlib import Path
 from types import ModuleType
-from __future__ import annotations
-
-import importlib
-import multiprocessing
-import random
-import sys
-from pathlib import Path
-from types import ModuleType
-from typing import Any, Mapping
 
 import pytest
 
@@ -37,7 +28,11 @@ from autoresearch.distributed.broker import (  # noqa: E402
 @pytest.fixture(scope="session", autouse=True)
 def set_spawn_start_method() -> None:
     """Use spawn to avoid fork-related deadlocks in multiprocessing."""
-    multiprocessing.set_start_method("spawn", force=True)
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        # Start method already set, ignore
+        pass
 
 
 @pytest.fixture

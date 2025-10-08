@@ -11,7 +11,7 @@ from autoresearch.api import app as api_app
 from autoresearch.main import app as cli_app
 from autoresearch.orchestration.orchestrator import Orchestrator
 
-SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+SPEC_PATH = Path(__file__).resolve().parents[3] / "docs/algorithms/config_utils.md"
 
 
 def test_config_spec_exists() -> None:

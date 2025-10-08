@@ -17,7 +17,7 @@ DOCS = [
 
 def repo_root() -> Path:
     """Return repository root."""
-    return Path(__file__).resolve().parents[2]
+    return Path(__file__).resolve().parents[3]
 
 
 def test_algorithm_docs_exist() -> None:
