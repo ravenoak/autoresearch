@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from unittest.mock import patch
 
 import pytest
@@ -62,7 +63,10 @@ def test_parallel_merging_is_deterministic(agent_groups):
     expected = {",".join(g) for g in agent_groups}
     assert set(resp1.reasoning) == expected
     assert set(resp2.reasoning) == expected
-    assert all(isinstance(step, FrozenReasoningStep) for step in resp1.reasoning)
+    assert set(resp1.reasoning) == set(resp2.reasoning)
+    for response in (resp1, resp2):
+        assert all(isinstance(step, FrozenReasoningStep) for step in response.reasoning)
+        assert all(isinstance(step, Hashable) for step in response.reasoning)
 
 
 @pytest.mark.reasoning_modes

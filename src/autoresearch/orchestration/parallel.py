@@ -77,9 +77,7 @@ def execute_parallel_query(
         unique = ReasoningCollection()
         seen: set[FrozenReasoningStep] = set()
         for step in ordered:
-            normalized = (
-                step if isinstance(step, FrozenReasoningStep) else normalize_reasoning_step(step)
-            )
+            normalized = normalize_reasoning_step(step)
             if normalized in seen:
                 continue
             seen.add(normalized)
@@ -202,8 +200,9 @@ def execute_parallel_query(
         claims: tuple[FrozenReasoningStep, ...] = tuple(
             sorted(normalized_claims, key=lambda step: step.sort_key)
         )
+        claim_collection = ReasoningCollection(claims)
         result_dict = {
-            "claims": claims,
+            "claims": claim_collection,
             "sources": result.citations,
             "metadata": {**result.metrics, "confidence": confidence, "agent_group": group},
             "results": {"group_answer": result.answer, "group_confidence": confidence},
@@ -211,7 +210,7 @@ def execute_parallel_query(
         final_state.update(result_dict)
 
     if errors or timeouts:
-        err_claims: list[dict[str, object]] = []
+        err_claims = ReasoningCollection()
         if errors:
             err_claims.extend(
                 _diagnostic_claim_for_group(
