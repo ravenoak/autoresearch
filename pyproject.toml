@@ -54,7 +54,7 @@ classifiers = [
 ]
 
 [tool.autoresearch]
-release_date = "Unreleased" # keep in sync with autoresearch.__release_date__
+release_date = "2025-10-08" # keep in sync with autoresearch.__release_date__
 
 [tool.setuptools]
 include-package-data = true

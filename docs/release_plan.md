@@ -9,62 +9,32 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 6, 2025** and
-reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
-defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
+`2025-05-18`). This schedule was last updated on **October 8, 2025** and
+confirms that the codebase now holds the tag-ready **0.1.0a1** version defined
+in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
 STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Status
 
-The strict typing gate remains green: at **2025-10-07 05:48 UTC**
-`uv run mypy --strict src tests` reported “Success: no issues found in 797
-source files”, so type coverage is stable while we repair pytest regressions.
-【6bfb2b†L1-L1】 A focused
-`uv run --extra test pytest tests/unit/legacy/test_relevance_ranking.py -k
-external_lookup_uses_cache` run in the same window still fails with
-`backend.call_count == 3`, keeping cache determinism as the top regression
-before the release sweep can resume.【7821ab†L1031-L1034】 The preflight plan now
-prioritises five short PRs—PR-L0 (lint parity), PR-S3 (cache guardrails), PR-V1
-(verify/coverage refresh), PR-B1 (behaviour hardening), and PR-E1 (evidence
-sync)—to restore end-to-end readiness.【F:docs/v0.1.0a1_preflight_plan.md†L1-L320】
+The release prerequisites closed on **2025-09-30**: `uv run task verify`
+completed with 1,256 passing tests and 99 % coverage, and `uv run task
+coverage` refreshed the XML artefact at 92.4 % statements while exercising
+the scout gate telemetry.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L4-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L2-L21】
 
-Verify still halts inside `flake8`: at **2025-10-06 04:41 UTC**
-`uv run task verify` exits with unused imports, duplicate definitions, misplaced
-`__future__` imports, and newline violations across the merged search, cache,
-and AUTO-mode telemetry modules. Mypy and pytest do not run until lint is
-restored.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】 The paired
-`uv run task coverage` attempt at the same timestamp began compiling GPU and
-analysis extras (`hdbscan==0.8.40` is the first build) and was aborted to avoid
-spending the release window on optional wheels; the partial log is archived for
-the follow-up sweep once lint is stable.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
+A targeted metadata check on **2025-10-08 15:56 UTC** confirmed that the
+project metadata records version `0.1.0a1` with the **2025-10-08** release
+date, and the TestPyPI dry run built both the sdist and wheel before skipping
+the upload step as expected.
+【F:baseline/logs/check-release-metadata-20251008T155612Z.log†L1-L1】
+【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】
 
-On **2025-10-08 at 15:11 UTC** the full `uv run task release:alpha` sweep
-advanced through lint, strict typing, spec linting, release metadata checks,
-and packaging, then halted during the coverage stage when the concurrent
-handling check in `tests/unit/legacy/test_a2a_interface.py` failed its timing
-assertion. The transcript and checksum live at
-`baseline/logs/release-alpha-dry-run-20251008T151148Z.log` and
-`baseline/logs/release-alpha-dry-run-20251008T151148Z.sha256` for follow-up
-triage.【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
-To confirm the TestPyPI stage still works end-to-end, we separately invoked
-`uv run python scripts/publish_dev.py --dry-run` at **15:15 UTC**; the command
-built both the sdist and wheel artefacts and recorded the dry-run skip along
-with a checksum. The artefacts live under
-`baseline/logs/testpypi-dry-run-20251008T151539Z.*` for reuse during the next
-release attempt.【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】
-The paired checksum document captures the log digest for auditors.
-【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
-
-The [v0.1.0a1 preflight readiness plan](v0.1.0a1_preflight_plan.md) now marks
-PR-S1 (deterministic search stubs), PR-S2 (namespace-aware cache keys), and
-PR-R0 (AUTO-mode claim hydration) as complete while promoting lint repair,
-legacy fixture restoration (PR-L0/PR-L1), orchestrator clean-up (PR-R2/PR-P1),
-and coverage refresh (PR-V1) as the next actions.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】
-The alpha ticket mirrors the updated checklist and references the new logs so
-release review can trace the lint regression and aborted coverage run.
-【F:issues/prepare-first-alpha-release.md†L1-L64】【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
+The changelog now documents the `## [0.1.0a1] - 2025-10-08` release entry with
+audit-ready highlights, confirming that the dossier is ready for tagging.
+【F:CHANGELOG.md†L9-L46】
 
 Distributed metrics still cite the captured baselines under
 `baseline/evaluation/`. The orchestrator recovery simulation (50 tasks,
