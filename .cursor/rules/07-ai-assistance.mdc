@@ -1,0 +1,222 @@
+---
+description: Guidelines for AI-assisted development with Cursor
+alwaysApply: true
+---
+
+# AI-Assisted Development Guidelines
+
+## Reasoning Framework
+Apply multi-disciplined reasoning to all development decisions:
+
+### Dialectical Reasoning
+1. **Thesis**: State the proposed approach
+2. **Antithesis**: Question it - what could go wrong?
+3. **Synthesis**: Combine insights into robust solution
+
+Example:
+```
+Thesis: Use caching to improve search performance
+Antithesis: Caching adds complexity and can serve stale data
+Synthesis: Implement TTL-based cache for frequent queries with
+           configurable expiration and cache invalidation hooks
+```
+
+### Socratic Method
+Ask probing questions before implementing:
+- What problem are we really solving?
+- What assumptions am I making?
+- What edge cases exist?
+- How will this scale?
+- What are the maintenance implications?
+- How can this fail?
+- What alternatives exist?
+
+### Systems Thinking
+Consider the whole system:
+- **Interactions**: How does this affect other components?
+- **Feedback loops**: What cascading effects occur?
+- **Emergent behavior**: What patterns emerge at scale?
+- **Constraints**: What limits exist?
+
+### Holistic Thinking
+Balance multiple concerns:
+- **Functionality**: Does it work correctly?
+- **Performance**: Is it fast enough?
+- **Maintainability**: Can others understand and modify it?
+- **Security**: Are there vulnerabilities?
+- **Usability**: Is the API intuitive?
+- **Testability**: Can we verify it works?
+
+## AI Pairing Best Practices
+
+### When to Use AI
+- Boilerplate code generation
+- Test case generation
+- Documentation writing
+- Code refactoring
+- Bug investigation
+- API exploration
+- Design exploration
+
+### When to Pause and Think
+- Architecture decisions
+- Security-critical code
+- Complex algorithms
+- Performance-critical paths
+- Breaking changes
+- API design
+
+## Effective Prompting
+
+### Context Provision
+Give the AI relevant context:
+- Current file and surrounding code
+- Related files and modules
+- Error messages and stack traces
+- Desired outcome and constraints
+- Relevant documentation
+
+### Specific Requests
+Be specific about what you want:
+
+✅ Good:
+```
+Refactor the search_documents function to use async/await
+for concurrent backend queries. Maintain the existing error
+handling and add timeout support.
+```
+
+❌ Vague:
+```
+Make search faster
+```
+
+### Iterative Refinement
+- Start with high-level design
+- Refine with specifics
+- Validate and test
+- Iterate based on results
+
+## Code Review Checklist
+When accepting AI-generated code, verify:
+
+### Correctness
+- [ ] Logic is sound and handles edge cases
+- [ ] Error handling is appropriate
+- [ ] Type hints are correct
+- [ ] Imports are correct and minimal
+
+### Style
+- [ ] Follows project conventions (PEP 8, 100 char lines)
+- [ ] Naming is clear and consistent
+- [ ] Code is readable and maintainable
+- [ ] Comments explain "why", not "what"
+
+### Testing
+- [ ] Existing tests still pass
+- [ ] New tests cover the changes
+- [ ] Edge cases are tested
+- [ ] Error conditions are tested
+
+### Integration
+- [ ] Fits with existing architecture
+- [ ] Doesn't introduce coupling
+- [ ] Handles dependencies appropriately
+- [ ] Logging is appropriate
+
+### Documentation
+- [ ] Docstrings are complete and accurate
+- [ ] Public APIs are documented
+- [ ] Complex logic has explanatory comments
+- [ ] User-facing docs are updated if needed
+
+## Common Pitfalls to Avoid
+
+### Over-Reliance
+- Don't blindly accept AI suggestions
+- Understand the code before committing
+- Verify correctness with tests
+- Consider maintenance implications
+
+### Under-Specification
+- Provide enough context
+- Specify constraints and requirements
+- Mention relevant standards and patterns
+- Reference existing code when appropriate
+
+### Ignoring Project Standards
+- AI may not know project-specific conventions
+- Always verify style compliance
+- Check against architecture guidelines
+- Ensure consistency with existing code
+
+## Learning from AI Interactions
+
+### Reflection
+After completing tasks with AI assistance:
+- What worked well?
+- What could be improved?
+- Were there misunderstandings?
+- How can prompts be more effective?
+
+### Documentation
+Document learned patterns:
+- Update AGENTS.md files for workflow improvements
+- Add examples to rules files
+- Share effective prompts with team
+- Document common pitfalls and solutions
+
+## Privacy and Security
+
+### Sensitive Information
+- Never include credentials in prompts
+- Be cautious with proprietary algorithms
+- Don't share sensitive user data
+- Review AI-generated code for security issues
+
+### Code Review
+- All AI-generated code requires human review
+- Security-critical code needs extra scrutiny
+- Test thoroughly before committing
+- Document any security considerations
+
+## Continuous Improvement
+
+### Feedback Loop
+1. Use AI to generate code
+2. Review and refine
+3. Test thoroughly
+4. Reflect on the process
+5. Update guidelines and prompts
+6. Share learnings with team
+
+### Rule Evolution
+- Update these rules as practices evolve
+- Add examples of effective patterns
+- Document anti-patterns to avoid
+- Keep rules focused and actionable
+
+## Collaboration with AI
+
+### Treat AI as a Junior Developer
+- Provide clear specifications
+- Review output carefully
+- Explain the "why" behind decisions
+- Use as a tool, not a replacement for thinking
+
+### Maintain Agency
+- You make the final decisions
+- Understand the code you commit
+- Take responsibility for AI-generated code
+- Question and verify suggestions
+
+## Project-Specific AI Guidance
+
+### Autoresearch Context
+When working with AI on this project:
+- Mention we use uv for package management
+- Reference existing architecture patterns
+- Point to relevant docs in `docs/`
+- Specify test requirements and markers
+- Note the importance of type hints
+- Emphasize error handling and logging
