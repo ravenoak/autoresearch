@@ -10,6 +10,12 @@ Coverage artefacts and the percentage summary were not regenerated, so the
 alpha dossier still lacks fresh end-to-end evidence.
 【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】
 【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】
+
+Before we propose the `0.1.0a1` tag, reviewers must acknowledge the
+documentation updates captured in STATUS.md, TASK_PROGRESS.md, and the
+preflight dossier. Capture those sign-offs in this ticket to confirm the
+release checklist reflects the final evidence package.
+
 As of **October 8, 2025 at 05:29 UTC** the search/cache lint cleanup swapped the
 legacy typing aliases for Python 3.12 generics, tightened cache slot helpers,
 and extended the collection hygiene stub so `uv run task check` reaches pytest
