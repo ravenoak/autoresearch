@@ -13,8 +13,8 @@ ensure_stub_module(
     },
 )
 
-from autoresearch import storage  # noqa: E402
-from autoresearch.distributed.broker import PersistClaimMessage, StorageQueueProtocol
+from autoresearch import storage  # noqa: E402 - import after stub setup
+from autoresearch.distributed.broker import PersistClaimMessage, StorageQueueProtocol  # noqa: E402 - import after stub setup
 
 
 class DummyManager(storage.StorageManager):

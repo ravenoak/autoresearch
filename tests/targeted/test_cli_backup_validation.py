@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import io
 from pathlib import Path
 
 import pytest
 import typer
 from rich.console import Console
-
-from __future__ import annotations
 
 from autoresearch.cli_backup import _validate_dir, _validate_file
 
