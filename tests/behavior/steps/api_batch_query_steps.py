@@ -13,7 +13,7 @@ from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from tests.behavior.context import BehaviorContext
-from tests.behavior.utils import PayloadDict, as_payload, store_payload
+from tests.behavior.utils import as_payload, store_payload
 
 from . import common_steps  # noqa: F401
 

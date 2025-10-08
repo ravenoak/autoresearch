@@ -3,17 +3,13 @@ import asyncio
 import socket
 import sys
 import time
-
-import asyncio
-import socket
-import sys
-import time
 from typing import Any
 
 import httpx
 import pytest
 
 # Ensure real a2a SDK is used instead of the test stub
+# noqa: E402 - imports after stub setup
 try:  # pragma: no cover - best effort
     import pydantic.root_model as _rm  # noqa: E402
 except Exception:  # pragma: no cover - fallback
@@ -26,20 +22,20 @@ for name in list(sys.modules):
     if name.startswith("a2a"):
         del sys.modules[name]
 
-from a2a.types import Message, MessageSendParams  # noqa: E402
-from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: E402
+from a2a.types import Message, MessageSendParams  # noqa: E402 - imports after stub setup
+from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: E402 - imports after stub setup
 
-from autoresearch.a2a_interface import (  # noqa: E402
+from autoresearch.a2a_interface import (  # noqa: E402 - imports after stub setup
     A2A_AVAILABLE,
     A2AInterface,
     create_message_send_params,
     get_message_model_cls,
 )
-from autoresearch.config.loader import ConfigLoader  # noqa: E402
-from autoresearch.config.models import ConfigModel  # noqa: E402
-from autoresearch.models import QueryResponse  # noqa: E402
-from scripts.a2a_concurrency_sim import run_simulation  # noqa: E402
-from tests.typing_helpers import TypedFixture
+from autoresearch.config.loader import ConfigLoader  # noqa: E402 - imports after stub setup
+from autoresearch.config.models import ConfigModel  # noqa: E402 - imports after stub setup
+from autoresearch.models import QueryResponse  # noqa: E402 - imports after stub setup
+from scripts.a2a_concurrency_sim import run_simulation  # noqa: E402 - imports after stub setup
+from tests.typing_helpers import TypedFixture  # noqa: E402 - imports after stub setup
 
 pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 

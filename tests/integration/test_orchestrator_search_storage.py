@@ -355,7 +355,7 @@ def test_orchestrator_handles_empty_search_results(
     calls: list[str] = []
     stored: list[JSONDict] = []
 
-    def _external_lookup(_query: str, _max_results: int = 2) -> list[JSONDict]:
+    def _external_lookup(_query: str, max_results: int = 2) -> list[JSONDict]:
         return []
 
     def _capture_claim(claim: JSONDict) -> None:

@@ -6,6 +6,8 @@ the API and orchestration system, including query forwarding, error handling,
 parameter handling, and concurrent request handling.
 """
 
+from __future__ import annotations
+
 import concurrent.futures
 from typing import Any
 from unittest.mock import MagicMock
@@ -19,7 +21,7 @@ from autoresearch.errors import OrchestrationError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from tests.behavior.context import BehaviorContext
-from tests.behavior.utils import PayloadDict, as_payload, store_payload
+from tests.behavior.utils import as_payload, store_payload
 from tests.typing_helpers import TypedFixture
 
 
