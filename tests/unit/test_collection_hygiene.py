@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tests.conftest import find_future_annotations_import_violations
+import pytest
+
+from tests.conftest import (
+    enforce_future_annotations_import_order,
+    find_future_annotations_import_violations,
+)
 
 
 def _write_module(path: Path, contents: str) -> Path:
@@ -32,3 +37,17 @@ def test_guard_ignores_valid_future_import_order(tmp_path: Path) -> None:
     )
 
     assert find_future_annotations_import_violations([valid]) == []
+
+
+def test_enforce_guard_raises_usage_error(tmp_path: Path) -> None:
+    offending = _write_module(
+        tmp_path / "offender.py",
+        "import sys\nfrom __future__ import annotations\n",
+    )
+
+    with pytest.raises(pytest.UsageError) as excinfo:
+        enforce_future_annotations_import_order([offending])
+
+    message = str(excinfo.value)
+    assert "offender.py" in message
+    assert "import sys" in message

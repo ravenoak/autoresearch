@@ -36,10 +36,12 @@ artifacts are created under `tmp_path` and cleaned automatically.
 
 ## Import hygiene guard
 
-- `tests/conftest.py` runs a collection-time check that fails when a module
-  imports anything before `from __future__ import annotations`.
-- `tests/unit/test_collection_hygiene.py` provides unit coverage by simulating
-  both offending and valid modules.
-- `uv run task check` triggers the guard through its pytest smoke tests; run
+- `tests/conftest.py` exposes `enforce_future_annotations_import_order` and runs
+  the guard at collection time so any module that imports before
+  `from __future__ import annotations` fails fast.
+- `tests/unit/test_collection_hygiene.py` simulates both offending and valid
+  modules and asserts the guard raises a `pytest.UsageError` with actionable
+  messaging.
+- `uv run task check` executes the hygiene tests alongside its smoke suite; run
   `uv run pytest tests/unit/test_collection_hygiene.py -q` for a focused audit.
 
