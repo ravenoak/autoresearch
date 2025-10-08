@@ -5,6 +5,8 @@ This module provides utilities for loading and managing DuckDB extensions,
 particularly the VSS extension used for vector similarity search.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from pathlib import Path
