@@ -1,3 +1,4 @@
+import ast
 import contextlib
 import importlib
 import importlib.util
@@ -6,7 +7,7 @@ import multiprocessing
 import multiprocessing.pool
 import os
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from multiprocessing import resource_tracker
 from pathlib import Path
 from types import ModuleType
@@ -19,6 +20,93 @@ from pytest_httpx import httpx_mock  # noqa: F401
 
 from tests.optional_imports import import_or_skip
 from tests.typing_helpers import TypedFixture
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+_FUTURE_IMPORT = "from __future__ import annotations"
+_DEFAULT_GUARD_DIRECTORIES = (
+    REPO_ROOT / "src",
+    REPO_ROOT / "tests",
+    REPO_ROOT / "scripts",
+    REPO_ROOT / "extensions",
+)
+_SKIP_DIRECTORY_NAMES = {".git", ".ruff_cache", "__pycache__", ".venv", "build", "dist"}
+
+
+def _should_skip_path(path: Path) -> bool:
+    return any(part in _SKIP_DIRECTORY_NAMES for part in path.parts)
+
+
+def _iter_python_files(paths: Iterable[Path]) -> Iterable[Path]:
+    for path in paths:
+        if not path.exists():
+            continue
+        if path.is_file():
+            if path.suffix == ".py" and not _should_skip_path(path):
+                yield path
+            continue
+        for candidate in path.rglob("*.py"):
+            if _should_skip_path(candidate):
+                continue
+            yield candidate
+
+
+def _find_future_import_index(module: ast.Module) -> int | None:
+    for index, node in enumerate(module.body):
+        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+            for alias in node.names:
+                if alias.name == "annotations":
+                    return index
+    return None
+
+
+def find_future_annotations_import_violations(
+    paths: Iterable[Path] | None = None,
+) -> list[str]:
+    """Return messages for modules that import before the future annotations directive."""
+
+    search_roots = (
+        [Path(path) for path in paths]
+        if paths is not None
+        else [candidate for candidate in _DEFAULT_GUARD_DIRECTORIES if candidate.exists()]
+    )
+
+    violations: list[str] = []
+    for file_path in _iter_python_files(search_roots):
+        try:
+            contents = file_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if _FUTURE_IMPORT not in contents:
+            continue
+        try:
+            module = ast.parse(contents)
+        except SyntaxError:
+            continue
+        future_index = _find_future_import_index(module)
+        if future_index is None:
+            continue
+        for node in module.body[:future_index]:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                try:
+                    relative = file_path.relative_to(REPO_ROOT)
+                except ValueError:
+                    relative = file_path
+                line = contents.splitlines()[node.lineno - 1].strip()
+                violations.append(f"{relative}:{node.lineno} {line}")
+    return violations
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:  # pragma: no cover - exercised in CI
+    del session
+    violations = find_future_annotations_import_violations()
+    if violations:
+        formatted = "\n- ".join(violations)
+        message = (
+            "Modules must place `from __future__ import annotations` before other imports:"\
+            f"\n- {formatted}"
+        )
+        raise pytest.UsageError(message)
 
 
 shared_memory: ModuleType | None

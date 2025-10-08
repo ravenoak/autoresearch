@@ -1,6 +1,12 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 8, 2025 at 04:21 UTC** the collection hygiene guard now runs
+during every pytest invocation, failing fast when imports precede
+`from __future__ import annotations`. Unit coverage exercises both failing and
+passing scenarios and the test README documents the policy so contributors know
+how to remediate violations.【F:tests/conftest.py†L1-L132】【F:tests/unit/test_collection_hygiene.py†L1-L34】【F:tests/README.md†L37-L42】
+
 As of **October 8, 2025 at 03:58 UTC** the lint fallout around misplaced future
 imports is cleared: every module called out in the October 6 verify log now
 starts with `from __future__ import annotations`, and the redundant pytest
@@ -187,9 +193,10 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - [x] Land **PR-A1** – normalise `FrozenReasoningStep` payloads inside
   specialist agents and adjust orchestration regression tests so
   `ReasoningCollection` in-place additions remain type-safe.
-- [ ] Land **PR-T0** – add regression coverage that fails when duplicate
-  imports precede `from __future__ import annotations`, document the guard, and
-  wire it into CI.
+- [x] Land **PR-T0** – add a collection-time guard for future import ordering,
+  back it with unit coverage, document the policy, and ensure `uv run task check`
+  exercises the pytest hook.
+  【F:tests/conftest.py†L1-L132】【F:tests/unit/test_collection_hygiene.py†L1-L34】【F:tests/README.md†L37-L42】
 - [ ] Repair lint fallout from PR-S1/S2/R0 so `uv run task verify` reaches
   mypy and pytest again, then capture fresh verify and coverage logs for the
   release dossier.
