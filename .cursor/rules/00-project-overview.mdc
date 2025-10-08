@@ -1,0 +1,46 @@
+---
+description: Autoresearch project overview and core principles
+alwaysApply: true
+---
+
+# Autoresearch Project Overview
+
+## Purpose
+AI-assisted research orchestration framework providing automated research workflows
+through a Python library, CLI, and comprehensive documentation.
+
+## Core Philosophy
+- **Clarity**: Write clear, self-documenting code with comprehensive docstrings
+- **Safety**: Prioritize type safety, error handling, and defensive programming
+- **Maintainability**: Favor readable, testable code over clever optimizations
+- **Reasoning**: Apply dialectical and Socratic reasoning to all decisions:
+  * State assumptions explicitly
+  * Question and explore alternatives
+  * Synthesize well-grounded conclusions
+  * Document key reasoning in commits and PRs
+
+## Technology Stack
+- **Language**: Python 3.12+
+- **Package Manager**: uv (prefix standalone commands with `uv run`)
+- **Formatter**: black
+- **Linter**: flake8
+- **Type Checker**: mypy
+- **Task Runner**: Task (Taskfile.yml)
+
+## Key Commands
+- `task install` - Initialize environment and install dependencies
+- `task check` - Fast linting, type checks, and tests (run early and often)
+- `task verify` - Full linting, type checks, and test suite with coverage (run before commits)
+- `task clean` - Remove build artifacts
+
+## Development Guidelines
+- Follow PEP 8 with 4-space indentation
+- Keep lines ≤ 100 characters
+- Include docstrings for all public APIs
+- Use type hints throughout
+- Write tests for all new functionality
+- Avoid committing binary artifacts; prefer text formats
+
+## Date Handling
+When applying the current date, derive it from system time.
+Current date: October 7, 2025

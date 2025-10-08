@@ -1,0 +1,176 @@
+---
+description: Git workflow and commit practices
+alwaysApply: true
+---
+
+# Git Workflow Guidelines
+
+## Branch Strategy
+- `main` - Production-ready code
+- `develop` - Integration branch (if using git-flow)
+- `feature/*` - New features
+- `fix/*` - Bug fixes
+- `docs/*` - Documentation updates
+- `refactor/*` - Code refactoring
+- `test/*` - Test improvements
+
+## Commit Messages
+Follow Conventional Commits specification:
+
+### Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Formatting, missing semicolons, etc.
+- `refactor`: Code restructuring without behavior change
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependency updates
+- `ci`: CI/CD configuration changes
+- `build`: Build system changes
+
+### Examples
+```
+feat(search): add vector similarity search backend
+
+Implement semantic search using DuckDB VSS extension.
+Supports cosine similarity and configurable thresholds.
+
+Closes #123
+```
+
+```
+fix(orchestrator): prevent race condition in task scheduling
+
+Add mutex lock around task queue access to prevent
+concurrent modification during distributed execution.
+
+Fixes #456
+```
+
+```
+docs(api): update search backend configuration examples
+
+Add examples for all supported backends (DuckDB, BM25).
+Include troubleshooting section for common issues.
+```
+
+### Best Practices
+- Write in imperative mood ("add feature" not "added feature")
+- Keep subject line under 72 characters
+- Separate subject from body with blank line
+- Wrap body at 72 characters
+- Explain *what* and *why*, not *how*
+- Reference issues and PRs in footer
+- Use body for dialectical reasoning when relevant
+
+## Pull Request Workflow
+
+### Before Creating PR
+1. Run `task verify` - ensure all tests pass
+2. Update documentation if needed
+3. Add changelog entry if applicable
+4. Rebase on target branch
+5. Ensure clean commit history
+
+### PR Description Template
+```markdown
+## Summary
+Brief description of changes and motivation.
+
+## Changes
+- List key changes
+- Highlight breaking changes
+- Note performance impacts
+
+## Testing
+- Describe testing performed
+- List any manual testing steps
+- Note test coverage changes
+
+## Reasoning
+- Explain design decisions
+- Document alternatives considered
+- Note trade-offs made
+
+## Checklist
+- [ ] Tests pass (`task verify`)
+- [ ] Documentation updated
+- [ ] CHANGELOG.md updated (if applicable)
+- [ ] Breaking changes documented
+- [ ] No linter errors
+```
+
+### PR Review Process
+- Request review from appropriate maintainers
+- Address feedback constructively
+- Discuss disagreements respectfully
+- Update PR based on feedback
+- Squash commits if requested
+
+## Commit Hygiene
+
+### Do
+- Make atomic commits (one logical change)
+- Write clear, descriptive messages
+- Keep commits focused and small
+- Test before committing
+- Commit frequently during development
+
+### Don't
+- Commit commented-out code
+- Include unrelated changes
+- Commit debug statements
+- Push broken code to main
+- Force push to shared branches (except after approval)
+
+## Merge Strategy
+- Use merge commits for feature branches
+- Squash commits for small fixes if requested
+- Rebase feature branches on main before merging
+- Delete branches after merging
+
+## Tag Strategy
+- Tag releases with semantic versioning: `v1.2.3`
+- Tag format: `v<major>.<minor>.<patch>`
+- Include release notes in tag message
+- Sign tags for releases
+
+## Git Hooks
+Project includes pre-commit hooks:
+- Code formatting (black)
+- Linter checks (flake8)
+- Type checking (mypy)
+- Test execution (for pre-push)
+
+Install hooks with: `task install`
+
+## Handling Sensitive Data
+- Never commit secrets, API keys, or credentials
+- Use environment variables for sensitive config
+- Add sensitive files to `.gitignore`
+- Use git-secrets or similar tools
+- If committed accidentally, rotate credentials immediately
+
+## Resolving Conflicts
+1. Understand both changes
+2. Communicate with other developer if needed
+3. Preserve intent of both changes when possible
+4. Test thoroughly after resolution
+5. Document complex resolutions in commit message
+
+## Continuous Integration
+- All PRs must pass CI checks
+- CI runs linting, type checks, and full test suite
+- Fix CI failures before requesting review
+- Monitor CI for flaky tests
+- Update CI configuration as project evolves

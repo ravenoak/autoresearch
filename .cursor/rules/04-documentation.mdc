@@ -1,0 +1,199 @@
+---
+description: Documentation standards and practices
+globs:
+  - "docs/**/*.md"
+  - "**/*.md"
+  - "src/**/*.py"
+alwaysApply: false
+---
+
+# Documentation Guidelines
+
+## Documentation Types
+
+### Code Documentation (Docstrings)
+All public APIs must have comprehensive docstrings using Google style:
+
+```python
+def search_documents(
+    query: str,
+    filters: Optional[dict[str, Any]] = None,
+    max_results: int = 10
+) -> list[Document]:
+    """Search for documents matching the query.
+    
+    This function performs a semantic search over the document corpus
+    using the configured search backend. Results are ranked by relevance.
+    
+    Args:
+        query: The search query string. Must not be empty.
+        filters: Optional dictionary of field filters to apply.
+            Example: {"category": "research", "year": 2024}
+        max_results: Maximum number of results to return. Must be positive.
+            Defaults to 10.
+    
+    Returns:
+        List of Document objects ranked by relevance score (highest first).
+        Returns empty list if no matches found.
+    
+    Raises:
+        ValueError: If query is empty or max_results is not positive.
+        SearchError: If the search backend encounters an error.
+    
+    Example:
+        >>> docs = search_documents("machine learning", max_results=5)
+        >>> for doc in docs:
+        ...     print(f"{doc.title}: {doc.score}")
+    
+    Note:
+        This function may take several seconds for large corpora.
+        Consider using async version for non-blocking operations.
+    """
+    pass
+```
+
+### Markdown Documentation
+Documentation in `docs/` should follow these guidelines:
+
+#### Structure
+- Start with a clear title (# heading)
+- Include a brief overview paragraph
+- Use hierarchical headings (##, ###)
+- Add a table of contents for long documents
+- Include "See Also" section for related docs
+
+#### Content
+- Write in clear, concise language
+- Use active voice
+- Include code examples with syntax highlighting
+- Add diagrams for complex concepts (PlantUML in `docs/diagrams/`)
+- Link to related documentation
+- Keep examples realistic and runnable
+
+#### Code Blocks
+Use language-specific syntax highlighting:
+
+````markdown
+```python
+# Python code example
+from autoresearch import SearchEngine
+
+engine = SearchEngine()
+results = engine.search("query")
+```
+
+```bash
+# Shell commands
+task install
+task verify
+```
+
+```toml
+# Configuration files
+[autoresearch]
+backend = "duckdb"
+max_results = 10
+```
+````
+
+### API Reference Documentation
+- Auto-generated from docstrings
+- Located in `docs/api_reference/`
+- Organized by module
+- Include usage examples
+- Link to related concepts
+
+### User Guides
+- Step-by-step instructions
+- Include prerequisites
+- Show expected output
+- Provide troubleshooting tips
+- Link to examples
+
+### Architecture Documentation
+- High-level system overview
+- Component interaction diagrams
+- Design decision rationale
+- Trade-offs and alternatives considered
+
+## Documentation Best Practices
+
+### Clarity
+- Define terms and acronyms on first use
+- Use consistent terminology throughout
+- Break complex topics into digestible sections
+- Provide context before details
+
+### Completeness
+- Document all public APIs
+- Include error conditions and handling
+- Explain configuration options
+- Provide examples for common use cases
+
+### Maintainability
+- Keep docs near the code they describe
+- Update docs when code changes
+- Review docs in pull requests
+- Remove outdated documentation
+
+### Accessibility
+- Use descriptive link text (not "click here")
+- Provide alt text for images
+- Use semantic HTML in generated docs
+- Ensure code examples are copy-pasteable
+
+## Documentation Workflow
+
+### For New Features
+1. Document the design in a spec (optional for small features)
+2. Write docstrings as you implement
+3. Add user-facing documentation
+4. Include usage examples
+5. Update relevant guides and references
+
+### For Bug Fixes
+1. Document the bug in the commit message
+2. Update docstrings if behavior changes
+3. Add troubleshooting guidance if relevant
+
+### For API Changes
+1. Document breaking changes in CHANGELOG.md
+2. Update migration guides
+3. Mark deprecated APIs with warnings
+4. Provide examples of new usage
+
+## Special Documentation Files
+
+### README.md
+- Project overview and value proposition
+- Quick start guide
+- Installation instructions
+- Links to detailed documentation
+- Contribution guidelines
+
+### CHANGELOG.md
+- Keep a changelog following Keep a Changelog format
+- Group changes: Added, Changed, Deprecated, Removed, Fixed, Security
+- Include version numbers and dates
+- Link to detailed documentation for major changes
+
+### CONTRIBUTING.md
+- How to set up development environment
+- Code style and conventions
+- Testing requirements
+- Pull request process
+- Code of conduct
+
+## MkDocs Configuration
+- Site configuration in `mkdocs.yml`
+- Use plugins: search, git-revision-date
+- Organize with nav structure
+- Enable syntax highlighting
+- Configure theme appropriately
+
+## Examples Directory
+- Place complete, runnable examples in `examples/`
+- Include README explaining the example
+- Keep examples simple and focused
+- Ensure examples run with current codebase
+- Reference examples from documentation

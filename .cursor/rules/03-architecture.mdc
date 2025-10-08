@@ -1,0 +1,175 @@
+---
+description: Architecture patterns and design principles
+globs:
+  - "src/**/*.py"
+alwaysApply: false
+---
+
+# Architecture Guidelines
+
+## Project Structure
+```
+src/autoresearch/
+  ├── agents/          # Agent system and orchestration
+  ├── config/          # Configuration management
+  ├── distributed/     # Distributed computing (Ray)
+  ├── llm/             # LLM integrations
+  ├── orchestration/   # Research orchestration
+  ├── query/           # Query processing
+  ├── search/          # Search backends
+  ├── storage/         # Data storage and retrieval
+  └── utils/           # Shared utilities
+```
+
+## Design Principles
+
+### Separation of Concerns
+- Each module has a single, well-defined responsibility
+- Avoid circular dependencies between modules
+- Use dependency injection for loose coupling
+- Keep business logic separate from I/O and UI code
+
+### Interface Segregation
+- Define clear interfaces (Protocols) for components
+- Clients should not depend on interfaces they don't use
+- Prefer small, focused interfaces over large ones
+
+Example:
+```python
+from typing import Protocol
+
+class SearchBackend(Protocol):
+    """Protocol for search backend implementations."""
+    
+    def search(self, query: str, limit: int) -> list[dict]:
+        """Execute a search query."""
+        ...
+    
+    def index_document(self, doc_id: str, content: dict) -> None:
+        """Index a document."""
+        ...
+```
+
+### Dependency Inversion
+- High-level modules should not depend on low-level modules
+- Both should depend on abstractions
+- Use Protocol types for dependencies
+- Inject dependencies through constructors
+
+Example:
+```python
+class ResearchOrchestrator:
+    def __init__(
+        self,
+        search: SearchBackend,
+        storage: StorageBackend,
+        llm: LLMProvider
+    ):
+        self._search = search
+        self._storage = storage
+        self._llm = llm
+```
+
+## Configuration Management
+- Use Pydantic models for configuration
+- Load from environment variables or config files
+- Validate configuration at startup
+- Provide sensible defaults
+- Document all configuration options
+
+Example:
+```python
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
+
+class SearchConfig(BaseSettings):
+    """Search engine configuration."""
+    
+    max_results: int = Field(default=10, ge=1, le=100)
+    timeout_seconds: int = Field(default=30, gt=0)
+    backend: str = Field(default="duckdb")
+    
+    class Config:
+        env_prefix = "AUTORESEARCH_SEARCH_"
+```
+
+## Error Handling Strategy
+- Define domain-specific exception hierarchies
+- Use specific exceptions for different error types
+- Include context in error messages
+- Log errors with appropriate severity
+- Fail fast for configuration errors
+- Retry with backoff for transient errors
+
+Example:
+```python
+class AutoresearchError(Exception):
+    """Base exception for autoresearch errors."""
+    pass
+
+class SearchError(AutoresearchError):
+    """Error during search operation."""
+    pass
+
+class ConfigurationError(AutoresearchError):
+    """Invalid configuration."""
+    pass
+```
+
+## Async/Await Usage
+- Use async for I/O-bound operations
+- Avoid mixing sync and async code unnecessarily
+- Use `asyncio.gather()` for concurrent operations
+- Handle exceptions in concurrent tasks
+- Set appropriate timeouts
+
+## Resource Management
+- Use context managers for resources (files, connections)
+- Close connections and clean up in finally blocks
+- Implement `__enter__` and `__exit__` for custom resources
+- Consider using `contextlib.contextmanager` for simple cases
+
+## Logging
+- Use structured logging with context
+- Log at appropriate levels (DEBUG, INFO, WARNING, ERROR)
+- Don't log sensitive information
+- Include relevant context (IDs, parameters)
+- Use logger hierarchies for filtering
+
+Example:
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+def process_query(query_id: str, query: str) -> None:
+    logger.info("Processing query", extra={
+        "query_id": query_id,
+        "query_length": len(query)
+    })
+    try:
+        # Process query
+        logger.debug("Query processed successfully", extra={"query_id": query_id})
+    except Exception as e:
+        logger.error(
+            "Query processing failed",
+            extra={"query_id": query_id, "error": str(e)},
+            exc_info=True
+        )
+        raise
+```
+
+## Performance Considerations
+- Profile before optimizing
+- Cache expensive computations
+- Use generators for large datasets
+- Consider memory usage for large files
+- Use connection pooling for databases
+- Batch operations when possible
+
+## Distributed Computing (Ray)
+- Use Ray for CPU-intensive parallel tasks
+- Keep tasks small and independent
+- Minimize data transfer between nodes
+- Handle failures gracefully
+- Monitor resource usage

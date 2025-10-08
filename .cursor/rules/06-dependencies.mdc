@@ -1,0 +1,206 @@
+---
+description: Dependency management and package handling
+globs:
+  - "pyproject.toml"
+  - "uv.lock"
+alwaysApply: false
+---
+
+# Dependency Management Guidelines
+
+## Package Manager: uv
+This project uses `uv` for fast, reliable Python package management.
+
+### Basic Commands
+```bash
+# Install project and dependencies
+uv sync
+
+# Add a dependency
+uv add package-name
+
+# Add a dev dependency
+uv add --dev package-name
+
+# Add an optional dependency (extras)
+uv add --optional extra-name package-name
+
+# Run a command in the virtual environment
+uv run python script.py
+uv run pytest
+uv run task verify
+
+# Update dependencies
+uv lock --upgrade
+```
+
+## Dependency Organization
+
+### Core Dependencies
+Required for basic functionality:
+- Runtime dependencies in `[project.dependencies]`
+- Keep minimal and well-justified
+- Pin major versions, allow minor/patch updates
+- Example: `requests>=2.31,<3.0`
+
+### Optional Dependencies (Extras)
+Grouped by feature or use case:
+- `dev-minimal` - Essential development tools
+- `test` - Testing frameworks and tools
+- `gpu` - GPU-accelerated computing
+- `distributed` - Distributed computing (Ray)
+- `docs` - Documentation generation
+- `ui` - Web UI components
+
+Example in `pyproject.toml`:
+```toml
+[project.optional-dependencies]
+dev-minimal = [
+    "black>=24.0.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+]
+```
+
+### Development Dependencies
+Install with: `task install` or `uv sync --extra dev-minimal --extra test`
+
+## Version Constraints
+
+### Specifying Versions
+- Use `>=X.Y,<X+1.0` for libraries (allow minor updates)
+- Use `~=X.Y.Z` for tools (allow patch updates only)
+- Pin exact versions only when necessary (security, known issues)
+- Document why strict pins are needed
+
+Examples:
+```toml
+# Library - allow minor updates
+requests = ">=2.31,<3.0"
+
+# Tool - allow patch updates
+black = "~=24.1.0"
+
+# Pinned for specific reason
+numpy = "==1.24.0"  # Required for GPU compatibility
+```
+
+### Version Ranges to Avoid
+- Unbounded ranges: `package>=1.0` (too permissive)
+- Wildcards: `package==1.*` (use `~=` instead)
+- Multiple constraints without reason: `package>=1.0,<=2.0,!=1.5`
+
+## Adding Dependencies
+
+### Before Adding a Dependency
+Ask these questions (Socratic reasoning):
+1. **Necessity**: Is this truly needed or can we implement it simply?
+2. **Maintenance**: Is the package actively maintained?
+3. **License**: Is the license compatible (check LICENSE file)?
+4. **Size**: What is the dependency footprint?
+5. **Alternatives**: Are there better-maintained or lighter alternatives?
+6. **Security**: Does it have known vulnerabilities?
+
+### Adding a New Dependency
+1. Research the package thoroughly
+2. Check latest stable version
+3. Review documentation and examples
+4. Add with appropriate version constraint
+5. Document why it's needed (in commit or docs)
+6. Update `uv.lock`: `uv lock`
+7. Test that it works: `task verify`
+
+## Updating Dependencies
+
+### Regular Updates
+- Review dependency updates monthly
+- Read changelogs before updating
+- Test thoroughly after updates
+- Update in separate PR with reasoning
+
+### Security Updates
+- Apply immediately for critical vulnerabilities
+- Test expeditiously but thoroughly
+- Document CVE or security advisory
+- Consider patching if update breaks compatibility
+
+### Update Workflow
+```bash
+# Check for updates
+uv lock --upgrade
+
+# Review changes
+git diff uv.lock
+
+# Test with updates
+task verify
+
+# Commit with explanation
+git commit -m "chore(deps): update dependencies
+
+- Update package X to vY.Z for security fix (CVE-XXXX-YYYY)
+- Update package A to vB.C for performance improvements
+  
+All tests passing. No breaking changes."
+```
+
+## Lock File Management
+
+### uv.lock
+- **Always commit**: Lock file ensures reproducible builds
+- **Keep updated**: Run `uv lock` after any dependency change
+- **Don't edit manually**: Let uv manage it
+- **Resolve conflicts**: Regenerate if conflicts in merge
+
+## Type Stubs
+
+### Type Hints for Third-Party Packages
+- Install type stubs from `types-*` packages when available
+- Create custom stubs in `typings/` for packages without types
+- Document stub creation in commit message
+
+Example:
+```bash
+# Add type stubs for requests
+uv add --dev types-requests
+
+# Custom stubs
+# Create typings/packagename/__init__.pyi
+```
+
+## Platform-Specific Dependencies
+
+### Handling Platform Differences
+Use environment markers for platform-specific deps:
+
+```toml
+[project.dependencies]
+windows-specific = { version = ">=1.0", markers = "sys_platform == 'win32'" }
+unix-specific = { version = ">=1.0", markers = "sys_platform != 'win32'" }
+```
+
+## Wheel Management
+
+### Custom Wheels
+- Store in `wheels/` directory if needed
+- Document why custom wheel is necessary
+- Include building instructions
+- Update when upstream fixes issue
+
+## Troubleshooting
+
+### Common Issues
+1. **Dependency conflicts**: Try `uv lock --upgrade` or relax constraints
+2. **Missing packages**: Ensure you've run `uv sync`
+3. **Version mismatches**: Check Python version (requires 3.12+)
+4. **Cache issues**: Try `uv clean` to clear cache
+
+### Getting Help
+- Check `uv --help` for command reference
+- Review `pyproject.toml` for project configuration
+- See `docs/installation.md` for setup details

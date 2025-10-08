@@ -1,0 +1,113 @@
+---
+description: Testing guidelines and practices
+globs:
+  - "tests/**/*.py"
+  - "**/*test*.py"
+alwaysApply: false
+---
+
+# Testing Guidelines
+
+## Test Structure
+- Organize tests to mirror source structure
+- Use descriptive test names: `test_<function>_<scenario>_<expected_result>`
+- Follow Arrange-Act-Assert pattern
+- One logical assertion per test when possible
+
+Example:
+```python
+def test_search_engine_query_with_empty_string_raises_value_error():
+    """Test that empty query string raises ValueError."""
+    # Arrange
+    engine = SearchEngine()
+    
+    # Act & Assert
+    with pytest.raises(ValueError, match="Query cannot be empty"):
+        engine.query("")
+```
+
+## Test Categories
+The project uses pytest markers to categorize tests:
+
+### Test Types
+- `@pytest.mark.unit` - Fast, isolated unit tests
+- `@pytest.mark.integration` - Tests with external dependencies
+- `@pytest.mark.behavior` - BDD-style behavior tests (Gherkin)
+- `@pytest.mark.benchmark` - Performance benchmarks
+- `@pytest.mark.slow` - Long-running tests
+
+### Resource Requirements
+- `@pytest.mark.requires_network` - Needs network access
+- `@pytest.mark.requires_gpu` - Needs GPU resources
+- `@pytest.mark.requires_docker` - Needs Docker
+
+### Complexity
+- `@pytest.mark.smoke` - Quick smoke tests
+- `@pytest.mark.regression` - Regression tests for bugs
+
+## Fixtures
+- Use fixtures from `tests/conftest.py` for shared setup
+- Prefer function-scoped fixtures unless expensive to create
+- Use `autouse=False` by default to keep tests explicit
+- Name fixtures clearly to indicate what they provide
+
+## Mocking
+- Mock external services and I/O operations
+- Use `unittest.mock` or `pytest-mock`
+- Verify mock calls with `assert_called_once_with()`
+- Don't mock what you don't own unless necessary
+
+## Coverage
+- Aim for high coverage but prioritize meaningful tests
+- `task verify` runs full test suite with coverage
+- Focus on testing edge cases and error paths
+- Don't test trivial getters/setters
+
+## Test Data
+- Store test data in `tests/data/` directory
+- Use fixtures to load test data
+- Generate data programmatically when possible
+- Keep test data minimal and focused
+
+## Parametrization
+Use `@pytest.mark.parametrize` for testing multiple inputs:
+
+```python
+@pytest.mark.parametrize("query,expected_count", [
+    ("python", 10),
+    ("machine learning", 5),
+    ("", 0),
+])
+def test_search_results_count(query, expected_count):
+    results = search(query)
+    assert len(results) == expected_count
+```
+
+## Behavior Tests (BDD)
+- Feature files in `tests/behavior/features/`
+- Use Given-When-Then structure
+- Keep scenarios focused and readable
+- Implement step definitions in corresponding Python files
+
+## Running Tests
+```bash
+# Fast check (run frequently)
+task check
+
+# Full verification (run before commit)
+task verify
+
+# Specific markers
+pytest -m unit
+pytest -m "integration and not slow"
+
+# With coverage
+pytest --cov=autoresearch --cov-report=html
+```
+
+## Test Best Practices
+- Tests should be fast, isolated, and deterministic
+- Use meaningful assertions, not just "assert True"
+- Test behavior, not implementation
+- Write tests first when fixing bugs (TDD for regression)
+- Clean up test artifacts and resources

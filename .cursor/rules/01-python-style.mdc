@@ -1,0 +1,97 @@
+---
+description: Python coding style and conventions
+globs:
+  - "**/*.py"
+alwaysApply: false
+---
+
+# Python Style Guidelines
+
+## Code Formatting
+- Follow PEP 8 strictly
+- Use 4-space indentation (no tabs)
+- Maximum line length: 100 characters
+- Format all code with `black` before committing
+- Ensure `flake8` passes with no violations
+
+## Type Hints
+- Use type hints for all function signatures
+- Use `from __future__ import annotations` for forward references
+- Prefer specific types over `Any` when possible
+- Use `Optional[T]` for nullable types
+- Use `Protocol` for structural subtyping when appropriate
+
+Example:
+```python
+from __future__ import annotations
+
+from typing import Optional, Protocol
+
+def process_query(
+    query: str,
+    max_results: int = 10,
+    filter_fn: Optional[Callable[[dict], bool]] = None
+) -> list[dict]:
+    """Process a search query and return results.
+    
+    Args:
+        query: The search query string
+        max_results: Maximum number of results to return
+        filter_fn: Optional filter function for results
+        
+    Returns:
+        List of result dictionaries
+        
+    Raises:
+        ValueError: If query is empty
+    """
+    pass
+```
+
+## Documentation
+- All public modules, classes, functions, and methods require docstrings
+- Use Google-style docstrings with Args, Returns, Raises sections
+- Document complex algorithms with inline comments explaining the "why"
+- Keep docstrings concise but complete
+
+## Naming Conventions
+- Classes: PascalCase (e.g., `SearchEngine`, `QueryProcessor`)
+- Functions/Methods: snake_case (e.g., `process_query`, `fetch_results`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`, `DEFAULT_TIMEOUT`)
+- Private members: prefix with single underscore (e.g., `_internal_method`)
+- Avoid single-letter names except in loops or mathematical contexts
+
+## Imports
+- Group imports: standard library, third-party, local
+- Sort imports within groups alphabetically
+- Use absolute imports from project root
+- Avoid wildcard imports (`from module import *`)
+
+Example:
+```python
+# Standard library
+import logging
+from pathlib import Path
+from typing import Optional
+
+# Third-party
+import numpy as np
+from pydantic import BaseModel
+
+# Local
+from autoresearch.core import SearchEngine
+from autoresearch.utils import logger
+```
+
+## Error Handling
+- Use specific exception types, not bare `except:`
+- Raise informative exceptions with clear messages
+- Clean up resources in `finally` blocks or use context managers
+- Log errors at appropriate levels
+
+## Best Practices
+- Prefer composition over inheritance
+- Use dataclasses or Pydantic models for data structures
+- Avoid mutable default arguments
+- Use context managers for resource management
+- Write defensive code: validate inputs, check assumptions

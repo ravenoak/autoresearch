@@ -1,0 +1,124 @@
+# Cursor IDE Ignore File
+# Files and directories that should be excluded from Cursor's indexing
+# This improves performance and focuses the AI on relevant code
+
+# Build artifacts and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+.tox/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.Python
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Lock files (large and auto-generated)
+uv.lock
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Logs
+*.log
+logs/
+baseline/logs/
+
+# Documentation build
+site/
+_build/
+.mkdocs_cache/
+
+# Testing artifacts
+.tox/
+.nox/
+
+# Large binary or generated files
+*.whl
+*.tar.gz
+*.zip
+wheels/**/*.whl
+
+# Database files
+*.db
+*.sqlite3
+*.duckdb
+*.duckdb.wal
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Node modules (if any JS tooling)
+node_modules/
+
+# Docker volumes
+.docker/
+
+# Git internals (already handled by Cursor but explicit)
+.git/
+
+# Baseline and archive data (large historical data)
+baseline/archive/
+baseline/evaluation/
+baseline/logs/
+
+# Generated documentation that's large
+docs/external_research_papers/
+
+# Type stubs that are auto-generated or from external sources
+typings/
+
+# Test output directories
+.benchmarks/
+
+# Large data files
+*.parquet
+*.csv.gz
+*.jsonl.gz
+*.arrow
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.cert
+
+# Compiled documentation
+docs/_build/
+docs/site/
+

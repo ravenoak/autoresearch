@@ -1,0 +1,401 @@
+---
+description: Security best practices and guidelines
+alwaysApply: true
+---
+
+# Security Guidelines
+
+## Security Philosophy
+- **Defense in depth**: Multiple layers of security
+- **Least privilege**: Minimal permissions necessary
+- **Fail securely**: Errors should not expose vulnerabilities
+- **Security by design**: Build security in from the start
+- **Assume breach**: Plan for compromise scenarios
+
+## Input Validation
+
+### Validate All Inputs
+```python
+from pydantic import BaseModel, Field, validator
+
+class SearchRequest(BaseModel):
+    """Validated search request."""
+    query: str = Field(..., min_length=1, max_length=1000)
+    max_results: int = Field(default=10, ge=1, le=100)
+    
+    @validator("query")
+    def validate_query(cls, v: str) -> str:
+        """Sanitize query input."""
+        # Remove null bytes
+        if "\x00" in v:
+            raise ValueError("Query contains null bytes")
+        # Prevent excessive whitespace
+        if len(v.strip()) == 0:
+            raise ValueError("Query is empty")
+        return v.strip()
+```
+
+### SQL Injection Prevention
+```python
+# ❌ NEVER use string interpolation for SQL
+def bad_query(user_id: str):
+    query = f"SELECT * FROM users WHERE id = '{user_id}'"
+    return db.execute(query)
+
+# ✅ ALWAYS use parameterized queries
+def good_query(user_id: str):
+    query = "SELECT * FROM users WHERE id = ?"
+    return db.execute(query, (user_id,))
+```
+
+### Command Injection Prevention
+```python
+import shlex
+import subprocess
+
+# ❌ Shell injection vulnerable
+def bad_command(filename: str):
+    subprocess.run(f"cat {filename}", shell=True)
+
+# ✅ Safe command execution
+def good_command(filename: str):
+    # Validate filename
+    if not filename.isalnum():
+        raise ValueError("Invalid filename")
+    subprocess.run(["cat", filename], check=True)
+```
+
+## Authentication & Authorization
+
+### API Keys and Secrets
+```python
+import os
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    """Load secrets from environment."""
+    api_key: str = Field(..., env="API_KEY")
+    database_url: str = Field(..., env="DATABASE_URL")
+    
+    class Config:
+        # Don't expose in repr
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+# ❌ NEVER hardcode secrets
+API_KEY = "sk_live_abc123..."
+
+# ✅ Load from environment
+settings = Settings()
+api_key = settings.api_key
+```
+
+### Password Handling
+```python
+import hashlib
+import os
+from base64 import b64encode
+
+# ❌ NEVER store plain passwords
+def store_bad_password(password: str):
+    db.save("password", password)
+
+# ✅ Hash with salt using strong algorithm
+def store_good_password(password: str):
+    salt = os.urandom(32)
+    hash_obj = hashlib.pbkdf2_hmac(
+        'sha256',
+        password.encode('utf-8'),
+        salt,
+        100000  # iterations
+    )
+    storage_value = b64encode(salt + hash_obj).decode('ascii')
+    db.save("password", storage_value)
+```
+
+### Token Handling
+```python
+import secrets
+
+# Generate cryptographically secure tokens
+def generate_api_token() -> str:
+    """Generate secure API token."""
+    return secrets.token_urlsafe(32)
+
+# Time-limited tokens
+from datetime import datetime, timedelta
+import jwt
+
+def create_jwt_token(user_id: str, secret: str) -> str:
+    """Create JWT with expiration."""
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.utcnow() + timedelta(hours=24)
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
+```
+
+## Data Protection
+
+### Sensitive Data Handling
+```python
+from typing import Any
+
+class SecretStr:
+    """Wrapper for sensitive strings."""
+    def __init__(self, value: str):
+        self._value = value
+    
+    def __repr__(self) -> str:
+        return "SecretStr('***')"
+    
+    def __str__(self) -> str:
+        return "***"
+    
+    def get_secret_value(self) -> str:
+        """Explicitly get the secret value."""
+        return self._value
+
+# Usage
+api_key = SecretStr(os.environ["API_KEY"])
+print(api_key)  # Output: ***
+print(api_key.get_secret_value())  # Explicit access
+```
+
+### Encryption at Rest
+```python
+from cryptography.fernet import Fernet
+
+class EncryptedStorage:
+    """Encrypt data before storage."""
+    def __init__(self, key: bytes):
+        self._cipher = Fernet(key)
+    
+    def encrypt(self, data: str) -> bytes:
+        """Encrypt data."""
+        return self._cipher.encrypt(data.encode())
+    
+    def decrypt(self, encrypted: bytes) -> str:
+        """Decrypt data."""
+        return self._cipher.decrypt(encrypted).decode()
+```
+
+### Secure File Operations
+```python
+import os
+from pathlib import Path
+
+def safe_path_join(base: Path, user_path: str) -> Path:
+    """Prevent path traversal attacks."""
+    # Resolve to absolute path
+    requested = (base / user_path).resolve()
+    
+    # Ensure it's within base directory
+    if not str(requested).startswith(str(base.resolve())):
+        raise ValueError("Path traversal attempt detected")
+    
+    return requested
+
+# Usage
+safe_path = safe_path_join(Path("/data"), user_input)
+```
+
+## Dependency Security
+
+### Regular Updates
+```bash
+# Check for vulnerabilities
+pip-audit
+
+# Update dependencies
+uv lock --upgrade
+```
+
+### Pin Dependencies
+```toml
+# pyproject.toml - Pin to specific ranges
+[project.dependencies]
+requests = ">=2.31,<3.0"  # Allows security patches
+
+[tool.uv]
+# Lock specific versions in uv.lock for reproducibility
+```
+
+### Vulnerability Scanning
+- Use `pip-audit` or similar tools
+- Monitor security advisories
+- Update promptly for critical vulnerabilities
+- Document security updates in CHANGELOG
+
+## Logging Security
+
+### Sanitize Logs
+```python
+import logging
+import re
+
+logger = logging.getLogger(__name__)
+
+def sanitize_for_log(data: str) -> str:
+    """Remove sensitive data from logs."""
+    # Mask credit cards
+    data = re.sub(r'\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b', '[CARD]', data)
+    # Mask email addresses
+    data = re.sub(r'\b[\w.-]+@[\w.-]+\.\w+\b', '[EMAIL]', data)
+    # Mask API keys
+    data = re.sub(r'\b[a-zA-Z0-9]{32,}\b', '[API_KEY]', data)
+    return data
+
+def safe_log(message: str, data: Any):
+    """Log with sanitization."""
+    sanitized = sanitize_for_log(str(data))
+    logger.info(f"{message}: {sanitized}")
+```
+
+### Don't Log Secrets
+```python
+# ❌ Logs sensitive data
+logger.info(f"Authenticating with key: {api_key}")
+
+# ✅ Log without sensitive data
+logger.info("Authenticating with API key")
+logger.debug(f"Key length: {len(api_key)}")  # Safe metadata
+```
+
+## Network Security
+
+### HTTPS Only
+```python
+import requests
+
+# Enforce HTTPS
+session = requests.Session()
+session.verify = True  # Verify SSL certificates
+
+def make_api_call(url: str):
+    if not url.startswith('https://'):
+        raise ValueError("Only HTTPS URLs allowed")
+    return session.get(url)
+```
+
+### Rate Limiting
+```python
+from time import time
+from collections import defaultdict
+
+class RateLimiter:
+    """Simple rate limiter."""
+    def __init__(self, max_requests: int, window_seconds: int):
+        self._max = max_requests
+        self._window = window_seconds
+        self._requests = defaultdict(list)
+    
+    def allow_request(self, key: str) -> bool:
+        """Check if request is allowed."""
+        now = time()
+        # Clean old requests
+        self._requests[key] = [
+            t for t in self._requests[key]
+            if now - t < self._window
+        ]
+        # Check limit
+        if len(self._requests[key]) >= self._max:
+            return False
+        self._requests[key].append(now)
+        return True
+```
+
+## Error Handling
+
+### Fail Securely
+```python
+# ❌ Exposes internal details
+def bad_error_handler(e: Exception):
+    return {"error": str(e), "stack": traceback.format_exc()}
+
+# ✅ Generic error message, log details
+def good_error_handler(e: Exception):
+    logger.error("Request failed", exc_info=True)
+    return {"error": "An error occurred. Please contact support."}
+```
+
+### Information Disclosure
+```python
+# ❌ Reveals system information
+if not user_exists(username):
+    raise ValueError("User not found")
+if not password_matches(username, password):
+    raise ValueError("Wrong password")
+
+# ✅ Generic message prevents user enumeration
+if not authenticate(username, password):
+    raise ValueError("Invalid username or password")
+```
+
+## Security Testing
+
+### Security Test Cases
+```python
+import pytest
+
+def test_sql_injection_attempt():
+    """Ensure SQL injection is prevented."""
+    malicious_input = "'; DROP TABLE users; --"
+    with pytest.raises(ValueError):
+        execute_query(malicious_input)
+
+def test_path_traversal():
+    """Ensure path traversal is prevented."""
+    malicious_path = "../../etc/passwd"
+    with pytest.raises(ValueError):
+        read_file(malicious_path)
+
+def test_xss_prevention():
+    """Ensure XSS attacks are prevented."""
+    xss_input = "<script>alert('xss')</script>"
+    output = sanitize_html(xss_input)
+    assert "<script>" not in output
+```
+
+## Security Checklist
+
+### For Every Feature
+- [ ] Input validation on all user inputs
+- [ ] Output encoding for all outputs
+- [ ] Parameterized queries (no string interpolation)
+- [ ] Secrets loaded from environment
+- [ ] Sensitive data not logged
+- [ ] HTTPS enforced for external calls
+- [ ] Rate limiting implemented
+- [ ] Error messages don't leak info
+- [ ] Security tests written
+- [ ] Dependencies are up to date
+
+### For PRs
+- [ ] No hardcoded secrets
+- [ ] No commented-out security code
+- [ ] Security implications documented
+- [ ] Threat model updated if needed
+- [ ] Security tests pass
+
+## Incident Response
+
+### If You Discover a Vulnerability
+1. **Don't** create a public issue
+2. **Do** email security contact immediately
+3. **Do** document the vulnerability privately
+4. **Do** assist in developing a fix
+5. **Wait** for coordinated disclosure
+
+### If Secrets Are Committed
+1. **Immediately** rotate the compromised secrets
+2. **Revoke** the old credentials
+3. **Remove** from git history (BFG, git-filter-branch)
+4. **Audit** for any unauthorized usage
+5. **Document** the incident
+
+## Resources
+- OWASP Top 10: https://owasp.org/www-project-top-ten/
+- Python Security Best Practices
+- CWE/SANS Top 25 Most Dangerous Software Errors
+- Security advisories for dependencies
