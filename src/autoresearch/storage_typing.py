@@ -96,6 +96,13 @@ class GraphProtocol(Protocol):
 class DuckDBCursorProtocol(Protocol):
     """Protocol describing the methods called on DuckDB cursors."""
 
+    def execute(
+        self,
+        query: str,
+        parameters: Sequence[JSONValue] | Mapping[str, JSONValue] | None = None,
+    ) -> DuckDBCursorProtocol:
+        ...
+
     def fetchall(self) -> list[tuple[JSONValue, ...]]:
         ...
 
