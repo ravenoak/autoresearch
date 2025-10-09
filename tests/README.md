@@ -34,11 +34,27 @@ unless their respective extras are installed.
 No external databases or network services need to be running. Temporary
 artifacts are created under `tmp_path` and cleaned automatically.
 
+## Quick regression marker
+
+The `quick` marker collects fast-running regressions that backstop
+`uv run task check`. Use it for hygiene guards and other suites that must
+surface failures before the longer extras install. Run the subset locally
+with:
+
+```bash
+uv run pytest -m quick -q
+```
+
+Keep the marked tests deterministic and free of optional extras so the
+smoke gate stays reliable on fresh environments.
+
 ## Import hygiene guard
 
 - `tests/conftest.py` exposes `enforce_future_annotations_import_order` and runs
   the guard at collection time so any module that imports before
   `from __future__ import annotations` fails fast.
+- `tests/unit/legacy/test_future_import_hygiene.py` carries the `quick` marker
+  so the fast gate exercises the guard without waiting for optional extras.
 - `tests/unit/test_collection_hygiene.py` simulates both offending and valid
   modules and asserts the guard raises a `pytest.UsageError` with actionable
   messaging.
