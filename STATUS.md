@@ -45,6 +45,18 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   preflight dossier, and the alpha ticket notes before proposing `0.1.0a1` so
   the release evidence links back to signed-off documentation.
   【F:issues/prepare-first-alpha-release.md†L1-L31】
+- At **23:32 UTC** `uv run scripts/scheduling_resource_benchmark.py`
+  `--max-workers 2 --tasks 20 --arrival-rate 3 --service-rate 5`
+  `--mem-per-task 0.5` recorded
+  a 119.82 tasks/s mean (σ≈1.08) for one worker and 237.54 tasks/s mean
+  (σ≈5.92) for two workers, keeping every sample above the ≥1.7× guard.
+  【a8f96b†L1-L5】
+- At **23:31 UTC** the focused suite `uv run --extra test pytest`
+  `tests/unit/legacy/test_scheduling_resource_benchmark.py` passed, confirming
+  the tightened variance assertions for the new benchmark guard.
+  【e862eb†L1-L10】
+- `uv run task check` remains green after the guard update, keeping the quick
+  gate evidence current for the alpha dossier.【f74cdb†L1-L9】
 
 ## October 8, 2025
 - Re-ran `uv run task release:alpha` at **15:11 UTC**; the sweep cleared lint,
