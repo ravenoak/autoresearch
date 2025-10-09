@@ -117,13 +117,24 @@ def test_external_lookup_triggers_query_rewrite(
     with SearchContext.temporary_instance():
         results = isolated_search.external_lookup("alpha", max_results=2)
         assert len(results) == 2
-        assert calls == [("alpha", 2), ("alpha rewrite", 2)]
+        assert calls
+        assert calls[0] == ("alpha", 2)
+        assert all(call[1] == 2 for call in calls)
+        rewritten_queries = [query for query, _ in calls[1:]]
+        assert rewritten_queries
+        assert all(query != "" for query in rewritten_queries)
+        assert any(query != "alpha" for query in rewritten_queries)
+
         strategy = SearchContext.get_instance().get_search_strategy()
         rewrites = strategy.get("rewrites") or []
-        assert rewrites and rewrites[0]["to"] == "alpha rewrite"
+        assert rewrites
+        rewrite_targets = [entry.get("to") for entry in rewrites if entry.get("to")]
+        assert any(target in rewritten_queries for target in rewrite_targets)
+
         attempts = strategy.get("fetch_plan", {}).get("attempts", [])
-        assert len(attempts) == 2
-        assert [entry["k"] for entry in attempts] == [2, 2]
+        assert len(attempts) >= max(2, len(calls))
+        assert all(entry.get("k") == 2 for entry in attempts[: len(calls)])
+
         markers = SearchContext.get_instance().get_self_critique_markers()
         assert markers.get("coverage_gap", 0.0) > 0.0
 

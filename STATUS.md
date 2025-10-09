@@ -18,6 +18,34 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 9, 2025
+- Captured a fresh `uv run task mypy-strict` sweep at **18:06 UTC**; the log at
+  `baseline/logs/mypy-strict-20251009T180614Z.log` confirms the strict gate
+  still reports “Success: no issues found in 805 source files.”
+  【F:baseline/logs/mypy-strict-20251009T180614Z.log†L1-L1】
+- Logged `uv run task check` at **18:06 UTC** and archived the output under
+  `baseline/logs/task-check-20251009T180628Z.log`; flake8, strict mypy, spec
+  linting, release metadata, and the CLI smoke tests all pass, keeping the quick
+  gate green.【F:baseline/logs/task-check-20251009T180628Z.log†L4-L43】
+- `uv run task verify EXTRAS="dev-minimal test"` at **18:08 UTC** still fails
+  when Hypothesis marks
+  `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+  as flaky, so the verify gate remains red and the cache property harness needs
+  stabilisation before the release sweep can progress. The failure log is stored
+  at `baseline/logs/task-verify-20251009T180847Z.log`.
+  【F:baseline/logs/task-verify-20251009T180847Z.log†L450-L481】
+- `uv run task coverage EXTRAS="dev-minimal test"` at **18:10 UTC** fails when
+  `tests/unit/search/test_adaptive_rewrite.py::`
+  `test_external_lookup_adaptive_k_increases_fetch` only retrieves a single
+  result, so coverage artefacts and the HTML report were not refreshed. The
+  failure is archived at `baseline/logs/task-coverage-20251009T181039Z.log` for
+  follow-up debugging.
+  【F:baseline/logs/task-coverage-20251009T181039Z.log†L333-L357】
+- Reviewers must acknowledge this STATUS.md revision, TASK_PROGRESS.md, the
+  preflight dossier, and the alpha ticket notes before proposing `0.1.0a1` so
+  the release evidence links back to signed-off documentation.
+  【F:issues/prepare-first-alpha-release.md†L1-L31】
+
 ## October 8, 2025
 - Re-ran `uv run task release:alpha` at **15:11 UTC**; the sweep cleared lint,
   strict typing, spec linting, release metadata checks, and packaging before

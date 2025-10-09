@@ -8,6 +8,19 @@ is archived at `baseline/logs/task-check-20251009T170029Z.log`, and the
 contributor guide in `tests/README.md` now documents the marker's scope so the
 alpha preflight no longer blocks on the missing registration.
 
+As of **October 9, 2025 at 18:10 UTC** the strict and quick gates stay green
+(`baseline/logs/mypy-strict-20251009T180614Z.log` and
+`baseline/logs/task-check-20251009T180628Z.log`), but the release gates remain
+red. `uv run task verify EXTRAS="dev-minimal test"` fails when Hypothesis flags
+`tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+as flaky,【F:baseline/logs/task-verify-20251009T180847Z.log†L450-L481】 and the
+coverage sweep halts when
+`tests/unit/search/test_adaptive_rewrite.py::`
+`test_external_lookup_adaptive_k_increases_fetch` returns a single document.
+【F:baseline/logs/task-coverage-20251009T181039Z.log†L333-L357】
+Document these follow-up items in the alpha checklists and capture reviewer
+sign-offs once the logs are green.
+
 As of **October 9, 2025 at 16:46 UTC** duckdb storage-hint canonicalisation keeps
 embedding caches and storage-derived seeds under identical cache keys. The
 Search service now deduplicates storage hints, reuses the same tuple for

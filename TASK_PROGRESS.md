@@ -1,3 +1,25 @@
+As of **2025-10-09 at 18:10 UTC** the strict and quick gates remain green but
+the release sweep still fails. `uv run task mypy-strict` at **18:06 UTC**
+reports “Success: no issues found in 805 source files,” and the log lives at
+`baseline/logs/mypy-strict-20251009T180614Z.log`.
+【F:baseline/logs/mypy-strict-20251009T180614Z.log†L1-L1】
+`uv run task check` at **18:06 UTC** also passes and is archived at
+`baseline/logs/task-check-20251009T180628Z.log`, confirming flake8, strict
+mypy, spec linting, release metadata, and the CLI smoke tests still clear the
+fast gate.【F:baseline/logs/task-check-20251009T180628Z.log†L4-L43】 The release
+blockers sit in the long gates: `uv run task verify EXTRAS="dev-minimal test"`
+fails when Hypothesis marks
+`tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+as flaky,【F:baseline/logs/task-verify-20251009T180847Z.log†L450-L481】 and the
+paired coverage run halts when
+`tests/unit/search/test_adaptive_rewrite.py::`
+`test_external_lookup_adaptive_k_increases_fetch` only returns one document, so
+coverage artefacts were not regenerated.
+【F:baseline/logs/task-coverage-20251009T181039Z.log†L333-L357】 Reviewers need to
+acknowledge the refreshed STATUS.md, TASK_PROGRESS.md, and preflight dossier in
+the alpha ticket before we attempt another release sweep.
+【F:issues/prepare-first-alpha-release.md†L1-L31】
+
 As of **2025-10-08 at 15:15 UTC** the TestPyPI stage is confirmed while the
 release sweep still fails. `uv run task release:alpha` at **15:11 UTC** cleared
 lint, strict typing, spec linting, metadata checks, and packaging before
