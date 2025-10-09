@@ -21,6 +21,17 @@ coverage sweep halts when
 Document these follow-up items in the alpha checklists and capture reviewer
 sign-offs once the logs are green.
 
+As of **October 9, 2025 at 21:50 UTC** the full `uv run task release:alpha`
+rerun reached coverage before failing on the
+`test_external_lookup_adaptive_k_increases_fetch` case in
+`tests/unit/search/test_adaptive_rewrite.py`, exiting with status 201 while the
+log and summary were archived for the gate review.
+【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】【F:baseline/logs/release-alpha-20251009T215007Z-summary.txt†L1-L1】
+The paired `uv run python scripts/publish_dev.py --dry-run` execution rebuilt
+the wheel and sdist, skipped upload, and generated fresh log and checksum
+artefacts for the TestPyPI stage.
+【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
+
 As of **October 9, 2025 at 16:46 UTC** duckdb storage-hint canonicalisation keeps
 embedding caches and storage-derived seeds under identical cache keys. The
 Search service now deduplicates storage hints, reuses the same tuple for
@@ -320,5 +331,17 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 - Run the release sign-off review after the publish gate clears, documenting the
   decision and any deferred scope directly in this ticket.
 
+## Maintainer sign-offs
+
+- [ ] Engineering maintainer – Confirm the adaptive K regression is resolved and
+      a green `task release:alpha` log is archived.
+- [ ] Quality maintainer – Validate coverage and TestPyPI evidence, including
+      refreshed release:alpha, verify, and publish logs.
+- [ ] Release manager – Approve announcement copy and mark this ticket ready to
+      close when the 0.1.0a1 tag is cut.
+
 ## Status
 Open
+
+Ready to close once the 0.1.0a1 tag is published and all sign-offs above are
+complete.
