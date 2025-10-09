@@ -14,6 +14,15 @@ embedding caches and storage-hybrid seeds aligned. The revived
 run proves deterministic hits using unified hint tuples, and `uv run task
 check` remains green with the same configuration.【F:src/autoresearch/search/core.py†L877-L1012】【F:src/autoresearch/search/core.py†L2386-L2421】【F:src/autoresearch/search/core.py†L2440-L2450】【F:src/autoresearch/search/core.py†L2633-L2668】【F:src/autoresearch/search/cache.py†L32-L75】【F:baseline/logs/test-cache-interleaved-20251009T164613Z.log†L1-L8】【F:baseline/logs/task-check-20251009T164646Z.log†L1-L43】
 
+As of **October 9, 2025 at 22:49 UTC** `Search.external_lookup` records
+namespace-annotated cache traces with fingerprint data, and the cache helpers
+emit store, hit, and miss events for Hypothesis diagnostics. The
+`test_interleaved_storage_paths_share_cache` property now provisions a unique
+TinyDB path per example, asserts the first backend execution, and inspects the
+trace before confirming deterministic hits. A focused Hypothesis run and the
+`uv run task check` sweep both pass, confirming cache reuse remains stable
+during storage interleaving.【F:src/autoresearch/search/core.py†L700-L905】【F:src/autoresearch/search/core.py†L987-L1116】【F:src/autoresearch/search/core.py†L2382-L2400】【F:src/autoresearch/search/core.py†L2899-L3005】【F:tests/unit/legacy/test_cache.py†L898-L1082】【0d7622†L1-L13】【9b81ca†L1-L8】
+
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 
@@ -28,4 +37,4 @@ check` remains green with the same configuration.【F:src/autoresearch/search/co
   namespace.
 
 ## Status
-In Review
+Resolved
