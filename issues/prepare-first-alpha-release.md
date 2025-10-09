@@ -11,15 +11,19 @@ Hypothesis property test with cache hits enabled, and
 `baseline/logs/task-check-20251009T164646Z.log` confirms the quick gate remains
 green after the fix.【F:src/autoresearch/search/core.py†L877-L1012】【F:src/autoresearch/search/core.py†L2386-L2421】【F:src/autoresearch/search/core.py†L2440-L2450】【F:src/autoresearch/search/core.py†L2633-L2668】【F:src/autoresearch/search/cache.py†L32-L75】【F:baseline/logs/test-cache-interleaved-20251009T164613Z.log†L1-L8】【F:baseline/logs/task-check-20251009T164646Z.log†L1-L43】
 
-As of **October 8, 2025 at 15:03 UTC** the release sweep remains blocked: the
-latest `uv run task verify EXTRAS="dev-minimal test"` run halts when Hypothesis
-reports `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
-as flaky, and the follow-on `uv run task coverage EXTRAS="dev-minimal test"`
-attempt aborts when the collection hygiene guard re-flags `tests/conftest.py`.
-Coverage artefacts and the percentage summary were not regenerated, so the
-alpha dossier still lacks fresh end-to-end evidence.
-【F:baseline/logs/verify_20251008T150125Z.log†L570-L572】
-【F:baseline/logs/coverage_20251008T150309Z.log†L452-L498】
+As of **October 9, 2025 at 17:18 UTC** the coverage sweep runs past the guard
+before failing when
+`tests/unit/legacy/test_scheduling_resource_benchmark.py::`
+`test_run_benchmark_scaling` asserts `False`, leaving one benchmark to triage
+before coverage artefacts can refresh. The log records
+`tests/unit/legacy/test_future_import_hygiene.py` succeeding earlier in the
+run, confirming the guard no longer halts collection.
+【F:baseline/logs/coverage_20251009T171811Z.log†L98-L98】
+【F:baseline/logs/coverage_20251009T171811Z.log†L265-L268】
+Guard refinements and regression tests keep helper instrumentation behind the
+directive and expose `autoresearch.search.context` so monkeypatched tests
+resolve correctly.【F:tests/conftest.py†L56-L138】【F:tests/unit/test_collection_hygiene.py†L20-L72】【F:src/autoresearch/search/__i
+n it__.py†L27-L49】
 
 Before we propose the `0.1.0a1` tag, reviewers must acknowledge the
 documentation updates captured in STATUS.md, TASK_PROGRESS.md, and the

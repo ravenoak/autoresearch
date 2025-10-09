@@ -30,6 +30,18 @@ def test_guard_flags_imports_before_future_directive(tmp_path: Path) -> None:
     assert "import os" in violations[0]
 
 
+def test_guard_flags_assignments_before_future_directive(tmp_path: Path) -> None:
+    offending = _write_module(
+        tmp_path / "assignment_offender.py",
+        "VALUE = 1\nfrom __future__ import annotations\n",
+    )
+
+    violations = find_future_annotations_import_violations([offending])
+
+    assert violations
+    assert "VALUE = 1" in violations[0]
+
+
 def test_guard_ignores_valid_future_import_order(tmp_path: Path) -> None:
     valid = _write_module(
         tmp_path / "valid.py",
@@ -37,6 +49,13 @@ def test_guard_ignores_valid_future_import_order(tmp_path: Path) -> None:
     )
 
     assert find_future_annotations_import_violations([valid]) == []
+
+
+def test_guard_accepts_repo_conftest() -> None:
+    repo_conftest = Path(__file__).resolve().parents[1] / "conftest.py"
+
+    assert repo_conftest.exists()
+    assert find_future_annotations_import_violations([repo_conftest]) == []
 
 
 def test_enforce_guard_raises_usage_error(tmp_path: Path) -> None:
