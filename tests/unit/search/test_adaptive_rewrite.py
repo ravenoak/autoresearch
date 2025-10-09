@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import pytest
 
+from pathlib import Path
+
+from autoresearch.cache import SearchCache
 from autoresearch.config.models import (
     AdaptiveKConfig,
     ConfigModel,
@@ -178,6 +181,61 @@ def test_external_lookup_adaptive_k_increases_fetch(
         assert [entry["k"] for entry in attempts] == [2, 4]
         rewrites = strategy.get("rewrites", [])
         assert not rewrites
+
+
+def test_adaptive_k_refreshes_cache_shortfall(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cache_path = tmp_path / "search-cache.json"
+    cache = SearchCache(str(cache_path))
+    search = Search(cache=cache)
+
+    config = _build_config(
+        backends=["stub"],
+        max_results=1,
+        rewrite_cfg=QueryRewriteConfig(enabled=False),
+        adaptive_cfg=AdaptiveKConfig(
+            enabled=True,
+            min_k=1,
+            max_k=3,
+            step=1,
+            coverage_gap_threshold=0.2,
+        ),
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
+
+    calls: list[tuple[str, int]] = []
+
+    def backend(query: str, max_results: int) -> list[dict[str, str]]:
+        calls.append((query, max_results))
+        if max_results <= 1:
+            return [{"title": "alpha", "url": "1"}]
+        return [
+            {"title": "alpha", "url": "1"},
+            {"title": "alpha-2", "url": "2"},
+            {"title": "alpha-3", "url": "3"},
+        ][:max_results]
+
+    search.backends = {"stub": backend}
+
+    try:
+        with SearchContext.temporary_instance():
+            results = search.external_lookup("alpha", max_results=1)
+            assert len(results) == 2
+            assert calls == [("alpha", 1), ("alpha", 2)]
+
+            strategy = SearchContext.get_instance().get_search_strategy()
+            attempts = strategy.get("fetch_plan", {}).get("attempts", [])
+            assert [entry["k"] for entry in attempts] == [1, 2]
+            first_metrics = attempts[0].get("metrics", {}) if attempts else {}
+            assert first_metrics.get("coverage_gap_signal", 0.0) >= 1.0
+            second_metrics = attempts[-1].get("metrics", {}) if attempts else {}
+            shortfalls = second_metrics.get("cache_shortfalls", {})
+            assert shortfalls.get("stub", {}).get("cached") == 1
+    finally:
+        cache.clear()
+        cache.teardown(remove_file=True)
 
 
 def test_query_strategy_markers_disabled(

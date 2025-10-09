@@ -2476,6 +2476,7 @@ class Search:
 
             results: List[Dict[str, Any]] = []
             results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
+            cache_shortfalls: dict[str, tuple[int, int]] = {}
 
             embedding_backends: Tuple[str, ...] = tuple(cfg.search.embedding_backends)
             pending_embedding_backends: set[str] = set(embedding_backends)
@@ -2612,12 +2613,25 @@ class Search:
                     storage_hints=storage_hints,
                     embedding_backend=None,
                 )
+                cached_docs: List[Dict[str, Any]] = []
                 if cached is not None:
                     cached_docs = self._normalise_backend_documents(cached, name)
                     with _hybrid_stage("cache-hit"):
                         self.add_embeddings(cached_docs, np_query_embedding)
-                    results.extend(cached_docs)
-                    return name, cached_docs[:max_results]
+                    if cached_docs:
+                        results.extend(cached_docs)
+                    if len(cached_docs) >= max_results:
+                        return name, cached_docs[:max_results]
+                    cache_shortfalls[name] = (len(cached_docs), max_results)
+                    log.debug(
+                        "Cache underfilled for backend",
+                        extra={
+                            "backend": name,
+                            "cached_count": len(cached_docs),
+                            "requested": max_results,
+                            "query": current_query,
+                        },
+                    )
 
                 try:
                     backend_results = backend(current_query, max_results)
@@ -2660,15 +2674,35 @@ class Search:
                     )
 
                 backend_docs = self._normalise_backend_documents(backend_results, name)
+
+                if cached_docs:
+                    seen = {
+                        str(doc.get("canonical_url") or doc.get("url"))
+                        for doc in cached_docs
+                        if doc.get("canonical_url") or doc.get("url")
+                    }
+                    deduped_backend_docs: list[Dict[str, Any]] = []
+                    for doc in backend_docs:
+                        canonical = doc.get("canonical_url") or doc.get("url")
+                        key = str(canonical) if canonical is not None else None
+                        if key is not None and key in seen:
+                            continue
+                        if key is not None:
+                            seen.add(key)
+                        deduped_backend_docs.append(doc)
+                    backend_docs = deduped_backend_docs
+
+                combined_docs = cached_docs + backend_docs
+                if backend_docs:
+                    results.extend(backend_docs)
                 self._cache_documents(
                     cache_key,
                     name,
-                    backend_docs,
+                    combined_docs,
                     storage_hints=storage_hints,
                     embedding_backend=None,
                 )
-                results.extend(backend_docs)
-                return name, backend_docs[:max_results]
+                return name, combined_docs[:max_results]
 
             backends = cfg.search.backends
             if not backends:
@@ -2803,15 +2837,58 @@ class Search:
                     fetch_limit=max_results,
                     by_backend=results_by_backend,
                 )
+                shortfall = int(metrics.get("shortfall", 0))
+                coverage_gap_signal = float(metrics.get("coverage_gap", 0.0))
+                single_result_run = bool(metrics.get("single_result_run", False))
+                if adaptive_cfg.enabled and max_results <= 1 and single_result_run:
+                    coverage_gap_signal = max(coverage_gap_signal, 1.0)
+                if shortfall > 0 and max_results > 0:
+                    coverage_gap_signal = max(
+                        coverage_gap_signal,
+                        float(shortfall) / float(max_results),
+                    )
+
+                diagnostic_metrics = dict(metrics)
+                diagnostic_metrics["coverage_gap_signal"] = coverage_gap_signal
+                diagnostic_metrics["attempted_plan_count"] = len(attempted_plans)
+                diagnostic_metrics["attempted_plans"] = [
+                    {"query": plan_query, "k": plan_k}
+                    for plan_query, plan_k in sorted(attempted_plans)
+                ]
+                if cache_shortfalls:
+                    diagnostic_metrics["cache_shortfalls"] = {
+                        backend_name: {
+                            "cached": cached_count,
+                            "requested": requested_k,
+                        }
+                        for backend_name, (cached_count, requested_k) in cache_shortfalls.items()
+                    }
+
+                log.debug(
+                    "Summarised retrieval coverage",
+                    extra={
+                        "attempt": attempt_count,
+                        "base_k": base_max_results,
+                        "effective_k": max_results,
+                        "reason": current_reason,
+                        "coverage_gap": metrics.get("coverage_gap", 0.0),
+                        "coverage_gap_signal": coverage_gap_signal,
+                        "unique_results": metrics.get("unique_results", 0),
+                        "total_results": metrics.get("result_count", 0),
+                        "cache_shortfalls": cache_shortfalls,
+                        "attempted_plan_count": len(attempted_plans),
+                    },
+                )
+
                 context.record_fetch_plan(
                     base_k=base_max_results,
                     attempt=attempt_count,
                     effective_k=max_results,
                     reason=current_reason,
-                    metrics=metrics,
+                    metrics=diagnostic_metrics,
                 )
 
-                coverage_gap = float(metrics.get("coverage_gap", 0.0))
+                coverage_gap = coverage_gap_signal
                 unique_results = int(metrics.get("unique_results", 0))
                 total_results = int(metrics.get("result_count", 0))
 

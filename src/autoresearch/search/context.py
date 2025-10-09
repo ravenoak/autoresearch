@@ -634,6 +634,9 @@ class SearchContext:
         unique_count = len(unique_ids)
         coverage = min(1.0, unique_count / float(limit))
         coverage_gap = max(0.0, 1.0 - coverage)
+        shortfall = max(0, limit - total_results)
+        fill_ratio = float(total_results) / float(limit) if limit else 0.0
+        single_result_run = total_results == 1
 
         backend_counts: dict[str, int] = {}
         if by_backend:
@@ -648,6 +651,9 @@ class SearchContext:
             "coverage_gap": coverage_gap,
             "duplicates": max(0, total_results - unique_count),
             "backend_counts": backend_counts,
+            "shortfall": shortfall,
+            "fill_ratio": fill_ratio,
+            "single_result_run": single_result_run,
         }
 
         if self._is_self_critique_capture_enabled():
