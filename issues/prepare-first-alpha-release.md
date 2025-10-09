@@ -1,6 +1,13 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 9, 2025 at 17:00 UTC** the `quick` regression marker is now
+registered in `pytest.ini`, keeping the hygiene guard in the fast gate without
+triggering `PytestUnknownMarkWarning`. The refreshed `uv run task check` sweep
+is archived at `baseline/logs/task-check-20251009T170029Z.log`, and the
+contributor guide in `tests/README.md` now documents the marker's scope so the
+alpha preflight no longer blocks on the missing registration.
+
 As of **October 9, 2025 at 16:46 UTC** duckdb storage-hint canonicalisation keeps
 embedding caches and storage-derived seeds under identical cache keys. The
 Search service now deduplicates storage hints, reuses the same tuple for
