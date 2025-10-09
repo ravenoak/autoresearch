@@ -53,6 +53,22 @@ def _iter_python_files(paths: Iterable[Path]) -> Iterable[Path]:
             yield candidate
 
 
+def _is_docstring_expr(node: ast.stmt) -> bool:
+    return (
+        isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    )
+
+
+def _first_non_docstring_index(module: ast.Module) -> int | None:
+    for index, node in enumerate(module.body):
+        if _is_docstring_expr(node):
+            continue
+        return index
+    return None
+
+
 def _find_future_import_index(module: ast.Module) -> int | None:
     for index, node in enumerate(module.body):
         if isinstance(node, ast.ImportFrom) and node.module == "__future__":
@@ -88,14 +104,21 @@ def find_future_annotations_import_violations(
         future_index = _find_future_import_index(module)
         if future_index is None:
             continue
-        for node in module.body[:future_index]:
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                try:
-                    relative = file_path.relative_to(REPO_ROOT)
-                except ValueError:
-                    relative = file_path
+        first_index = _first_non_docstring_index(module)
+        if first_index is None:
+            continue
+        if first_index != future_index:
+            node = module.body[first_index]
+            try:
+                relative = file_path.relative_to(REPO_ROOT)
+            except ValueError:
+                relative = file_path
+            if hasattr(node, "lineno"):
                 line = contents.splitlines()[node.lineno - 1].strip()
-                violations.append(f"{relative}:{node.lineno} {line}")
+                location = f"{relative}:{node.lineno} {line}"
+            else:  # pragma: no cover - defensive fallback
+                location = f"{relative}:? {type(node).__name__}"
+            violations.append(location)
     return violations
 
 

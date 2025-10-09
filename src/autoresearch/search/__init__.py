@@ -24,7 +24,7 @@ from .http import _http_session, close_http_session, get_http_session, set_http_
 # ``autoresearch.search.core``. Without this explicit import, the module is not
 # registered as an attribute of the package which leads to ``AttributeError``
 # during monkeypatch resolution in integration tests.
-from . import core, storage  # noqa: F401  (re-exported for test accessibility)
+from . import context, core, storage  # noqa: F401  (re-exported for test accessibility)
 
 __all__ = [
     "ExternalLookupResult",
@@ -39,6 +39,7 @@ __all__ = [
     "get_cache",
     "get_config",
     "StorageManager",
+    "context",
     "storage",
     "SPACY_AVAILABLE",
     "BERTOPIC_AVAILABLE",
