@@ -15,7 +15,7 @@ from copy import copy, deepcopy
 from dataclasses import dataclass, field
 from typing import Optional, TypedDict
 
-from autoresearch.orchestration import ReasoningMode
+from autoresearch.models import ReasoningMode
 
 
 class ContextAwareSearchConfigDump(TypedDict):
@@ -142,7 +142,7 @@ class ConfigModelStub:
     gate_capture_query_strategy: bool = True
     gate_capture_self_critique: bool = True
     agents: list[str] = field(default_factory=list)
-    reasoning_mode: ReasoningMode | None = None
+    reasoning_mode: ReasoningMode = ReasoningMode.DIALECTICAL
     llm_backend: str = "lmstudio"
 
     def model_dump(self) -> ConfigModelDump:
@@ -201,11 +201,7 @@ class ConfigModelStub:
             "gate_capture_query_strategy": self.gate_capture_query_strategy,
             "gate_capture_self_critique": self.gate_capture_self_critique,
             "agents": list(self.agents),
-            "reasoning_mode": (
-                self.reasoning_mode.value
-                if isinstance(self.reasoning_mode, ReasoningMode)
-                else self.reasoning_mode
-            ),
+            "reasoning_mode": self.reasoning_mode.value,
             "llm_backend": self.llm_backend,
         }
 
@@ -286,6 +282,7 @@ def make_config_model(
     loops: int = 2,
     adaptive_max_factor: int = 20,
     adaptive_min_buffer: int = 10,
+    reasoning_mode: ReasoningMode = ReasoningMode.DIRECT,
     search_overrides: Mapping[str, SearchOverrideValue] | None = None,
     context_overrides: Mapping[str, ContextOverrideValue] | None = None,
     query_rewrite_overrides: Mapping[str, SearchOverrideValue] | None = None,
@@ -304,6 +301,7 @@ def make_config_model(
         loops=loops,
         adaptive_max_factor=adaptive_max_factor,
         adaptive_min_buffer=adaptive_min_buffer,
+        reasoning_mode=reasoning_mode,
         search=search_cfg,
     )
 

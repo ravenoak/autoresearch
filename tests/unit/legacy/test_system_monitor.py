@@ -44,7 +44,7 @@ class BrokenMem:
 
 
 def test_system_monitor_collects(monkeypatch: MonkeyPatch) -> None:
-    def cpu_percent(_: float | None = None) -> float:
+    def cpu_percent(interval: float | None = None) -> float:
         return 12.0
 
     monkeypatch.setattr(psutil, "cpu_percent", cpu_percent)
@@ -63,8 +63,8 @@ def test_system_monitor_collects(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_collect_returns_expected_tuple(monkeypatch: MonkeyPatch) -> None:
-    def cpu_percent(_: float | None = None) -> str:
-        return "55.0"
+    def cpu_percent(interval: float | None = None) -> float:
+        return 55.0
 
     monkeypatch.setattr(psutil, "cpu_percent", cpu_percent)
     mem = MemoryUsageStr(percent="44.0")
@@ -89,8 +89,8 @@ def test_collect_handles_failures(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_collect_normalizes_iterable_values(monkeypatch: MonkeyPatch) -> None:
-    def cpu_percent(_: float | None = None) -> list[str]:
-        return ["77.5"]
+    def cpu_percent(interval: float | None = None) -> float:
+        return 77.5
 
     monkeypatch.setattr(psutil, "cpu_percent", cpu_percent)
     monkeypatch.setattr(psutil, "virtual_memory", lambda: MemoryUsageNaN())

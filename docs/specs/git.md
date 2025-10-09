@@ -22,7 +22,7 @@ real dependency.
 
 ## Proof Sketch
 
-Integration tests such as `tests/integration/test_local_git_backend.py` and
+Integration tests such as `tests/integration/test_local_git_backend_extra.py` and
 targeted tests like `tests/targeted/test_git_search.py` exercise commit creation
 and iteration, confirming the invariants.
 
@@ -36,9 +36,9 @@ and iteration, confirming the invariants.
 
 - Code: [src/git/__init__.py][m1]
 - Tests:
-  - [tests/integration/test_local_git_backend.py][t1]
+  - [tests/integration/test_local_git_backend_extra.py][t1]
   - [tests/targeted/test_git_search.py][t2]
 
 [m1]: ../../src/git/__init__.py
-[t1]: ../../tests/integration/test_local_git_backend.py
+[t1]: ../../tests/integration/test_local_git_backend_extra.py
 [t2]: ../../tests/targeted/test_git_search.py

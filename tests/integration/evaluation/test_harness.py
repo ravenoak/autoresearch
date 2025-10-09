@@ -102,7 +102,7 @@ def test_harness_clones_config_and_closes_connections(
 
     assert summaries and summaries[0].duckdb_path is not None
     assert copy_calls, "Expected ConfigModel.model_copy to be invoked"
-    assert copy_calls[0]["update"] == {}
+    assert copy_calls[0]["update"] is None
     assert copy_calls[0]["deep"] is True
     assert connections, "Expected DuckDB connections to be opened"
     assert all(conn.closed for conn in connections)

@@ -91,6 +91,6 @@ simulation script [sim-script] models concurrent writers, dedicated
 evictors, and edge cases such as zero, negative, exact, under-budget,
 stale-LRU, and metrics-dropout usage.
 
-[analysis-test]: ../../tests/analysis/test_storage_eviction.py
+[analysis-test]: ../../tests/analysis/test_storage_eviction_extra.py
 [unit-test]: ../../tests/unit/legacy/test_storage_eviction.py
 [sim-script]: ../../scripts/storage_eviction_sim.py

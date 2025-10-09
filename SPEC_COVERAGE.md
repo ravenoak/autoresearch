@@ -78,7 +78,7 @@
 | `git` | [git.md](docs/specs/git.md) | [t123], [t124] | OK |
 | `git/search.py` | [git-search.md](docs/specs/git-search.md) | [t124] | OK |
 
-[t1]: tests/integration/test_a2a_interface.py
+[t1]: tests/integration/test_a2a_interface_extra.py
 [t2]: tests/unit/legacy/test_distributed.py
 [t3]: tests/unit/legacy/test_main_module.py
 [p1]: docs/algorithms/a2a_interface.md
@@ -106,10 +106,10 @@
 [s5]: scripts/api_stream_order_sim.py
 [t15]: tests/analysis/test_api_stream_order_sim.py
 [t16]: tests/analysis/test_api_streaming_sim.py
-[t17]: tests/integration/test_api.py
+[t17]: tests/integration/test_api_extra.py
 [t18]: tests/integration/test_api_additional.py
 [t19]: tests/integration/test_api_auth.py
-[t20]: tests/integration/test_api_auth_middleware.py
+[t20]: tests/integration/test_api_auth_middleware_extra.py
 [t21]: tests/integration/test_api_auth_permissions.py
 [t22]: tests/integration/test_api_docs.py
 [t23]: tests/integration/test_api_hot_reload.py
@@ -130,7 +130,7 @@
 [p8]: docs/algorithms/config_hot_reload.md
 [p9]: docs/algorithms/config_weight_sum_simulation.md
 [t38]: tests/analysis/config_hot_reload_metrics.json
-[t39]: tests/analysis/test_config_hot_reload_sim.py
+[t39]: tests/analysis/test_config_hot_reload_sim_extra.py
 [t40]: tests/behavior/features/configuration_hot_reload.feature
 [t41]: tests/integration/test_config_hot_reload_components.py
 [t42]: tests/unit/legacy/test_config_env_file.py
@@ -230,8 +230,8 @@
 [t108]: tests/integration/storage/test_simulation_benchmarks.py
 [t109]: tests/integration/test_rdf_persistence.py
 [t110]: tests/integration/test_storage_duckdb_fallback.py
-[t111]: tests/integration/test_storage_eviction.py
-[t112]: tests/targeted/test_storage_eviction.py
+[t111]: tests/integration/test_storage_eviction_extra.py
+[t112]: tests/targeted/test_storage_eviction_extra.py
 [t113]: tests/unit/legacy/test_storage_eviction.py
 [t114]: tests/unit/legacy/test_storage_eviction_sim.py
 [s21]: scripts/oxigraph_backend_sim.py
@@ -244,7 +244,7 @@
 [p21]: docs/algorithms/visualization.md
 [t121]: tests/behavior/features/visualization_cli.feature
 [t122]: tests/unit/legacy/test_visualization.py
-[t123]: tests/integration/test_local_git_backend.py
+[t123]: tests/integration/test_local_git_backend_extra.py
 [t124]: tests/targeted/test_git_search.py
 [t125]: tests/unit/legacy/test_storage_manager_concurrency.py
 [t127]: tests/unit/legacy/test_search.py::test_external_lookup_vector_search

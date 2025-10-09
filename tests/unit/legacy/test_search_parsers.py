@@ -89,6 +89,8 @@ def test_search_local_file_backend(tmp_path, sample_pdf_file, sample_docx_file):
     cfg.search.backends = ["local_file"]
     cfg.search.local_file.path = str(tmp_path)
     cfg.search.local_file.file_types = ["pdf", "docx"]
+    # Disable query rewriting for this test to ensure local file backend works with original query
+    cfg.search.query_rewrite.enabled = False
     with temporary_config(cfg):
         results = Search.external_lookup("hello", max_results=5)
     snippets = " ".join(r["snippet"].lower() for r in results)

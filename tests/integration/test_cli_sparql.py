@@ -23,14 +23,15 @@ def test_sparql_query_cli_handles_missing_headers(monkeypatch: pytest.MonkeyPatc
 
     def fake_tabulate(
         rows_arg: list[tuple[str, str]],
-        headers_arg: list[str],
-        tablefmt_arg: str,
+        headers: list[str] | None = None,
+        tablefmt: str = "github",
+        **kwargs: object,
     ) -> str:
-        return f"{headers_arg}:{list(rows_arg)}"
+        return f"{headers}:{rows_arg}"
 
-    monkeypatch.setattr("autoresearch.cli_utils.tabulate", fake_tabulate)
+    monkeypatch.setattr("tabulate.tabulate", fake_tabulate)
     monkeypatch.setattr("autoresearch.cli_utils.console.print", outputs.append)
 
     sparql_query_cli("SELECT ?s ?o WHERE { ?s ?p ?o }", apply_reasoning=False)
 
-    assert outputs == ["[]:[('subject', 'object')]"]
+    assert outputs == ["[]:[['subject', 'object']]"]

@@ -123,9 +123,12 @@ def fake_result_aggregators(
     created: list[dist_coordinator.ResultAggregator] = []
 
     class RecordingResultAggregator(dist_coordinator.ResultAggregator):
-        def __init__(self, queue: Any) -> None:
+        def __init__(self, queue: Any, db_path: str, child_conn: Any) -> None:
             multiprocessing.Process.__init__(self, daemon=True)
             self._queue = queue
+            self._child_conn = child_conn
+            self._parent_conn: Any = None
+            self._results = []
             self.results = cast("ListProxy[AgentResultMessage]", [])
             self.start_calls = 0
             created.append(self)

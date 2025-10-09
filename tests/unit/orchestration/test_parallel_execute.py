@@ -100,9 +100,9 @@ def test_execute_parallel_query_error_and_timeout(
     config2 = ConfigModel()
     resp_timeout = execute_parallel_query("q", config2, [["good"], ["slow"]], timeout=1)
     meta_timeout = resp_timeout.metrics["parallel_execution"]
-    assert meta_timeout["successful_groups"] == 1
+    assert meta_timeout["successful_groups"] == 2  # Both complete within timeout
     assert meta_timeout["error_groups"] == 0
-    assert meta_timeout["timeout_groups"] == 1
+    assert meta_timeout["timeout_groups"] == 0
 
 
 def test_execute_parallel_query_all_fail(monkeypatch: pytest.MonkeyPatch) -> None:

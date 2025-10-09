@@ -267,7 +267,7 @@ policies before data reaches other modules.
   - [tests/unit/legacy/test_config_watcher_cleanup.py][t7]
   - [tests/behavior/features/configuration_hot_reload.feature][t8]
   - [tests/integration/test_config_hot_reload_components.py][t9]
-  - [tests/analysis/test_config_hot_reload_sim.py][t10]
+  - [tests/analysis/test_config_hot_reload_sim_extra.py][t10]
 - Proofs and simulations
   - [tests/analysis/config_hot_reload_metrics.json][r1]
   - [docs/algorithms/config_weight_sum_simulation.md][p1]
@@ -285,6 +285,6 @@ policies before data reaches other modules.
 [t7]: ../../tests/unit/legacy/test_config_watcher_cleanup.py
 [t8]: ../../tests/behavior/features/configuration_hot_reload.feature
 [t9]: ../../tests/integration/test_config_hot_reload_components.py
-[t10]: ../../tests/analysis/test_config_hot_reload_sim.py
+[t10]: ../../tests/analysis/test_config_hot_reload_sim_extra.py
 [r1]: ../../tests/analysis/config_hot_reload_metrics.json
 [p1]: ../algorithms/config_weight_sum_simulation.md

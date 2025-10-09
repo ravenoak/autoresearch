@@ -177,9 +177,9 @@ and `0.31 OPS` [t5r].
   - [tests/behavior/features/storage_search_integration.feature][t1]
   - [tests/integration/test_search_storage.py][t2]
   - [tests/unit/legacy/test_storage_eviction.py][t3]
-  - [tests/integration/test_storage_eviction.py][t4]
+  - [tests/integration/test_storage_eviction_extra.py][t4]
   - [tests/integration/test_storage_duckdb_fallback.py][t5]
-  - [tests/targeted/test_storage_eviction.py][t6]
+  - [tests/targeted/test_storage_eviction_extra.py][t6]
   - [tests/unit/legacy/test_storage_eviction_sim.py][t7]
   - [tests/unit/legacy/test_storage_manager_concurrency.py][t125]
   - [tests/integration/storage/test_simulation_benchmarks.py][t8]
@@ -199,10 +199,10 @@ and `0.31 OPS` [t5r].
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
 [t2]: ../../tests/integration/test_search_storage.py
 [t3]: ../../tests/unit/legacy/test_storage_eviction.py
-[t4]: ../../tests/integration/test_storage_eviction.py
+[t4]: ../../tests/integration/test_storage_eviction_extra.py
 [t5]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t5r]: ../../tests/integration/test_storage_duckdb_fallback.py
-[t6]: ../../tests/targeted/test_storage_eviction.py
+[t6]: ../../tests/targeted/test_storage_eviction_extra.py
 [t7]: ../../tests/unit/legacy/test_storage_eviction_sim.py
 [t125]: ../../tests/unit/legacy/test_storage_manager_concurrency.py
 [t8]: ../../tests/integration/storage/test_simulation_benchmarks.py

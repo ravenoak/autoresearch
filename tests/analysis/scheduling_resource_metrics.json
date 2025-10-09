@@ -2,22 +2,22 @@
   "1": {
     "utilization": 0.6,
     "avg_queue_length": 0.8999999999999998,
-    "throughput": 115.86159887116257,
-    "mem_kb": 5120,
+    "throughput": 96.94079887499679,
+    "mem_kb": 57851904,
     "expected_memory": 250.0
   },
   "2": {
     "utilization": 0.3,
     "avg_queue_length": 0.05934065934065934,
-    "throughput": 223.25588905004707,
-    "mem_kb": 5024,
+    "throughput": 191.546387470998,
+    "mem_kb": 38731776,
     "expected_memory": 250.0
   },
   "4": {
     "utilization": 0.15,
     "avg_queue_length": 0.0006151976607298826,
-    "throughput": 436.3449031790435,
-    "mem_kb": 5120,
+    "throughput": 384.66891904474306,
+    "mem_kb": 36929536,
     "expected_memory": 250.0
   }
 }
