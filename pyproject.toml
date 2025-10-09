@@ -144,6 +144,7 @@ test = [
     "pytest-httpx >=0.35.0",
     "pytest-bdd >=8.1.0",
     "pytest-benchmark >=4.0.0",
+    "pytest-timeout >=2.3.1",
     "flake8 >=7.2.0",
     "tomli-w >=1.2.0",
     "duckdb >=1.0.0",
@@ -170,6 +171,7 @@ dev = [
     "pytest-bdd >=8.1.0",
     "pytest-cov >=6.1.1",
     "pytest-httpx >=0.35.0",
+    "pytest-timeout >=2.3.1",
     "flake8 >=7.2.0",
     "black >=24.4.0",
     "mypy >=1.10.0",
@@ -320,6 +322,10 @@ module = [
 ]
 ignore_errors = false
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["sentence_transformers", "sentence_transformers.*"]
+ignore_missing_imports = true
 
 [tool.flake8]
 max-line-length = 100

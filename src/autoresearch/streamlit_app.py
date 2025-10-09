@@ -64,6 +64,9 @@ class _PILImage(Protocol):
 # Configure matplotlib to use a non-interactive backend
 matplotlib.use("Agg")
 
+# Check if we're running in test mode
+_test_mode = os.environ.get("_STREAMLIT_TEST_MODE", "false").lower() == "true"
+
 # Set page configuration
 st.set_page_config(
     page_title="Autoresearch",
@@ -646,8 +649,30 @@ def collect_system_metrics() -> Dict[str, Any]:
 
 
 def update_metrics_periodically() -> None:
-    """Update system metrics periodically in the background."""
+    """Update system metrics periodically in the background.
+
+    This function runs in a daemon thread and will stop when:
+    1. Test mode is enabled (_test_mode flag in session state)
+    2. A stop signal is set (_metrics_thread_stop in session state)
+    3. The timeout is reached (configurable via STREAMLIT_METRICS_TIMEOUT env var)
+    """
+    # Check if we're in test mode and should exit early
+    if _test_mode:
+        return
+
+    # Get timeout from environment (default 1 hour, lower for tests)
+    timeout_seconds = float(os.environ.get("STREAMLIT_METRICS_TIMEOUT", "3600"))
+    start_time = time.time()
+
     while True:
+        # Check if we should stop (for graceful shutdown)
+        if getattr(st.session_state, "_metrics_thread_stop", False):
+            break
+
+        # Check for timeout (prevent infinite loops in tests)
+        if time.time() - start_time > timeout_seconds:
+            break
+
         # Collect metrics
         metrics = collect_system_metrics()
 
@@ -1180,6 +1205,12 @@ def display_log_viewer() -> None:
         st.info("No logs match the current filters")
 
 
+def stop_metrics_thread() -> None:
+    """Stop the metrics collection thread gracefully."""
+    if hasattr(st.session_state, "_metrics_thread_stop"):
+        st.session_state._metrics_thread_stop = True
+
+
 def initialize_session_state() -> None:
     """Initialize Streamlit session state variables."""
     # Initialize configuration
@@ -1273,13 +1304,15 @@ def main() -> None:
     # Initialize session state
     initialize_session_state()
 
-    # Start background threads if not already running
+    # Start background threads if not already running and not in test mode
     if not any(thread.name == "MetricsCollector" for thread in threading.enumerate()):
-        # Start background thread for metrics collection
-        metrics_thread = threading.Thread(
-            target=update_metrics_periodically, daemon=True, name="MetricsCollector"
-        )
-        metrics_thread.start()
+        # Check if we're in test mode - if so, don't start background threads
+        if not _test_mode:
+            # Start background thread for metrics collection
+            metrics_thread = threading.Thread(
+                target=update_metrics_periodically, daemon=True, name="MetricsCollector"
+            )
+            metrics_thread.start()
 
         # Set up logging
         setup_logging()
