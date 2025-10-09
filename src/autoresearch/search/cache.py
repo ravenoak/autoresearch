@@ -30,11 +30,16 @@ def _canonical_embedding_backend(embedding_backend: str | None) -> str:
 
 
 def _canonical_storage_hints(storage_hints: Sequence[str] | None) -> tuple[str, ...]:
-    """Return a sorted tuple of storage hints with a placeholder when absent."""
+    """Return a sorted, de-duplicated tuple of storage hints or a placeholder."""
 
     if not storage_hints:
         return (_DEFAULT_STORAGE_HINT,)
-    return tuple(sorted(storage_hints))
+
+    seen: list[str] = []
+    for hint in storage_hints:
+        if hint not in seen:
+            seen.append(hint)
+    return tuple(sorted(seen))
 
 
 def build_cache_slot(

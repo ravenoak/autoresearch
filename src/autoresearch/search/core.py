@@ -874,6 +874,35 @@ class Search:
 
         return canonicalize_query_text(query)
 
+    @staticmethod
+    def _canonicalise_storage_hints(
+        storage_hints: Sequence[str] | None,
+    ) -> Tuple[str, ...]:
+        """Return a sorted tuple of unique storage hints."""
+
+        if not storage_hints:
+            return ()
+
+        seen: list[str] = []
+        for hint in storage_hints:
+            if hint not in seen:
+                seen.append(hint)
+        return tuple(sorted(seen))
+
+    @staticmethod
+    def _embedding_storage_hints(
+        backend: str,
+        *,
+        extra_hints: Sequence[str] | None = None,
+    ) -> Tuple[str, ...]:
+        """Return canonical storage hints for embedding-aware cache slots."""
+
+        hints: set[str] = set(extra_hints or ())
+        hints.add("embedding")
+        if backend == "duckdb":
+            hints.add("storage-vector")
+        return tuple(sorted(hints))
+
     def _build_cache_key(
         self,
         *,
@@ -907,7 +936,7 @@ class Search:
             dtype = getattr(query_embedding, "dtype", None)
             dtype_label = str(dtype) if dtype is not None else "float"
             embedding_state = f"{dtype_label}:{dims}"
-        hints = tuple(sorted(storage_hints)) if storage_hints else ()
+        hints = self._canonicalise_storage_hints(storage_hints)
         return build_cache_key(
             namespace=self._cache_namespace,
             backend=backend,
@@ -931,11 +960,12 @@ class Search:
 
         payload = [dict(doc) for doc in docs]
         seen: set[str] = set()
+        canonical_hints = self._canonicalise_storage_hints(storage_hints)
         for slot in build_cache_slots(
             cache_key,
             namespace=self._cache_namespace,
             embedding_backend=embedding_backend,
-            storage_hints=storage_hints,
+            storage_hints=canonical_hints,
         ):
             if slot in seen:
                 continue
@@ -957,11 +987,12 @@ class Search:
     ) -> Optional[List[Dict[str, Any]]]:
         """Return cached documents, upgrading legacy entries when necessary."""
 
+        canonical_hints = self._canonicalise_storage_hints(storage_hints)
         slots = build_cache_slots(
             cache_key,
             namespace=self._cache_namespace,
             embedding_backend=embedding_backend,
-            storage_hints=storage_hints,
+            storage_hints=canonical_hints,
         )
         for slot in slots:
             cached = self.cache.get_cached_results(slot, backend)
@@ -976,7 +1007,7 @@ class Search:
                 cache_key,
                 backend,
                 cached,
-                storage_hints=storage_hints,
+                storage_hints=canonical_hints,
                 embedding_backend=embedding_backend,
             )
             return cached
@@ -1821,9 +1852,7 @@ class Search:
                 log.warning(f"Unknown embedding backend '{name}'")
                 continue
 
-            storage_hints: Tuple[str, ...] = ("embedding",)
-            if name == "duckdb":
-                storage_hints += ("storage-vector",)
+            storage_hints = self._embedding_storage_hints(name)
 
             cache_key = self._build_cache_key(
                 backend=name,
@@ -2358,7 +2387,7 @@ class Search:
                 name: str, docs: Sequence[Dict[str, Any]] | None
             ) -> None:
                 pending_embedding_backends.discard(name)
-                storage_hints: Tuple[str, ...] = ("embedding",)
+                storage_hints = self._embedding_storage_hints(name)
                 cache_key = self._build_cache_key(
                     backend=name,
                     query=current_query,
@@ -2410,7 +2439,7 @@ class Search:
 
             if np_query_embedding is not None and pending_embedding_backends:
                 for backend_name in tuple(pending_embedding_backends):
-                    storage_hints: Tuple[str, ...] = ("embedding",)
+                    storage_hints = self._embedding_storage_hints(backend_name)
                     cache_key = self._build_cache_key(
                         backend=backend_name,
                         query=current_query,
@@ -2611,6 +2640,7 @@ class Search:
                 duckdb_docs = self._normalise_backend_documents(duckdb_seed, "duckdb")
                 results_by_backend["duckdb"] = duckdb_docs
                 pending_embedding_backends.discard("duckdb")
+                duckdb_storage_hints = self._embedding_storage_hints("duckdb")
                 duckdb_cache_key = self._build_cache_key(
                     backend="duckdb",
                     query=current_query,
@@ -2618,15 +2648,23 @@ class Search:
                     hybrid_query=cfg.search.hybrid_query,
                     use_semantic_similarity=cfg.search.use_semantic_similarity,
                     query_embedding=np_query_embedding,
-                    storage_hints=("storage-vector", "duckdb-seed"),
+                    storage_hints=duckdb_storage_hints,
                     normalized_query=current_canonical_query,
                 )
                 self._cache_documents(
                     duckdb_cache_key,
                     "duckdb",
                     duckdb_docs,
-                    storage_hints=("storage-vector", "duckdb-seed"),
+                    storage_hints=duckdb_storage_hints,
                     embedding_backend="duckdb",
+                )
+                log.debug(
+                    "Cached duckdb embedding seeds via storage hybrid lookup",
+                    extra={
+                        "cache_namespace": self._cache_namespace,
+                        "storage_hints": duckdb_storage_hints,
+                        "seed_count": len(duckdb_docs),
+                    },
                 )
                 duckdb_from_storage = True
 
