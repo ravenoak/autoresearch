@@ -52,6 +52,12 @@ variables to calibrate expectations.
   (≈1.78) so modest hardware variance still satisfies the expectation.
 - Memory checks reuse the same baseline to enforce a 25 MiB budget during
   regression runs.
+- ``benchmark_scheduler`` records ``throughput_samples`` alongside
+  ``throughput_mean`` and ``throughput_stddev`` after a deterministic
+  warm-up batch. If the fastest-to-slowest spread exceeds 15 %, the
+  slowest slot is rerun before statistics are finalised. Regression tests
+  assert every sample from the multi-worker run is at least 1.7× faster
+  than the paired single-worker sample.
 
 Adjust these variables before running ``pytest`` or
 ``scripts/orchestrator_perf_sim.py --benchmark`` to match local hardware.

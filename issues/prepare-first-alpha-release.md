@@ -64,6 +64,15 @@ directive and expose `autoresearch.search.context` so monkeypatched tests
 resolve correctly.【F:tests/conftest.py†L56-L138】【F:tests/unit/test_collection_hygiene.py†L20-L72】【F:src/autoresearch/search/__i
 n it__.py†L27-L49】
 
+As of **October 9, 2025 at 23:32 UTC** the scheduler benchmark warm-up now runs
+deterministic batches: `uv run scripts/scheduling_resource_benchmark.py`
+`--max-workers 2 --tasks 20 --arrival-rate 3 --service-rate 5`
+`--mem-per-task 0.5` reports 119.82 tasks/s mean (σ≈1.08) for one worker and
+237.54 tasks/s mean (σ≈5.92) for two workers, sustaining the ≥1.7× per-sample
+guard.【a8f96b†L1-L5】 The focused pytest regression and the refreshed
+`uv run task check` sweep both pass with the new variance assertions, keeping
+the alpha quick gate green.【e862eb†L1-L10】【f74cdb†L1-L9】
+
 Before we propose the `0.1.0a1` tag, reviewers must acknowledge the
 documentation updates captured in STATUS.md, TASK_PROGRESS.md, and the
 preflight dossier. Capture those sign-offs in this ticket to confirm the
