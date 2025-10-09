@@ -32,6 +32,14 @@ the wheel and sdist, skipped upload, and generated fresh log and checksum
 artefacts for the TestPyPI stage.
 【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
 
+As of **October 9, 2025 at 22:49 UTC** cache instrumentation now records
+namespace-tagged fingerprints and cache slot outcomes for each
+`Search.external_lookup` call, and the Hypothesis regression isolates TinyDB
+state per example before asserting the initial backend invocation and captured
+trace. The targeted `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
+run and `uv run task check` sweep both pass, showing deterministic cache reuse
+under mixed storage paths.【F:src/autoresearch/search/core.py†L700-L905】【F:src/autoresearch/search/core.py†L987-L1116】【F:src/autoresearch/search/core.py†L2382-L2400】【F:src/autoresearch/search/core.py†L2899-L3005】【F:tests/unit/legacy/test_cache.py†L898-L1082】【0d7622†L1-L13】【9b81ca†L1-L8】
+
 As of **October 9, 2025 at 16:46 UTC** duckdb storage-hint canonicalisation keeps
 embedding caches and storage-derived seeds under identical cache keys. The
 Search service now deduplicates storage hints, reuses the same tuple for

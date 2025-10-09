@@ -55,6 +55,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Literal,
     Optional,
     ParamSpec,
     Protocol,
@@ -686,6 +687,30 @@ class ExternalLookupResult:
         return self.cache_base
 
 
+CacheEventStage = Literal["hit", "miss", "store"]
+
+
+@dataclass(frozen=True)
+class CacheTraceEvent:
+    """Describe a cache interaction recorded during a lookup."""
+
+    stage: CacheEventStage
+    backend: str
+    namespace: str
+    fingerprint: str | None
+    slot: str | None = None
+    embedding_backend: str | None = None
+    storage_hints: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CacheTrace:
+    """Summarise cache trace information for the latest lookup."""
+
+    namespace: str
+    events: tuple[CacheTraceEvent, ...] = ()
+
+
 class LocalGitResult(TypedDict, total=False):
     """Typed mapping describing entries produced by ``_local_git_backend``."""
 
@@ -840,6 +865,12 @@ class Search:
         self._cache_base: SearchCache = base_cache
         self._cache_namespace: str | None = final_namespace
         self.cache = base_cache.namespaced(final_namespace)
+        namespace_label = final_namespace or "__default__"
+        self._active_namespace: str = namespace_label
+        self._cache_events: list[CacheTraceEvent] = []
+        self._last_cache_trace: CacheTrace = CacheTrace(
+            namespace=namespace_label, events=()
+        )
         log.debug(
             "Initialised search cache",
             extra={
@@ -867,6 +898,12 @@ class Search:
     def close_http_session() -> None:
         """Close the pooled HTTP session."""
         close_http_session()
+
+    @property
+    def cache_trace(self) -> CacheTrace:
+        """Return cache trace details for the most recent lookup."""
+
+        return self._last_cache_trace
 
     @staticmethod
     def _normalise_cache_query(query: str) -> str:
@@ -947,6 +984,31 @@ class Search:
             storage_hints=hints,
         )
 
+    def _record_cache_event(
+        self,
+        *,
+        stage: CacheEventStage,
+        backend: str,
+        cache_key: CacheKey,
+        slot: str | None,
+        storage_hints: Sequence[str] | None,
+        embedding_backend: str | None,
+    ) -> None:
+        """Record cache interactions for diagnostic tracing."""
+
+        namespace = self._active_namespace or (self._cache_namespace or "__default__")
+        hints = self._canonicalise_storage_hints(storage_hints)
+        event = CacheTraceEvent(
+            stage=stage,
+            backend=backend,
+            namespace=namespace,
+            fingerprint=cache_key.fingerprint,
+            slot=slot,
+            embedding_backend=embedding_backend,
+            storage_hints=hints,
+        )
+        self._cache_events.append(event)
+
     def _cache_documents(
         self,
         cache_key: CacheKey,
@@ -971,11 +1033,27 @@ class Search:
                 continue
             seen.add(slot)
             self.cache.cache_results(slot, backend, payload)
+            self._record_cache_event(
+                stage="store",
+                backend=backend,
+                cache_key=cache_key,
+                slot=slot,
+                storage_hints=canonical_hints,
+                embedding_backend=embedding_backend,
+            )
         for candidate in cache_key.candidates():
             if candidate in seen:
                 continue
             seen.add(candidate)
             self.cache.cache_results(candidate, backend, payload)
+            self._record_cache_event(
+                stage="store",
+                backend=backend,
+                cache_key=cache_key,
+                slot=candidate,
+                storage_hints=canonical_hints,
+                embedding_backend=embedding_backend,
+            )
 
     def _get_cached_documents(
         self,
@@ -997,12 +1075,28 @@ class Search:
         for slot in slots:
             cached = self.cache.get_cached_results(slot, backend)
             if cached is not None:
+                self._record_cache_event(
+                    stage="hit",
+                    backend=backend,
+                    cache_key=cache_key,
+                    slot=slot,
+                    storage_hints=canonical_hints,
+                    embedding_backend=embedding_backend,
+                )
                 return cached
 
         for candidate in cache_key.candidates():
             cached = self.cache.get_cached_results(candidate, backend)
             if cached is None:
                 continue
+            self._record_cache_event(
+                stage="hit",
+                backend=backend,
+                cache_key=cache_key,
+                slot=candidate,
+                storage_hints=canonical_hints,
+                embedding_backend=embedding_backend,
+            )
             self._cache_documents(
                 cache_key,
                 backend,
@@ -1011,6 +1105,14 @@ class Search:
                 embedding_backend=embedding_backend,
             )
             return cached
+        self._record_cache_event(
+            stage="miss",
+            backend=backend,
+            cache_key=cache_key,
+            slot=None,
+            storage_hints=canonical_hints,
+            embedding_backend=embedding_backend,
+        )
         return None
 
     @staticmethod
@@ -2277,6 +2379,9 @@ class Search:
     ) -> List[Dict[str, Any]] | ExternalLookupResult:
         """Perform an external search using configured backends."""
 
+        namespace_label = self._cache_namespace or "__default__"
+        self._active_namespace = namespace_label
+        self._cache_events = []
         cfg = _get_runtime_config()
 
         provided_executed_query: str | None = None
@@ -2791,6 +2896,11 @@ class Search:
                     cache_view=self.cache,
                     storage=StorageManager,
                 )
+                self._last_cache_trace = CacheTrace(
+                    namespace=self._active_namespace
+                    or (self._cache_namespace or "__default__"),
+                    events=tuple(self._cache_events),
+                )
                 return bundle if return_handles else bundle.results
 
             fallback_count = max(1, base_max_results)
@@ -2887,6 +2997,11 @@ class Search:
                 by_backend=results_by_backend,
             )
 
+            self._last_cache_trace = CacheTrace(
+                namespace=self._active_namespace
+                or (self._cache_namespace or "__default__"),
+                events=tuple(self._cache_events),
+            )
             return bundle if return_handles else bundle.results
 
 

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
+import tempfile
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
@@ -893,7 +895,9 @@ def test_interleaved_storage_paths_share_cache(
     vector_seed: bool,
     storage_sources: list[str],
 ) -> None:
-    cache = SearchCache()
+    temp_dir = Path(tempfile.mkdtemp(prefix="cache-interleaved-"))
+    cache_path = temp_dir / "cache.json"
+    cache = SearchCache(str(cache_path))
     calls: dict[str, int] = {"backend": 0, "duckdb": 0}
 
     def backend(query: str, max_results: int = 5) -> list[dict[str, str]]:
@@ -916,135 +920,166 @@ def test_interleaved_storage_paths_share_cache(
 
     vector = np.array([0.1, 0.2], dtype=float)
 
-    with ExitStack() as stack:
-        stack.enter_context(
-            patch(
-                "autoresearch.search.core.StorageManager.has_vss",
-                new=staticmethod(lambda: vector_seed),
-            )
-        )
-        search_default = stack.enter_context(
-            property_search(
-                cache,
-                cfg,
-                embedding_vector=vector,
-                transformer_factory=lambda: object(),
-            )
-        )
-
-        search_default.backends = {"primary": backend}
-        search_default.embedding_backends = {"duckdb": duckdb_backend}
-
-        def fake_storage(
-            self: Search,
-            query: str,
-            query_embedding: np.ndarray | None,
-            backend_results: BackendResultMap,
-            max_results: int,
-        ) -> BackendResultMap:
-            del self, query_embedding, backend_results, max_results
-            docs: BackendResults = []
-            if vector_seed:
-                docs.append(
-                    {
-                        "url": "urn:vector",
-                        "title": "VectorDoc",
-                        "storage_sources": ["vector"],
-                    }
+    try:
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch(
+                    "autoresearch.search.core.StorageManager.has_vss",
+                    new=staticmethod(lambda: vector_seed),
                 )
-            for source in storage_sources:
-                if source == "vector" and not vector_seed:
-                    continue
-                docs.append(
-                    {
-                        "url": f"urn:{source}",
-                        "title": f"{source.title()}Doc",
-                        "storage_sources": [source],
-                    }
+            )
+            search_default = stack.enter_context(
+                property_search(
+                    cache,
+                    cfg,
+                    embedding_vector=vector,
+                    transformer_factory=lambda: object(),
                 )
-            return {"storage": docs}
+            )
 
-        search_default.storage_hybrid_lookup = MethodType(fake_storage, search_default)
+            search_default.backends = {"primary": backend}
+            search_default.embedding_backends = {"duckdb": duckdb_backend}
 
-        first = search_default.external_lookup("topic")
-        initial_backend_calls = calls["backend"]
-        initial_duckdb_calls = calls["duckdb"]
-        second = search_default.external_lookup("topic")
+            def fake_storage(
+                self: Search,
+                query: str,
+                query_embedding: np.ndarray | None,
+                backend_results: BackendResultMap,
+                max_results: int,
+            ) -> BackendResultMap:
+                del self, query_embedding, backend_results, max_results
+                docs: BackendResults = []
+                if vector_seed:
+                    docs.append(
+                        {
+                            "url": "urn:vector",
+                            "title": "VectorDoc",
+                            "storage_sources": ["vector"],
+                        }
+                    )
+                for source in storage_sources:
+                    if source == "vector" and not vector_seed:
+                        continue
+                    docs.append(
+                        {
+                            "url": f"urn:{source}",
+                            "title": f"{source.title()}Doc",
+                            "storage_sources": [source],
+                        }
+                    )
+                return {"storage": docs}
 
-        assert calls["backend"] == initial_backend_calls, (
-            "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
-        )
-        assert calls["duckdb"] == initial_duckdb_calls, (
-            "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
-        )
-        assert second == first, (
-            "Without stable cache keys, how could sequential storage blends return identical payloads?"
-        )
+            search_default.storage_hybrid_lookup = MethodType(fake_storage, search_default)
 
-        canonical_hints = search_default._embedding_storage_hints("duckdb")
-        scrambled_hints = tuple(reversed(canonical_hints + canonical_hints))
+            first = search_default.external_lookup("topic")
+            first_trace = search_default.cache_trace
+            assert calls["backend"] == 1, (
+                "Without a cache miss on the first lookup, how would the backend ever run?"
+            )
+            assert any(
+                event.stage == "store"
+                and event.backend == "primary"
+                and event.fingerprint
+                for event in first_trace.events
+            ), (
+                "If namespace traces failed to capture fingerprints, what evidence would confirm the initial store?"
+            )
+            expected_namespace = search_default._cache_namespace or "__default__"
+            assert first_trace.namespace == expected_namespace, (
+                "When traces omit the active namespace, how could Hypothesis reason about isolation?"
+            )
 
-        canonical_slots = build_cache_slots(
-            search_default._build_cache_key(
-                backend="duckdb",
-                query="topic",
-                embedding_backends=tuple(cfg.search.embedding_backends),
-                hybrid_query=cfg.search.hybrid_query,
-                use_semantic_similarity=cfg.search.use_semantic_similarity,
-                query_embedding=vector,
+            initial_backend_calls = calls["backend"]
+            initial_duckdb_calls = calls["duckdb"]
+            second = search_default.external_lookup("topic")
+            second_trace = search_default.cache_trace
+
+            assert calls["backend"] == initial_backend_calls, (
+                "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
+            )
+            assert calls["duckdb"] == initial_duckdb_calls, (
+                "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
+            )
+            assert any(
+                event.stage == "hit" and event.backend == "primary"
+                for event in second_trace.events
+            ), (
+                "When the second lookup reuses cached payloads, shouldn't a cache hit be observable?"
+            )
+            assert second_trace.namespace == first_trace.namespace, (
+                "If namespaces drifted across lookups, how would cache hits stay deterministic?"
+            )
+            assert second == first, (
+                "Without stable cache keys, how could sequential storage blends return identical payloads?"
+            )
+
+            canonical_hints = search_default._embedding_storage_hints("duckdb")
+            scrambled_hints = tuple(reversed(canonical_hints + canonical_hints))
+
+            canonical_slots = build_cache_slots(
+                search_default._build_cache_key(
+                    backend="duckdb",
+                    query="topic",
+                    embedding_backends=tuple(cfg.search.embedding_backends),
+                    hybrid_query=cfg.search.hybrid_query,
+                    use_semantic_similarity=cfg.search.use_semantic_similarity,
+                    query_embedding=vector,
+                    storage_hints=canonical_hints,
+                ),
+                namespace=search_default._cache_namespace,
+                embedding_backend="duckdb",
                 storage_hints=canonical_hints,
-            ),
-            namespace=search_default._cache_namespace,
-            embedding_backend="duckdb",
-            storage_hints=canonical_hints,
-        )
-        scrambled_slots = build_cache_slots(
-            search_default._build_cache_key(
-                backend="duckdb",
+            )
+            scrambled_slots = build_cache_slots(
+                search_default._build_cache_key(
+                    backend="duckdb",
+                    query="topic",
+                    embedding_backends=tuple(cfg.search.embedding_backends),
+                    hybrid_query=cfg.search.hybrid_query,
+                    use_semantic_similarity=cfg.search.use_semantic_similarity,
+                    query_embedding=vector,
+                    storage_hints=scrambled_hints,
+                ),
+                namespace=search_default._cache_namespace,
+                embedding_backend="duckdb",
+                storage_hints=scrambled_hints,
+            )
+            assert canonical_slots == scrambled_slots, (
+                "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
+            )
+
+            key = search_default._build_cache_key(
+                backend="primary",
                 query="topic",
                 embedding_backends=tuple(cfg.search.embedding_backends),
                 hybrid_query=cfg.search.hybrid_query,
                 use_semantic_similarity=cfg.search.use_semantic_similarity,
                 query_embedding=vector,
-                storage_hints=scrambled_hints,
-            ),
-            namespace=search_default._cache_namespace,
-            embedding_backend="duckdb",
-            storage_hints=scrambled_hints,
-        )
-        assert canonical_slots == scrambled_slots, (
-            "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
-        )
+                storage_hints=("external",),
+            )
+            assume(key.fingerprint is not None)
+            repeat = search_default._build_cache_key(
+                backend="primary",
+                query="topic",
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=cfg.search.hybrid_query,
+                use_semantic_similarity=cfg.search.use_semantic_similarity,
+                query_embedding=vector,
+                storage_hints=("external",),
+            )
+            assert repeat.fingerprint == key.fingerprint, (
+                "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
+            )
 
-        key = search_default._build_cache_key(
-            backend="primary",
-            query="topic",
-            embedding_backends=tuple(cfg.search.embedding_backends),
-            hybrid_query=cfg.search.hybrid_query,
-            use_semantic_similarity=cfg.search.use_semantic_similarity,
-            query_embedding=vector,
-            storage_hints=("external",),
+        assert calls["backend"] == 1, (
+            "If cache slots multiplied, how could backend calls stay capped at a single execution?"
         )
-        assume(key.fingerprint is not None)
-        repeat = search_default._build_cache_key(
-            backend="primary",
-            query="topic",
-            embedding_backends=tuple(cfg.search.embedding_backends),
-            hybrid_query=cfg.search.hybrid_query,
-            use_semantic_similarity=cfg.search.use_semantic_similarity,
-            query_embedding=vector,
-            storage_hints=("external",),
+        assert calls["duckdb"] <= 1, (
+            "When cache keys stabilise embeddings, shouldn't vector fetches avoid repeated calls?"
         )
-        assert repeat.fingerprint == key.fingerprint, (
-            "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
-        )
-
-    assert calls["backend"] == 1, (
-        "If cache slots multiplied, how could backend calls stay capped at a single execution?"
-    )
-    assert calls["duckdb"] <= 1, (
-        "When cache keys stabilise embeddings, shouldn't vector fetches avoid repeated calls?"
-    )
+    finally:
+        cache.teardown(remove_file=True)
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_context_aware_query_expansion_uses_cache(
