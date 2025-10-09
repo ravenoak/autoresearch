@@ -65,6 +65,16 @@ def api_client() -> TypedFixture[TestClient]:
     return None
 
 
+@pytest.fixture(autouse=True)
+def reset_api_state():
+    """Reset FastAPI app state between tests to prevent interference."""
+    # Clear async tasks that might accumulate between tests
+    if hasattr(api_app.state, 'async_tasks'):
+        api_app.state.async_tasks.clear()
+
+    yield
+
+
 @pytest.fixture
 def token_baseline(
     request: pytest.FixtureRequest,

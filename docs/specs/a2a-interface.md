@@ -70,7 +70,7 @@ Unit tests assert that:
   - [scripts/a2a_concurrency_sim.py][s1]
 - Tests
   - [tests/behavior/features/a2a_interface.feature][t1]
-  - [tests/integration/test_a2a_interface.py][t2] – verifies three
+  - [tests/integration/test_a2a_interface_extra.py][t2] – verifies three
     concurrent queries complete without blocking.
   - [tests/unit/legacy/test_a2a_interface.py][t3] – checks parallel queries return
     distinct results and validates dispatch order.
@@ -80,6 +80,6 @@ Unit tests assert that:
 [a1]: ../algorithms/a2a_interface.md
 [s1]: ../../scripts/a2a_concurrency_sim.py
 [t1]: ../../tests/behavior/features/a2a_interface.feature
-[t2]: ../../tests/integration/test_a2a_interface.py
+[t2]: ../../tests/integration/test_a2a_interface_extra.py
 [t3]: ../../tests/unit/legacy/test_a2a_interface.py
 [t4]: ../../tests/unit/legacy/test_a2a_concurrency_sim.py

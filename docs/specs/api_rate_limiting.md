@@ -64,10 +64,10 @@ unchanged, proving convergence under the configured rate ``R``.
 - Tests
   - [tests/analysis/test_api_stream_order_sim.py][t15]
   - [tests/analysis/test_api_streaming_sim.py][t16]
-  - [tests/integration/test_api.py][t17]
+  - [tests/integration/test_api_extra.py][t17]
   - [tests/integration/test_api_additional.py][t18]
   - [tests/integration/test_api_auth.py][t19]
-  - [tests/integration/test_api_auth_middleware.py][t20]
+  - [tests/integration/test_api_auth_middleware_extra.py][t20]
   - [tests/integration/test_api_auth_permissions.py][t21]
   - [tests/integration/test_api_docs.py][t22]
   - [tests/integration/test_api_hot_reload.py][t23]
@@ -88,10 +88,10 @@ unchanged, proving convergence under the configured rate ``R``.
 
 [t15]: ../../tests/analysis/test_api_stream_order_sim.py
 [t16]: ../../tests/analysis/test_api_streaming_sim.py
-[t17]: ../../tests/integration/test_api.py
+[t17]: ../../tests/integration/test_api_extra.py
 [t18]: ../../tests/integration/test_api_additional.py
 [t19]: ../../tests/integration/test_api_auth.py
-[t20]: ../../tests/integration/test_api_auth_middleware.py
+[t20]: ../../tests/integration/test_api_auth_middleware_extra.py
 [t21]: ../../tests/integration/test_api_auth_permissions.py
 [t22]: ../../tests/integration/test_api_docs.py
 [t23]: ../../tests/integration/test_api_hot_reload.py

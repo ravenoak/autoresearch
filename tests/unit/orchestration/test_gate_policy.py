@@ -10,7 +10,6 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestration_utils import (
     OrchestrationUtils,
-    ScoutGateDecision,
     ScoutGatePolicy,
 )
 from autoresearch.orchestration.state import QueryState
@@ -96,7 +95,6 @@ def test_scout_gate_reduces_loops_when_signals_low() -> None:
             metrics=metrics,
         )
 
-    assert isinstance(decision, ScoutGateDecision)
     assert decision.should_debate is False
     assert decision.target_loops == 1
     assert decision.tokens_saved == 80

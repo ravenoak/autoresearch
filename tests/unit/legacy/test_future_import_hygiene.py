@@ -11,7 +11,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _iter_python_modules(root: Path) -> list[Path]:
-    return [path for path in root.rglob("*.py") if ".git" not in path.parts]
+    return [
+        path for path in root.rglob("*.py")
+        if ".git" not in path.parts and ".venv" not in path.parts
+    ]
 
 
 def _first_non_docstring_node(body: list[ast.stmt]) -> int:

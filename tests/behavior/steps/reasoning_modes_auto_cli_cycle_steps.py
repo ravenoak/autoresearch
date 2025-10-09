@@ -921,11 +921,11 @@ def assert_auto_cached_answer(auto_cli_cycle: dict[str, Any]) -> None:
         assert not answer.lower().startswith(prefix)
     for entry in warnings:
         if isinstance(entry, Mapping):
-                message = entry.get("message")
-                if isinstance(message, str) and message.strip():
-                    lowered = message.strip().lower()
-                    assert lowered not in answer.lower()
-                    assert lowered not in payload_answer.lower()
+            message = entry.get("message")
+            if isinstance(message, str) and message.strip():
+                lowered = message.strip().lower()
+                assert lowered not in answer.lower()
+                assert lowered not in payload_answer.lower()
 
 
 @then("the AUTO warning banners should remain isolated between runs")

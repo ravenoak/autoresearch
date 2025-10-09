@@ -26,9 +26,14 @@ if importlib.util.find_spec("bertopic") is None:
         BERTopicModule, install_stub_module("bertopic", _BERTopicModule)
     )
 else:  # pragma: no cover
-    import bertopic as _bertopic  # pragma: no cover
-
-    bertopic = cast(BERTopicModule, _bertopic)
+    try:
+        import bertopic as _bertopic  # pragma: no cover
+        bertopic = cast(BERTopicModule, _bertopic)
+    except ImportError:
+        # BERTopic has import issues, use stub instead
+        bertopic = cast(
+            BERTopicModule, install_stub_module("bertopic", _BERTopicModule)
+        )
 
 
 __all__ = ["BERTopicModule", "bertopic"]

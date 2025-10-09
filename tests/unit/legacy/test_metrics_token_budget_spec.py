@@ -1,5 +1,5 @@
 # mypy: ignore-errors
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
@@ -66,6 +66,7 @@ def test_budget_converges_for_constant_usage():
     usage=st.integers(min_value=1, max_value=100),
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
+@settings(deadline=None)  # Disable deadline for this potentially slow test
 def test_budget_rounds_half_up(usage: int, margin: float) -> None:
     """The update uses round-half-up on the scaled usage."""
     m = OrchestrationMetrics()

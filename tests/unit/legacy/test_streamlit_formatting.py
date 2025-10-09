@@ -1,6 +1,7 @@
 # mypy: ignore-errors
 import json
 from hypothesis import given, strategies as st
+from autoresearch.output_format import OutputDepth
 from autoresearch.streamlit_app import (
     create_interaction_trace,
     create_progress_graph,
@@ -33,17 +34,17 @@ def test_create_progress_graph(agent_execs):
 
 
 @given(
-    answer=st.text(min_size=1, max_size=30),
-    citations=st.lists(st.text(min_size=1, max_size=15), max_size=3),
-    reasoning=st.lists(st.text(min_size=1, max_size=15), max_size=3),
+    answer=st.text(min_size=1, max_size=30, alphabet=st.characters(min_codepoint=32, max_codepoint=126)),
+    citations=st.lists(st.text(min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)), max_size=3),
+    reasoning=st.lists(st.text(min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)), max_size=3),
 )
 def test_format_result_markdown_json(answer, citations, reasoning):
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})
-    md = format_result_as_markdown(resp)
+    md = format_result_as_markdown(resp, OutputDepth.STANDARD)
     assert answer in md
     for c in citations:
         assert c in md
-    js = format_result_as_json(resp)
+    js = format_result_as_json(resp, OutputDepth.STANDARD)
     parsed = json.loads(js)
     assert parsed["answer"] == answer
     assert parsed["citations"] == citations

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import contextlib
 import importlib
@@ -144,6 +146,10 @@ pytest_plugins = [
     "tests.fixtures.diagnostics",
     "tests.fixtures.performance",
     "pytest_httpx",
+    "pytest_bdd",
+    "tests.behavior.fixtures",
+    "tests.behavior.steps",
+    "tests.behavior.utils",
 ]
 
 # Use spawn to avoid fork-related deadlocks and ensure clean state.
@@ -633,6 +639,51 @@ def stop_config_watcher(
     ConfigLoader().stop_watching()
     yield
     ConfigLoader().stop_watching()
+
+
+@pytest.fixture
+def disable_streamlit_metrics(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
+    """Completely disable Streamlit metrics thread for tests marked with requires_ui."""
+    def noop_metrics():
+        """No-op replacement for update_metrics_periodically in tests."""
+        pass
+
+    # Patch the function to do nothing
+    monkeypatch.setattr(
+        "autoresearch.streamlit_app.update_metrics_periodically", noop_metrics
+    )
+    # Also set short timeout as backup
+    monkeypatch.setenv("STREAMLIT_METRICS_TIMEOUT", "1")
+    yield
+
+
+@pytest.fixture(autouse=True)
+def cleanup_streamlit_threads(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> TypedFixture[None]:
+    """Ensure Streamlit background threads (MetricsCollector) are cleaned up and disabled in tests."""
+    import threading
+
+    # Set short timeout for metrics thread in all tests
+    monkeypatch.setenv("STREAMLIT_METRICS_TIMEOUT", "1")
+
+    # For UI tests, also disable the metrics thread completely
+    if request.node.get_closest_marker("requires_ui"):
+        def noop_metrics():
+            pass
+        monkeypatch.setattr(
+            "autoresearch.streamlit_app.update_metrics_periodically", noop_metrics
+        )
+
+    # Before test: identify existing threads
+    before_threads = {t.name: t for t in threading.enumerate()}
+
+    yield
+
+    # After test: cleanup any MetricsCollector threads
+    after_threads = threading.enumerate()
+    for thread in after_threads:
+        if thread.name == "MetricsCollector" and thread not in before_threads.values():
+            # Thread is a daemon so it should stop when we end, but give it a moment
+            thread.join(timeout=0.2)
 
 
 @pytest.fixture(autouse=True)

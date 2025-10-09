@@ -58,12 +58,7 @@ class StorageErrorHandler:
 
 
 # Load fixtures and step implementations so their fixtures are available
-pytest_plugins = (
-    "pytest_bdd",
-    "tests.behavior.fixtures",
-    "tests.behavior.steps",
-    "tests.behavior.utils",
-)
+# Note: pytest_plugins is now defined in the main tests/conftest.py file
 
 
 ALLOWED_STEP_MODULES = {

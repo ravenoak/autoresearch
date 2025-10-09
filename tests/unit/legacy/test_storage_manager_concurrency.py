@@ -47,45 +47,59 @@ def test_setup_thread_safe(monkeypatch):
 
 
 def test_persist_claim_thread_safe(monkeypatch):
-    StorageManager.context.graph = nx.DiGraph()
-    StorageManager.context.rdf_store = object()
+    # Save original context state
+    original_graph = StorageManager.context.graph
+    original_rdf_store = StorageManager.context.rdf_store
+    original_db_backend = StorageManager.context.db_backend
 
-    class DummyBackend:
-        def persist_claim(self, claim) -> None:  # pragma: no cover - stub
-            pass
+    try:
+        StorageManager.context.graph = nx.DiGraph()
+        StorageManager.context.rdf_store = object()
 
-        def update_claim(self, claim, partial_update) -> None:  # pragma: no cover
-            pass
+        class DummyBackend:
+            def persist_claim(self, claim) -> None:  # pragma: no cover - stub
+                pass
 
-    StorageManager.context.db_backend = DummyBackend()
+            def update_claim(self, claim, partial_update) -> None:  # pragma: no cover
+                pass
 
-    monkeypatch.setattr(
-        storage,
-        "ConfigLoader",
-        lambda: types.SimpleNamespace(config=types.SimpleNamespace(ram_budget_mb=0)),
-    )
-    monkeypatch.setattr(StorageManager, "_persist_to_rdf", lambda c: None)
-    monkeypatch.setattr(StorageManager, "_update_rdf_claim", lambda c, p: None)
-    monkeypatch.setattr(StorageManager, "_persist_to_kuzu", lambda c: None)
-    monkeypatch.setattr(StorageManager, "_enforce_ram_budget", lambda b: None)
-    monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
+            def get_connection(self):  # pragma: no cover - stub
+                return self
 
-    claims = [
-        {"id": f"c{i}", "type": "fact", "content": f"content {i}"}
-        for i in range(10)
-    ]
+            def _create_tables(self, skip_migrations: bool = False) -> None:  # pragma: no cover - stub
+                pass
 
-    def worker(claim: dict) -> None:
-        StorageManager.persist_claim(claim)
+        StorageManager.context.db_backend = DummyBackend()
 
-    threads = [threading.Thread(target=worker, args=(cl,)) for cl in claims]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
+        monkeypatch.setattr(
+            storage,
+            "ConfigLoader",
+            lambda: types.SimpleNamespace(config=types.SimpleNamespace(ram_budget_mb=0)),
+        )
+        monkeypatch.setattr(StorageManager, "_persist_to_rdf", lambda c: None)
+        monkeypatch.setattr(StorageManager, "_update_rdf_claim", lambda c, p: None)
+        monkeypatch.setattr(StorageManager, "_persist_to_kuzu", lambda c: None)
+        monkeypatch.setattr(StorageManager, "_enforce_ram_budget", lambda b: None)
+        monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
 
-    graph = StorageManager.get_graph()
-    assert graph.number_of_nodes() == len(claims)
-    StorageManager.context.graph.clear()
-    StorageManager.context.db_backend = None
-    StorageManager.context.rdf_store = None
+        claims = [
+            {"id": f"c{i}", "type": "fact", "content": f"content {i}"}
+            for i in range(10)
+        ]
+
+        def worker(claim: dict) -> None:
+            StorageManager.persist_claim(claim)
+
+        threads = [threading.Thread(target=worker, args=(cl,)) for cl in claims]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        graph = StorageManager.get_graph()
+        assert graph.number_of_nodes() == len(claims)
+    finally:
+        # Restore original context state
+        StorageManager.context.graph = original_graph
+        StorageManager.context.rdf_store = original_rdf_store
+        StorageManager.context.db_backend = original_db_backend

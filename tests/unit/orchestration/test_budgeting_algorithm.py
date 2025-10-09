@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.budgeting import _apply_adaptive_token_budget
+from autoresearch.models import ReasoningMode
 from tests.helpers import make_config_model
 
 
@@ -17,6 +18,7 @@ def _typed_config(
         loops=loops,
         adaptive_max_factor=adaptive_max_factor,
         adaptive_min_buffer=adaptive_min_buffer,
+        reasoning_mode=ReasoningMode.DIRECT,
     )
     return ConfigModel.model_validate(stub.model_dump())
 
