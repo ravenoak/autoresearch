@@ -3,7 +3,7 @@
 import inspect
 import pytest
 from typer.testing import CliRunner
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from autoresearch.main import app as cli_app
 from autoresearch.cli_evaluation import evaluation_app, _normalise_suite
