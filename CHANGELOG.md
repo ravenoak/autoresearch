@@ -122,6 +122,10 @@ Reference issues by slugged filename (for example,
   the wheel and sdist checksums in
   [docs/release_plan.md](docs/release_plan.md), closing
   [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】【F:STATUS.md†L33-L38】【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
+- Recorded the October 9, 2025 `task release:alpha` sweep failing on
+  `tests/unit/search/test_adaptive_rewrite.py::test_external_lookup_adaptive_k_increases_fetch`,
+  preserving the log and summary so the adaptive K regression remains on the
+  gating list for the alpha tag.【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】【F:baseline/logs/release-alpha-20251009T215007Z-summary.txt†L1-L1】
 
 ### Verification Evidence
 - `uv run task verify` completed on 2025-09-25 at 02:27:17 Z after

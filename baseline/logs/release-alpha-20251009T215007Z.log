@@ -1,0 +1,426 @@
+[release:alpha] syncing dependencies
+[release:alpha] running flake8
+[release:alpha] running mypy
+Success: no issues found in 805 source files
+[release:alpha] linting specs
+[release:alpha] checking release metadata
+Release metadata aligned: version=0.1.0a1, date=2025-10-08
+[release:alpha] running task verify
+3.45.4
+Verifying extras: analysis, build, dev-minimal, distributed, git, llm, nlp, parsers, test, ui, vss
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+GitPython 3.1.45
+a2a-sdk 0.3.8
+black 25.9.0
+build 1.3.0
+cibuildwheel 3.2.0
+dspy-ai 3.0.3
+duckdb 1.3.2
+duckdb-extension-vss 1.3.2
+fakeredis 2.32.0
+fastembed 0.7.3
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.140.3
+lxml 5.4.0
+mypy 1.18.2
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+pillow 11.3.0
+polars 1.34.0
+psutil 7.1.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+pytest-timeout 2.4.0
+python-docx 1.2.0
+ray 2.49.2
+redis 6.4.0
+responses 0.25.8
+spacy 3.8.7
+streamlit 1.50.0
+tomli-w 1.2.0
+twine 6.2.0
+types-protobuf 6.32.1.20250918
+types-psutil 7.0.0.20251001
+types-requests 2.32.4.20250913
+types-tabulate 0.9.0.20241207
+uvicorn 0.37.0
+[verify][lint] flake8 passed
+Success: no issues found in 805 source files
+[verify][mypy] strict suite passed
+[verify][lint] spec lint passed
+Release metadata aligned: version=0.1.0a1, date=2025-10-08
+[coverage] syncing dependencies
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: langsmith-0.4.33, anyio-4.11.0, bdd-8.1.0, timeout-2.4.0, cov-7.0.0, hypothesis-6.140.3, benchmark-5.1.0, httpx-0.35.0
+timeout: 300.0s
+timeout method: thread
+timeout func_only: False
+collected 1230 items / 115 deselected / 1115 selected
+
+tests/unit/api/test_api_llm.py .                                                                                         [  0%]
+tests/unit/api/test_routes.py ..                                                                                         [  0%]
+tests/unit/config/test_loader_types.py .......                                                                           [  0%]
+tests/unit/distributed/test_coordination_properties.py .........                                                         [  1%]
+tests/unit/distributed/test_storage_coordinator.py .............                                                         [  2%]
+tests/unit/evaluation/test_harness_typing.py .                                                                           [  2%]
+tests/unit/evidence/test_stability_utils.py ...                                                                          [  3%]
+tests/unit/knowledge/test_graph_pipeline.py ..                                                                           [  3%]
+tests/unit/legacy/test_a2a_concurrency_sim.py .                                                                          [  3%]
+tests/unit/legacy/test_a2a_interface.py ..............................                                                   [  6%]
+tests/unit/legacy/test_additional_algorithm_docs.py .                                                                    [  6%]
+tests/unit/legacy/test_additional_coverage.py ...............                                                            [  7%]
+tests/unit/legacy/test_advanced_agents.py .......                                                                        [  8%]
+tests/unit/legacy/test_agent_communication.py .....                                                                      [  8%]
+tests/unit/legacy/test_agent_registry.py ...                                                                             [  8%]
+tests/unit/legacy/test_agents_dialectical.py ..                                                                          [  9%]
+tests/unit/legacy/test_agents_llm.py .......                                                                             [  9%]
+tests/unit/legacy/test_algorithm_docs.py ..                                                                              [  9%]
+tests/unit/legacy/test_api.py .......                                                                                    [ 10%]
+tests/unit/legacy/test_api_auth_deps.py ...                                                                              [ 10%]
+tests/unit/legacy/test_api_auth_middleware.py .....                                                                      [ 11%]
+tests/unit/legacy/test_api_error_handling.py ...                                                                         [ 11%]
+tests/unit/legacy/test_api_errors.py ..                                                                                  [ 11%]
+tests/unit/legacy/test_api_imports.py .                                                                                  [ 11%]
+tests/unit/legacy/test_api_lifespan.py .                                                                                 [ 11%]
+tests/unit/legacy/test_api_rate_limit.py ....                                                                            [ 12%]
+tests/unit/legacy/test_api_token_utils.py ..                                                                             [ 12%]
+tests/unit/legacy/test_backup_manager.py ..                                                                              [ 12%]
+tests/unit/legacy/test_bm25_scoring.py .                                                                                 [ 12%]
+tests/unit/legacy/test_budgeting.py .                                                                                    [ 12%]
+tests/unit/legacy/test_cache.py .............                                                                            [ 13%]
+tests/unit/legacy/test_cache_deepcopy.py ..                                                                              [ 14%]
+tests/unit/legacy/test_cache_extra.py .                                                                                  [ 14%]
+tests/unit/legacy/test_check_env_warnings.py .......                                                                     [ 14%]
+tests/unit/legacy/test_circuit_breaker_module.py ..                                                                      [ 15%]
+tests/unit/legacy/test_cli_backup_extra.py ..........                                                                    [ 15%]
+tests/unit/legacy/test_cli_help.py ......                                                                                [ 16%]
+tests/unit/legacy/test_cli_helpers.py ...........                                                                        [ 17%]
+tests/unit/legacy/test_cli_utils.py .                                                                                    [ 17%]
+tests/unit/legacy/test_cli_utils_extra.py ............                                                                   [ 18%]
+tests/unit/legacy/test_cli_visualize.py ...                                                                              [ 18%]
+tests/unit/legacy/test_coalition_execution.py ..                                                                         [ 19%]
+tests/unit/legacy/test_config_env_file.py ..                                                                             [ 19%]
+tests/unit/legacy/test_config_errors.py ......                                                                           [ 19%]
+tests/unit/legacy/test_config_hot_reload_sim.py ..                                                                       [ 20%]
+tests/unit/legacy/test_config_loader_defaults.py ...                                                                     [ 20%]
+tests/unit/legacy/test_config_profiles.py .....                                                                          [ 20%]
+tests/unit/legacy/test_config_reload.py ..                                                                               [ 20%]
+tests/unit/legacy/test_config_utils.py ......                                                                            [ 21%]
+tests/unit/legacy/test_config_validation_errors.py ....                                                                  [ 21%]
+tests/unit/legacy/test_config_validators_additional.py ..............                                                    [ 23%]
+tests/unit/legacy/test_config_watcher_cleanup.py .....                                                                   [ 23%]
+tests/unit/legacy/test_core_modules_additional.py .........                                                              [ 24%]
+tests/unit/legacy/test_data_analysis.py ...                                                                              [ 24%]
+tests/unit/legacy/test_distributed_executors.py ....                                                                     [ 24%]
+tests/unit/legacy/test_distributed_perf_compare.py .                                                                     [ 25%]
+tests/unit/legacy/test_distributed_perf_sim_script.py ...                                                                [ 25%]
+tests/unit/legacy/test_download_duckdb_extensions.py .......                                                             [ 25%]
+tests/unit/legacy/test_duckdb_storage_backend.py ................                                                        [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend_concurrency.py ...                                                         [ 27%]
+tests/unit/legacy/test_duckdb_storage_backend_extended.py .............                                                  [ 28%]
+tests/unit/legacy/test_error_recovery.py ...                                                                             [ 29%]
+tests/unit/legacy/test_error_utils_additional.py .......                                                                 [ 29%]
+tests/unit/legacy/test_errors.py .....                                                                                   [ 30%]
+tests/unit/legacy/test_eviction.py ...........                                                                           [ 31%]
+tests/unit/legacy/test_examples_package.py .                                                                             [ 31%]
+tests/unit/legacy/test_failure_paths.py ......                                                                           [ 31%]
+tests/unit/legacy/test_failure_scenarios.py .....                                                                        [ 32%]
+tests/unit/legacy/test_formattemplate_property.py .                                                                      [ 32%]
+tests/unit/legacy/test_future_import_hygiene.py .                                                                        [ 32%]
+tests/unit/legacy/test_heuristic_properties.py ....                                                                      [ 32%]
+tests/unit/legacy/test_http_session.py .                                                                                 [ 32%]
+tests/unit/legacy/test_hybridmethod_guard.py ..                                                                          [ 33%]
+tests/unit/legacy/test_incremental_updates.py ...                                                                        [ 33%]
+tests/unit/legacy/test_interfaces.py ...                                                                                 [ 33%]
+tests/unit/legacy/test_kg_reasoning.py .............                                                                     [ 34%]
+tests/unit/legacy/test_llm_adapter.py ....                                                                               [ 35%]
+tests/unit/legacy/test_llm_capabilities.py ...................                                                           [ 36%]
+tests/unit/legacy/test_llm_docstrings.py ...                                                                             [ 37%]
+tests/unit/legacy/test_logging_shutdown.py .                                                                             [ 37%]
+tests/unit/legacy/test_logging_utils.py ...                                                                              [ 37%]
+tests/unit/legacy/test_logging_utils_env.py ..                                                                           [ 37%]
+tests/unit/legacy/test_main_backup_commands.py ............                                                              [ 38%]
+tests/unit/legacy/test_main_cli.py .......                                                                               [ 39%]
+tests/unit/legacy/test_main_config_commands.py ....                                                                      [ 39%]
+tests/unit/legacy/test_main_first_run_detection.py .                                                                     [ 39%]
+tests/unit/legacy/test_main_module.py .                                                                                  [ 39%]
+tests/unit/legacy/test_main_monitor_commands.py .....                                                                    [ 40%]
+tests/unit/legacy/test_metrics.py ..                                                                                     [ 40%]
+tests/unit/legacy/test_metrics_counters.py ...                                                                           [ 40%]
+tests/unit/legacy/test_metrics_extra.py ..                                                                               [ 40%]
+tests/unit/legacy/test_metrics_extra2.py ..                                                                              [ 41%]
+tests/unit/legacy/test_metrics_helpers.py ...                                                                            [ 41%]
+tests/unit/legacy/test_metrics_heuristics.py ..                                                                          [ 41%]
+tests/unit/legacy/test_metrics_misc.py ...                                                                               [ 41%]
+tests/unit/legacy/test_metrics_summary.py ..                                                                             [ 41%]
+tests/unit/legacy/test_metrics_token_budget_extra.py ..                                                                  [ 42%]
+tests/unit/legacy/test_metrics_token_budget_spec.py .......                                                              [ 42%]
+tests/unit/legacy/test_models_docstrings.py ....                                                                         [ 43%]
+tests/unit/legacy/test_monitor_cli.py .....                                                                              [ 43%]
+tests/unit/legacy/test_monitor_metrics_init.py .                                                                         [ 43%]
+tests/unit/legacy/test_more_coverage.py ...........                                                                      [ 44%]
+tests/unit/legacy/test_new_modules.py ...                                                                                [ 44%]
+tests/unit/legacy/test_numpy_stub.py .                                                                                   [ 45%]
+tests/unit/legacy/test_ontology_reasoner_props.py .                                                                      [ 45%]
+tests/unit/legacy/test_orchestration_utils_delegation.py ..                                                              [ 45%]
+tests/unit/legacy/test_orchestration_utils_module.py ....                                                                [ 45%]
+tests/unit/legacy/test_orchestrator_breaker_state_transitions.py .                                                       [ 45%]
+tests/unit/legacy/test_orchestrator_budget_and_errors.py ....                                                            [ 46%]
+tests/unit/legacy/test_orchestrator_cb_manager.py .                                                                      [ 46%]
+tests/unit/legacy/test_orchestrator_circuit_breaker_property.py .                                                        [ 46%]
+tests/unit/legacy/test_orchestrator_edgecases.py ...                                                                     [ 46%]
+tests/unit/legacy/test_orchestrator_errors.py ........s                                                                  [ 47%]
+tests/unit/legacy/test_orchestrator_helpers.py ....                                                                      [ 47%]
+tests/unit/legacy/test_orchestrator_memory.py ..                                                                         [ 47%]
+tests/unit/legacy/test_orchestrator_messages.py .                                                                        [ 47%]
+tests/unit/legacy/test_orchestrator_order.py ...                                                                         [ 48%]
+tests/unit/legacy/test_orchestrator_parallel_deterministic.py s.                                                         [ 48%]
+tests/unit/legacy/test_orchestrator_parallel_property.py .                                                               [ 48%]
+tests/unit/legacy/test_orchestrator_perf_sim.py .s..                                                                     [ 48%]
+tests/unit/legacy/test_orchestrator_proofs.py .s                                                                         [ 49%]
+tests/unit/legacy/test_orchestrator_storage_interface.py ...                                                             [ 49%]
+tests/unit/legacy/test_orchestrator_utils.py ..........                                                                  [ 50%]
+tests/unit/legacy/test_output_format.py ........................                                                         [ 52%]
+tests/unit/legacy/test_output_format_edgecases.py .                                                                      [ 52%]
+tests/unit/legacy/test_output_format_edgecases2.py .                                                                     [ 52%]
+tests/unit/legacy/test_output_format_extra.py .                                                                          [ 52%]
+tests/unit/legacy/test_output_format_extra2.py ..                                                                        [ 52%]
+tests/unit/legacy/test_parallel_module.py ....                                                                           [ 53%]
+tests/unit/legacy/test_planner_prompt_builder.py ..                                                                      [ 53%]
+tests/unit/legacy/test_pool_sessions.py ...                                                                              [ 53%]
+tests/unit/legacy/test_prompts_docstrings.py ...                                                                         [ 53%]
+tests/unit/legacy/test_property_api_rate_limit_bounds.py .                                                               [ 53%]
+tests/unit/legacy/test_property_coordination_fixed_point.py .                                                            [ 54%]
+tests/unit/legacy/test_property_coordination_stability.py .                                                              [ 54%]
+tests/unit/legacy/test_property_dialectical_coordination.py .                                                            [ 54%]
+tests/unit/legacy/test_property_evaluate_weights.py ..                                                                   [ 54%]
+tests/unit/legacy/test_property_ontology_reasoner.py ...                                                                 [ 54%]
+tests/unit/legacy/test_property_ranking_ties.py .                                                                        [ 54%]
+tests/unit/legacy/test_property_resource_monitor_stats.py .                                                              [ 54%]
+tests/unit/legacy/test_property_search.py ..                                                                             [ 55%]
+tests/unit/legacy/test_property_search_ranking.py ....                                                                   [ 55%]
+tests/unit/legacy/test_property_storage.py ...                                                                           [ 55%]
+tests/unit/legacy/test_property_token_budget_sequence.py .                                                               [ 55%]
+tests/unit/legacy/test_property_token_counting.py ..                                                                     [ 55%]
+tests/unit/legacy/test_property_vector_search.py .....                                                                   [ 56%]
+tests/unit/legacy/test_property_watch_changes.py .                                                                       [ 56%]
+tests/unit/legacy/test_query_state.py .                                                                                  [ 56%]
+tests/unit/legacy/test_query_state_features.py ....                                                                      [ 56%]
+tests/unit/legacy/test_ranking_convergence.py .                                                                          [ 57%]
+tests/unit/legacy/test_ranking_idempotence.py .                                                                          [ 57%]
+tests/unit/legacy/test_ranking_weights.py .....                                                                          [ 57%]
+tests/unit/legacy/test_rdf_update.py ..                                                                                  [ 57%]
+tests/unit/legacy/test_reasoning_modes.py ...                                                                            [ 58%]
+tests/unit/legacy/test_reasoning_strategy.py .                                                                           [ 58%]
+tests/unit/legacy/test_relevance_ranking.py ................                                                             [ 59%]
+tests/unit/legacy/test_resource_monitor_gpu.py .....                                                                     [ 60%]
+tests/unit/legacy/test_resource_monitor_start.py ..                                                                      [ 60%]
+tests/unit/legacy/test_resource_monitor_usage.py ....                                                                    [ 60%]
+tests/unit/legacy/test_scheduler_benchmark.py ......                                                                     [ 61%]
+tests/unit/legacy/test_scheduling_resource_benchmark.py .                                                                [ 61%]
+tests/unit/legacy/test_search.py ........s.......                                                                        [ 62%]
+tests/unit/legacy/test_search_backends_unit.py .......                                                                   [ 63%]
+tests/unit/legacy/test_search_context_imports.py ....                                                                    [ 63%]
+tests/unit/legacy/test_search_core_additional.py ..                                                                      [ 63%]
+tests/unit/legacy/test_search_extra.py ...                                                                               [ 64%]
+tests/unit/legacy/test_search_http_session.py .                                                                          [ 64%]
+tests/unit/legacy/test_search_import.py ..                                                                               [ 64%]
+tests/unit/legacy/test_search_network_failures.py ..                                                                     [ 64%]
+tests/unit/legacy/test_search_reset.py .                                                                                 [ 64%]
+tests/unit/legacy/test_smoke_vss_stub.py .                                                                               [ 64%]
+tests/unit/legacy/test_source_credibility_scores.py ..                                                                   [ 64%]
+tests/unit/legacy/test_source_credibility_simulation.py ..                                                               [ 65%]
+tests/unit/legacy/test_specialized_agents.py ..........                                                                  [ 65%]
+tests/unit/legacy/test_storage.py .                                                                                      [ 66%]
+tests/unit/legacy/test_storage_backend_extra.py .....                                                                    [ 66%]
+tests/unit/legacy/test_storage_backup_fast.py .                                                                          [ 66%]
+tests/unit/legacy/test_storage_delegate.py ...                                                                           [ 66%]
+tests/unit/legacy/test_storage_delegate_extra.py .                                                                       [ 66%]
+tests/unit/legacy/test_storage_delegate_queue.py ..                                                                      [ 67%]
+tests/unit/legacy/test_storage_errors.py ........                                                                        [ 67%]
+tests/unit/legacy/test_storage_eviction.py ................                                                              [ 69%]
+tests/unit/legacy/test_storage_eviction_sim.py .....                                                                     [ 69%]
+tests/unit/legacy/test_storage_initialize_error.py .                                                                     [ 69%]
+tests/unit/legacy/test_storage_manager_concurrency.py ..                                                                 [ 69%]
+tests/unit/legacy/test_storage_persist_failure.py .                                                                      [ 70%]
+tests/unit/legacy/test_storage_persistence.py ..                                                                         [ 70%]
+tests/unit/legacy/test_storage_persistence_eviction.py ...                                                               [ 70%]
+tests/unit/legacy/test_storage_ram_usage.py .....                                                                        [ 70%]
+tests/unit/legacy/test_storage_teardown.py ....                                                                          [ 71%]
+tests/unit/legacy/test_storage_utils.py ...                                                                              [ 71%]
+tests/unit/legacy/test_storage_validation.py .............................                                               [ 74%]
+tests/unit/legacy/test_streaming_webhook_sim.py .                                                                        [ 74%]
+tests/unit/legacy/test_streamlit_app_edgecases.py ..                                                                     [ 74%]
+tests/unit/legacy/test_streamlit_formatting.py ...                                                                       [ 74%]
+tests/unit/legacy/test_streamlit_rerun.py ..                                                                             [ 74%]
+tests/unit/legacy/test_streamlit_ui_helpers.py .                                                                         [ 74%]
+tests/unit/legacy/test_streamlit_utils.py ..                                                                             [ 75%]
+tests/unit/legacy/test_synthesis.py ........                                                                             [ 75%]
+tests/unit/legacy/test_synthesizer_agent_modes.py ..                                                                     [ 76%]
+tests/unit/legacy/test_system_monitor.py ....                                                                            [ 76%]
+tests/unit/legacy/test_test_tools.py .....                                                                               [ 76%]
+tests/unit/legacy/test_token_budget.py .....                                                                             [ 77%]
+tests/unit/legacy/test_token_budget_convergence.py ...........                                                           [ 78%]
+tests/unit/legacy/test_token_budget_heuristic.py .                                                                       [ 78%]
+tests/unit/legacy/test_token_budget_property.py ..                                                                       [ 78%]
+tests/unit/legacy/test_token_budgeting_hypothesis.py ...                                                                 [ 78%]
+tests/unit/legacy/test_token_counting_utils.py ....                                                                      [ 79%]
+tests/unit/legacy/test_token_monitoring.py .                                                                             [ 79%]
+tests/unit/legacy/test_token_usage.py .......                                                                            [ 79%]
+tests/unit/legacy/test_token_utils_module.py ..                                                                          [ 80%]
+tests/unit/legacy/test_tracing.py ...                                                                                    [ 80%]
+tests/unit/legacy/test_user_preferences.py ..                                                                            [ 80%]
+tests/unit/legacy/test_vector_search.py ......                                                                           [ 81%]
+tests/unit/legacy/test_version.py ...                                                                                    [ 81%]
+tests/unit/legacy/test_visualization.py ..                                                                               [ 81%]
+tests/unit/legacy/test_visualization_rdf.py .                                                                            [ 81%]
+tests/unit/legacy/test_vss_extension_loader.py ................                                                          [ 83%]
+tests/unit/legacy/test_webhooks_logging.py ..                                                                            [ 83%]
+tests/unit/monitor/test_metrics_endpoint.py .....                                                                        [ 83%]
+tests/unit/orchestration/test_answer_audit.py ...                                                                        [ 83%]
+tests/unit/orchestration/test_auto_mode.py ...                                                                           [ 84%]
+tests/unit/orchestration/test_budgeting_algorithm.py ...                                                                 [ 84%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py .                                                           [ 84%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py .                                                            [ 84%]
+tests/unit/orchestration/test_gate_policy.py ....                                                                        [ 85%]
+tests/unit/orchestration/test_metrics_graph_summary.py ...                                                               [ 85%]
+tests/unit/orchestration/test_model_routing.py ..                                                                        [ 85%]
+tests/unit/orchestration/test_orchestration_simulations.py ...                                                           [ 85%]
+tests/unit/orchestration/test_package_exports.py ....                                                                    [ 86%]
+tests/unit/orchestration/test_parallel_execute.py ...                                                                    [ 86%]
+tests/unit/orchestration/test_parallel_merge_invariant.py .                                                              [ 86%]
+tests/unit/orchestration/test_query_state_features_extra.py .....                                                        [ 86%]
+tests/unit/orchestration/test_reverify.py ...                                                                            [ 87%]
+tests/unit/orchestration/test_state_registry.py .....                                                                    [ 87%]
+tests/unit/orchestration/test_task_coordinator.py ...........                                                            [ 88%]
+tests/unit/orchestration/test_task_graph_enhancements.py ...                                                             [ 88%]
+tests/unit/orchestration/test_token_utils.py ......                                                                      [ 89%]
+tests/unit/orchestration/test_utils_confidence.py ...                                                                    [ 89%]
+tests/unit/search/test_adaptive_rewrite.py .F
+
+=========================================================== FAILURES ===========================================================
+_______________________________________ test_external_lookup_adaptive_k_increases_fetch ________________________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fcebcde6600>
+isolated_search = <autoresearch.search.core.Search object at 0x7fcebcde5910>
+
+    def test_external_lookup_adaptive_k_increases_fetch(
+        monkeypatch: pytest.MonkeyPatch, isolated_search: Search
+    ) -> None:
+        config = _build_config(
+            backends=["stub"],
+            max_results=2,
+            rewrite_cfg=QueryRewriteConfig(enabled=False),
+            adaptive_cfg=AdaptiveKConfig(
+                enabled=True,
+                min_k=2,
+                max_k=4,
+                step=2,
+                coverage_gap_threshold=0.25,
+            ),
+        )
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: config)
+        monkeypatch.setattr("autoresearch.search.context.get_config", lambda: config)
+    
+        calls: list[tuple[str, int]] = []
+    
+        def backend(query: str, max_results: int) -> list[dict[str, str]]:
+            calls.append((query, max_results))
+            if max_results <= 2:
+                return [{"title": "alpha", "url": "1"}]
+            return [
+                {"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)
+            ]
+    
+        isolated_search.backends = {"stub": backend}
+    
+        with SearchContext.temporary_instance():
+            results = isolated_search.external_lookup("adaptive", max_results=2)
+>           assert len(results) == 4
+E           AssertionError: assert 1 == 4
+E            +  where 1 = len([{'backend': 'stub', 'bm25_score': 1.0, 'canonical_url': '1', 'credibility_score': 1.0, ...}])
+
+/workspace/autoresearch/tests/unit/search/test_adaptive_rewrite.py:174: AssertionError
+------------------------------------------------------ Captured log setup ------------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+---------------------------------------------------- Captured log teardown -----------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:104 No configuration file found; using defaults
+======================================================= warnings summary =======================================================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:833
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:833: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; tests.behavior.utils
+    self.import_plugin(import_spec)
+
+tests/unit/legacy/test_main_config_commands.py:5
+  /workspace/autoresearch/tests/unit/legacy/test_main_config_commands.py:5: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/networkx/readwrite/json_graph/node_link.py:145: FutureWarning: 
+  The default value will be `edges="edges" in NetworkX 3.6.
+  
+  To make this warning go away, explicitly set the edges kwarg, e.g.:
+  
+    nx.node_link_data(G, edges="links") to preserve current behavior, or
+    nx.node_link_data(G, edges="edges") for forward compatibility.
+    warnings.warn(
+
+tests/unit/legacy/test_kg_reasoning.py::test_run_ontology_reasoner_reload_without_owlrl
+  /workspace/autoresearch/src/autoresearch/kg_reasoning.py:60: RuntimeWarning: owlrl not installed; ontology reasoning will be skipped
+    warnings.warn(
+
+tests/unit/orchestration/test_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'...review'}} label='scout'), input_type=FrozenReasoningStep])
+    return self.__pydantic_serializer__.to_python(
+
+tests/unit/orchestration/test_query_state_features_extra.py::test_query_state_cloudpickle_serialization_preserves_fields
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'... 'claim'} label='claim'), input_type=FrozenReasoningStep])
+    return self.__pydantic_serializer__.to_python(
+
+tests/unit/orchestration/test_reverify.py::test_reverify_extracts_claims_and_retries
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'... on regression sweeps.'), input_type=FrozenReasoningStep])
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'... label='Checked claims'), input_type=FrozenReasoningStep])
+    return self.__pydantic_serializer__.to_python(
+
+tests/unit/orchestration/test_reverify.py::test_reverify_supplies_fact_checker_defaults
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'... label='Baseline claim'), input_type=FrozenReasoningStep])
+    return self.__pydantic_serializer__.to_python(
+
+tests/unit/orchestration/test_reverify.py::test_reverify_respects_fact_checker_opt_out
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `dict[str, any]` - serialized value may not be as expected [field_name='claims', input_value=FrozenReasoningStep({'id'...im'} label='Skip claim'), input_type=FrozenReasoningStep])
+    return self.__pydantic_serializer__.to_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+===================================================== slowest 10 durations =====================================================
+12.00s call     tests/unit/legacy/test_cache.py::test_sequential_hybrid_sequences_respect_cache_fingerprint
+11.06s call     tests/unit/legacy/test_eviction.py::test_deterministic_override_clamped_to_minimum
+10.92s call     tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache
+10.22s call     tests/unit/legacy/test_relevance_ranking.py::test_external_lookup_uses_cache
+7.34s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+6.76s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_coordinator_lifecycle_management
+6.33s call     tests/unit/legacy/test_cache.py::test_v2_cache_entries_upgrade_on_hit
+6.15s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_start_storage_coordinator_returns_correct_types
+4.50s call     tests/unit/legacy/test_cache.py::test_legacy_cache_entries_upgrade_on_hit
+4.13s call     tests/unit/distributed/test_storage_coordinator.py::TestStorageCoordinator::test_concurrent_message_processing
+=================================================== short test summary info ====================================================
+FAILED tests/unit/search/test_adaptive_rewrite.py::test_external_lookup_adaptive_k_increases_fetch - AssertionError: assert 1...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================= 1 failed, 996 passed, 5 skipped, 115 deselected, 9 warnings in 327.62s (0:05:27) =======================
+Command failed with exit code 201

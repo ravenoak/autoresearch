@@ -36,6 +36,33 @@ The changelog now documents the `## [0.1.0a1] - 2025-10-08` release entry with
 audit-ready highlights, confirming that the dossier is ready for tagging.
 【F:CHANGELOG.md†L9-L46】
 
+The October 9, 2025 21:50 UTC `uv run task release:alpha` rerun advanced through
+lint, mypy, verify, and coverage before failing on the
+`test_external_lookup_adaptive_k_increases_fetch` case in
+`tests/unit/search/test_adaptive_rewrite.py`.
+The archived log and summary capture the 201 exit code so the adaptive K
+regression remains on the release gate radar.
+【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】
+【F:baseline/logs/release-alpha-20251009T215007Z-summary.txt†L1-L1】
+
+The same window's `uv run python scripts/publish_dev.py --dry-run` rebuilt the
+wheel and sdist, skipped the upload step, and wrote refreshed log and checksum
+artefacts for the TestPyPI stage.
+【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】
+【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
+
+## Announcement draft
+
+Autoresearch 0.1.0a1 (2025-10-08) is ready to announce once the release gate
+turns green. Highlight the verified claim-extraction telemetry upgrades, the
+session graph exports, and the release governance refresh drawn from the
+changelog entry.
+【F:CHANGELOG.md†L13-L30】
+
+Reminder: the adaptive K regression must be cleared before tagging; reference
+the latest `task release:alpha` log when communicating status updates.
+【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】
+
 Distributed metrics still cite the captured baselines under
 `baseline/evaluation/`. The orchestrator recovery simulation (50 tasks,
 0.01 s latency, 0.2 fail rate) averages 89.36 tasks/s with a 0.13 recovery
