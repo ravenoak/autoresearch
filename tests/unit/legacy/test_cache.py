@@ -880,7 +880,6 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
     )
 
 
-@pytest.mark.skip(reason="Flaky property-based test - needs investigation")
 @settings(max_examples=20, deadline=None)
 @given(
     vector_seed=st.booleans(),
@@ -980,6 +979,41 @@ def test_interleaved_storage_paths_share_cache(
         )
         assert second == first, (
             "Without stable cache keys, how could sequential storage blends return identical payloads?"
+        )
+
+        canonical_hints = search_default._embedding_storage_hints("duckdb")
+        scrambled_hints = tuple(reversed(canonical_hints + canonical_hints))
+
+        canonical_slots = build_cache_slots(
+            search_default._build_cache_key(
+                backend="duckdb",
+                query="topic",
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=cfg.search.hybrid_query,
+                use_semantic_similarity=cfg.search.use_semantic_similarity,
+                query_embedding=vector,
+                storage_hints=canonical_hints,
+            ),
+            namespace=search_default._cache_namespace,
+            embedding_backend="duckdb",
+            storage_hints=canonical_hints,
+        )
+        scrambled_slots = build_cache_slots(
+            search_default._build_cache_key(
+                backend="duckdb",
+                query="topic",
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=cfg.search.hybrid_query,
+                use_semantic_similarity=cfg.search.use_semantic_similarity,
+                query_embedding=vector,
+                storage_hints=scrambled_hints,
+            ),
+            namespace=search_default._cache_namespace,
+            embedding_backend="duckdb",
+            storage_hints=scrambled_hints,
+        )
+        assert canonical_slots == scrambled_slots, (
+            "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
         )
 
         key = search_default._build_cache_key(

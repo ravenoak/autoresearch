@@ -1,6 +1,16 @@
 # Prepare first alpha release
 
 ## Context
+As of **October 9, 2025 at 16:46 UTC** duckdb storage-hint canonicalisation keeps
+embedding caches and storage-derived seeds under identical cache keys. The
+Search service now deduplicates storage hints, reuses the same tuple for
+embedding, prefetch, and hybrid enrichment paths, and emits a debug log when
+hybrid storage populates duckdb seeds for future runs.
+`baseline/logs/test-cache-interleaved-20251009T164613Z.log` captures the revived
+Hypothesis property test with cache hits enabled, and
+`baseline/logs/task-check-20251009T164646Z.log` confirms the quick gate remains
+green after the fix.【F:src/autoresearch/search/core.py†L877-L1012】【F:src/autoresearch/search/core.py†L2386-L2421】【F:src/autoresearch/search/core.py†L2440-L2450】【F:src/autoresearch/search/core.py†L2633-L2668】【F:src/autoresearch/search/cache.py†L32-L75】【F:baseline/logs/test-cache-interleaved-20251009T164613Z.log†L1-L8】【F:baseline/logs/task-check-20251009T164646Z.log†L1-L43】
+
 As of **October 8, 2025 at 15:03 UTC** the release sweep remains blocked: the
 latest `uv run task verify EXTRAS="dev-minimal test"` run halts when Hypothesis
 reports `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
