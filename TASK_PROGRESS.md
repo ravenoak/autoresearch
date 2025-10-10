@@ -1,3 +1,21 @@
+As of **2025-10-10 at 00:01 UTC** the quick gate is green while the long release
+jobs still cannot complete under the evaluation time limits. `task check` ran at
+**23:59 UTC** and the log at `baseline/logs/task-check-20251009T235931Z.log`
+confirms flake8, strict mypy, spec linting, release metadata, and the CLI smoke
+tests continue to pass.【F:baseline/logs/task-check-20251009T235931Z.log†L1-L137】
+The follow-up `task verify` attempt immediately pulled the full optional stack
+including CUDA, PyTorch, Ray, and transformers wheels before we aborted to
+prevent the GPU downloads from consuming the entire window; the new log documents
+the blocking extras.【F:baseline/logs/task-verify-20251010T000001Z.log†L65-L186】
+`task coverage` and `task release:alpha` hit the same constraint, reaching the
+unit-test entry point and lint stage respectively before we halted them to avoid
+redundant long-running work.【F:baseline/logs/task-coverage-20251010T000041Z.log†L1-L17】【F:baseline/logs/release-alpha-20251010T000051Z.log†L1-L68】
+`uv run python scripts/publish_dev.py --dry-run` still builds the wheel and sdist
+successfully, so the TestPyPI rehearsal remains ready once the long gates go
+green.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】 Reviewers must
+capture acknowledgements in the alpha ticket before we tag `0.1.0a1` so the
+release dossier reflects these partial runs.【F:issues/prepare-first-alpha-release.md†L1-L31】
+
 As of **2025-10-09 at 18:10 UTC** the strict and quick gates remain green but
 the release sweep still fails. `uv run task mypy-strict` at **18:06 UTC**
 reports “Success: no issues found in 805 source files,” and the log lives at
