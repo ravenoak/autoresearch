@@ -112,10 +112,14 @@ These tasks completed in order: environment bootstrap → packaging verification
 ### Prerequisites for tagging 0.1.0a1
 
 Run `uv run task release:alpha` to execute the full readiness sweep before
-tagging a future alpha build. The command installs the dev-minimal, test, and
-default optional extras (excluding `gpu`). It then runs lint, type checks, spec
-lint, the verify and coverage tasks, packaging builds, metadata checks, and the
-TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
+tagging a future alpha build. By default the command installs only the
+`dev-minimal` and `test` extras, then runs lint, type checks, spec lint, the
+verify and coverage tasks, packaging builds, metadata checks, and the TestPyPI
+dry run. Those subtasks stay on the same baseline footprint, so targeted suites
+that need optional extras are skipped until you opt in. Pass `EXTRAS="full"` to
+include the optional extras set (`nlp`, `ui`, `vss`, `git`, `distributed`,
+`analysis`, `llm`, `parsers`, and `build`) and add values like `gpu` when those
+wheels are staged (for example, `EXTRAS="full gpu"`).
 
 - [x] Source the Task PATH helper or invoke release commands through
   `uv run task …` as described in

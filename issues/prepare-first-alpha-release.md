@@ -17,6 +17,17 @@ window. `task check` at **23:59 UTC** remains green and the log is archived at
 the default extras, so we aborted after the dependency sync and recorded the
 log at `baseline/logs/task-verify-20251010T000001Z.log` while we hunt for a
 lighter rehearsal strategy.【F:baseline/logs/task-verify-20251010T000001Z.log†L65-L186】
+As of **October 10, 2025 at 03:00 UTC** `task release:alpha` now syncs only the
+baseline `dev-minimal` and `test` extras by default, keeping the heavier
+optional groups behind an explicit `EXTRAS="full"` flag to shorten local
+rehearsals. The nested `verify` and `coverage` subtasks stay on the same
+baseline footprint, skipping targeted suites for optional extras until the flag
+is set.【F:Taskfile.yml†L264-L346】【F:Taskfile.yml†L424-L501】【F:docs/releasing.md†L18-L26】
+Track the smoke coverage for those optional extras separately:
+
+- [ ] Run `uv run task release:alpha EXTRAS="full"` (and append `gpu` when the
+  wheels are staged) to refresh the optional extra readiness log once the
+  window allows.
 Standalone `task coverage` and `task release:alpha` hit the same constraint—we
 stopped the runs once pytest and linting began to avoid burning the window on
 duplicate long jobs—and their logs live at
