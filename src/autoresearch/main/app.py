@@ -152,6 +152,12 @@ def start_watcher(
         set_verbosity(Verbosity.QUIET)
     else:
         set_verbosity(Verbosity.NORMAL)
+    # When help is requested, avoid initializing runtime dependencies.
+    # ``ctx.resilient_parsing`` is ``True`` in Click when ``--help`` or ``-h`` is
+    # present on the command line, including during Typer's ``CliRunner`` tests.
+    if getattr(ctx, "resilient_parsing", False):
+        os.environ["COLUMNS"] = "200"
+        return
     # Set environment variables for VSS extension control if CLI options are provided
     if no_vss:
         os.environ["VECTOR_EXTENSION"] = "false"
@@ -159,7 +165,10 @@ def start_watcher(
         os.environ["VECTOR_EXTENSION_PATH"] = vss_path
 
     # If help is requested anywhere on the command line, skip prompts and initialization
-    if any(arg in {"--help", "-h"} for arg in sys.argv):
+    cli_args = tuple(getattr(ctx, "args", ()) or ())
+    if any(arg in {"--help", "-h"} for arg in cli_args) or any(
+        arg in {"--help", "-h"} for arg in sys.argv
+    ):
         # Ensure wide help to avoid truncation of long option names in tests
         os.environ["COLUMNS"] = "200"
         return
@@ -209,17 +218,6 @@ def start_watcher(
     # Skip heavy initialization when help is requested to ensure `--help` always works
     if any(arg in {"--help", "-h"} for arg in sys.argv):
         return
-
-    if invoked_subcommand not in {"config", "monitor"}:
-        try:
-            # Import lazily to avoid side-effects during help rendering
-            from ..storage import StorageManager
-            StorageManager.setup()
-        except StorageError as e:
-            # Fail fast when storage initialization fails to ensure clear feedback in CLI.
-            # Use plain stdout to satisfy tests that assert on stdout content.
-            print(f"Storage initialization failed: {e}")
-            raise typer.Exit(code=1)
 
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()
@@ -423,6 +421,14 @@ def search(
     # Lazy imports to avoid side effects during help rendering
     from ..storage import StorageManager
     from ..output_format import OutputFormatter
+
+    try:
+        StorageManager.setup()
+    except StorageError as e:
+        # Fail fast when storage initialization fails to ensure clear feedback in CLI.
+        # Use plain stdout to satisfy tests that assert on stdout content.
+        print(f"Storage initialization failed: {e}")
+        raise typer.Exit(code=1)
 
     # Resolve orchestrator: prefer module-level handle (for tests) else import
     OrchestratorLocal = Orchestrator
