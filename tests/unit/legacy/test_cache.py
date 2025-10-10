@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import shutil
 import tempfile
+from collections import Counter
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
@@ -17,10 +18,12 @@ import pytest
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
 
-from autoresearch.cache import SearchCache
+from autoresearch.cache import CacheKey, SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from autoresearch.search.cache import build_cache_slots
+from autoresearch.search.context import SearchContext
+from autoresearch.search.core import CacheTrace
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
@@ -48,6 +51,7 @@ def property_search(
     """Yield a temporary :class:`Search` instance with property stubs applied."""
 
     with ExitStack() as stack:
+        stack.enter_context(SearchContext.temporary_instance())
         stack.enter_context(
             patch.object(
                 Search,
@@ -920,6 +924,14 @@ def test_interleaved_storage_paths_share_cache(
 
     vector = np.array([0.1, 0.2], dtype=float)
 
+    storage_doc_sources: list[str] = []
+    if vector_seed:
+        storage_doc_sources.append("vector")
+    for source in storage_sources:
+        if source == "vector" and not vector_seed:
+            continue
+        storage_doc_sources.append(source)
+
     try:
         with ExitStack() as stack:
             stack.enter_context(
@@ -989,6 +1001,122 @@ def test_interleaved_storage_paths_share_cache(
                 "When traces omit the active namespace, how could Hypothesis reason about isolation?"
             )
 
+            def primary_cache_key() -> CacheKey:
+                return search_default._build_cache_key(
+                    backend="primary",
+                    query="topic",
+                    embedding_backends=tuple(cfg.search.embedding_backends),
+                    hybrid_query=cfg.search.hybrid_query,
+                    use_semantic_similarity=cfg.search.use_semantic_similarity,
+                    query_embedding=vector,
+                    storage_hints=("external",),
+                )
+
+            def duckdb_cache_key(query_value: str, hints: tuple[str, ...]) -> CacheKey:
+                return search_default._build_cache_key(
+                    backend="duckdb",
+                    query=query_value,
+                    embedding_backends=tuple(cfg.search.embedding_backends),
+                    hybrid_query=cfg.search.hybrid_query,
+                    use_semantic_similarity=cfg.search.use_semantic_similarity,
+                    query_embedding=vector,
+                    storage_hints=hints,
+                )
+
+            primary_key = primary_cache_key()
+            duckdb_hints = search_default._embedding_storage_hints("duckdb")
+            duckdb_topic_key = duckdb_cache_key("topic", duckdb_hints)
+
+            assert primary_key.fingerprint is not None
+            assert duckdb_topic_key.fingerprint is not None
+
+            primary_hints = search_default._canonicalise_storage_hints(("external",))
+
+            def unique_slots(
+                cache_key: CacheKey,
+                *,
+                namespace: str | None,
+                embedding_backend: str | None,
+                storage_hints: tuple[str, ...],
+            ) -> tuple[str, ...]:
+                seen: list[str] = []
+                for slot in build_cache_slots(
+                    cache_key,
+                    namespace=namespace,
+                    embedding_backend=embedding_backend,
+                    storage_hints=storage_hints,
+                ):
+                    if slot not in seen:
+                        seen.append(slot)
+                for candidate in cache_key.candidates():
+                    if candidate not in seen:
+                        seen.append(candidate)
+                return tuple(seen)
+
+            primary_slots = unique_slots(
+                primary_key,
+                namespace=search_default._cache_namespace,
+                embedding_backend=None,
+                storage_hints=primary_hints,
+            )
+
+            duckdb_backend_invoked = int(not vector_seed and not storage_doc_sources)
+            duckdb_store_expected = vector_seed or bool(duckdb_backend_invoked)
+
+            duckdb_topic_slots = unique_slots(
+                duckdb_topic_key,
+                namespace=search_default._cache_namespace,
+                embedding_backend="duckdb",
+                storage_hints=duckdb_hints,
+            )
+
+            embedding_token = search_default._embedding_cache_token(vector)
+            duckdb_embedding_key: CacheKey | None = None
+            duckdb_embedding_slots: tuple[str, ...] = ()
+            if duckdb_backend_invoked:
+                duckdb_embedding_key = duckdb_cache_key(embedding_token, duckdb_hints)
+                assert duckdb_embedding_key.fingerprint is not None
+                duckdb_embedding_slots = unique_slots(
+                    duckdb_embedding_key,
+                    namespace=search_default._cache_namespace,
+                    embedding_backend="duckdb",
+                    storage_hints=duckdb_hints,
+                )
+
+            def event_counter(trace: CacheTrace) -> Counter[tuple[str, str, str | None, tuple[str, ...]]]:
+                return Counter(
+                    (
+                        event.backend,
+                        event.stage,
+                        event.fingerprint,
+                        event.storage_hints,
+                    )
+                    for event in trace.events
+                )
+
+            first_counter = event_counter(first_trace)
+            first_expected: Counter[tuple[str, str, str | None, tuple[str, ...]]] = Counter()
+            first_expected[("primary", "miss", primary_key.fingerprint, primary_hints)] = 1
+            first_expected[("primary", "store", primary_key.fingerprint, primary_hints)] = len(primary_slots)
+            first_expected[("duckdb", "miss", duckdb_topic_key.fingerprint, duckdb_hints)] = 1
+            if duckdb_store_expected:
+                first_expected[("duckdb", "store", duckdb_topic_key.fingerprint, duckdb_hints)] = len(
+                    duckdb_topic_slots
+                )
+            if duckdb_backend_invoked and duckdb_embedding_key is not None:
+                first_expected[("duckdb", "miss", duckdb_embedding_key.fingerprint, duckdb_hints)] = 1
+                first_expected[("duckdb", "store", duckdb_embedding_key.fingerprint, duckdb_hints)] = len(
+                    duckdb_embedding_slots
+                )
+
+            assert first_counter == first_expected, (
+                "If cache traces skipped canonical fingerprints, how could we validate deterministic storage events?"
+            )
+
+            assert calls["duckdb"] == duckdb_backend_invoked, (
+                "When duckdb lookup paths change, shouldn't backend calls align with the expected storage coverage?"
+            )
+
             initial_backend_calls = calls["backend"]
             initial_duckdb_calls = calls["duckdb"]
             second = search_default.external_lookup("topic")
@@ -998,19 +1126,29 @@ def test_interleaved_storage_paths_share_cache(
                 "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
             )
             assert calls["duckdb"] == initial_duckdb_calls, (
-                "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
-            )
-            assert any(
-                event.stage == "hit" and event.backend == "primary"
-                for event in second_trace.events
-            ), (
-                "When the second lookup reuses cached payloads, shouldn't a cache hit be observable?"
+                "When duckdb coverage is deterministic, why would repeated lookups trigger additional backend calls?"
             )
             assert second_trace.namespace == first_trace.namespace, (
                 "If namespaces drifted across lookups, how would cache hits stay deterministic?"
             )
             assert second == first, (
                 "Without stable cache keys, how could sequential storage blends return identical payloads?"
+            )
+
+            second_counter = event_counter(second_trace)
+            second_expected: Counter[tuple[str, str, str | None, tuple[str, ...]]] = Counter()
+            second_expected[("primary", "hit", primary_key.fingerprint, primary_hints)] = 1
+            if duckdb_store_expected:
+                duckdb_store_multiplier = 1 + (1 if vector_seed else 0)
+                second_expected[("duckdb", "hit", duckdb_topic_key.fingerprint, duckdb_hints)] = 1
+                second_expected[("duckdb", "store", duckdb_topic_key.fingerprint, duckdb_hints)] = (
+                    len(duckdb_topic_slots) * duckdb_store_multiplier
+                )
+            else:
+                second_expected[("duckdb", "miss", duckdb_topic_key.fingerprint, duckdb_hints)] = 1
+
+            assert second_counter == second_expected, (
+                "If cache hits were non-deterministic, how could we reconcile the trace with expected slot usage?"
             )
 
             canonical_hints = search_default._embedding_storage_hints("duckdb")
@@ -1074,8 +1212,8 @@ def test_interleaved_storage_paths_share_cache(
         assert calls["backend"] == 1, (
             "If cache slots multiplied, how could backend calls stay capped at a single execution?"
         )
-        assert calls["duckdb"] <= 1, (
-            "When cache keys stabilise embeddings, shouldn't vector fetches avoid repeated calls?"
+        assert calls["duckdb"] == duckdb_backend_invoked, (
+            "When cache keys stabilise embeddings, shouldn't vector fetches match the expected backend usage?"
         )
     finally:
         cache.teardown(remove_file=True)

@@ -362,6 +362,7 @@ class SearchContext:
         attempt: int,
         effective_k: int,
         reason: str,
+        query: str | None = None,
         metrics: Mapping[str, Any] | None = None,
     ) -> None:
         """Persist adaptive fetch telemetry for the active query."""
@@ -382,6 +383,8 @@ class SearchContext:
                 "k": int(effective_k),
                 "reason": str(reason),
             }
+            if query is not None:
+                entry["query"] = str(query)
             if metrics is not None:
                 entry["metrics"] = dict(metrics)
             plan["attempts"].append(entry)
