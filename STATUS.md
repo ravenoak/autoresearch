@@ -18,6 +18,34 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## October 10, 2025
+- Ran `task check` at **23:59 UTC** and archived the fresh log at
+  `baseline/logs/task-check-20251009T235931Z.log`; flake8, strict mypy, spec
+  linting, release metadata, and the CLI smoke tests all pass, keeping the quick
+  gate green while we iterate on the long pipelines.【F:baseline/logs/task-check-20251009T235931Z.log†L1-L137】
+- Attempted `task verify` with default extras at **00:00 UTC**; the run pulled
+  the full optional stack including the CUDA toolchain, PyTorch, Ray, and other
+  heavy dependencies before we aborted to avoid exhausting the evaluation
+  window. The log documents the GPU wheels and transformer packages that block a
+  timely sweep in this environment.【F:baseline/logs/task-verify-20251010T000001Z.log†L65-L186】
+- Kicked off `task coverage` moments later and halted once pytest started to
+  spin up so we can defer the multi-hour suite until the GPU extras can be
+  cached; the log captures the command reaching the unit-test entry point before
+  we stopped the run.【F:baseline/logs/task-coverage-20251010T000041Z.log†L1-L17】
+- Began `task release:alpha` with the default optional extras set; dependency
+  resolution swapped in build tooling but also reintroduced the large GPU
+  payloads, so we interrupted prior to linting to avoid redundant installs while
+  the long gates remain blocked.【F:baseline/logs/release-alpha-20251010T000051Z.log†L1-L68】
+- `uv run python scripts/publish_dev.py --dry-run` still builds the wheel and
+  sdist cleanly and skips upload as expected, keeping the TestPyPI stage ready
+  for whenever the release sweep goes green.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】
+- Confirmed `src/autoresearch/__init__.py` still advertises
+  `__release_date__ = "2025-10-08"`, matching the release metadata recorded in
+  the changelog for 0.1.0a1.【F:src/autoresearch/__init__.py†L24-L27】【F:CHANGELOG.md†L11-L29】
+- Reviewers must continue to acknowledge STATUS.md, TASK_PROGRESS.md, and the
+  alpha ticket notes inside `issues/prepare-first-alpha-release.md` before we
+  cut the `0.1.0a1` tag so the release dossier remains auditable.【F:issues/prepare-first-alpha-release.md†L1-L31】
+
 ## October 9, 2025
 - Captured a fresh `uv run task mypy-strict` sweep at **18:06 UTC**; the log at
   `baseline/logs/mypy-strict-20251009T180614Z.log` confirms the strict gate

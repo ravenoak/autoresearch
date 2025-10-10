@@ -8,6 +8,23 @@ is archived at `baseline/logs/task-check-20251009T170029Z.log`, and the
 contributor guide in `tests/README.md` now documents the marker's scope so the
 alpha preflight no longer blocks on the missing registration.
 
+As of **October 10, 2025 at 00:01 UTC** the quick gate passes but verify,
+coverage, and the release sweep still cannot finish inside the evaluation
+window. `task check` at **23:59 UTC** remains green and the log is archived at
+`baseline/logs/task-check-20251009T235931Z.log`.
+【F:baseline/logs/task-check-20251009T235931Z.log†L1-L137】
+`task verify` immediately pulls CUDA, PyTorch, Ray, and transformer wheels under
+the default extras, so we aborted after the dependency sync and recorded the
+log at `baseline/logs/task-verify-20251010T000001Z.log` while we hunt for a
+lighter rehearsal strategy.【F:baseline/logs/task-verify-20251010T000001Z.log†L65-L186】
+Standalone `task coverage` and `task release:alpha` hit the same constraint—we
+stopped the runs once pytest and linting began to avoid burning the window on
+duplicate long jobs—and their logs live at
+`baseline/logs/task-coverage-20251010T000041Z.log` and
+`baseline/logs/release-alpha-20251010T000051Z.log` respectively.【F:baseline/logs/task-coverage-20251010T000041Z.log†L1-L17】【F:baseline/logs/release-alpha-20251010T000051Z.log†L1-L68】
+`uv run python scripts/publish_dev.py --dry-run` still completes, so the
+TestPyPI rehearsal stays warm for when we can run the full sweep.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】
+
 As of **October 9, 2025 at 18:10 UTC** the strict and quick gates stay green
 (`baseline/logs/mypy-strict-20251009T180614Z.log` and
 `baseline/logs/task-check-20251009T180628Z.log`), but the release gates remain

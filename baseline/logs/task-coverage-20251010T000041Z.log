@@ -1,0 +1,17 @@
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+   --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers --extra gpu \
+  
+
+Resolved 328 packages in 9ms
+Audited 279 packages in 0.94ms
+task: [coverage] echo "[coverage] erasing previous data"
+[coverage] erasing previous data
+task: [coverage] uv run coverage erase
+task: [coverage] echo "[coverage] running unit tests"
+[coverage] running unit tests
+task: [coverage] uv run pytest --maxfail=1 --durations=10 -x tests/unit \
+  -m 'not slow and not requires_git  and not requires_nlp  and not requires_ui  and not requires_vss  and not requires_distributed  and not requires_analysis  and not requires_llm  and not requires_parsers  and not requires_gpu' --cov=src --cov-report=term-missing \
+  --cov-append
+
