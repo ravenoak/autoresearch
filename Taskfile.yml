@@ -266,14 +266,40 @@ tasks:
 
   coverage:
     vars:
-      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS}}"
+      USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
+      DEFAULT_OPTIONAL_EXTRAS: "{{default \"\" .DEFAULT_OPTIONAL_EXTRAS}}"
+      EFFECTIVE_EXTRAS:
+        sh: |
+          set -eu
+          extras="{{.USER_EXTRAS}}"
+          default_extras="{{.DEFAULT_OPTIONAL_EXTRAS}}"
+          if [ -n "$extras" ]; then
+            if [ "$extras" = "baseline" ]; then
+              printf '%s\n' "baseline"
+              exit 0
+            fi
+            printf '%s\n' "$extras"
+            exit 0
+          fi
+          if [ -n "$default_extras" ]; then
+            if [ "$default_extras" = "baseline" ]; then
+              printf '%s\n' "baseline"
+              exit 0
+            fi
+            printf '%s\n' "$default_extras"
+            exit 0
+          fi
+          printf '%s\n' "{{.ALL_EXTRAS}}"
       SYNC_EXTRAS:
         sh: |
           set -eu
           extras="{{.VERIFY_BASE_EXTRAS}}"
-          if [ -n "{{.EXTRAS}}" ]; then
-            extras="$extras {{.EXTRAS}}"
-          fi
+          case "{{.EFFECTIVE_EXTRAS}}" in
+            ""|baseline) ;;
+            *)
+              extras="$extras {{.EFFECTIVE_EXTRAS}}"
+              ;;
+          esac
           dedup=""
           for extra in $extras; do
             case " $dedup " in
@@ -281,17 +307,19 @@ tasks:
               *) dedup="$dedup $extra" ;;
             esac
           done
-          printf '%s\n' "${dedup# }"
+          if [ -n "$dedup" ]; then
+            printf '%s\n' "${dedup# }"
+          fi
       EXTRA_MARKERS: >-
-        {{if contains .EXTRAS "git"}}{{else}} and not requires_git{{end}}
-        {{if contains .EXTRAS "nlp"}}{{else}} and not requires_nlp{{end}}
-        {{if contains .EXTRAS "ui"}}{{else}} and not requires_ui{{end}}
-        {{if contains .EXTRAS "vss"}}{{else}} and not requires_vss{{end}}
-        {{if contains .EXTRAS "distributed"}}{{else}} and not requires_distributed{{end}}
-        {{if contains .EXTRAS "analysis"}}{{else}} and not requires_analysis{{end}}
-        {{if contains .EXTRAS "llm"}}{{else}} and not requires_llm{{end}}
-        {{if contains .EXTRAS "parsers"}}{{else}} and not requires_parsers{{end}}
-        {{if contains .EXTRAS "gpu"}}{{else}} and not requires_gpu{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "git"}}{{else}} and not requires_git{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "nlp"}}{{else}} and not requires_nlp{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "ui"}}{{else}} and not requires_ui{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "vss"}}{{else}} and not requires_vss{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "distributed"}}{{else}} and not requires_distributed{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "analysis"}}{{else}} and not requires_analysis{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "llm"}}{{else}} and not requires_llm{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "parsers"}}{{else}} and not requires_parsers{{end}}
+        {{if contains .EFFECTIVE_EXTRAS "gpu"}}{{else}} and not requires_gpu{{end}}
     cmds:
       - echo "[coverage] syncing dependencies"
       - |
@@ -313,8 +341,8 @@ tasks:
       - echo "[coverage] running targeted tests per extra"
       - |
           set -eu
-          extras_requested="{{.EXTRAS}}"
-          if [ -z "$extras_requested" ]; then
+          extras_requested="{{.EFFECTIVE_EXTRAS}}"
+          if [ -z "$extras_requested" ] || [ "$extras_requested" = "baseline" ]; then
             echo "[coverage][targeted] skipping; no extras requested"
           else
             for extra in {{.ALL_EXTRAS}}; do
@@ -356,7 +384,7 @@ tasks:
     cmds:
       - task: coverage
         vars:
-          EXTRAS: ""
+          EXTRAS: "baseline"
       - echo "[coverage] generating HTML report"
       - uv run coverage html
     desc: |
@@ -385,7 +413,10 @@ tasks:
               *) dedup="$dedup $extra" ;;
             esac
           done
-          printf '%s\n' "${dedup# }"
+          if [ -n "$dedup" ]; then
+            printf '%s\n' "${dedup# }"
+          fi
+      COVERAGE_DEFAULT_OPTIONALS: "{{if .USER_EXTRAS}}{{.USER_EXTRAS}}{{else}}baseline{{end}}"
     cmds:
       - |
           set -eu
@@ -409,6 +440,7 @@ tasks:
       - task: coverage
         vars:
           EXTRAS: "{{.USER_EXTRAS}}"
+          DEFAULT_OPTIONAL_EXTRAS: "{{.COVERAGE_DEFAULT_OPTIONALS}}"
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
@@ -428,9 +460,20 @@ tasks:
       OPTIONAL_EXTRAS:
         sh: |
           set -eu
-          extras="{{.ALL_EXTRAS_NO_GPU}} build"
+          extras=""
           if [ -n "{{.USER_EXTRAS}}" ]; then
-            extras="$extras {{.USER_EXTRAS}}"
+            for flag in {{.USER_EXTRAS}}; do
+              case "$flag" in
+                full)
+                  extras="$extras {{.ALL_EXTRAS_NO_GPU}} build"
+                  ;;
+                "")
+                  ;;
+                *)
+                  extras="$extras $flag"
+                  ;;
+              esac
+            done
           fi
           dedup=""
           for extra in $extras; do
@@ -439,7 +482,11 @@ tasks:
               *) dedup="$dedup $extra" ;;
             esac
           done
-          printf '%s\n' "${dedup# }"
+          if [ -n "$dedup" ]; then
+            printf '%s\n' "${dedup# }"
+          fi
+      COVERAGE_EXTRAS: "{{.OPTIONAL_EXTRAS}}"
+      COVERAGE_DEFAULT_OPTIONALS: "baseline"
       SYNC_EXTRAS:
         sh: |
           set -eu
@@ -470,7 +517,10 @@ tasks:
       - echo "[release:alpha] running task verify"
       - uv run task verify EXTRAS="{{.OPTIONAL_EXTRAS}}"
       - echo "[release:alpha] running task coverage"
-      - uv run task coverage EXTRAS="{{.OPTIONAL_EXTRAS}}"
+      - task: coverage
+        vars:
+          EXTRAS: "{{.COVERAGE_EXTRAS}}"
+          DEFAULT_OPTIONAL_EXTRAS: "{{.COVERAGE_DEFAULT_OPTIONALS}}"
       - echo "[release:alpha] building distributions"
       - uv run python -m build
       - echo "[release:alpha] checking metadata with twine"
@@ -479,8 +529,9 @@ tasks:
       - uv run python scripts/publish_dev.py --dry-run
     desc: |
       Run the alpha release readiness sweep.
-      Installs dev-minimal, test, and optional extras (minus gpu) by default.
-      Pass EXTRAS (e.g., "gpu") to add more optional groups.
+      Installs only the dev-minimal and test extras by default.
+      Pass EXTRAS="full" to add the optional extras set (minus gpu), and
+      combine it with other extras as needed (e.g., EXTRAS="full gpu").
 
   verify:warnings:
     vars:

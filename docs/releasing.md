@@ -18,10 +18,14 @@ notes. Before running any release workflow, pick one of the supported helpers:
   helper is not sourced.
 
 - Run `uv run task release:alpha` to automate the alpha readiness sweep before
-  tagging. It installs the dev-minimal, test, and default optional extras
-  (excluding `gpu`), then runs lint, type checks, spec lint, `task verify`,
-  `task coverage`, `python -m build`, `twine check`, and the TestPyPI dry run.
-  Provide `EXTRAS="gpu"` to include GPU wheels when available.
+  tagging. By default it installs only the `dev-minimal` and `test` extras,
+  then runs lint, type checks, spec lint, `task verify`, `task coverage`,
+  `python -m build`, `twine check`, and the TestPyPI dry run. The verify and
+  coverage subtasks stay on the same baseline footprint, so tests that require
+  optional extras are skipped unless you opt in. Pass `EXTRAS="full"` to add
+  the optional extras set (`nlp`, `ui`, `vss`, `git`, `distributed`,
+  `analysis`, `llm`, `parsers`, and `build`) and append values like `gpu` as
+  needed (for example, `EXTRAS="full gpu"`).
 - Update the version and release date in `pyproject.toml`
   (`project.version`, `tool.autoresearch.release_date`),
   `src/autoresearch/__init__.py` (`__version__`, `__release_date__`), and the
