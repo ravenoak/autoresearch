@@ -221,6 +221,7 @@ version = "0.1.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "a2a-sdk" },
+    { name = "build" },
     { name = "click" },
     { name = "duckdb" },
     { name = "fastapi" },
@@ -412,6 +413,7 @@ requires-dist = [
     { name = "bertopic", marker = "extra == 'gpu'", specifier = ">=0.17.3" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.4.0" },
     { name = "black", marker = "extra == 'dev-minimal'", specifier = ">=24.4.0" },
+    { name = "build", specifier = ">=1.3.0" },
     { name = "build", marker = "extra == 'build'", specifier = ">=1.2.2" },
     { name = "cibuildwheel", marker = "python_full_version < '3.13' and extra == 'build'", specifier = ">=3.0.1" },
     { name = "cibuildwheel", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=3.0.1" },
