@@ -2465,6 +2465,7 @@ class Search:
             return vss_available
 
         while True:
+            self._cache_events = []
             attempt_count += 1
             current_reason = plan_reason
             plan_reason = "followup"
@@ -2490,7 +2491,10 @@ class Search:
                 current_canonical_query = self._normalise_cache_query(current_query)
 
             def _record_embedding_backend(
-                name: str, docs: Sequence[Dict[str, Any]] | None
+                name: str,
+                docs: Sequence[Dict[str, Any]] | None,
+                *,
+                from_cache: bool = False,
             ) -> None:
                 pending_embedding_backends.discard(name)
                 storage_hints = self._embedding_storage_hints(name)
@@ -2506,18 +2510,21 @@ class Search:
                 )
                 if not docs:
                     results_by_backend.setdefault(name, [])
-                    self._cache_documents(
-                        cache_key,
-                        name,
-                        [],
-                        storage_hints=storage_hints,
-                        embedding_backend=name,
-                    )
+                    if not from_cache:
+                        self._cache_documents(
+                            cache_key,
+                            name,
+                            [],
+                            storage_hints=storage_hints,
+                            embedding_backend=name,
+                        )
                     return
 
                 normalised_docs = self._normalise_backend_documents(docs, name)
                 results_by_backend[name] = normalised_docs
                 results.extend(normalised_docs)
+                if from_cache:
+                    return
                 self._cache_documents(
                     cache_key,
                     name,
@@ -2564,7 +2571,11 @@ class Search:
                     )
                     if cached_embedding is None:
                         continue
-                    _record_embedding_backend(backend_name, cached_embedding[:max_results])
+                    _record_embedding_backend(
+                        backend_name,
+                        cached_embedding[:max_results],
+                        from_cache=True,
+                    )
 
             def _ensure_embedding_results() -> None:
                 nonlocal embedding_lookup_invoked
@@ -2620,18 +2631,21 @@ class Search:
                         self.add_embeddings(cached_docs, np_query_embedding)
                     if cached_docs:
                         results.extend(cached_docs)
-                    if len(cached_docs) >= max_results:
+                    cached_count = len(cached_docs)
+                    if cached_count >= max_results:
                         return name, cached_docs[:max_results]
-                    cache_shortfalls[name] = (len(cached_docs), max_results)
+                    cache_shortfalls[name] = (cached_count, max_results)
                     log.debug(
                         "Cache underfilled for backend",
                         extra={
                             "backend": name,
-                            "cached_count": len(cached_docs),
+                            "cached_count": cached_count,
                             "requested": max_results,
                             "query": current_query,
                         },
                     )
+                    if max_results <= base_max_results:
+                        return name, cached_docs[:max_results]
 
                 try:
                     backend_results = backend(current_query, max_results)
@@ -2755,10 +2769,23 @@ class Search:
                     continue
                 enriched_docs = self._normalise_backend_documents(docs, name)
                 storage_results[name] = enriched_docs
-                if name in results_by_backend:
-                    results_by_backend[name].extend(enriched_docs)
-                else:
-                    results_by_backend[name] = enriched_docs
+                existing = results_by_backend.get(name)
+                if existing is None:
+                    results_by_backend[name] = list(enriched_docs)
+                    continue
+                seen: set[str] = {
+                    str(doc.get("canonical_url") or doc.get("url"))
+                    for doc in existing
+                    if doc.get("canonical_url") or doc.get("url")
+                }
+                for doc in enriched_docs:
+                    canonical = doc.get("canonical_url") or doc.get("url")
+                    key = str(canonical) if canonical is not None else None
+                    if key is not None and key in seen:
+                        continue
+                    if key is not None:
+                        seen.add(key)
+                    existing.append(doc)
             if storage_results:
                 pending_embedding_backends.difference_update(
                     name for name in storage_results if name in pending_embedding_backends
@@ -2775,6 +2802,7 @@ class Search:
                 and np_query_embedding is not None
                 and _vss_available()
             ):
+                duckdb_pending = "duckdb" in pending_embedding_backends
                 duckdb_seed = vector_storage_docs[:max_results] if vector_storage_docs else []
                 duckdb_docs = self._normalise_backend_documents(duckdb_seed, "duckdb")
                 results_by_backend["duckdb"] = duckdb_docs
@@ -2790,22 +2818,23 @@ class Search:
                     storage_hints=duckdb_storage_hints,
                     normalized_query=current_canonical_query,
                 )
-                self._cache_documents(
-                    duckdb_cache_key,
-                    "duckdb",
-                    duckdb_docs,
-                    storage_hints=duckdb_storage_hints,
-                    embedding_backend="duckdb",
-                )
-                log.debug(
-                    "Cached duckdb embedding seeds via storage hybrid lookup",
-                    extra={
-                        "cache_namespace": self._cache_namespace,
-                        "storage_hints": duckdb_storage_hints,
-                        "seed_count": len(duckdb_docs),
-                    },
-                )
-                duckdb_from_storage = True
+                if duckdb_pending:
+                    self._cache_documents(
+                        duckdb_cache_key,
+                        "duckdb",
+                        duckdb_docs,
+                        storage_hints=duckdb_storage_hints,
+                        embedding_backend="duckdb",
+                    )
+                    log.debug(
+                        "Cached duckdb embedding seeds via storage hybrid lookup",
+                        extra={
+                            "cache_namespace": self._cache_namespace,
+                            "storage_hints": duckdb_storage_hints,
+                            "seed_count": len(duckdb_docs),
+                        },
+                    )
+                    duckdb_from_storage = True
 
             if storage_results.get("storage"):
                 if not duckdb_from_storage:
@@ -2830,6 +2859,17 @@ class Search:
                 ranked_results = self.cross_backend_rank(
                     current_query, results_by_backend, np_query_embedding
                 )
+                deduped_results: list[Dict[str, Any]] = []
+                seen_canonical: set[str] = set()
+                for doc in ranked_results:
+                    canonical = doc.get("canonical_url") or doc.get("url")
+                    key = str(canonical) if canonical is not None else None
+                    if key is not None and key in seen_canonical:
+                        continue
+                    if key is not None:
+                        seen_canonical.add(key)
+                    deduped_results.append(doc)
+                ranked_results = deduped_results
 
                 metrics = context.summarize_retrieval_outcome(
                     current_query,

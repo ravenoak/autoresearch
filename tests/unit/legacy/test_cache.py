@@ -4,11 +4,12 @@ from __future__ import annotations
 import importlib.util
 import shutil
 import tempfile
+from collections import Counter
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
 from types import MethodType
-from collections.abc import Callable, Iterator, Sequence
 from unittest.mock import patch
 
 import numpy as np
@@ -20,6 +21,7 @@ if not importlib.util.find_spec("tinydb"):
 from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
+from autoresearch.search.context import SearchContext
 from autoresearch.search.cache import build_cache_slots
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
@@ -49,10 +51,20 @@ def property_search(
 
     with ExitStack() as stack:
         stack.enter_context(
+            patch("autoresearch.search.core.get_config", lambda: cfg)
+        )
+        stack.enter_context(SearchContext.temporary_instance())
+        stack.enter_context(
             patch.object(
                 Search,
                 "calculate_bm25_scores",
                 new=staticmethod(assert_bm25_signature),
+            )
+        )
+        stack.enter_context(
+            patch(
+                "autoresearch.search.storage.persist_results",
+                lambda results, *_args, **_kwargs: None,
             )
         )
         if embedding_vector is not None:
@@ -81,12 +93,26 @@ def property_search(
                     new=staticmethod(lambda: None),
                 )
             )
-        stack.enter_context(
-            patch("autoresearch.search.core.get_config", lambda: cfg)
-        )
         search = Search(cache=cache)
         with search.temporary_state() as state:
             yield state
+
+
+def summarise_trace(trace) -> Counter:
+    """Return stage/backend counts for a cache trace."""
+
+    return Counter((event.stage, event.backend) for event in trace.events)
+
+
+def fingerprint_sets(trace) -> dict[str, set[str]]:
+    """Return backend-to-fingerprint mappings present in ``trace``."""
+
+    mapping: dict[str, set[str]] = {}
+    for event in trace.events:
+        if event.fingerprint is None:
+            continue
+        mapping.setdefault(event.backend, set()).add(event.fingerprint)
+    return mapping
 
 
 @pytest.fixture(autouse=True)
@@ -973,26 +999,44 @@ def test_interleaved_storage_paths_share_cache(
 
             first = search_default.external_lookup("topic")
             first_trace = search_default.cache_trace
+            first_summary = summarise_trace(first_trace)
+            first_fingerprints = fingerprint_sets(first_trace)
             assert calls["backend"] == 1, (
                 "Without a cache miss on the first lookup, how would the backend ever run?"
             )
-            assert any(
-                event.stage == "store"
-                and event.backend == "primary"
-                and event.fingerprint
-                for event in first_trace.events
-            ), (
-                "If namespace traces failed to capture fingerprints, what evidence would confirm the initial store?"
+            initial_backend_calls = calls["backend"]
+            initial_duckdb_calls = calls["duckdb"]
+            expected_duckdb_store = 0
+            if initial_duckdb_calls > 0:
+                expected_duckdb_store = 12
+            elif vector_seed:
+                expected_duckdb_store = 6
+            expected_first = Counter({("miss", "primary"): 1, ("store", "primary"): 6})
+            expected_first[("miss", "duckdb")] = 1 + int(initial_duckdb_calls > 0)
+            expected_first[("store", "duckdb")] = expected_duckdb_store
+            assert first_summary == expected_first, (
+                "If canonical cache slots were unstable, why would the initial trace diverge from the expected miss/store counts?"
             )
+            primary_fps = first_fingerprints.get("primary", set())
+            duckdb_fps = first_fingerprints.get("duckdb", set())
+            assert len(primary_fps) == 1 and all(primary_fps), (
+                "When the primary backend fingerprints drift, what anchors cache namespace determinism?"
+            )
+            expected_duckdb_fp_count = 1 + int(initial_duckdb_calls > 0)
+            assert len(duckdb_fps) == expected_duckdb_fp_count and all(duckdb_fps), (
+                "If embedding cache fingerprints were missing, how could subsequent hits validate reuse?"
+            )
+            (primary_fp,) = tuple(primary_fps)
+            duckdb_fp_candidates = set(duckdb_fps)
             expected_namespace = search_default._cache_namespace or "__default__"
             assert first_trace.namespace == expected_namespace, (
                 "When traces omit the active namespace, how could Hypothesis reason about isolation?"
             )
 
-            initial_backend_calls = calls["backend"]
-            initial_duckdb_calls = calls["duckdb"]
             second = search_default.external_lookup("topic")
             second_trace = search_default.cache_trace
+            second_summary = summarise_trace(second_trace)
+            second_fingerprints = fingerprint_sets(second_trace)
 
             assert calls["backend"] == initial_backend_calls, (
                 "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
@@ -1000,11 +1044,16 @@ def test_interleaved_storage_paths_share_cache(
             assert calls["duckdb"] == initial_duckdb_calls, (
                 "When duckdb seeds vary, shouldn't cached embeddings prevent duplicate vector fetches?"
             )
-            assert any(
-                event.stage == "hit" and event.backend == "primary"
-                for event in second_trace.events
-            ), (
-                "When the second lookup reuses cached payloads, shouldn't a cache hit be observable?"
+            expected_second = Counter({("hit", "primary"): 1})
+            if expected_duckdb_store > 0:
+                expected_second[("hit", "duckdb")] = 1
+            else:
+                expected_second[("miss", "duckdb")] = 1
+            assert second_summary == expected_second, (
+                "When replayed cache traces diverge from the canonical hit/miss snapshot, what guarantee keeps cache reuse deterministic?"
+            )
+            assert second_fingerprints.get("primary", set()) == {primary_fp}, (
+                "When second-look fingerprints change, what guarantees namespace-level cache continuity?"
             )
             assert second_trace.namespace == first_trace.namespace, (
                 "If namespaces drifted across lookups, how would cache hits stay deterministic?"
@@ -1016,16 +1065,17 @@ def test_interleaved_storage_paths_share_cache(
             canonical_hints = search_default._embedding_storage_hints("duckdb")
             scrambled_hints = tuple(reversed(canonical_hints + canonical_hints))
 
+            duckdb_key = search_default._build_cache_key(
+                backend="duckdb",
+                query="topic",
+                embedding_backends=tuple(cfg.search.embedding_backends),
+                hybrid_query=cfg.search.hybrid_query,
+                use_semantic_similarity=cfg.search.use_semantic_similarity,
+                query_embedding=vector,
+                storage_hints=canonical_hints,
+            )
             canonical_slots = build_cache_slots(
-                search_default._build_cache_key(
-                    backend="duckdb",
-                    query="topic",
-                    embedding_backends=tuple(cfg.search.embedding_backends),
-                    hybrid_query=cfg.search.hybrid_query,
-                    use_semantic_similarity=cfg.search.use_semantic_similarity,
-                    query_embedding=vector,
-                    storage_hints=canonical_hints,
-                ),
+                duckdb_key,
                 namespace=search_default._cache_namespace,
                 embedding_backend="duckdb",
                 storage_hints=canonical_hints,
@@ -1047,6 +1097,37 @@ def test_interleaved_storage_paths_share_cache(
             assert canonical_slots == scrambled_slots, (
                 "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
             )
+            assume(duckdb_key.fingerprint is not None)
+            expected_duckdb_fps = {duckdb_key.fingerprint}
+            if initial_duckdb_calls > 0:
+                cache_token = search_default._embedding_cache_token(vector)
+                embedding_cache_key = search_default._build_cache_key(
+                    backend="duckdb",
+                    query=cache_token,
+                    embedding_backends=tuple(cfg.search.embedding_backends),
+                    hybrid_query=cfg.search.hybrid_query,
+                    use_semantic_similarity=cfg.search.use_semantic_similarity,
+                    query_embedding=vector,
+                    storage_hints=canonical_hints,
+                    normalized_query=cache_token,
+                )
+                assume(embedding_cache_key.fingerprint is not None)
+                expected_duckdb_fps.add(embedding_cache_key.fingerprint)
+            assert duckdb_fp_candidates == expected_duckdb_fps, (
+                "When duckdb cache fingerprints diverge from traces, what anchors deterministic reuse?"
+            )
+            if expected_duckdb_fps:
+                assert second_summary.get(("hit", "duckdb"), 0) == int(expected_duckdb_store > 0), (
+                    "If cached embeddings were available, why didn't the second lookup record a deterministic hit?"
+                )
+                if expected_duckdb_store > 0:
+                    assert second_fingerprints.get("duckdb", set()) == {duckdb_key.fingerprint}, (
+                        "If embedding fingerprints oscillated, how could deterministic cache hits be asserted?"
+                    )
+                else:
+                    assert second_summary.get(("miss", "duckdb"), 0) == 1, (
+                        "When no embeddings were cached, shouldn't the duckdb namespace record a miss instead of a phantom hit?"
+                    )
 
             key = search_default._build_cache_key(
                 backend="primary",
@@ -1058,6 +1139,9 @@ def test_interleaved_storage_paths_share_cache(
                 storage_hints=("external",),
             )
             assume(key.fingerprint is not None)
+            assert key.fingerprint == primary_fp, (
+                "If primary cache fingerprints changed between traces and keys, how could namespace comparisons stay sound?"
+            )
             repeat = search_default._build_cache_key(
                 backend="primary",
                 query="topic",

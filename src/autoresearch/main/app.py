@@ -67,6 +67,30 @@ app = cast(
     ),
 )
 
+
+def _help_requested(ctx: click.Context) -> bool:
+    """Return ``True`` when the current invocation requested CLI help output."""
+
+    help_tokens = {"--help", "-h"}
+    candidate_args: list[str] = []
+    protected: tuple[str, ...] = ()
+    if isinstance(getattr(ctx, "args", ()), (list, tuple)):
+        source_args: tuple[str, ...] = tuple(
+            arg for arg in ctx.args if isinstance(arg, str)
+        )
+    else:
+        source_args = ()
+    raw_protected = ctx.__dict__.get("protected_args", ())
+    if isinstance(raw_protected, (list, tuple)):
+        protected = tuple(arg for arg in raw_protected if isinstance(arg, str))
+    for source in (source_args, protected):
+        for arg in source:
+            if isinstance(arg, str):
+                candidate_args.append(arg)
+    candidate_args.extend(arg for arg in sys.argv[1:] if isinstance(arg, str))
+    return any(token in help_tokens for token in candidate_args)
+
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -158,8 +182,8 @@ def start_watcher(
     if vss_path:
         os.environ["VECTOR_EXTENSION_PATH"] = vss_path
 
-    # If help is requested anywhere on the command line, skip prompts and initialization
-    if any(arg in {"--help", "-h"} for arg in sys.argv):
+    help_requested = _help_requested(ctx)
+    if help_requested:
         # Ensure wide help to avoid truncation of long option names in tests
         os.environ["COLUMNS"] = "200"
         return
@@ -206,20 +230,8 @@ def start_watcher(
             ctx.invoke(config_init)
             return
 
-    # Skip heavy initialization when help is requested to ensure `--help` always works
-    if any(arg in {"--help", "-h"} for arg in sys.argv):
+    if help_requested:
         return
-
-    if invoked_subcommand not in {"config", "monitor"}:
-        try:
-            # Import lazily to avoid side-effects during help rendering
-            from ..storage import StorageManager
-            StorageManager.setup()
-        except StorageError as e:
-            # Fail fast when storage initialization fails to ensure clear feedback in CLI.
-            # Use plain stdout to satisfy tests that assert on stdout content.
-            print(f"Storage initialization failed: {e}")
-            raise typer.Exit(code=1)
 
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()
@@ -233,6 +245,21 @@ def start_watcher(
     call_on_close = getattr(ctx, "call_on_close", None)
     if callable(call_on_close):
         call_on_close(_stop_watcher)
+
+
+def _ensure_storage_ready(ctx: click.Context | typer.Context | None) -> None:
+    """Initialise storage backends unless CLI parsing is in help mode."""
+
+    if ctx is not None and getattr(ctx, "resilient_parsing", False):
+        return
+
+    try:
+        from ..storage import StorageManager
+
+        StorageManager.setup()
+    except StorageError as exc:
+        print(f"Storage initialization failed: {exc}")
+        raise typer.Exit(code=1)
 
 
 @typed_command()
@@ -418,6 +445,7 @@ def search(
         # Options overview (for reference)
         # --interactive, --loops, --ontology, --ontology-reasoner, --infer-relations, --visualize
     """
+    _ensure_storage_ready(click.get_current_context(silent=True))
     config = _config_loader.load_config()
 
     # Lazy imports to avoid side effects during help rendering

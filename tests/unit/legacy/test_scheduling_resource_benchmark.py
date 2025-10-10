@@ -3,6 +3,7 @@
 
 from importlib import util
 from pathlib import Path
+import random
 import statistics
 
 import pytest
@@ -23,6 +24,7 @@ def _load_module():
 
 def test_run_benchmark_scaling():
     """More workers increase throughput and memory scales with tasks."""
+    random.seed(0)
     mod = _load_module()
     results = mod.run_benchmark(2, 3, 5, 20, 0.5)
     assert len(results) == 2
