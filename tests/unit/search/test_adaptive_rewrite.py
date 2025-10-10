@@ -74,6 +74,14 @@ def isolated_search(monkeypatch: pytest.MonkeyPatch) -> Search:
         "autoresearch.search.core.SearchCache.cache_results",
         lambda self, query, backend, results: None,
     )
+    monkeypatch.setattr(
+        "autoresearch.cache._SearchCacheView.get_cached_results",
+        lambda self, query, backend: None,
+    )
+    monkeypatch.setattr(
+        "autoresearch.cache._SearchCacheView.cache_results",
+        lambda self, query, backend, results: None,
+    )
     search = Search()
     return search
 
@@ -179,6 +187,38 @@ def test_external_lookup_adaptive_k_increases_fetch(
         strategy = SearchContext.get_instance().get_search_strategy()
         attempts = strategy.get("fetch_plan", {}).get("attempts", [])
         assert [entry["k"] for entry in attempts] == [2, 4]
+        assert [entry["query"] for entry in attempts] == ["adaptive", "adaptive"]
+        assert [entry["reason"] for entry in attempts] == ["initial", "adaptive_increase"]
+        first_metrics = attempts[0].get("metrics", {})
+        second_metrics = attempts[1].get("metrics", {})
+        assert first_metrics.get("executed_query") == "adaptive"
+        assert second_metrics.get("executed_query") == "adaptive"
+        assert first_metrics.get("coverage_gap_signal", 0.0) >= 0.5
+        assert second_metrics.get("coverage_gap_signal", 1.0) < first_metrics.get(
+            "coverage_gap_signal", 0.0
+        )
+        assert first_metrics.get("planned_action") == "adaptive_increase"
+        assert first_metrics.get("adaptive_triggered") is True
+        assert first_metrics.get("next_k") == 4
+        assert first_metrics.get("refresh_already_attempted") is False
+        assert first_metrics.get("cache_bypassed_hits", {}) == {}
+        assert first_metrics.get("cache_bypass") is False
+        assert second_metrics.get("cache_bypass") is True
+        assert second_metrics.get("planned_action") == "none"
+        assert second_metrics.get("adaptive_triggered") is False
+        assert second_metrics.get("next_k") == 4
+        assert second_metrics.get("refresh_already_attempted") is False
+        bypassed_hits = second_metrics.get("cache_bypassed_hits", {})
+        assert bypassed_hits in ({}, {"stub": 1})
+        assert first_metrics.get("previous_coverage_gap") is None
+        assert second_metrics.get("previous_coverage_gap") == pytest.approx(
+            first_metrics.get("coverage_gap_signal", 0.0)
+        )
+        assert second_metrics.get("attempted_plan_count") == 2
+        assert second_metrics.get("attempted_plans") == [
+            {"query": "adaptive", "k": 2},
+            {"query": "adaptive", "k": 4},
+        ]
         rewrites = strategy.get("rewrites", [])
         assert not rewrites
 
@@ -230,9 +270,16 @@ def test_adaptive_k_refreshes_cache_shortfall(
             assert [entry["k"] for entry in attempts] == [1, 2]
             first_metrics = attempts[0].get("metrics", {}) if attempts else {}
             assert first_metrics.get("coverage_gap_signal", 0.0) >= 1.0
+            assert first_metrics.get("planned_action") == "adaptive_increase"
+            assert first_metrics.get("adaptive_triggered") is True
+            assert first_metrics.get("next_k") == 2
             second_metrics = attempts[-1].get("metrics", {}) if attempts else {}
             shortfalls = second_metrics.get("cache_shortfalls", {})
             assert shortfalls.get("stub", {}).get("cached") == 1
+            assert second_metrics.get("cache_hits", {}).get("stub") == 1
+            assert second_metrics.get("cache_bypassed_hits", {}).get("stub") == 1
+            assert second_metrics.get("planned_action") == "none"
+            assert second_metrics.get("adaptive_triggered") is False
     finally:
         cache.clear()
         cache.teardown(remove_file=True)

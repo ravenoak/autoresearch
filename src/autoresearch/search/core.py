@@ -2444,9 +2444,12 @@ class Search:
             max_results = min(max_results, adaptive_cfg.max_k)
 
         attempt_count = 0
+        force_backend_refresh = False
+        previous_coverage_gap: float | None = None
         rewrite_attempts = 0
         plan_reason = "initial"
         attempted_plans: set[Tuple[str, int]] = set()
+        adaptive_refresh_attempts: set[Tuple[str, int]] = set()
 
         adaptive_span = max(0, adaptive_cfg.max_k - max_results) if adaptive_cfg.enabled else 0
         adaptive_step = adaptive_cfg.step if adaptive_cfg.step > 0 else 1
@@ -2477,6 +2480,11 @@ class Search:
             results: List[Dict[str, Any]] = []
             results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
             cache_shortfalls: dict[str, tuple[int, int]] = {}
+            cache_hits: dict[str, int] = {}
+            cache_bypassed_hits: dict[str, int] = {}
+
+            bypass_cache_for_attempt = force_backend_refresh
+            force_backend_refresh = False
 
             embedding_backends: Tuple[str, ...] = tuple(cfg.search.embedding_backends)
             pending_embedding_backends: set[str] = set(embedding_backends)
@@ -2488,6 +2496,17 @@ class Search:
                 canonical_hint = None
             else:
                 current_canonical_query = self._normalise_cache_query(current_query)
+
+            if bypass_cache_for_attempt:
+                log.debug(
+                    "Adaptive retry bypassing cached payloads",
+                    extra={
+                        "attempt": attempt_count,
+                        "query": current_query,
+                        "previous_coverage_gap": previous_coverage_gap,
+                        "reason": current_reason,
+                    },
+                )
 
             def _record_embedding_backend(
                 name: str, docs: Sequence[Dict[str, Any]] | None
@@ -2614,22 +2633,66 @@ class Search:
                     embedding_backend=None,
                 )
                 cached_docs: List[Dict[str, Any]] = []
+                cached_count = 0
+                shortfall = False
                 if cached is not None:
                     cached_docs = self._normalise_backend_documents(cached, name)
-                    with _hybrid_stage("cache-hit"):
-                        self.add_embeddings(cached_docs, np_query_embedding)
+                    cached_count = len(cached_docs)
+                    shortfall = cached_count < max_results
                     if cached_docs:
-                        results.extend(cached_docs)
-                    if len(cached_docs) >= max_results:
-                        return name, cached_docs[:max_results]
-                    cache_shortfalls[name] = (len(cached_docs), max_results)
+                        cache_hits[name] = cached_count
+                        if bypass_cache_for_attempt:
+                            cache_bypassed_hits[name] = cached_count
+                        else:
+                            with _hybrid_stage("cache-hit"):
+                                self.add_embeddings(cached_docs, np_query_embedding)
+                            results.extend(cached_docs)
                     log.debug(
-                        "Cache underfilled for backend",
+                        "External lookup cache hit",
                         extra={
+                            "attempt": attempt_count,
                             "backend": name,
-                            "cached_count": len(cached_docs),
-                            "requested": max_results,
-                            "query": current_query,
+                            "cached_count": cached_count,
+                            "requested_k": max_results,
+                            "shortfall": shortfall,
+                            "bypassed": bypass_cache_for_attempt,
+                        },
+                    )
+                    if shortfall:
+                        cache_shortfalls[name] = (cached_count, max_results)
+                        log.debug(
+                            "Cache shortfall detected",
+                            extra={
+                                "attempt": attempt_count,
+                                "backend": name,
+                                "cached_count": cached_count,
+                                "requested_k": max_results,
+                                "query": current_query,
+                                "refresh": bypass_cache_for_attempt,
+                            },
+                        )
+                        if not bypass_cache_for_attempt:
+                            log.debug(
+                                "Serving cached payload despite shortfall",
+                                extra={
+                                    "attempt": attempt_count,
+                                    "backend": name,
+                                    "cached_count": cached_count,
+                                    "requested_k": max_results,
+                                    "query": current_query,
+                                },
+                            )
+                    if not bypass_cache_for_attempt:
+                        return name, cached_docs[:max_results]
+
+                if cached_docs and bypass_cache_for_attempt:
+                    log.debug(
+                        "Cache payload retained but forcing backend refresh",
+                        extra={
+                            "attempt": attempt_count,
+                            "backend": name,
+                            "cached_count": cached_count,
+                            "requested_k": max_results,
                         },
                     )
 
@@ -2837,16 +2900,91 @@ class Search:
                     fetch_limit=max_results,
                     by_backend=results_by_backend,
                 )
+                attempt_k = max_results
                 shortfall = int(metrics.get("shortfall", 0))
                 coverage_gap_signal = float(metrics.get("coverage_gap", 0.0))
                 single_result_run = bool(metrics.get("single_result_run", False))
-                if adaptive_cfg.enabled and max_results <= 1 and single_result_run:
+                if adaptive_cfg.enabled and attempt_k <= 1 and single_result_run:
                     coverage_gap_signal = max(coverage_gap_signal, 1.0)
-                if shortfall > 0 and max_results > 0:
+                if shortfall > 0 and attempt_k > 0:
                     coverage_gap_signal = max(
                         coverage_gap_signal,
-                        float(shortfall) / float(max_results),
+                        float(shortfall) / float(attempt_k),
                     )
+
+                coverage_gap = coverage_gap_signal
+                unique_results = int(metrics.get("unique_results", 0))
+                total_results = int(metrics.get("result_count", 0))
+                refresh_plan = (current_query, attempt_k)
+                refresh_already_attempted = refresh_plan in adaptive_refresh_attempts
+
+                adaptive_action_taken = False
+                adaptive_action_type: str | None = None
+                next_max_results = attempt_k
+                next_plan_reason = "followup"
+                next_force_backend_refresh = False
+                adaptive_log_details: dict[str, Any] = {}
+                if (
+                    adaptive_cfg.enabled
+                    and coverage_gap > adaptive_cfg.coverage_gap_threshold
+                ):
+                    proposed_k = min(
+                        adaptive_cfg.max_k,
+                        max(attempt_k + adaptive_cfg.step, adaptive_cfg.min_k),
+                    )
+                    if proposed_k > attempt_k and (current_query, proposed_k) not in attempted_plans:
+                        adaptive_action_taken = True
+                        adaptive_action_type = "adaptive_increase"
+                        next_max_results = proposed_k
+                        next_plan_reason = "adaptive_increase"
+                        next_force_backend_refresh = True
+                        adaptive_log_details = {
+                            "previous_k": attempt_k,
+                            "next_k": proposed_k,
+                        }
+                    elif not refresh_already_attempted:
+                        adaptive_action_taken = True
+                        adaptive_action_type = "adaptive_refresh"
+                        next_plan_reason = "adaptive_refresh"
+                        next_force_backend_refresh = True
+                    else:
+                        adaptive_action_type = "adaptive_refresh_exhausted"
+
+                rewrite_action_taken = False
+                rewrite_plan_reason: str | None = None
+                chosen_rewrite: dict[str, str] | None = None
+                if (
+                    allow_rewrite
+                    and not adaptive_action_taken
+                    and rewrite_attempts < rewrite_cfg.max_attempts
+                ):
+                    rewrite_needed = (
+                        total_results < rewrite_cfg.min_results
+                        or unique_results < rewrite_cfg.min_unique_sources
+                        or coverage_gap > rewrite_cfg.coverage_gap_threshold
+                    )
+                    if rewrite_needed:
+                        suggestions = context.suggest_rewrites(
+                            current_query, limit=rewrite_cfg.max_attempts
+                        )
+                        for suggestion in suggestions:
+                            candidate_query = suggestion.get("query", "").strip()
+                            if not candidate_query:
+                                continue
+                            if (candidate_query, attempt_k) in attempted_plans:
+                                continue
+                            chosen_rewrite = suggestion
+                            break
+                        if chosen_rewrite is not None:
+                            rewrite_action_taken = True
+                            rewrite_reason = chosen_rewrite.get("reason", "context")
+                            rewrite_plan_reason = f"rewrite_{rewrite_reason}"
+
+                planned_action = (
+                    rewrite_plan_reason
+                    if rewrite_action_taken and rewrite_plan_reason is not None
+                    else adaptive_action_type
+                ) or "none"
 
                 diagnostic_metrics = dict(metrics)
                 diagnostic_metrics["coverage_gap_signal"] = coverage_gap_signal
@@ -2855,6 +2993,14 @@ class Search:
                     {"query": plan_query, "k": plan_k}
                     for plan_query, plan_k in sorted(attempted_plans)
                 ]
+                diagnostic_metrics["cache_bypass"] = bool(bypass_cache_for_attempt)
+                diagnostic_metrics["previous_coverage_gap"] = previous_coverage_gap
+                diagnostic_metrics["adaptive_triggered"] = adaptive_action_taken
+                diagnostic_metrics["planned_action"] = planned_action
+                diagnostic_metrics["next_k"] = (
+                    next_max_results if adaptive_action_type == "adaptive_increase" else attempt_k
+                )
+                diagnostic_metrics["refresh_already_attempted"] = refresh_already_attempted
                 if cache_shortfalls:
                     diagnostic_metrics["cache_shortfalls"] = {
                         backend_name: {
@@ -2863,13 +3009,18 @@ class Search:
                         }
                         for backend_name, (cached_count, requested_k) in cache_shortfalls.items()
                     }
+                if cache_hits:
+                    diagnostic_metrics["cache_hits"] = dict(cache_hits)
+                if cache_bypassed_hits:
+                    diagnostic_metrics["cache_bypassed_hits"] = dict(cache_bypassed_hits)
+                diagnostic_metrics["executed_query"] = current_query
 
                 log.debug(
                     "Summarised retrieval coverage",
                     extra={
                         "attempt": attempt_count,
                         "base_k": base_max_results,
-                        "effective_k": max_results,
+                        "effective_k": attempt_k,
                         "reason": current_reason,
                         "coverage_gap": metrics.get("coverage_gap", 0.0),
                         "coverage_gap_signal": coverage_gap_signal,
@@ -2877,71 +3028,79 @@ class Search:
                         "total_results": metrics.get("result_count", 0),
                         "cache_shortfalls": cache_shortfalls,
                         "attempted_plan_count": len(attempted_plans),
+                        "planned_action": planned_action,
                     },
                 )
 
                 context.record_fetch_plan(
                     base_k=base_max_results,
                     attempt=attempt_count,
-                    effective_k=max_results,
+                    effective_k=attempt_k,
                     reason=current_reason,
+                    query=current_query,
                     metrics=diagnostic_metrics,
                 )
 
-                coverage_gap = coverage_gap_signal
-                unique_results = int(metrics.get("unique_results", 0))
-                total_results = int(metrics.get("result_count", 0))
+                previous_coverage_gap = coverage_gap_signal
 
-                adaptive_triggered = False
-                if adaptive_cfg.enabled and coverage_gap > adaptive_cfg.coverage_gap_threshold:
-                    proposed_k = min(
-                        adaptive_cfg.max_k,
-                        max(max_results + adaptive_cfg.step, adaptive_cfg.min_k),
-                    )
-                    if proposed_k > max_results and (current_query, proposed_k) not in attempted_plans:
-                        adaptive_triggered = True
-                        max_results = proposed_k
-                        plan_reason = "adaptive_increase"
-
-                rewrite_triggered = False
-                if (
-                    allow_rewrite
-                    and not adaptive_triggered
-                    and rewrite_attempts < rewrite_cfg.max_attempts
-                ):
-                    rewrite_triggered = (
-                        total_results < rewrite_cfg.min_results
-                        or unique_results < rewrite_cfg.min_unique_sources
-                        or coverage_gap > rewrite_cfg.coverage_gap_threshold
-                    )
-                    if rewrite_triggered:
-                        suggestions = context.suggest_rewrites(
-                            current_query, limit=rewrite_cfg.max_attempts
+                if adaptive_action_taken:
+                    if adaptive_action_type == "adaptive_increase":
+                        log.debug(
+                            "Adaptive coverage gap escalation",
+                            extra={
+                                "attempt": attempt_count,
+                                "query": current_query,
+                                "previous_k": adaptive_log_details.get("previous_k", attempt_k),
+                                "next_k": adaptive_log_details.get("next_k", next_max_results),
+                                "coverage_gap": coverage_gap_signal,
+                                "previous_coverage_gap": previous_coverage_gap,
+                            },
                         )
-                        chosen: dict[str, str] | None = None
-                        for suggestion in suggestions:
-                            candidate_query = suggestion.get("query", "").strip()
-                            if not candidate_query:
-                                continue
-                            if (candidate_query, max_results) in attempted_plans:
-                                continue
-                            chosen = suggestion
-                            break
-                        if chosen is not None:
-                            rewrite_attempts += 1
-                            context.record_query_rewrite(
-                                original=current_query,
-                                rewritten=chosen["query"],
-                                reason=chosen.get("reason", "context"),
-                                attempt=rewrite_attempts,
-                            )
-                            search_query = chosen["query"]
-                            plan_reason = f"rewrite_{chosen.get('reason', 'context')}"
-                            allow_rewrite = rewrite_attempts < rewrite_cfg.max_attempts
-                        else:
-                            rewrite_triggered = False
+                    elif adaptive_action_type == "adaptive_refresh":
+                        adaptive_refresh_attempts.add(refresh_plan)
+                        log.debug(
+                            "Adaptive coverage gap refresh",
+                            extra={
+                                "attempt": attempt_count,
+                                "query": current_query,
+                                "k": attempt_k,
+                                "coverage_gap": coverage_gap_signal,
+                                "previous_coverage_gap": previous_coverage_gap,
+                            },
+                        )
 
-                if adaptive_triggered or rewrite_triggered:
+                    force_backend_refresh = next_force_backend_refresh
+                    max_results = next_max_results
+                    plan_reason = next_plan_reason
+                    continue
+
+                if (
+                    adaptive_action_type == "adaptive_refresh_exhausted"
+                    and adaptive_cfg.enabled
+                    and coverage_gap > adaptive_cfg.coverage_gap_threshold
+                ):
+                    log.debug(
+                        "Adaptive coverage gap persisted after refresh",
+                        extra={
+                            "attempt": attempt_count,
+                            "query": current_query,
+                            "k": attempt_k,
+                            "coverage_gap": coverage_gap_signal,
+                            "previous_coverage_gap": previous_coverage_gap,
+                        },
+                    )
+
+                if rewrite_action_taken and chosen_rewrite is not None:
+                    rewrite_attempts += 1
+                    context.record_query_rewrite(
+                        original=current_query,
+                        rewritten=chosen_rewrite["query"],
+                        reason=chosen_rewrite.get("reason", "context"),
+                        attempt=rewrite_attempts,
+                    )
+                    search_query = chosen_rewrite["query"]
+                    plan_reason = rewrite_plan_reason or "rewrite_context"
+                    allow_rewrite = rewrite_attempts < rewrite_cfg.max_attempts
                     continue
 
                 search_storage.persist_results(ranked_results)
@@ -3020,11 +3179,13 @@ class Search:
                 fetch_limit=fallback_count,
                 by_backend=results_by_backend,
             )
+            previous_coverage_gap = float(metrics.get("coverage_gap", 0.0))
             context.record_fetch_plan(
                 base_k=base_max_results,
                 attempt=attempt_count,
                 effective_k=fallback_count,
                 reason=current_reason,
+                query=current_query,
                 metrics=metrics,
             )
 
