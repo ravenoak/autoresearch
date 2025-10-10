@@ -464,10 +464,10 @@ tasks:
           if [ -n "{{.USER_EXTRAS}}" ]; then
             for flag in {{.USER_EXTRAS}}; do
               case "$flag" in
+                ""|baseline)
+                  ;;
                 full)
                   extras="$extras {{.ALL_EXTRAS_NO_GPU}} build"
-                  ;;
-                "")
                   ;;
                 *)
                   extras="$extras $flag"
@@ -490,7 +490,11 @@ tasks:
       SYNC_EXTRAS:
         sh: |
           set -eu
-          extras="{{.VERIFY_BASE_EXTRAS}} {{.OPTIONAL_EXTRAS}}"
+          extras="{{.VERIFY_BASE_EXTRAS}}"
+          optional="{{.OPTIONAL_EXTRAS}}"
+          if [ -n "$optional" ]; then
+            extras="$extras $optional"
+          fi
           dedup=""
           for extra in $extras; do
             case " $dedup " in
