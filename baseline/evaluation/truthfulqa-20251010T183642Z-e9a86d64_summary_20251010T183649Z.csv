@@ -1,0 +1,2 @@
+run_id,dataset,started_at,completed_at,total_examples,accuracy,citation_coverage,contradiction_rate,avg_latency_seconds,avg_tokens_input,avg_tokens_output,avg_tokens_total,avg_cycles_completed,gate_debate_rate,gate_exit_rate,gated_example_ratio,avg_planner_depth,avg_routing_delta,total_routing_delta,avg_routing_decisions,routing_strategy,config_signature
+truthfulqa-20251010T183642Z-e9a86d64,truthfulqa,2025-10-10 11:36:42.81803,2025-10-10 11:36:42.818195,1,,,,,,,,,,,0.0,,,,,,5de565d441457e57
