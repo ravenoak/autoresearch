@@ -5,6 +5,7 @@ import pytest
 from typer.testing import CliRunner
 from unittest.mock import Mock, patch
 
+from autoresearch.config import ConfigModel
 from autoresearch.main import app as cli_app
 from autoresearch.cli_evaluation import evaluation_app, _normalise_suite
 from autoresearch.evaluation import available_datasets
@@ -14,6 +15,7 @@ from autoresearch.distributed.executors import (
     _as_storage_queue,
     _resolve_storage_queue,
 )
+from autoresearch.models import QueryResponse
 
 
 class TestMainApp:
@@ -67,6 +69,38 @@ class TestMainApp:
         # Test with invalid arguments
         result = runner.invoke(cli_app, ["search"])
         assert result.exit_code != 0
+
+    @patch("autoresearch.main.app.StorageManager.setup")
+    @patch("autoresearch.main.app.Orchestrator")
+    def test_search_accepts_depth_alias(
+        self,
+        mock_orchestrator: Mock,
+        mock_storage: Mock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Ensure depth aliases such as 'concise' are accepted by the CLI."""
+
+        runner = CliRunner()
+        mock_storage.return_value = None
+        response = QueryResponse(
+            answer="ok",
+            citations=[],
+            reasoning=["chain"],
+            metrics={},
+            state_id="alias-run",
+        )
+        mock_orchestrator.return_value.run_query.return_value = response
+        monkeypatch.setattr(
+            "autoresearch.main.app._config_loader.load_config",
+            lambda: ConfigModel(),
+        )
+
+        result = runner.invoke(
+            cli_app, ["search", "--depth", "concise", "alias coverage"]
+        )
+
+        assert result.exit_code == 0, result.stdout
+        mock_orchestrator.return_value.run_query.assert_called_once()
 
 
 class TestCliEvaluation:
