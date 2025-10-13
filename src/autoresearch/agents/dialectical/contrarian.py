@@ -33,13 +33,30 @@ class ContrarianAgent(Agent):
 
         # Generate an antithesis using the prompt template
         prompt = self.generate_prompt("contrarian.antithesis", thesis=thesis_text)
-        antithesis = adapter.generate(prompt, model=model)
+        try:
+            antithesis = adapter.generate(prompt, model=model)
+            lm_error: dict[str, Any] | None = None
+        except Exception as exc:
+            from ...errors import LLMError
+
+            err = exc if isinstance(exc, LLMError) else LLMError(str(exc), cause=exc)
+            log.warning("Contrarian antithesis generation failed: %s", err)
+            antithesis = "Antithesis unavailable due to LM error."
+            lm_error = {
+                "message": str(err),
+                "metadata": getattr(err, "metadata", None),
+            }
+        else:
+            lm_error = None
 
         # Create and return the result
         claim = self.create_claim(antithesis, "antithesis")
+        metadata: Dict[str, Any] = {"phase": DialoguePhase.ANTITHESIS}
+        if lm_error:
+            metadata["lm_error"] = lm_error
         return self.create_result(
             claims=[claim],
-            metadata={"phase": DialoguePhase.ANTITHESIS},
+            metadata=metadata,
             results={"antithesis": antithesis},
         )
 

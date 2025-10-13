@@ -17,6 +17,7 @@ from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
+from ...errors import LLMError
 
 log = get_logger(__name__)
 
@@ -34,15 +35,43 @@ class SynthesizerAgent(Agent):
         model = self.get_model(config)
         mode = config.reasoning_mode
         is_first_cycle = state.cycle == 0
+        lm_errors: list[dict[str, Any]] = []
+
+        def guarded_generate(prompt_name: str, prompt_text: str, fallback: str) -> tuple[str, LLMError | None]:
+            """Invoke the LLM adapter while capturing recoverable failures."""
+
+            try:
+                return adapter.generate(prompt_text, model=model), None
+            except LLMError as exc:
+                log.warning(
+                    "Synthesizer %s generation failed with LLM error: %s",
+                    prompt_name,
+                    exc,
+                )
+                lm_errors.append(
+                    {
+                        "phase": prompt_name,
+                        "message": str(exc),
+                        "metadata": getattr(exc, "metadata", None),
+                    }
+                )
+                return fallback, exc
 
         if mode == ReasoningMode.DIRECT:
             # Direct reasoning mode: Answer the query directly
             prompt = self.generate_prompt("synthesizer.direct", query=state.query)
-            answer = adapter.generate(prompt, model=model)
+            answer, error = guarded_generate(
+                "direct_answer",
+                prompt,
+                "No answer synthesized due to upstream LM error.",
+            )
 
             metadata_extra, audit_kwargs, support_audits = self._build_verification_context(
                 answer, state
             )
+            if error:
+                metadata_extra = metadata_extra or {}
+                metadata_extra["lm_errors"] = lm_errors
             claim = self.create_claim(
                 answer,
                 "synthesis",
@@ -62,12 +91,19 @@ class SynthesizerAgent(Agent):
         elif is_first_cycle:
             # First cycle: Generate a thesis
             prompt = self.generate_prompt("synthesizer.thesis", query=state.query)
-            thesis_text = adapter.generate(prompt, model=model)
+            thesis_text, error = guarded_generate(
+                "thesis",
+                prompt,
+                "Thesis unavailable due to LM error.",
+            )
 
             claim = self.create_claim(thesis_text, "thesis")
+            metadata_payload: dict[str, Any] = {"phase": DialoguePhase.THESIS}
+            if error:
+                metadata_payload["lm_errors"] = lm_errors
             return self.create_result(
                 claims=[claim],
-                metadata={"phase": DialoguePhase.THESIS},
+                metadata=metadata_payload,
                 results={"thesis": thesis_text},
             )
 
@@ -75,11 +111,18 @@ class SynthesizerAgent(Agent):
             # Later cycles: Synthesize from claims
             claims_text = "\n".join(c.get("content", "") for c in state.claims)
             prompt = self.generate_prompt("synthesizer.synthesis", claims=claims_text)
-            synthesis_text = adapter.generate(prompt, model=model)
+            synthesis_text, error = guarded_generate(
+                "synthesis",
+                prompt,
+                "Synthesis unavailable due to LM error.",
+            )
 
             metadata_extra, audit_kwargs, support_audits = self._build_verification_context(
                 synthesis_text, state
             )
+            if error:
+                metadata_extra = metadata_extra or {}
+                metadata_extra["lm_errors"] = lm_errors
             claim = self.create_claim(
                 synthesis_text,
                 "synthesis",

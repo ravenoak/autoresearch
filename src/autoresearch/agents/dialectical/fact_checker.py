@@ -18,6 +18,7 @@ from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
 from ...storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
+from ...errors import LLMError
 
 log = get_logger(__name__)
 
@@ -293,6 +294,7 @@ class FactChecker(Agent):
         # Generate verification using the prompt template
         claims_text = "\n".join(c.get("content", "") for c in state.claims)
         template_name = "fact_checker.verification"
+        verification_error: LLMError | None = None
         if prompt_variant:
             candidate = f"{template_name}.{prompt_variant}"
             try:
@@ -305,7 +307,18 @@ class FactChecker(Agent):
                 prompt = self.generate_prompt(template_name, claims=claims_text)
         else:
             prompt = self.generate_prompt(template_name, claims=claims_text)
-        verification = adapter.generate(prompt, model=model)
+        try:
+            verification = adapter.generate(prompt, model=model)
+        except LLMError as exc:
+            verification_error = exc
+            log.warning(
+                "FactChecker verification failed with LLM error: %s",
+                exc,
+            )
+            verification = (
+                "Verification unavailable: the LLM backend rejected the request. "
+                "Review metadata for error details."
+            )
 
         # Create and return the result
         valid_scores = [
@@ -394,6 +407,11 @@ class FactChecker(Agent):
         }
         if planner_snapshot:
             aggregate_provenance["planner"] = dict(planner_snapshot)
+        if verification_error:
+            aggregate_provenance["lm_error"] = {
+                "message": str(verification_error),
+                "metadata": getattr(verification_error, "metadata", None),
+            }
 
         verification_claim = self.create_claim(
             verification,

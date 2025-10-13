@@ -117,6 +117,18 @@ class LMStudioAdapter(LLMAdapter):
         self.endpoint = os.getenv(
             "LMSTUDIO_ENDPOINT", "http://localhost:1234/v1/chat/completions"
         )
+        timeout_env = os.getenv("LMSTUDIO_TIMEOUT")
+        try:
+            self.timeout = float(timeout_env) if timeout_env else 300.0
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            self.timeout = 300.0
+
+    def validate_model(self, model: str | None) -> str:
+        """Return the provided model without restricting LM Studio identifiers."""
+
+        if model:
+            return model
+        return super().validate_model(model)
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the LM Studio local API.
@@ -134,29 +146,48 @@ class LMStudioAdapter(LLMAdapter):
         """
         model = self.validate_model(model)
 
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        session: RequestsSessionProtocol = get_session()
         try:
-            payload = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-            session: RequestsSessionProtocol = get_session()
             resp: RequestsResponseProtocol = session.post(
-                self.endpoint, json=payload, timeout=30
+                self.endpoint, json=payload, timeout=self.timeout
             )
             resp.raise_for_status()
-            data: Dict[str, Any] = resp.json()
-            return str(
-                data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            )
-        except requests.RequestException as e:
+        except requests.exceptions.HTTPError as exc:
+            from ..errors import LLMError
+
+            detail: Dict[str, Any] = {
+                "status_code": exc.response.status_code if exc.response else None,
+                "response_text": (
+                    exc.response.text[:500] if exc.response and exc.response.text else ""
+                ),
+                "payload_keys": list(payload.keys()),
+            }
+            raise LLMError(
+                "Failed to generate response from LM Studio",
+                cause=exc,
+                model=model,
+                suggestion=(
+                    "Inspect LM Studio server logs for request validation errors "
+                    "and verify the selected model supports the prompt size."
+                ),
+                metadata=detail,
+            ) from exc
+        except requests.RequestException as exc:
             from ..errors import LLMError
 
             raise LLMError(
                 "Failed to generate response from LM Studio",
-                cause=e,
+                cause=exc,
                 model=model,
                 suggestion="Ensure LM Studio is running and accessible at the configured endpoint",
-            )
+            ) from exc
+
+        data: Dict[str, Any] = resp.json()
+        return str(data.get("choices", [{}])[0].get("message", {}).get("content", ""))
 
 
 class OpenAIAdapter(LLMAdapter):
