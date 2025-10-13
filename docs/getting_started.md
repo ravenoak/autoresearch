@@ -1,98 +1,146 @@
 # Getting Started
 
-This guide walks you through installing the project dependencies and running your first search.
+This primer walks through the essential moves required to bring
+Autoresearch online. It keeps the dialectical and Socratic habits front
+and centre so you continually question assumptions, inspect evidence,
+and adapt the workflow to your context. Each persona receives a focused
+journey; skim the others to stay aware of adjacent responsibilities.
 
-## System Architecture
+## Orienting prompts
 
-Autoresearch uses a modular architecture with several key components. The PlantUML diagram for the overall system architecture is available at `docs/diagrams/system_architecture.puml`.
+- *What problem do you need Autoresearch to solve first?*
+- *Which surface—CLI, UI, API, or FastMCP—best fits that workflow?*
+- *How will you validate that results are trustworthy and reproducible?*
+- *Which guardrails or observability signals prove the system behaves as
+  intended?*
 
-- The system consists of:
-- **Client Interfaces**: CLI, API, Monitor, and FastMCP
-- **Core Components**: Orchestrator, ConfigLoader, Error Hierarchy, Metrics, and Tracing
-- **Agents**: Synthesizer, Contrarian, and Fact-Checker
-- **LLM Integration**: Adapters for different LLM backends
-- **Storage & Search**: Hybrid storage system with vector search
-- **Output Formatting**: Formatting and synthesis of results
+Keep these questions in mind as you move through the checklists. They
+anchor a dialectical practice: state assumptions, surface counterpoints,
+and integrate lessons.
 
-## Installation
+## Shared prerequisites
 
-Use `uv venv` and `uv pip install -e '.[full,parsers,git,llm,dev]'` to set up a development environment:
+- Python 3.12 or newer.
+- [uv](https://github.com/astral-sh/uv) for environment and dependency
+  management.
+- Git, `make`, and build tools required for native extensions such as
+  `hdbscan`.
+- Optional: Docker if you prefer containerised execution.
 
-```bash
-uv venv
-uv pip install -e '.[full,parsers,git,llm,dev]'
-```
-
-`hdbscan` is built from source and needs compilation tools. Install `gcc`, `g++`,
-and the Python development headers first. On Debian/Ubuntu run:
+On Debian or Ubuntu install core build tooling with:
 
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential python3-dev
 ```
 
-If OpenMP support causes build issues you can disable it with:
+If you anticipate GPU workloads, review `docs/installation.md` for CUDA
+extras before continuing.
+
+## Environment setup snapshot
+
+- **Researchers.** Prioritise CLI and UI surfaces plus provenance exports;
+  validate with a sample search and debate trace review.
+- **Contributors.** Install full extras and agent scaffolding; validate
+  with `task check` and targeted tests.
+- **Operators.** Enable API, monitoring, and FastMCP surfaces; validate
+  with metrics endpoints and authentication smoke tests.
+
+Use the persona sections below to expand these summaries into actionable
+steps.
+
+## Research practitioner quickstart
+
+### Install and bootstrap
+
+1. **Clone the repository** and enter the project directory.
+2. **Create the virtual environment**:
+
+   ```bash
+   uv venv
+   ```
+
+3. **Install recommended extras** for day-one research:
+
+   ```bash
+   uv pip install -e '.[full,parsers,git,llm,ui]'
+   ```
+
+   - Set `HDBSCAN_NO_OPENMP=1` if OpenMP support causes build issues.
+   - Prefer `uv` over `pip` for repeatable resolution, though `pip
+     install -e .` works when tooling is constrained.
+
+4. **Run the bootstrap task** to wire auxiliary tooling and Git hooks:
+
+   ```bash
+   task install
+   ```
+
+5. **Capture secrets** (API keys, Serper tokens) in `.env.local` or your
+   secrets manager rather than committing them.
+
+### Configure your first profile
+
+Autoresearch reads configuration from `autoresearch.toml`. Start with the
+sample generated during `task install` or copy
+`examples/autoresearch.toml` into the project root. Review key sections:
+
+- `[llm]` – model provider, API base URL, authentication.
+- `[search]` – web, local file, and Git backends; ensure data access fits
+  compliance boundaries.
+- `[orchestrator]` – agent roster, retry policies, guardrails.
+- `[monitor]` – telemetry endpoints for real-time observation.
+
+Ask: *Which defaults reinforce or undermine research quality?* Adjust
+values incrementally and keep a copy of the baseline for future
+comparisons.
+
+### Launch your first search
+
+Use the CLI to validate end-to-end orchestration:
 
 ```bash
-export HDBSCAN_NO_OPENMP=1
+autoresearch search "What are the latest breakthroughs in battery density?"
 ```
 
-Alternatively install via pip:
+Control verbosity with `--depth` presets:
+
+- `tldr` – final synthesis plus key citations.
+- `concise` – adds primary findings and confidence metrics.
+- `standard` – includes claim audits and resource usage snapshots.
+- `trace` – surfaces the reasoning graph and raw tool responses.
+
+Combine depth with structured outputs when you need machine-readable
+artefacts:
 
 ```bash
-pip install -e .
+autoresearch search "Outline quantum error correction" \
+  --depth trace --output json
 ```
 
-## First search
+After each run, inspect the timeline, agent notes, and source
+attributions. Ask whether the synthesis matches expectations, then rerun
+with alternate prompts or agents to explore counterfactuals.
 
-Run a search from the command line:
+### Explore other surfaces
 
-```bash
-autoresearch search "What is quantum computing?"
-```
+- **Streamlit UI:** `autoresearch ui`. Toggle contrarian analysis, watch
+  token usage, and compare the UI summary against CLI traces for gaps.
+- **Monitor dashboard:** `autoresearch monitor`. When a chart looks off,
+  ask *which subsystem needs attention* before proceeding.
+- **FastMCP interface:** `autoresearch serve`. Use the exported tool in
+  automation frameworks and compare its answers with direct CLI output.
+- **HTTP API:** `autoresearch api --host 0.0.0.0 --port 8080`. Test with
+  `curl` and plan how you will persist artefacts or attach them to
+  downstream workflows.
 
-### Controlling output depth
+### Blend your own data
 
-The `search` command accepts a `--depth` flag so you can tune how much detail
-is printed. Depth presets include:
-
-- `tldr` – TL;DR summary plus the final answer.
-- `concise` – adds key findings and a short citation roll-up.
-- `standard` – includes claim audit tables and expanded metrics.
-- `trace` – exposes the full reasoning trace and raw response payload.
-
-For example:
-
-```bash
-autoresearch search "What is agentic search?" --depth concise
-autoresearch search "Explain prompt reflection" --depth trace --output json
-```
-
-When using the Streamlit UI, a radio selector above the results mirrors the
-same depth levels. Switching depth refreshes the TL;DR, key findings, claim
-audits, and GraphRAG artefacts without re-running the query. Each panel shows a
-provenance note when information is truncated so you know when to increase the
-depth for audit work.
-
-## API authentication
-
-To access the HTTP API, configure keys and roles:
-
-- Set `api.api_key` for a shared secret or define multiple keys via
-  `api.api_keys`.
-- Map each key to a role and grant permissions with `api.role_permissions`.
-- Missing or invalid credentials return **401 Unauthorized**.
-- Insufficient permissions return **403 Forbidden**.
-
-## Local file and Git search
-
-Enable local search backends in `autoresearch.toml`:
+Enable hybrid retrieval:
 
 ```toml
-
 [search]
 backends = ["serper", "local_file", "local_git"]
-
 
 [search.local_file]
 path = "/path/to/docs"
@@ -104,32 +152,105 @@ branches = ["main"]
 history_depth = 50
 ```
 
-Local search results are merged with those from web backends so your documents
-and code appear alongside external sources. PDF and DOCX files are parsed
-automatically and Git commit diffs are indexed so code history shows up in
-results. All sources are ranked together using BM25 and embedding similarity.
+Compare runs with and without internal artefacts. Note how internal
+sources support or challenge public evidence and adjust relevance
+weights accordingly.
 
-Then query your directory or repository just like any other search:
+## Contributor developer onboarding
 
-```bash
-autoresearch search "neural networks in docs"
-```
+### Extend the installation
 
-## MCP Interface
+1. Create a virtual environment with `uv venv` if not already done.
+2. Install development extras:
 
-Autoresearch also exposes a **FastMCP** server so other agents can use it as a
-tool. Start the server with:
+   ```bash
+   uv pip install -e '.[dev,full,parsers,git,llm,analysis]'
+   ```
 
-```bash
-autoresearch serve
-```
+3. Run `task install` to configure hooks and shared tooling.
+4. Execute `task check` to run formatting, linting, and targeted tests.
+5. Execute `task verify` before opening a pull request to include the
+   full suite with coverage.
 
-Send a query using the provided client helper:
+Document assumptions in `issues/` when you encounter blockers so the
+team can respond.
 
-```python
-from autoresearch.mcp_interface import query
+### Map the codebase
 
-result = query("What is the capital of France?")
-print(result["answer"])
-```
+- Start with [Architecture](architecture/overview.md) and the diagrams in
+  `docs/diagrams/` to understand planner, agents, and knowledge storage.
+- Explore `src/autoresearch/agents/` for agent scaffolding and contract
+  definitions (see [Agents overview](agents_overview.md)).
+- Review `tests/` to see behaviour-driven CLI scenarios and unit tests
+  that protect reasoning utilities (see
+  [Testing guidelines](testing_guidelines.md)).
+- Study [Configuration](configuration.md) to grasp how profiles and
+  environment overrides merge.
 
+Ask during review: *What failure modes did we miss? Which dependencies
+need pinning?* Capture answers in documentation or follow-up issues.
+
+### Develop changes safely
+
+- Mirror the dialectical contract in new agents: articulate a thesis,
+  invite counterpoints, cite evidence, and log provenance.
+- Add tests alongside features. Use Socratic prompts in docstrings to
+  explain design intent and expected counterarguments.
+- Update relevant docs whenever CLI flags, API schemas, or UI behaviour
+  changes; contributors rely on accurate guidance to avoid regressions.
+
+## Operations and integration preparation
+
+### Harden deployment surfaces
+
+- **Streamlit UI:** ensure the `ui` extra is installed, then run
+  `autoresearch ui`. Add authentication if shared beyond a single
+  workstation.
+- **HTTP API:** launch with `autoresearch api --host 0.0.0.0 --port 8080`
+  and secure using `api.api_key` or per-user entries in `api.api_keys`
+  (see [API authentication](api_authentication.md)).
+- **FastMCP server:** expose Autoresearch to other agents with
+  `autoresearch serve`; scope tool permissions and track usage.
+
+### Establish observability
+
+- Set `api.monitoring_enabled = true` in `autoresearch.toml` or export the
+  corresponding environment variable.
+- Scrape `/metrics` with Prometheus to track system health, Redis or Ray
+  connectivity, loop counts, token usage, and latency buckets.
+- Use CLI watch modes to stream CPU, memory, and token counters during
+  long investigations.
+- Centralise logs; each agent turn, planner update, and knowledge graph
+  mutation carries timestamps to simplify audits (see [Monitoring](monitor.md)).
+
+### Safeguard data and compliance
+
+- Keep the default local-first posture: secrets remain in `.env`, cached
+  sources stay on disk, and nothing leaves the workstation unless you
+  configure external sinks (see [README](../README.md#accessibility)).
+- Catalogue graph exports and retention policies so auditors can
+  reconstruct claim provenance.
+- Run incident response drills: *What happens if a backend fails? How do
+  we replay or resume a run?* Update runbooks with findings.
+
+### Automate integrations
+
+- Embed the HTTP API in notebooks, dashboards, or CI pipelines. Streaming
+  responses make partial progress visible.
+- Combine FastMCP with other agent frameworks to schedule recurring
+  investigations.
+- Use Task or cron jobs to trigger batch analyses and publish outputs to
+  knowledge bases or ticketing systems.
+
+## Next steps
+
+- Study `docs/introduction_to_autoresearch.md` for a systems view of
+  philosophy, architecture, and persona journeys.
+- Review `docs/advanced_usage.md` to layer on batching, scheduling, and
+  custom agent development once the basics feel solid.
+- Capture lessons learned in issues or runbooks so your team can iterate
+  with the same clarity you applied while onboarding.
+
+By continually questioning the setup and experimenting across surfaces
+you will develop a resilient research practice that scales smoothly from
+v0.1.0a1 into the forthcoming v0.1.0 release.
