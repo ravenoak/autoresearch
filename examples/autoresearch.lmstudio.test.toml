@@ -1,0 +1,112 @@
+# Enhanced LM Studio configuration for testing with dynamic model discovery
+[core]
+llm_backend = "lmstudio"
+loops = 2
+reasoning_mode = "dialectical"
+# Model will be dynamically discovered from LM Studio API
+# default_model = "mistral"  # This will be overridden by discovered models
+token_budget = 4000
+tracing_enabled = false
+
+[search]
+backends = ["serper"]
+max_results_per_query = 5
+hybrid_query = false
+use_semantic_similarity = false
+use_bm25 = true
+use_source_credibility = false
+parallel_enabled = true
+max_workers = 2
+
+[storage.duckdb]
+path = "data/test_autoresearch.duckdb"
+vector_extension = false
+
+# LM Studio specific configuration
+[llm.lmstudio]
+# The endpoint will use the default http://localhost:1234/v1/chat/completions
+# But can be overridden via LMSTUDIO_ENDPOINT environment variable
+endpoint = "http://localhost:1234/v1/chat/completions"
+timeout = 300.0
+# Model discovery will be attempted automatically
+# discovered_models will be populated from LM Studio API
+model_discovery_enabled = true
+context_size_awareness = true
+adaptive_budgeting = true
+intelligent_truncation = true
+
+# Context configuration for LM Studio
+[context]
+overflow_strategy = "truncate"
+response_reserve_tokens = 512
+accurate_counting = true
+max_chunks = 5
+chunk_overlap = 100
+cache_ttl_seconds = 300
+chars_per_token = 4
+
+# Agent configuration with LM Studio models
+[agent_config.synthesizer]
+# model = null  # Will use first discovered model or fallback - omitted for dynamic discovery
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+token_share = 0.4
+latency_slo_ms = 3000
+
+[agent_config.contrarian]
+# model = null  # Will use first discovered model or fallback - omitted for dynamic discovery
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+token_share = 0.3
+latency_slo_ms = 3000
+
+[agent_config.fact_checker]
+# model = null  # Will use first discovered model or fallback - omitted for dynamic discovery
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+token_share = 0.3
+latency_slo_ms = 3000
+
+# Model routing configuration for LM Studio
+[model_routing]
+enabled = true
+default_latency_slo_ms = 5000.0
+budget_pressure_ratio = 0.8
+strategy_name = "balanced"
+
+[model_routing.role_policies.synthesizer]
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+# default_model = null  # Use first discovered model - omitted for dynamic discovery
+latency_slo_ms = 3000.0
+token_share = 0.4
+
+[model_routing.role_policies.contrarian]
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+# default_model = null  # Use first discovered model - omitted for dynamic discovery
+latency_slo_ms = 3000.0
+token_share = 0.3
+
+[model_routing.role_policies.fact_checker]
+preferred_models = []  # Will be populated with discovered models
+allowed_models = []  # Allow all discovered models
+# default_model = null  # Use first discovered model - omitted for dynamic discovery
+latency_slo_ms = 3000.0
+token_share = 0.3
+
+# Model profiles for discovered models (will be enhanced with actual data)
+[model_routing.model_profiles]
+# These will be populated with actual model information from LM Studio
+# Including cost estimates, latency profiles, and quality rankings
+
+# Logging configuration for debugging LM Studio integration
+[logging]
+level = "INFO"
+# Enable debug logging for LM Studio adapter
+enable_lmstudio_debug = true
+
+# Circuit breaker configuration for LM Studio
+[circuit_breaker]
+threshold = 3
+cooldown = 30

@@ -12,20 +12,19 @@ Each adapter implements a common interface for generating text from prompts.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, cast
 import os
+import re
 
 import requests
 
+from ..logging_utils import get_logger
 from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from .pool import get_session
 
 
 class LLMAdapter(ABC):
     """Abstract LLM adapter interface."""
-
-    # Class variable to store available models for each adapter
-    available_models: list[str] = []
 
     @classmethod
     def get_adapter(cls, name: str) -> "LLMAdapter":
@@ -40,6 +39,16 @@ class LLMAdapter(ABC):
         from .registry import LLMFactory
 
         return LLMFactory.get(name)
+
+    @property
+    def available_models(self) -> list[str]:
+        """Return the list of available models for this adapter.
+
+        Returns:
+            List of available model names
+        """
+        # Default implementation returns empty list - subclasses should override
+        return []
 
     def validate_model(self, model: str | None) -> str:
         """Validate the model and return the model name to use.
@@ -57,16 +66,18 @@ class LLMAdapter(ABC):
 
         if model is None:
             # Use default model if none specified
-            return self.available_models[0] if self.available_models else "default"
+            available = self.available_models
+            return available[0] if available else "default"
 
-        if not self.available_models or model in self.available_models:
+        available = self.available_models
+        if not available or model in available:
             return model
 
         raise LLMError(
             f"Invalid model: {model}",
-            available_models=self.available_models,
+            available_models=available,
             provided=model,
-            suggestion=f"Configure a valid model in your configuration file. Available models: {', '.join(self.available_models)}",
+            suggestion=f"Configure a valid model in your configuration file. Available models: {', '.join(available)}",
         )
 
     @abstractmethod
@@ -86,7 +97,10 @@ class LLMAdapter(ABC):
 class DummyAdapter(LLMAdapter):
     """Simple adapter used for testing."""
 
-    available_models = ["dummy-model"]
+    @property
+    def available_models(self) -> list[str]:
+        """Return available models for the dummy adapter."""
+        return ["dummy-model"]
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate a dummy response for testing purposes.
@@ -104,14 +118,46 @@ class DummyAdapter(LLMAdapter):
 
 
 class LMStudioAdapter(LLMAdapter):
-    """Adapter for the LM Studio local API."""
+    """Adapter for the LM Studio local API with dynamic model discovery and context size awareness."""
 
-    available_models = ["lmstudio", "llama2", "mistral", "mixtral"]
+    # Default fallback models when discovery fails
+    _fallback_models = ["lmstudio", "llama2", "mistral", "mixtral"]
+
+    # Context size estimates for different model families (conservative estimates)
+    _default_context_sizes = {
+        # Small models (typically 4-8B parameters)
+        "4b": 4096,
+        "7b": 4096,
+        "8b": 8192,
+        "13b": 4096,
+        # Medium models (typically 30-36B parameters)
+        "30b": 8192,
+        "32b": 8192,
+        "36b": 16384,
+        # Large models (typically 70B+ parameters)
+        "70b": 4096,
+        "72b": 4096,
+        # Qwen models tend to have good context windows
+        "qwen": 8192,
+        "qwen2": 32768,
+        "qwen3": 32768,
+        # DeepSeek models
+        "deepseek": 32768,
+        # Mistral models
+        "mistral": 8192,
+        "mixtral": 32768,
+        # Code models might have smaller contexts
+        "code": 4096,
+        "coder": 4096,
+        # Default conservative estimate
+        "default": 4096,
+    }
 
     def __init__(self) -> None:
-        """Initialize the LM Studio adapter.
+        """Initialize the LM Studio adapter with context size awareness.
 
         The endpoint can be customized using the LMSTUDIO_ENDPOINT environment variable.
+        The adapter will attempt to discover available models and estimate their context sizes.
         """
         # Allow custom endpoint via env for tests/config
         self.endpoint = os.getenv(
@@ -123,15 +169,468 @@ class LMStudioAdapter(LLMAdapter):
         except (TypeError, ValueError):  # pragma: no cover - defensive
             self.timeout = 300.0
 
-    def validate_model(self, model: str | None) -> str:
-        """Return the provided model without restricting LM Studio identifiers."""
+        # Initialize available models - will be populated by model discovery
+        self._discovered_models: list[str] = []
+        self._model_discovery_error: str | None = None
+        self._model_context_sizes: dict[str, int] = {}
+        self._context_warnings: dict[str, str] = {}
+        self._token_usage_history: dict[str, list[int]] = {}  # Track token usage per model
+        self._performance_metrics: dict[str, dict[str, float]] = {}  # Track performance metrics
+        self._discover_available_models()
 
+    @property
+    def available_models(self) -> list[str]:
+        """Return available models, preferring discovered models over fallbacks."""
+        if self._discovered_models:
+            return self._discovered_models
+        elif self._model_discovery_error:
+            # Return fallbacks when discovery failed but provide warning
+            return self._fallback_models
+        else:
+            # During initialization or when no discovery occurred, return fallbacks
+            return self._fallback_models
+
+    def _discover_available_models(self) -> None:
+        """Discover available models from LM Studio API and their actual context sizes.
+
+        This method attempts to query the LM Studio API for available models.
+        It first queries /v1/models to get the list of loaded models, then for each model,
+        it queries /api/v0/models/{model} to get the actual max_context_length.
+        If API calls fail, it falls back to heuristic estimation.
+        """
+        try:
+            # Step 1: Get list of models via OpenAI-compatible endpoint
+            models_endpoint = self.endpoint.replace("/chat/completions", "/models")
+            session: RequestsSessionProtocol = get_session()
+            resp: RequestsResponseProtocol = session.get(models_endpoint, timeout=10.0)
+            resp.raise_for_status()
+
+            data: Dict[str, Any] = resp.json()
+            models = data.get("data", [])
+
+            # Extract model identifiers
+            discovered = []
+            for model in models:
+                model_id = model.get("id") or model.get("model")
+                if model_id:
+                    discovered.append(model_id)
+
+            if not discovered:
+                self._model_discovery_error = "No models found in LM Studio API response"
+                return
+
+            # Step 2: Query each model for actual context size
+            self._discovered_models = discovered
+            for model_id in discovered:
+                context_size = self._query_model_context_size(model_id)
+                self._model_context_sizes[model_id] = context_size
+
+        except requests.exceptions.RequestException as exc:
+            self._model_discovery_error = f"Failed to discover models from LM Studio: {exc}"
+            self._fallback_to_heuristic_models()
+        except Exception as exc:
+            self._model_discovery_error = f"Unexpected error during model discovery: {exc}"
+            self._fallback_to_heuristic_models()
+
+    def _query_model_context_size(self, model_id: str) -> int:
+        """Query LM Studio API for actual context size of a specific model.
+
+        Args:
+            model_id: The model identifier to query
+
+        Returns:
+            The actual context size from API, or heuristic estimate if API fails
+        """
+        try:
+            # Query LM Studio-specific endpoint for detailed model info
+            base_url = self.endpoint.rsplit('/v1/', 1)[0]  # Remove /v1/chat/completions
+            api_endpoint = f"{base_url}/api/v0/models/{model_id}"
+            session: RequestsSessionProtocol = get_session()
+            resp: RequestsResponseProtocol = session.get(api_endpoint, timeout=10.0)
+            resp.raise_for_status()
+
+            model_info: Dict[str, Any] = resp.json()
+
+            # Extract max_context_length if available
+            if "max_context_length" in model_info:
+                context_size = model_info["max_context_length"]
+                logger = get_logger(__name__)
+                logger.debug(f"Model {model_id}: context_size={context_size} (from API)")
+                return int(context_size)
+
+        except Exception as e:
+            logger = get_logger(__name__)
+            logger.debug(f"Failed to query context size for {model_id} from API: {e}")
+
+        # Fall back to heuristic estimation
+        return self._estimate_context_size(model_id)
+
+    def _fallback_to_heuristic_models(self) -> None:
+        """Fall back to using default fallback models when discovery fails."""
+        # Use fallback models with default context sizes
+        for model in self._fallback_models:
+            self._model_context_sizes[model] = self._estimate_context_size(model)
+        # Don't set discovered_models to fallbacks - use empty list to indicate no real discovery
+        self._discovered_models = []
+
+    def _estimate_context_size(self, model_id: str) -> int:
+        """Estimate context size for a model based on its name and known characteristics.
+
+        Args:
+            model_id: The model identifier to estimate context size for
+
+        Returns:
+            Estimated context size in tokens (conservative estimate)
+        """
+        model_lower = model_id.lower()
+
+        # Check for specific patterns in model names
+        for pattern, context_size in self._default_context_sizes.items():
+            if pattern in model_lower:
+                return context_size
+
+        # Special handling for some known models
+        if "qwen3" in model_lower and "thinking" in model_lower:
+            return 8192  # Qwen3 thinking models might have smaller contexts
+
+        if "embedding" in model_lower or "nomic" in model_lower:
+            return 512  # Embedding models typically have very small contexts
+
+        # Default conservative estimate
+        return self._default_context_sizes["default"]
+
+    def get_context_size(self, model: str) -> int:
+        """Get the estimated context size for a model.
+
+        Args:
+            model: The model identifier
+
+        Returns:
+            Estimated context size in tokens
+        """
+        return self._model_context_sizes.get(model, self._default_context_sizes["default"])
+
+    def estimate_prompt_tokens(self, prompt: str) -> int:
+        """Estimate the number of tokens in a prompt using accurate counting when available.
+
+        Args:
+            prompt: The prompt text to estimate tokens for
+
+        Returns:
+            Estimated token count using best available method
+        """
+        from .token_counting import count_tokens_accurate
+        return count_tokens_accurate(prompt, self.validate_model(None), "lmstudio")
+
+    def truncate_prompt(self, prompt: str, model: str, max_tokens: int | None = None) -> str:
+        """Truncate a prompt to fit within context size limits using intelligent truncation.
+
+        Args:
+            prompt: The prompt to truncate
+            model: The model identifier to get context size for
+            max_tokens: Optional maximum tokens to allow (overrides model context)
+
+        Returns:
+            Truncated prompt that should fit within context limits
+        """
+        if max_tokens is None:
+            max_tokens = self.get_context_size(model)
+
+        # Reserve tokens for response generation (rough estimate)
+        reserved_for_response = min(512, max_tokens // 4)
+        available_for_prompt = max_tokens - reserved_for_response
+
+        estimated_tokens = self.estimate_prompt_tokens(prompt)
+
+        if estimated_tokens <= available_for_prompt:
+            return prompt
+
+        # Use intelligent truncation that preserves important content
+        return self._intelligently_truncate_prompt(prompt, available_for_prompt)
+
+    def _intelligently_truncate_prompt(self, prompt: str, max_tokens: int) -> str:
+        """Intelligently truncate a prompt to preserve the most important content.
+
+        Args:
+            prompt: The prompt to truncate
+            max_tokens: Maximum tokens to allow
+
+        Returns:
+            Intelligently truncated prompt
+        """
+        # Use conservative character estimate (3 chars per token)
+        max_chars = max_tokens * 3
+
+        if len(prompt) <= max_chars:
+            return prompt
+
+        # Try to truncate at sentence boundaries first
+        sentences = re.split(r'[.!?]+', prompt)
+        current_prompt = ""
+
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+
+            # Add the sentence with its punctuation
+            test_prompt = current_prompt + sentence + ". "
+
+            if self.estimate_prompt_tokens(test_prompt) <= max_tokens:
+                current_prompt = test_prompt
+            else:
+                # If adding this sentence would exceed the limit, stop here
+                break
+
+        if current_prompt:
+            truncated = current_prompt.rstrip() + "... [content truncated to fit context]"
+        else:
+            # Fallback to simple character truncation
+            truncated = prompt[:max_chars] + "... [prompt truncated to fit context]"
+
+        return truncated
+
+    def _generate_context_size_suggestion(self, model: str, context_size: int, prompt_tokens: int) -> str:
+        """Generate intelligent suggestions for context size errors.
+
+        Args:
+            model: The model identifier
+            context_size: The model's context size
+            prompt_tokens: Estimated tokens in the prompt
+
+        Returns:
+            Intelligent suggestion string for handling context size errors
+        """
+        suggestions = []
+
+        # Primary suggestion: truncate the prompt
+        truncation_ratio = context_size / prompt_tokens if prompt_tokens > 0 else 1
+        if truncation_ratio < 0.8:
+            suggestions.append(
+                f"Truncate the prompt to fit within the model's {context_size} token context limit. "
+                f"Your prompt is estimated at {prompt_tokens} tokens, which is {prompt_tokens - context_size} tokens over the limit."
+            )
+        else:
+            suggestions.append(
+                f"Consider truncating the prompt to better utilize the available {context_size} token context."
+            )
+
+        # Secondary suggestion: use a different model
+        available_models = self.available_models
+        larger_models = [m for m in available_models if self.get_context_size(m) > context_size]
+
+        if larger_models:
+            largest_model = max(larger_models, key=lambda m: self.get_context_size(m))
+            largest_context = self.get_context_size(largest_model)
+            suggestions.append(
+                f"Switch to a model with larger context window. '{largest_model}' has {largest_context} tokens "
+                f"({largest_context - context_size} more than '{model}')."
+            )
+
+        # Tertiary suggestion: break into chunks
+        if prompt_tokens > context_size * 2:
+            chunk_count = (prompt_tokens // context_size) + 1
+            suggestions.append(
+                f"Break the request into {chunk_count} smaller chunks to process separately."
+            )
+
+        # Quaternary suggestion: optimize token usage
+        suggestions.append(
+            "Consider removing redundant information, using more concise language, or "
+            "focusing on the most essential parts of your query."
+        )
+
+        return " ".join(suggestions[:2])  # Return top 2 suggestions
+
+    def check_context_fit(self, prompt: str, model: str) -> tuple[bool, str | None]:
+        """Check if a prompt will fit within the model's context size.
+
+        Args:
+            prompt: The prompt to check
+            model: The model identifier
+
+        Returns:
+            Tuple of (will_fit, warning_message)
+        """
+        estimated_tokens = self.estimate_prompt_tokens(prompt)
+        context_size = self.get_context_size(model)
+        reserved_for_response = min(512, context_size // 4)
+        available_for_prompt = context_size - reserved_for_response
+
+        if estimated_tokens <= available_for_prompt:
+            return True, None
+
+        return False, (
+            f"Prompt estimated at {estimated_tokens} tokens exceeds available context "
+            f"({available_for_prompt} tokens) for model {model}. Consider truncating or "
+            "using a model with larger context window."
+        )
+
+    def get_adaptive_token_budget(self, model: str, base_budget: int | None = None) -> int:
+        """Get adaptive token budget based on model capabilities and usage history.
+
+        Args:
+            model: The model identifier
+            base_budget: Optional base budget to start from
+
+        Returns:
+            Adaptive token budget that considers model capabilities and performance
+        """
+        if base_budget is None:
+            base_budget = self.get_context_size(model)
+
+        # Adjust budget based on model capabilities
+        context_size = self.get_context_size(model)
+
+        # Use adaptive scaling based on model size and performance history
+        adaptive_factor = self._calculate_adaptive_factor(model)
+
+        # Apply adaptive factor but stay within safe bounds
+        adaptive_budget = int(base_budget * adaptive_factor)
+        adaptive_budget = max(1024, min(adaptive_budget, context_size - 512))
+
+        return adaptive_budget
+
+    def _calculate_adaptive_factor(self, model: str) -> float:
+        """Calculate adaptive factor based on model capabilities and usage patterns.
+
+        Args:
+            model: The model identifier
+
+        Returns:
+            Adaptive factor (0.5-1.2 range typically)
+        """
+        base_factor = 0.8  # Conservative base factor
+
+        # Adjust based on model size (larger models can handle more tokens)
+        context_size = self.get_context_size(model)
+        if context_size >= 16384:
+            base_factor *= 1.2  # Large context models
+        elif context_size >= 8192:
+            base_factor *= 1.1  # Medium context models
+        elif context_size <= 4096:
+            base_factor *= 0.9  # Small context models
+
+        # Adjust based on usage history (if available)
+        if model in self._token_usage_history and self._token_usage_history[model]:
+            # If we've successfully used high token counts before, be more aggressive
+            recent_usage = self._token_usage_history[model][-5:]  # Last 5 uses
+            avg_usage = sum(recent_usage) / len(recent_usage)
+
+            if avg_usage > context_size * 0.8:  # Using >80% of context successfully
+                base_factor *= 1.1
+            elif avg_usage < context_size * 0.5:  # Using <50% of context
+                base_factor *= 0.9
+
+        # Adjust based on performance metrics (if available)
+        if model in self._performance_metrics:
+            metrics = self._performance_metrics[model]
+
+            # If model performs well with higher token counts, increase factor
+            if metrics.get("success_rate", 0) > 0.9 and metrics.get("avg_tokens", 0) > context_size * 0.7:
+                base_factor *= 1.05
+
+        # Keep factor within reasonable bounds
+        return max(0.6, min(base_factor, 1.3))
+
+    def record_token_usage(self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True) -> None:
+        """Record token usage for adaptive budgeting.
+
+        Args:
+            model: The model identifier
+            prompt_tokens: Number of tokens used in prompt
+            response_tokens: Number of tokens generated in response
+            success: Whether the request was successful
+        """
+        if model not in self._token_usage_history:
+            self._token_usage_history[model] = []
+
+        # Keep only recent history (last 20 requests)
+        self._token_usage_history[model].append(prompt_tokens + response_tokens)
+        if len(self._token_usage_history[model]) > 20:
+            self._token_usage_history[model] = self._token_usage_history[model][-20:]
+
+        # Update performance metrics
+        if model not in self._performance_metrics:
+            self._performance_metrics[model] = {"success_count": 0, "total_count": 0, "total_tokens": 0}
+
+        self._performance_metrics[model]["total_count"] += 1
+        self._performance_metrics[model]["total_tokens"] += prompt_tokens + response_tokens
+
+        if success:
+            self._performance_metrics[model]["success_count"] += 1
+
+        # Calculate derived metrics
+        success_rate = self._performance_metrics[model]["success_count"] / self._performance_metrics[model]["total_count"]
+        avg_tokens = self._performance_metrics[model]["total_tokens"] / self._performance_metrics[model]["total_count"]
+
+        self._performance_metrics[model]["success_rate"] = success_rate
+        self._performance_metrics[model]["avg_tokens"] = avg_tokens
+
+    def get_model_performance_report(self, model: str | None = None) -> dict[str, Any]:
+        """Get performance report for models.
+
+        Args:
+            model: Optional specific model to report on, or None for all models
+
+        Returns:
+            Performance report dictionary
+        """
+        if model:
+            if model in self._performance_metrics:
+                return {
+                    "model": model,
+                    "metrics": self._performance_metrics[model],
+                    "context_size": self.get_context_size(model),
+                    "recent_usage": self._token_usage_history.get(model, []),
+                }
+            else:
+                return {"model": model, "error": "No performance data available"}
+        else:
+            return {
+                "models": list(self._performance_metrics.keys()),
+                "context_sizes": {m: self.get_context_size(m) for m in self._performance_metrics.keys()},
+                "performance_metrics": self._performance_metrics,
+                "usage_history": self._token_usage_history,
+            }
+
+    def validate_model(self, model: str | None) -> str:
+        """Return the provided model without restricting LM Studio identifiers.
+
+        For LM Studio, we allow any model identifier since LM Studio supports
+        various model formats and the API will validate the actual model.
+        """
         if model:
             return model
         return super().validate_model(model)
 
+    def get_model_info(self) -> dict[str, Any]:
+        """Get information about model discovery status and context size awareness.
+
+        Returns:
+            Dictionary containing discovery status, available models, and context size information
+        """
+        # Determine if we're using actually discovered models vs fallbacks
+        using_actual_discovery = (
+            bool(self._discovered_models) and
+            not self._model_discovery_error and
+            self._discovered_models != self._fallback_models
+        )
+
+        return {
+            "discovered_models": self._discovered_models,
+            "fallback_models": self._fallback_models,
+            "discovery_error": self._model_discovery_error,
+            "endpoint": self.endpoint,
+            "using_discovered": using_actual_discovery,
+            "model_context_sizes": self._model_context_sizes,
+            "context_warnings": self._context_warnings,
+            "performance_metrics": self._performance_metrics,
+            "token_usage_history": self._token_usage_history,
+        }
+
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
-        """Generate text using the LM Studio local API.
+        """Generate text using the LM Studio local API with context size awareness.
 
         Args:
             prompt: The prompt to generate text from
@@ -142,14 +641,32 @@ class LMStudioAdapter(LLMAdapter):
             The generated text response
 
         Raises:
-            LLMError: If there's an error communicating with the LM Studio API
+            LLMError: If there's an error communicating with the LM Studio API or context size issues
         """
         model = self.validate_model(model)
 
-        payload = {
+        # Check if prompt fits within context size
+        fits, warning = self.check_context_fit(prompt, model)
+        if not fits and warning:
+            # Try to truncate the prompt
+            truncated_prompt = self.truncate_prompt(prompt, model)
+            if truncated_prompt != prompt:
+                # Use truncated prompt but log the warning
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Prompt truncated for model {model}: {warning}")
+
+        payload: Dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
         }
+
+        # Add max_tokens if specified in kwargs or if we need to limit context
+        if "max_tokens" not in kwargs:
+            # Use adaptive token budgeting based on model capabilities and usage history
+            adaptive_budget = self.get_adaptive_token_budget(model)
+            payload["max_tokens"] = adaptive_budget
+
         session: RequestsSessionProtocol = get_session()
         try:
             resp: RequestsResponseProtocol = session.post(
@@ -160,24 +677,56 @@ class LMStudioAdapter(LLMAdapter):
             from ..errors import LLMError
 
             detail: Dict[str, Any] = {
-                "status_code": exc.response.status_code if exc.response else None,
+                "status_code": exc.response.status_code if exc.response is not None else None,
                 "response_text": (
-                    exc.response.text[:500] if exc.response and exc.response.text else ""
+                    exc.response.text[:500] if exc.response is not None and hasattr(exc.response, 'text') and exc.response.text else ""
                 ),
                 "payload_keys": list(payload.keys()),
+                "context_size": self.get_context_size(model),
+                "estimated_prompt_tokens": self.estimate_prompt_tokens(prompt),
             }
+
+            # Check if this is a context size error and provide intelligent recovery suggestions
+            response_text = detail["response_text"]
+            context_size = detail.get("context_size", self.get_context_size(model))
+            prompt_tokens = detail.get("estimated_prompt_tokens", 0)
+
+            if any(keyword in response_text.lower() for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]):
+                # This is likely a context size error - provide intelligent recovery suggestions
+                suggestion = self._generate_context_size_suggestion(model, context_size, prompt_tokens)
+            elif "rate limit" in response_text.lower() or "too many requests" in response_text.lower():
+                suggestion = (
+                    "Rate limit exceeded. Please wait a moment before retrying, "
+                    "or consider using a different model with higher rate limits."
+                )
+            elif "model" in response_text.lower() and ("not found" in response_text.lower() or "unavailable" in response_text.lower()):
+                suggestion = (
+                    f"Model '{model}' is not available or not loaded in LM Studio. "
+                    "Please ensure the model is properly loaded in LM Studio, or select a different model."
+                )
+            else:
+                suggestion = (
+                    "Inspect LM Studio server logs for request validation errors "
+                    "and verify the selected model supports the prompt size."
+                )
+
+            # Record failed usage for adaptive budgeting
+            prompt_tokens = self.estimate_prompt_tokens(prompt)
+            self.record_token_usage(model, prompt_tokens, 0, success=False)
+
             raise LLMError(
                 "Failed to generate response from LM Studio",
                 cause=exc,
                 model=model,
-                suggestion=(
-                    "Inspect LM Studio server logs for request validation errors "
-                    "and verify the selected model supports the prompt size."
-                ),
+                suggestion=suggestion,
                 metadata=detail,
             ) from exc
         except requests.RequestException as exc:
             from ..errors import LLMError
+
+            # Record failed usage for adaptive budgeting
+            prompt_tokens = self.estimate_prompt_tokens(prompt)
+            self.record_token_usage(model, prompt_tokens, 0, success=False)
 
             raise LLMError(
                 "Failed to generate response from LM Studio",
@@ -187,16 +736,79 @@ class LMStudioAdapter(LLMAdapter):
             ) from exc
 
         data: Dict[str, Any] = resp.json()
-        return str(data.get("choices", [{}])[0].get("message", {}).get("content", ""))
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        generated_text = str(content) if content is not None else ""
+
+        # Record successful usage for adaptive budgeting
+        prompt_tokens = self.estimate_prompt_tokens(prompt)
+        response_tokens = self.estimate_prompt_tokens(generated_text)
+        self.record_token_usage(model, prompt_tokens, response_tokens, success=True)
+
+        return generated_text
+
+    def _get_intelligent_fallback(self, config, agent_name: str) -> str:
+        """Get intelligent fallback model based on available models and context."""
+        # If using LM Studio, try to get a model from discovery
+        if config is not None and hasattr(config, 'llm_backend') and config.llm_backend == "lmstudio":
+            try:
+                model_info = self.get_model_info()
+
+                if model_info.get("using_discovered", False) and model_info.get("discovered_models"):
+                    discovered_models = model_info["discovered_models"]
+
+                    # Prefer models with larger context sizes
+                    best_model = None
+                    best_context_size = 0
+
+                    for model in discovered_models[:3]:  # Check first 3 models
+                        try:
+                            context_size = self.get_context_size(model)
+                            if context_size > best_context_size:
+                                best_context_size = context_size
+                                best_model = model
+                        except Exception:
+                            continue
+
+                    if best_model:
+                        return best_model
+
+            except Exception as e:
+                log.debug(f"Intelligent fallback discovery failed: {e}")
+
+        # Fallback to conservative defaults based on backend
+        if config is not None and hasattr(config, 'llm_backend'):
+            if config.llm_backend == "lmstudio":
+                return "mistral"  # Conservative LM Studio default
+            elif config.llm_backend == "openai":
+                return "gpt-3.5-turbo"  # Conservative OpenAI default
+            elif config.llm_backend == "openrouter":
+                return "anthropic/claude-3-haiku"  # Conservative OpenRouter default
+
+        return "mistral"  # Global conservative default
 
 
 class OpenAIAdapter(LLMAdapter):
-    """Adapter for the OpenAI API using raw HTTP calls."""
+    """Adapter for the OpenAI API with context awareness and accurate token counting."""
 
-    available_models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+    # Known context sizes for OpenAI models (fallback if API unavailable)
+    _model_context_sizes = {
+        "gpt-3.5-turbo": 16385,
+        "gpt-3.5-turbo-16k": 16385,
+        "gpt-4": 8192,
+        "gpt-4-32k": 32768,
+        "gpt-4-turbo": 128000,
+        "gpt-4-turbo-preview": 128000,
+        "gpt-4o": 128000,
+        "gpt-4o-mini": 128000,
+    }
+
+    @property
+    def available_models(self) -> list[str]:
+        """Return available models for the OpenAI adapter."""
+        return list(self._model_context_sizes.keys())
 
     def __init__(self) -> None:
-        """Initialize the OpenAI adapter.
+        """Initialize the OpenAI adapter with context awareness.
 
         The API key is read from the OPENAI_API_KEY environment variable.
         The endpoint can be customized using the OPENAI_ENDPOINT environment variable.
@@ -205,6 +817,60 @@ class OpenAIAdapter(LLMAdapter):
         self.endpoint = os.getenv(
             "OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions"
         )
+
+        # Cache for model context sizes
+        self._context_cache: dict[str, int] = {}
+        self._context_cache_ttl: dict[str, float] = {}
+
+    def get_context_size(self, model: str) -> int:
+        """Get context size for OpenAI model.
+
+        Args:
+            model: The model identifier
+
+        Returns:
+            Context size in tokens
+        """
+        # Check cache first (5 minute TTL)
+        import time
+        current_time = time.time()
+        if model in self._context_cache:
+            cache_time = self._context_cache_ttl.get(model, 0)
+            if current_time - cache_time < 300:  # 5 minutes
+                return self._context_cache[model]
+
+        # Try exact match first
+        if model in self._model_context_sizes:
+            context_size = self._model_context_sizes[model]
+        else:
+            # Try prefix match for model variants
+            context_size = None
+            for known_model, size in self._model_context_sizes.items():
+                if model.startswith(known_model):
+                    context_size = size
+                    break
+
+            if context_size is None:
+                # Default conservative estimate
+                context_size = 4096
+
+        # Cache the result
+        self._context_cache[model] = context_size
+        self._context_cache_ttl[model] = current_time
+
+        return context_size
+
+    def estimate_prompt_tokens(self, prompt: str) -> int:
+        """Estimate tokens in prompt using tiktoken for OpenAI models.
+
+        Args:
+            prompt: The prompt text to estimate tokens for
+
+        Returns:
+            Estimated token count using tiktoken when available
+        """
+        from .token_counting import count_tokens_accurate
+        return count_tokens_accurate(prompt, self.validate_model(None), "openai")
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the OpenAI API.
@@ -243,9 +909,8 @@ class OpenAIAdapter(LLMAdapter):
             )
             response.raise_for_status()
             data: Dict[str, Any] = response.json()
-            return str(
-                data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            )
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return str(content) if content is not None else ""
         except requests.RequestException as e:
             from ..errors import LLMError
 
@@ -258,23 +923,24 @@ class OpenAIAdapter(LLMAdapter):
 
 
 class OpenRouterAdapter(LLMAdapter):
-    """Adapter for the OpenRouter.ai API using raw HTTP calls."""
+    """Adapter for the OpenRouter.ai API with dynamic context detection."""
 
-    available_models = [
-        "anthropic/claude-3-opus",
-        "anthropic/claude-3-sonnet",
-        "anthropic/claude-3-haiku",
-        "mistralai/mistral-large",
-        "mistralai/mistral-medium",
-        "mistralai/mistral-small",
-        "google/gemini-pro",
-        "google/gemini-1.5-pro",
-        "meta-llama/llama-3-70b-instruct",
-        "meta-llama/llama-3-8b-instruct",
-    ]
+    # Default context sizes for OpenRouter models (fallback)
+    _default_model_contexts = {
+        "anthropic/claude-3-opus": 200000,
+        "anthropic/claude-3-sonnet": 200000,
+        "anthropic/claude-3-haiku": 200000,
+        "mistralai/mistral-large": 32768,
+        "mistralai/mistral-medium": 32768,
+        "mistralai/mistral-small": 32768,
+        "google/gemini-pro": 32768,
+        "google/gemini-1.5-pro": 2097152,
+        "meta-llama/llama-3-70b-instruct": 8192,
+        "meta-llama/llama-3-8b-instruct": 8192,
+    }
 
     def __init__(self) -> None:
-        """Initialize the OpenRouter adapter.
+        """Initialize the OpenRouter adapter with context awareness.
 
         The API key is read from the OPENROUTER_API_KEY environment variable.
         The endpoint can be customized using the OPENROUTER_ENDPOINT environment variable.
@@ -283,6 +949,126 @@ class OpenRouterAdapter(LLMAdapter):
         self.endpoint = os.getenv(
             "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
         )
+
+        # Cache for model context sizes from API
+        self._model_context_sizes: dict[str, int] = {}
+        self._context_cache_ttl: dict[str, float] = {}
+
+        # Discover models on initialization
+        self._discover_models()
+
+    @property
+    def available_models(self) -> list[str]:
+        """Return available models for the OpenRouter adapter."""
+        return list(self._default_model_contexts.keys())
+
+    def __init__(self) -> None:
+        """Initialize the OpenRouter adapter with context awareness.
+
+        The API key is read from the OPENROUTER_API_KEY environment variable.
+        The endpoint can be customized using the OPENROUTER_ENDPOINT environment variable.
+        """
+        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+        self.endpoint = os.getenv(
+            "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
+        )
+
+        # Cache for model context sizes from API
+        self._model_context_sizes: dict[str, int] = {}
+        self._context_cache_ttl: dict[str, float] = {}
+
+        # Discover models on initialization
+        self._discover_models()
+
+    def _discover_models(self) -> None:
+        """Discover models and context sizes from OpenRouter API."""
+        if not self.api_key:
+            logger.debug("OpenRouter API key not set, using default context sizes")
+            self._model_context_sizes = self._default_model_contexts.copy()
+            return
+
+        try:
+            # Query the OpenRouter models endpoint
+            url = "https://openrouter.ai/api/v1/models"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
+                "X-Title": "Autoresearch",
+            }
+
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            # Process the models data
+            for model in data.get("data", []):
+                model_id = model.get("id")
+                context_length = model.get("context_length")
+
+                if model_id and context_length:
+                    self._model_context_sizes[model_id] = context_length
+                    logger.debug(f"OpenRouter model {model_id}: context_length={context_length}")
+
+        except Exception as e:
+            logger.error(f"Error discovering OpenRouter models: {e}")
+            logger.debug("Using default context sizes for OpenRouter models")
+            self._model_context_sizes = self._default_model_contexts.copy()
+
+    def get_context_size(self, model: str) -> int:
+        """Get context size for OpenRouter model.
+
+        Args:
+            model: The model identifier
+
+        Returns:
+            Context size in tokens
+        """
+        # Check cache first (5 minute TTL)
+        import time
+        current_time = time.time()
+        if model in self._model_context_sizes:
+            cache_time = self._context_cache_ttl.get(model, 0)
+            if current_time - cache_time < 300:  # 5 minutes
+                return self._model_context_sizes[model]
+
+        # Get from API or defaults
+        if model in self._model_context_sizes:
+            context_size = self._model_context_sizes[model]
+        else:
+            # Try to discover this specific model
+            self._discover_models()
+            context_size = self._model_context_sizes.get(model, 4096)  # Conservative fallback
+
+        # Cache the result
+        self._model_context_sizes[model] = context_size
+        self._context_cache_ttl[model] = current_time
+
+        return context_size
+
+    def estimate_prompt_tokens(self, prompt: str) -> int:
+        """Estimate tokens in prompt using appropriate tokenizer.
+
+        Args:
+            prompt: The prompt text to estimate tokens for
+
+        Returns:
+            Estimated token count using best available method
+        """
+        from .token_counting import count_tokens_accurate
+
+        # Determine provider based on model prefix
+        provider = "openrouter"
+        if model := self.validate_model(None):
+            if model.startswith(("anthropic/", "claude")):
+                provider = "anthropic"
+            elif model.startswith(("google/", "gemini")):
+                provider = "google"
+            elif model.startswith(("mistralai/", "mistral")):
+                provider = "mistral"
+            elif model.startswith(("meta-llama/", "llama")):
+                provider = "meta"
+
+        return count_tokens_accurate(prompt, model, provider)
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the OpenRouter.ai API.
@@ -325,9 +1111,8 @@ class OpenRouterAdapter(LLMAdapter):
             )
             response.raise_for_status()
             data: Dict[str, Any] = response.json()
-            return str(
-                data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            )
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return str(content) if content is not None else ""
         except requests.RequestException as e:
             from ..errors import LLMError
 
