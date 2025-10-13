@@ -9,6 +9,7 @@ import importlib
 import json
 import logging
 import math
+import os
 import time
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
@@ -34,6 +35,7 @@ from .model_routing import (
     ingest_state_overrides,
     resolve_agent_directives,
 )
+# ModelConfigMixin import removed to avoid circular imports
 from .reasoning_payloads import FrozenReasoningStep
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -42,6 +44,163 @@ if TYPE_CHECKING:  # pragma: no cover
     from .state import QueryState
 
 log = logging.getLogger(__name__)
+
+
+def _select_model_enhanced(config: "ConfigModel", agent_name: str) -> str:
+    """Enhanced model selection logic with LM Studio integration.
+
+    Model selection priority (highest to lowest):
+    1. Environment variable override (AUTORESEARCH_MODEL_<AGENT> or AUTORESEARCH_MODEL)
+    2. Agent-specific model configuration
+    3. LM Studio discovered models (if using LM Studio backend and discovery available)
+    4. Agent-specific preferred models (if adapter available for discovery)
+    5. Global default model from config
+    6. Intelligent fallback based on discovered models and context size (if adapter available)
+    """
+    import os
+
+    # 1. Check for environment variable overrides
+    env_model = _get_env_model_override(agent_name)
+    if env_model:
+        log.debug(f"Using environment variable model override: {env_model}")
+        return env_model
+
+    # 2. Check agent-specific model configuration
+    model_cfg = config.agent_config.get(agent_name)
+    if model_cfg and model_cfg.model:
+        log.debug(f"Using agent-specific model configuration: {model_cfg.model}")
+        return model_cfg.model
+
+    # 3. LM Studio model discovery integration
+    if config.llm_backend == "lmstudio":
+        discovered_model = _get_lmstudio_discovered_model(config, agent_name, model_cfg)
+        if discovered_model:
+            log.debug(f"Using LM Studio discovered model: {discovered_model}")
+            return discovered_model
+
+    # 4. Agent-specific preferred models (legacy fallback)
+    if model_cfg and model_cfg.preferred_models:
+        # If preferred models are configured but not dynamically discovered
+        preferred_model = _select_from_preferred_models(model_cfg.preferred_models, agent_name)
+        if preferred_model:
+            log.debug(f"Using agent preferred model: {preferred_model}")
+            return preferred_model
+
+    # 5. Use global default model from config
+    if config.default_model:
+        log.debug(f"Using global default model: {config.default_model}")
+        return config.default_model
+
+    # 6. Final intelligent fallback
+    fallback = _get_intelligent_fallback(config, agent_name)
+    log.warning(f"No suitable model found, using intelligent fallback: {fallback}")
+    return fallback
+
+
+def _get_env_model_override(agent_name: str) -> str | None:
+    """Get model override from environment variables."""
+    # Agent-specific environment variable
+    agent_env_var = f"AUTORESEARCH_MODEL_{agent_name.upper()}"
+    model = os.getenv(agent_env_var)
+    if model:
+        return model.strip()
+
+    # Global environment variable
+    model = os.getenv("AUTORESEARCH_MODEL")
+    if model:
+        return model.strip()
+
+    return None
+
+
+def _get_lmstudio_discovered_model(config: "ConfigModel", agent_name: str, model_cfg) -> str | None:
+    """Get model from LM Studio discovery when available."""
+    try:
+        from ..llm.adapters import LMStudioAdapter
+
+        # Create adapter to access discovered models
+        adapter = LMStudioAdapter()
+
+        # Get model info to check discovery status
+        model_info = adapter.get_model_info()
+
+        if model_info.get("using_discovered", False) and model_info.get("discovered_models"):
+            discovered_models = model_info["discovered_models"]
+
+            # Try agent-specific allowed models first
+            if model_cfg and model_cfg.allowed_models:
+                for allowed_model in model_cfg.allowed_models:
+                    if allowed_model in discovered_models:
+                        return allowed_model
+
+            # Then try agent-specific preferred models
+            if model_cfg and model_cfg.preferred_models:
+                for preferred_model in model_cfg.preferred_models:
+                    if preferred_model in discovered_models:
+                        return preferred_model
+
+            # Finally, use the first discovered model
+            if discovered_models:
+                return discovered_models[0]
+
+    except Exception as e:
+        log.debug(f"LM Studio model discovery failed: {e}")
+
+    return None
+
+
+def _select_from_preferred_models(preferred_models: list[str], agent_name: str) -> str | None:
+    """Select from statically configured preferred models."""
+    if not preferred_models:
+        return None
+
+    # For now, just return the first preferred model
+    # In the future, this could consider context size, performance, etc.
+    return preferred_models[0]
+
+
+def _get_intelligent_fallback(config: "ConfigModel", agent_name: str) -> str:
+    """Get intelligent fallback model based on available models and context."""
+    # If using LM Studio, try to get a model from discovery
+    if config.llm_backend == "lmstudio":
+        try:
+            from ..llm.adapters import LMStudioAdapter
+
+            adapter = LMStudioAdapter()
+            model_info = adapter.get_model_info()
+
+            if model_info.get("using_discovered", False) and model_info.get("discovered_models"):
+                discovered_models = model_info["discovered_models"]
+
+                # Prefer models with larger context sizes
+                best_model = None
+                best_context_size = 0
+
+                for model in discovered_models[:3]:  # Check first 3 models
+                    try:
+                        context_size = adapter.get_context_size(model)
+                        if context_size > best_context_size:
+                            best_context_size = context_size
+                            best_model = model
+                    except Exception:
+                        continue
+
+                if best_model:
+                    return best_model
+
+        except Exception as e:
+            log.debug(f"Intelligent fallback discovery failed: {e}")
+
+    # Fallback to conservative defaults based on backend
+    if config.llm_backend == "lmstudio":
+        return "mistral"  # Conservative LM Studio default
+    elif config.llm_backend == "openai":
+        return "gpt-3.5-turbo"  # Conservative OpenAI default
+    elif config.llm_backend == "openrouter":
+        return "anthropic/claude-3-haiku"  # Conservative OpenRouter default
+    else:
+        return "mistral"  # Global conservative default
+
 
 QUERY_COUNTER = Counter(
     "autoresearch_queries_total", "Total number of queries processed"
@@ -596,6 +755,11 @@ class OrchestrationMetrics:
         self.gate_coverage_ratios: list[float] = []
         self.gate_agreement_stats: list[dict[str, Any]] = []
         self.gate_decision_outcomes: list[str] = []
+        # Context-related metrics
+        self._context_utilization: dict[str, list[tuple[int, int]]] = {}
+        self._truncation_events: dict[str, list[tuple[int, int]]] = {}
+        self._chunking_events: dict[str, list[int]] = {}
+        self._context_errors: dict[str, list[dict[str, Any]]] = {}
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -1186,11 +1350,8 @@ class OrchestrationMetrics:
             allowed = None
         if preferred is not None and not preferred:
             preferred = None
-        current_model = (
-            agent_cfg.model
-            if agent_cfg and agent_cfg.model
-            else directives.default_model or config.default_model
-        )
+        # Use enhanced model selection logic (inline to avoid circular imports)
+        current_model = _select_model_enhanced(config, agent_name)
 
         usage = self.get_agent_usage_stats(
             agent_name, routing_cfg.default_latency_slo_ms
@@ -1430,3 +1591,103 @@ class OrchestrationMetrics:
         desired = round_with_margin(max(usage_candidates), margin)
 
         return max(desired, 1)
+
+    def record_context_utilization(
+        self,
+        model: str,
+        used_tokens: int,
+        available_tokens: int
+    ) -> None:
+        """Record context utilization for a model."""
+        if model not in self._context_utilization:
+            self._context_utilization[model] = []
+        self._context_utilization[model].append((used_tokens, available_tokens))
+
+    def record_truncation(
+        self,
+        model: str,
+        original_tokens: int,
+        truncated_tokens: int
+    ) -> None:
+        """Record a truncation event."""
+        if model not in self._truncation_events:
+            self._truncation_events[model] = []
+        self._truncation_events[model].append((original_tokens, truncated_tokens))
+
+    def record_chunking(self, model: str, num_chunks: int) -> None:
+        """Record a chunking operation."""
+        if model not in self._chunking_events:
+            self._chunking_events[model] = []
+        self._chunking_events[model].append(num_chunks)
+
+    def record_context_error(
+        self,
+        model: str,
+        error_type: str,
+        recovered: bool
+    ) -> None:
+        """Record a context-related error."""
+        if model not in self._context_errors:
+            self._context_errors[model] = []
+        self._context_errors[model].append({
+            "error_type": error_type,
+            "recovered": recovered,
+            "timestamp": time.time()
+        })
+
+    def get_context_stats(self) -> dict[str, Any]:
+        """Get context-related statistics."""
+        stats = {
+            "utilization": {},
+            "truncations": {},
+            "chunking": {},
+            "errors": {}
+        }
+
+        # Calculate utilization percentages
+        for model, data in self._context_utilization.items():
+            if data:
+                avg_used = sum(u for u, _ in data) / len(data)
+                avg_available = sum(a for _, a in data) / len(data)
+                avg_percent = (avg_used / avg_available * 100) if avg_available > 0 else 0
+                stats["utilization"][model] = {
+                    "avg_used": int(avg_used),
+                    "avg_available": int(avg_available),
+                    "avg_percent": round(avg_percent, 1),
+                    "count": len(data)
+                }
+
+        # Truncation stats
+        for model, data in self._truncation_events.items():
+            if data:
+                avg_original = sum(o for o, _ in data) / len(data)
+                avg_truncated = sum(t for _, t in data) / len(data)
+                avg_reduction = ((avg_original - avg_truncated) / avg_original * 100) if avg_original > 0 else 0
+                stats["truncations"][model] = {
+                    "count": len(data),
+                    "avg_original": int(avg_original),
+                    "avg_truncated": int(avg_truncated),
+                    "avg_reduction_percent": round(avg_reduction, 1)
+                }
+
+        # Chunking stats
+        for model, data in self._chunking_events.items():
+            if data:
+                stats["chunking"][model] = {
+                    "count": len(data),
+                    "avg_chunks": round(sum(data) / len(data), 1),
+                    "max_chunks": max(data)
+                }
+
+        # Error stats
+        for model, errors in self._context_errors.items():
+            if errors:
+                total = len(errors)
+                recovered = sum(1 for e in errors if e["recovered"])
+                stats["errors"][model] = {
+                    "total": total,
+                    "recovered": recovered,
+                    "recovery_rate": round(recovered / total * 100, 1) if total > 0 else 0
+                }
+
+        return stats

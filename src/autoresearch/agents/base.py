@@ -98,7 +98,90 @@ class Agent(
         Returns:
             The model name to use.
         """
-        return self.get_model_config(config, self.role.value)
+        adapter = self.get_adapter(config)
+        return self.get_model_config(config, self.role.value, adapter)
+
+    def _validate_and_adjust_prompt(
+        self,
+        prompt: str,
+        model: str,
+        config: ConfigModel
+    ) -> str:
+        """Validate prompt fits context and adjust if needed."""
+        from ..llm.context_management import get_context_manager
+        from ..llm.chunking import chunk_prompt, synthesize_chunk_results
+
+        context_mgr = get_context_manager()
+        adapter = self.get_adapter(config)
+        provider = config.llm_backend
+
+        validation = context_mgr.validate_prompt_fit(prompt, model, provider)
+
+        if validation.fits:
+            return prompt
+
+        log.warning(
+            f"{self.name}: Prompt exceeds context ({validation.estimated_tokens} > "
+            f"{validation.available_tokens} tokens). {validation.recommendation}"
+        )
+
+        # Get overflow strategy from config
+        overflow_strategy = config.context.overflow_strategy.value
+
+        if overflow_strategy == "chunk" or validation.should_chunk:
+            # Use chunking strategy
+            log.info(f"{self.name}: Chunking prompt for processing")
+            return self._handle_chunked_generation(prompt, model, config)
+        elif overflow_strategy == "truncate" or validation.should_truncate:
+            # Use truncation
+            log.info(f"{self.name}: Truncating prompt to fit context")
+            return context_mgr.truncate_intelligently(prompt, model)
+        else:
+            # Raise error if strategy is "error"
+            from ..errors import LLMError
+            raise LLMError(
+                f"Prompt exceeds context size: {validation.estimated_tokens} tokens "
+                f"(max: {validation.available_tokens})",
+                model=model,
+                suggestion=validation.recommendation
+            )
+
+    def _handle_chunked_generation(
+        self,
+        prompt: str,
+        model: str,
+        config: ConfigModel
+    ) -> str:
+        """Handle prompt that needs to be chunked."""
+        from ..llm.context_management import get_context_manager
+        from ..llm.chunking import chunk_prompt, synthesize_chunk_results
+
+        context_mgr = get_context_manager()
+        adapter = self.get_adapter(config)
+        provider = config.llm_backend
+
+        safe_budget = context_mgr.get_safe_budget(model, provider)
+        chunks = chunk_prompt(prompt, safe_budget)
+
+        log.info(f"{self.name}: Processing {len(chunks)} chunks")
+
+        # Process each chunk
+        chunk_results = []
+        for i, (chunk_text, start, end) in enumerate(chunks):
+            log.debug(f"{self.name}: Processing chunk {i+1}/{len(chunks)}")
+            result = adapter.generate(chunk_text, model=model)
+            chunk_results.append(result)
+
+        # Synthesize results
+        if len(chunk_results) == 1:
+            return chunk_results[0]
+        else:
+            return synthesize_chunk_results(
+                chunk_results,
+                prompt[:200],  # Use beginning as query reference
+                adapter,
+                model
+            )
 
     # ------------------------------------------------------------------
     # Message passing API

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from enum import Enum
 from threading import RLock
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Protocol, Self, TypeVar
 
@@ -517,6 +518,59 @@ class AnalysisConfig(BaseModel):
     polars_enabled: bool = Field(default=False)
 
 
+class ContextOverflowStrategy(str, Enum):
+    """Strategy for handling context overflow."""
+    TRUNCATE = "truncate"
+    CHUNK = "chunk"
+    ERROR = "error"
+
+
+class ContextConfig(BaseModel):
+    """Configuration for context size management."""
+
+    overflow_strategy: ContextOverflowStrategy = Field(
+        default=ContextOverflowStrategy.TRUNCATE,
+        description="Strategy when prompt exceeds context"
+    )
+
+    response_reserve_tokens: int = Field(
+        default=512,
+        ge=128,
+        description="Tokens reserved for model response"
+    )
+
+    accurate_counting: bool = Field(
+        default=True,
+        description="Use tiktoken for accurate token counting (when available)"
+    )
+
+    max_chunks: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Maximum chunks for large prompts"
+    )
+
+    chunk_overlap: int = Field(
+        default=100,
+        ge=0,
+        description="Token overlap between chunks"
+    )
+
+    cache_ttl_seconds: int = Field(
+        default=300,
+        ge=60,
+        description="TTL for cached context size info"
+    )
+
+    chars_per_token: int = Field(
+        default=4,
+        ge=1,
+        le=10,
+        description="Character-to-token ratio for approximation"
+    )
+
+
 class ConfigModel(SupportsModelCopyMixin):
     """Main configuration model with validation."""
 
@@ -570,6 +624,7 @@ class ConfigModel(SupportsModelCopyMixin):
     search: SearchConfig = Field(default_factory=SearchConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
+    context: ContextConfig = Field(default_factory=ContextConfig)
     model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
     user_preferences: Dict[str, Any] = Field(default_factory=dict)
     enable_agent_messages: bool = Field(
