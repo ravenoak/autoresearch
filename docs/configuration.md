@@ -325,6 +325,40 @@ OPENROUTER_API_KEY=...
 
 These keys are automatically loaded and used by the respective adapters.
 
+## Minimal Setup: LM Studio + Serper
+
+For a lightweight configuration that only relies on the local LM Studio
+server and Serper web search, copy the example file at
+`examples/autoresearch.minimal.lmstudio_serper.toml` into your working
+directory. The file keeps only the essential sections: it pins the
+LLM backend to LM Studio, narrows search to Serper, and disables the
+DuckDB vector extension so no optional dependencies are required.
+
+```toml
+# autoresearch.toml
+[core]
+llm_backend = "lmstudio"
+default_model = "mistral"
+
+[search]
+backends = ["serper"]
+hybrid_query = false
+use_semantic_similarity = false
+
+[storage.duckdb]
+vector_extension = false
+```
+
+Pair the TOML settings with a minimal `.env` file that exposes your
+Serper credentials and, if needed, a custom LM Studio endpoint:
+
+```
+SERPER_API_KEY=your-serper-token
+LMSTUDIO_ENDPOINT=http://localhost:1234/v1/chat/completions
+```
+
+With these values in place Autoresearch will resolve prompts through
+LM Studio while fetching supporting evidence via Serper.
 
 ## Runtime Environment Variables
 
