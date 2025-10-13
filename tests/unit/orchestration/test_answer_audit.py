@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import AnswerAuditor, QueryState
 from autoresearch.output_format import OutputDepth, OutputFormatter
@@ -89,3 +91,23 @@ def test_output_formatter_uses_structured_warnings() -> None:
     note = depth_payload.notes.get("tldr", "")
     assert "unsupported" in note.lower()
     assert "cli answer" not in note.lower()
+
+
+def test_answer_audit_retry_handles_equal_scores(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression test for sorting retries when entailment scores are tied."""
+
+    state = QueryState(query="tie breaker")
+    state.claims.append({"id": "c1", "content": "Autoresearch improves workflows"})
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.state.Search.external_lookup",
+        lambda *args, **kwargs: [
+            {"snippet": "Autoresearch improves workflows"},
+            {"snippet": "Autoresearch improves workflows"},
+        ],
+    )
+
+    auditor = AnswerAuditor(state)
+    retry = auditor._retry_claim(state.claims[0], [])
+    assert retry is not None
+    assert retry.sources
