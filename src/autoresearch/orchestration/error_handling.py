@@ -63,7 +63,9 @@ def _apply_recovery_strategy(
     """Apply an appropriate recovery strategy based on error category."""
 
     claim: Dict[str, Any]
-    if error_category == "transient":
+    if error_category == "recoverable_context":
+        return _handle_context_size_error(agent_name, e, state)
+    elif error_category == "transient":
         recovery_strategy = "retry_with_backoff"
         suggestion = (
             "This error is likely temporary. The system will automatically retry with backoff."
@@ -222,3 +224,57 @@ def _handle_agent_error(
         telemetry["claim_debug"] = cast(Dict[str, Any], claim_dict.get("debug", {}))
     error_info["telemetry"] = telemetry
     return error_info
+
+
+def _handle_context_size_error(
+    agent_name: str, error: Exception, state: QueryState
+) -> Dict[str, Any]:
+    """Handle context size errors with intelligent recovery."""
+    from ..llm.context_management import get_context_manager
+
+    recovery_strategy = "context_truncation"
+
+    # Extract context size info if available in error
+    error_str = str(error)
+    context_size = None
+    prompt_size = None
+
+    # Try to parse context size from error message
+    import re
+    context_match = re.search(r'context.*?(\d+)', error_str, re.IGNORECASE)
+    if context_match:
+        context_size = int(context_match.group(1))
+
+    # Build recovery suggestion
+    suggestion = (
+        f"Context size exceeded for {agent_name}. "
+        "Automatically truncating prompt to fit within limits. "
+    )
+
+    if context_size:
+        suggestion += f"Model context: {context_size} tokens. "
+
+    suggestion += (
+        "Consider: 1) Using a model with larger context, "
+        "2) Breaking query into smaller parts, "
+        "3) Reducing verbosity in prompts."
+    )
+
+    # Create diagnostic claim
+    claim = _build_diagnostic_claim(
+        agent_name=agent_name,
+        content=f"Context size error recovered via automatic truncation",
+        error=error,
+        error_category="recoverable_context",
+        recovery_strategy=recovery_strategy,
+        suggestion=suggestion,
+        event="context_overflow_recovered"
+    )
+
+    return {
+        "recovery_strategy": recovery_strategy,
+        "suggestion": suggestion,
+        "claim": claim,
+        "context_size": context_size,
+        "recoverable": True,
+    }

@@ -1394,3 +1394,23 @@ if __name__ == "__main__":
         else:
             # Re-raise other exceptions
             raise
+
+
+@typed_command("diagnose-context")
+def diagnose_context() -> None:
+    """Diagnose context size capabilities and metrics.
+
+    This command provides comprehensive diagnostics for context size management,
+    including capabilities across providers, token counting accuracy, and
+    utilization metrics.
+
+    Examples:
+        # Show context capabilities for all providers
+        autoresearch diagnose-context
+
+        # Include metrics from recent queries
+        autoresearch diagnose-context
+    """
+    from ..llm.diagnostics import diagnose_context_full
+
+    diagnose_context_full()

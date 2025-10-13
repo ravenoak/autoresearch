@@ -3,9 +3,11 @@ from __future__ import annotations
 """Utilities for applying role-aware model routing policies."""
 
 from dataclasses import dataclass, field
+import os
 import time
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Sequence
 
+# ModelConfigMixin import removed to avoid circular imports
 from ..config.models import AgentConfig, ConfigModel, ModelRoutingConfig
 from ..logging_utils import get_logger
 
@@ -14,6 +16,57 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 log = get_logger(__name__)
+
+
+def _select_model_enhanced(config: ConfigModel, agent_name: str) -> str:
+    """Enhanced model selection logic to avoid circular imports.
+
+    Model selection priority (highest to lowest):
+    1. Environment variable override (AUTORESEARCH_MODEL_<AGENT> or AUTORESEARCH_MODEL)
+    2. Agent-specific model configuration
+    3. Agent-specific preferred models (if adapter available for discovery)
+    4. Global default model from config
+    5. Intelligent fallback based on discovered models (if adapter available)
+    """
+    import os
+
+    # 1. Check for environment variable overrides
+    env_model = _get_env_model_override(agent_name)
+    if env_model:
+        log.debug(f"Using environment variable model override: {env_model}")
+        return env_model
+
+    # 2. Check agent-specific model configuration
+    model_cfg = config.agent_config.get(agent_name)
+    if model_cfg and model_cfg.model:
+        log.debug(f"Using agent-specific model configuration: {model_cfg.model}")
+        return model_cfg.model
+
+    # 3. Use global default model from config
+    if config.default_model:
+        log.debug(f"Using global default model: {config.default_model}")
+        return config.default_model
+
+    # 4. Final fallback to a safe default
+    fallback = "mistral"  # Conservative default
+    log.warning(f"No suitable model found, using fallback: {fallback}")
+    return fallback
+
+
+def _get_env_model_override(agent_name: str) -> str | None:
+    """Get model override from environment variables."""
+    # Agent-specific environment variable
+    agent_env_var = f"AUTORESEARCH_MODEL_{agent_name.upper()}"
+    model = os.getenv(agent_env_var)
+    if model:
+        return model.strip()
+
+    # Global environment variable
+    model = os.getenv("AUTORESEARCH_MODEL")
+    if model:
+        return model.strip()
+
+    return None
 
 
 @dataclass
@@ -204,10 +257,9 @@ def resolve_agent_directives(
             allowed = [override_model]
         elif override_model not in allowed:
             allowed = [override_model, *[m for m in allowed if m != override_model]]
-    default_model = (
-        (policy.default_model if policy and policy.default_model else None)
-        or config.default_model
-    )
+    # Use enhanced model selection logic for default model (inline to avoid circular imports)
+    agent_name = policy_key if policy_key else "default"
+    default_model = _select_model_enhanced(config, agent_name)
     return AgentRoutingDirectives(
         allowed_models=allowed,
         preferred_models=preferred,

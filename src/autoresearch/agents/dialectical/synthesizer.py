@@ -41,7 +41,9 @@ class SynthesizerAgent(Agent):
             """Invoke the LLM adapter while capturing recoverable failures."""
 
             try:
-                return adapter.generate(prompt_text, model=model), None
+                # Validate and adjust prompt for context size
+                adjusted_prompt = self._validate_and_adjust_prompt(prompt_text, model, config)
+                return adapter.generate(adjusted_prompt, model=model), None
             except LLMError as exc:
                 log.warning(
                     "Synthesizer %s generation failed with LLM error: %s",
@@ -56,6 +58,19 @@ class SynthesizerAgent(Agent):
                     }
                 )
                 return fallback, exc
+
+        # Record context utilization for metrics
+        from ..orchestration.metrics import get_orchestration_metrics
+        metrics = get_orchestration_metrics()
+
+        # Record context utilization for the model used
+        if model and hasattr(metrics, 'record_context_utilization'):
+            from ..llm.context_management import get_context_manager
+            context_mgr = get_context_manager()
+            context_size = context_mgr.get_context_size(model)
+            # Estimate tokens used (rough approximation)
+            estimated_prompt_tokens = len(prompt_text) // 4
+            metrics.record_context_utilization(model, estimated_prompt_tokens, context_size)
 
         if mode == ReasoningMode.DIRECT:
             # Direct reasoning mode: Answer the query directly
