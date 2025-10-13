@@ -239,7 +239,7 @@ def search(
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
-    depth: Optional[OutputDepth] = typer.Option(
+    depth: Optional[str] = typer.Option(
         None,
         "--depth",
         help=f"Depth of detail in CLI output ({depth_help_text()})",
@@ -546,7 +546,9 @@ def search(
         # Show a success message before the results
         print_success("Query processed successfully")
 
-        OutputFormatter.format(result, fmt, depth=depth)
+        OutputFormatter.format(
+            result, fmt, depth=cast(Optional[OutputDepth], depth)
+        )
         if result.state_id:
             print_info(
                 f"State ID: {result.state_id}",
@@ -683,7 +685,9 @@ def search(
             if os.getenv("PYTEST_CURRENT_TEST")
             else ("json" if not sys.stdout.isatty() else "markdown")
         )
-        OutputFormatter.format(error_result, fmt, depth=depth)
+        OutputFormatter.format(
+            error_result, fmt, depth=cast(Optional[OutputDepth], depth)
+        )
 
 
 # Add monitoring subcommands
@@ -722,7 +726,7 @@ def reverify(
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
-    depth: Optional[OutputDepth] = typer.Option(
+    depth: Optional[str] = typer.Option(
         None,
         "--depth",
         help=f"Depth of detail in CLI output ({depth_help_text()})",
@@ -770,7 +774,9 @@ def reverify(
         if os.getenv("PYTEST_CURRENT_TEST")
         else ("json" if not sys.stdout.isatty() else "markdown")
     )
-    OutputFormatter.format(response, fmt, depth=depth)
+    OutputFormatter.format(
+        response, fmt, depth=cast(Optional[OutputDepth], depth)
+    )
     if response.state_id:
         print_info(f"State ID: {response.state_id}", symbol=False)
 

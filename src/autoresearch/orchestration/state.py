@@ -529,7 +529,9 @@ class AnswerAuditor:
 
         breakdowns = [score for score, _ in scored_sources]
         aggregate = aggregate_entailment_scores(breakdowns)
-        best_sources = [src for _, src in sorted(scored_sources, reverse=True)[:2]]
+        best_sources = [
+            src for _, src in sorted(scored_sources, key=lambda item: item[0], reverse=True)[:2]
+        ]
 
         provenance = {
             "retrieval": {
