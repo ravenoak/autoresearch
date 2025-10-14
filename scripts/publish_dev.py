@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-"""Publish a development build to the TestPyPI repository.
+"""Verify package builds and metadata for release.
 
 Usage:
-    uv run scripts/publish_dev.py [--dry-run] [--repository REPO]
+    uv run scripts/publish_dev.py [--dry-run]
 
-Authentication uses one of the following methods:
-    - ``TWINE_API_TOKEN`` -- API token for TestPyPI
-    - ``TWINE_USERNAME`` and ``TWINE_PASSWORD`` -- legacy username/password
-
-The script builds the package and uploads it to TestPyPI using ``twine``.
+The script builds the package and verifies it can be uploaded without errors.
 """
 
 from __future__ import annotations
@@ -22,7 +18,7 @@ from pathlib import Path
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Build the package and upload it to TestPyPI using ``twine``."""
+    """Build the package and verify it for release."""
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -82,7 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     if result.returncode != 0:
         out = result.stdout + result.stderr
         if "403" in out or "401" in out or "Forbidden" in out or "Unauthorized" in out:
-            print("Authentication failed: check your TestPyPI credentials")
+            print("Authentication failed: check your credentials")
             return 1
         return result.returncode
     return 0
