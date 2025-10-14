@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from ..config.models import ConfigModel
-from ..orchestration.state import QueryState
+from autoresearch.orchestration.state import QueryState
 from .feedback import FeedbackEvent
 from ..llm.adapters import LLMAdapter
 from ..logging_utils import get_logger
