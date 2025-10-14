@@ -1691,3 +1691,25 @@ class OrchestrationMetrics:
                 }
 
         return stats
+
+
+# Global metrics instance
+_current_metrics: OrchestrationMetrics | None = None
+
+
+def get_orchestration_metrics() -> OrchestrationMetrics:
+    """Get the current orchestration metrics instance.
+
+    Returns:
+        The current OrchestrationMetrics instance, creating one if needed.
+    """
+    global _current_metrics
+    if _current_metrics is None:
+        _current_metrics = OrchestrationMetrics()
+    return _current_metrics
+
+
+def reset_orchestration_metrics() -> None:
+    """Reset the global orchestration metrics instance."""
+    global _current_metrics
+    _current_metrics = None

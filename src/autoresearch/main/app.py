@@ -1330,7 +1330,8 @@ def gui(
     from pathlib import Path
 
     # Get the path to the streamlit_app.py file
-    app_path = Path(__file__).parent / "streamlit_app.py"
+    # Go up two levels: from main/ to autoresearch/ where streamlit_app.py is located
+    app_path = Path(__file__).parent.parent / "streamlit_app.py"
 
     # Ensure the file exists
     if not app_path.exists():
