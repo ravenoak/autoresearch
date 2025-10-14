@@ -11,14 +11,21 @@
   hooks or dependencies.
 - This syncs the `dev-minimal` and `test` extras; set `EXTRAS` to include
   additional optional dependencies.
-- Use **uv** for package management; prefix standalone Python commands with
-  `uv run`.
+- Use **uv** for package management:
+  - `uv run <command>` executes commands in the project's virtual environment
+  - `uv pip install -e .` installs the project in editable mode for development
+  - `uvx <tool>` runs tools in temporary virtual environments (not for this project)
 - For provisioning issues within this evaluation, `scripts/codex_setup.sh`
   bootstraps the Codex environment. It is Codex-specific, non-generic, and
   must not be referenced outside AGENTS.md files or the script itself. Use
   `scripts/setup.sh` for any other environment. It installs the project in
   editable mode and records the DuckDB vector extension path in `.env.offline`.
   Ensure it finishes in under 15 minutes, with 10 minutes as a target.
+
+## Current Known Issues
+- **Missing Module**: `autoresearch.agents.orchestration` module not found during agent execution
+- **LM Studio Integration**: Configuration is correct, but agent execution fails due to missing orchestration module
+- **Virtual Environment**: Must run from project directory with `uv run` or activate `.venv` manually
 
 ## Testing
 - `task check` – run early for linting, type checks, and a fast test suite.
