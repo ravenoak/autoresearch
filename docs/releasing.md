@@ -20,12 +20,11 @@ notes. Before running any release workflow, pick one of the supported helpers:
 - Run `uv run task release:alpha` to automate the alpha readiness sweep before
   tagging. The default invocation now syncs only the `dev-minimal` and `test`
   extras before running lint, type checks, spec lint, `task verify`,
-  `task coverage`, `python -m build`, `twine check`, and the TestPyPI dry run.
-  The verify and coverage subtasks stay on the same baseline footprint, so
-  suites that require optional extras are skipped unless you opt in. Pass
-  `EXTRAS="full"` to add the optional extras set (`nlp`, `ui`, `vss`, `git`,
-  `distributed`, `analysis`, `llm`, `parsers`, and `build`) and append values
-  like `gpu` as needed (for example, `EXTRAS="full gpu"`).
+  `task coverage`, and `python -m build`. The verify and coverage subtasks stay
+  on the same baseline footprint, so suites that require optional extras are
+  skipped unless you opt in. Pass `EXTRAS="full"` to add the optional extras set
+  (`nlp`, `ui`, `vss`, `git`, `distributed`, `analysis`, `llm`, `parsers`, and
+  `build`) and append values like `gpu` as needed (for example, `EXTRAS="full gpu"`).
 - Update the version and release date in `pyproject.toml`
   (`project.version`, `tool.autoresearch.release_date`),
   `src/autoresearch/__init__.py` (`__version__`, `__release_date__`), and the
@@ -42,35 +41,11 @@ notes. Before running any release workflow, pick one of the supported helpers:
 - Build the documentation with `task docs` (or `uv run --extra docs mkdocs
   build`) to ensure the site compiles with the docs extras.
 
-- Upload the validated build to TestPyPI.
+- Create and push a git tag for the release:
 
   ```bash
-  uv run scripts/publish_dev.py
-  ```
-
-[status-cli]:
-  https://github.com/autoresearch/autoresearch/blob/main/STATUS.md#status
-
-## TestPyPI authentication
-
-Generate an API token from [TestPyPI](https://test.pypi.org/manage/account/)
-and store it securely:
-
-1. Sign in and open **Account settings → API tokens**.
-2. Create a token scoped to the project or your entire account.
-3. Export the token as ``TWINE_API_TOKEN`` or set
-   ``TWINE_USERNAME=__token__`` and ``TWINE_PASSWORD=<token>``.
-
-If the upload fails with a 403 response:
-
-- Confirm you are using a TestPyPI token rather than a PyPI token.
-- Ensure the token has permission to upload the project.
-- Regenerate the token if it may be revoked or expired.
-
-- Release to PyPI once the TestPyPI upload is verified.
-
-  ```bash
-  uv run twine upload dist/*
+  git tag v0.1.0a1
+  git push origin v0.1.0a1
   ```
 
 ## Container images

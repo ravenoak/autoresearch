@@ -33,8 +33,7 @@ stopped the runs once pytest and linting began to avoid burning the window on
 duplicate long jobs—and their logs live at
 `baseline/logs/task-coverage-20251010T000041Z.log` and
 `baseline/logs/release-alpha-20251010T000051Z.log` respectively.【F:baseline/logs/task-coverage-20251010T000041Z.log†L1-L17】【F:baseline/logs/release-alpha-20251010T000051Z.log†L1-L68】
-`uv run python scripts/publish_dev.py --dry-run` still completes, so the
-TestPyPI rehearsal stays warm for when we can run the full sweep.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】
+The packaging build still completes successfully for when we can run the full sweep.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】
 
 As of **October 9, 2025 at 18:10 UTC** the strict and quick gates stay green
 (`baseline/logs/mypy-strict-20251009T180614Z.log` and
@@ -55,9 +54,8 @@ rerun reached coverage before failing on the
 `tests/unit/search/test_adaptive_rewrite.py`, exiting with status 201 while the
 log and summary were archived for the gate review.
 【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】【F:baseline/logs/release-alpha-20251009T215007Z-summary.txt†L1-L1】
-The paired `uv run python scripts/publish_dev.py --dry-run` execution rebuilt
-the wheel and sdist, skipped upload, and generated fresh log and checksum
-artefacts for the TestPyPI stage.
+The paired packaging build execution rebuilt the wheel and sdist successfully,
+and generated fresh log and checksum artefacts.
 【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
 
 As of **October 9, 2025 at 22:49 UTC** cache instrumentation now records
@@ -217,8 +215,8 @@ The paired coverage sweep begins compiling GPU-heavy extras (for example
 partial log is archived for the next run after lint repairs.
 【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 The refreshed preflight plan now records **PR-S1**, **PR-S2**, and **PR-R0** as
-merged while prioritising lint cleanup and the coverage rerun before TestPyPI
-reactivation.【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】 Updated scheduler
+merged while prioritising lint cleanup and the coverage rerun before tagging.
+【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】 Updated scheduler
 baseline data generated on **October 6, 2025 at 15:04 UTC** captures current
 throughput floors with provenance metadata for audit reuse.
 【F:baseline/evaluation/scheduler_benchmark.json†L1-L15】
@@ -246,8 +244,7 @@ mirror the metrics telemetry, closing the regression that previously mutated
 the summary text.
 【F:tests/behavior/steps/reasoning_modes_auto_cli_cycle_steps.py†L685-L723】
 【F:src/autoresearch/orchestration/state.py†L132-L206】【34ebc5†L1-L76】
-TestPyPI dry runs stay paused per the improvement plan; we will revisit once
-the suite is green.
+Tagging will proceed once the suite is green.
 
 Follow-up work reintroduced canonical URLs and backend labels through
 `Search._normalise_backend_documents`, and the stub backend, fallback
@@ -368,11 +365,9 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
   archived in the release plan and deep research plan so the alpha gate reflects
   the current state of evidence.
 - Keep the deterministic storage floor documentation linked from the release
-  plan, STATUS.md, and TASK_PROGRESS.md while the TestPyPI stage remains
-  paused.
-- Lift the TestPyPI dry-run hold when the publish directive changes, capture the
-  resulting log, and update `docs/release_plan.md` and `STATUS.md` before
-  proposing the tag.
+  plan, STATUS.md, and TASK_PROGRESS.md during the release preparation.
+- Capture the final verification logs and update `docs/release_plan.md` and 
+  `STATUS.md` before proposing the tag.
 - Run the release sign-off review after the publish gate clears, documenting the
   decision and any deferred scope directly in this ticket.
 
@@ -380,8 +375,8 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
 
 - [ ] Engineering maintainer – Confirm the adaptive K regression is resolved and
       a green `task release:alpha` log is archived.
-- [ ] Quality maintainer – Validate coverage and TestPyPI evidence, including
-      refreshed release:alpha, verify, and publish logs.
+- [ ] Quality maintainer – Validate coverage evidence, including
+      refreshed release:alpha, verify, and packaging logs.
 - [ ] Release manager – Approve announcement copy and mark this ticket ready to
       close when the 0.1.0a1 tag is cut.
 
