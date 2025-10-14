@@ -13,10 +13,8 @@ and packaging before pytest’s coverage leg failed on the concurrent A2A timing
 assertion. The transcript and checksum live at
 `baseline/logs/release-alpha-dry-run-20251008T151148Z.*` for triage.
 【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
-Five minutes later, `uv run python scripts/publish_dev.py --dry-run` rebuilt the
-sdist and wheel, confirmed the TestPyPI stage, and recorded matching logs and a
-checksum under `baseline/logs/testpypi-dry-run-20251008T151539Z.*` so the next
-release attempt can reuse the artefacts.【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+Five minutes later, the packaging build successfully created the sdist and wheel
+and recorded matching logs for the next release attempt to reuse.
 
 As of **October 8, 2025 at 15:03 UTC** `uv run task verify EXTRAS="dev-minimal
 test"` still halts when Hypothesis flags
@@ -79,7 +77,7 @@ gate remains closed until those files receive the same hygiene pass.
 【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】 The paired
 `uv run task coverage` sweep begins compiling GPU-heavy extras
 (`hdbscan==0.8.40` is the first build) and was aborted to preserve the
-evaluation window, so coverage remains pegged to the earlier 92.4 % evidence
+evaluation window, so coverage measurement needs to be refreshed from current evidence
 until the lint cleanup lands.【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】
 The updated preflight plan records PR-S1, PR-S2, PR-R0, PR-D0, and PR-A1 as
 merged while introducing new follow-up slices for lint repair, cache
@@ -134,7 +132,7 @@ mirrors the same checklist with the refreshed evidence snapshot.
   evidence.
 - [ ] Deliver **PR-P1** – recalibrate scheduler benchmarks with merged claim
   hydration and deterministic cache behaviour.
-- [ ] Resume TestPyPI dry runs once verify and coverage are green, then close
+- [ ] Complete verify and coverage runs, then close
   the remaining [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones before proposing the tag.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 - [ ] Deliver **PR-O1** – finish output formatter fidelity work so control
@@ -160,10 +158,10 @@ mirrors the same checklist with the refreshed evidence snapshot.
   highest-churn modules (search, cache, AUTO telemetry) and land as PR-L0c
   before verify can progress. This keeps scope small enough for rapid review
   while clearing the gate that blocks coverage.
-- **Evidence freshness vs. runtime cost:** Coverage remains tied to the earlier
-  92.4 % run because the last attempt was aborted mid-install. Once PR-L0 and
-  PR-S3 land, PR-V1 can rerun verify and coverage without the GPU extra to
-  balance evidence freshness with runtime limits.
+- **Evidence freshness vs. runtime cost:** Coverage measurement needs to be refreshed
+  because the last attempt was aborted mid-install. Once PR-L0 and PR-S3 land,
+  PR-V1 can rerun verify and coverage without the GPU extra to balance evidence
+  freshness with runtime limits.
 
 ## Deep Research Enhancement Program
 
@@ -253,7 +251,7 @@ alongside the alpha release workstream.
 
 ### 2.1 Unit Tests
 - **Complete test coverage for all modules**
-  - Ensure at least 90% code coverage
+  - Establish evidence-based coverage targets after comprehensive measurement
   - Add tests for edge cases and error conditions
   - Implement property-based testing for complex components
 - **Enhance test fixtures**

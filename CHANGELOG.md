@@ -8,7 +8,7 @@ Reference issues by slugged filename (for example,
 ## [Unreleased]
 - No unreleased changes.
 
-## [0.1.0a1] - 2025-10-08
+## [0.1.0a1] - 2025-11-15
 
 ### Highlights
 - Landed the verification loop enhancements so claim extraction telemetry feeds retry
@@ -118,7 +118,7 @@ Reference issues by slugged filename (for example,
   release gate open while the follow-up lands.【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L40】【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - Staged the packaging dry run with Python 3.12.10 and `uv 0.7.22`; archived the
   refreshed build log (`baseline/logs/build-20250924T033349Z.log`), the
-  TestPyPI dry run log (`baseline/logs/publish-dev-20250924T033415Z.log`), and
+  packaging dry run log (`baseline/logs/publish-dev-20250924T033415Z.log`), and
   the wheel and sdist checksums in
   [docs/release_plan.md](docs/release_plan.md), closing
   [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】【F:STATUS.md†L33-L38】【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
