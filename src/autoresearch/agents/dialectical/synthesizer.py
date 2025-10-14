@@ -59,22 +59,23 @@ class SynthesizerAgent(Agent):
                 )
                 return fallback, exc
 
-        # Record context utilization for metrics
-        from ..orchestration.metrics import get_orchestration_metrics
+        # Initialize metrics for context utilization recording
+        from autoresearch.orchestration.metrics import get_orchestration_metrics
         metrics = get_orchestration_metrics()
-
-        # Record context utilization for the model used
-        if model and hasattr(metrics, 'record_context_utilization'):
-            from ..llm.context_management import get_context_manager
-            context_mgr = get_context_manager()
-            context_size = context_mgr.get_context_size(model)
-            # Estimate tokens used (rough approximation)
-            estimated_prompt_tokens = len(prompt_text) // 4
-            metrics.record_context_utilization(model, estimated_prompt_tokens, context_size)
 
         if mode == ReasoningMode.DIRECT:
             # Direct reasoning mode: Answer the query directly
             prompt = self.generate_prompt("synthesizer.direct", query=state.query)
+
+            # Record context utilization for metrics
+            if model and hasattr(metrics, 'record_context_utilization'):
+                from ...llm.context_management import get_context_manager
+                context_mgr = get_context_manager()
+                context_size = context_mgr.get_context_size(model)
+                # Estimate tokens used (rough approximation)
+                estimated_prompt_tokens = len(prompt) // 4
+                metrics.record_context_utilization(model, estimated_prompt_tokens, context_size)
+
             answer, error = guarded_generate(
                 "direct_answer",
                 prompt,
@@ -106,6 +107,16 @@ class SynthesizerAgent(Agent):
         elif is_first_cycle:
             # First cycle: Generate a thesis
             prompt = self.generate_prompt("synthesizer.thesis", query=state.query)
+
+            # Record context utilization for metrics
+            if model and hasattr(metrics, 'record_context_utilization'):
+                from ...llm.context_management import get_context_manager
+                context_mgr = get_context_manager()
+                context_size = context_mgr.get_context_size(model)
+                # Estimate tokens used (rough approximation)
+                estimated_prompt_tokens = len(prompt) // 4
+                metrics.record_context_utilization(model, estimated_prompt_tokens, context_size)
+
             thesis_text, error = guarded_generate(
                 "thesis",
                 prompt,
@@ -126,6 +137,16 @@ class SynthesizerAgent(Agent):
             # Later cycles: Synthesize from claims
             claims_text = "\n".join(c.get("content", "") for c in state.claims)
             prompt = self.generate_prompt("synthesizer.synthesis", claims=claims_text)
+
+            # Record context utilization for metrics
+            if model and hasattr(metrics, 'record_context_utilization'):
+                from ...llm.context_management import get_context_manager
+                context_mgr = get_context_manager()
+                context_size = context_mgr.get_context_size(model)
+                # Estimate tokens used (rough approximation)
+                estimated_prompt_tokens = len(prompt) // 4
+                metrics.record_context_utilization(model, estimated_prompt_tokens, context_size)
+
             synthesis_text, error = guarded_generate(
                 "synthesis",
                 prompt,
