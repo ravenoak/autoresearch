@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 6, 2025**.
+[README](README.md). Last updated **October 14, 2025**.
 
 ## Deep Research enhancement program
 
@@ -52,7 +52,7 @@ instrumenting AUTO mode—before Phase 2 planner upgrades resume.
 
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
-targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
+targets **November 15, 2025**, with **0.1.0** planned for **December 15, 2025**
 across project documentation. As of **October 6, 2025 at 04:41 UTC** the strict
 typing gate stays green, but `uv run task verify` now fails inside `flake8`
 with unused imports, duplicate definitions, misplaced `__future__` imports, and
@@ -62,13 +62,12 @@ aborted to preserve the evaluation window, so lint repair and a refreshed
 coverage sweep are the next gates.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
 【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】 The updated
 [preflight readiness plan](docs/v0.1.0a1_preflight_plan.md) marks PR-S1,
-PR-S2, and PR-R0 complete while prioritising lint cleanup, coverage reruns, and
-TestPyPI reactivation; the alpha ticket mirrors the same checklist.
+PR-S2, and PR-R0 complete while prioritising lint cleanup and coverage reruns;
+the alpha ticket mirrors the same checklist.
 【F:docs/v0.1.0a1_preflight_plan.md†L1-L210】【F:issues/prepare-first-alpha-release.md†L1-L64】
 
 The deterministic storage resident-floor documentation remains published and
-linked from the release plan, keeping the TestPyPI stage paused until coverage
-and verification sweeps can be refreshed.
+linked from the release plan while coverage and verification sweeps are refreshed.
 【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
 
 Phase 1 of the deep research initiative is still complete. Upcoming work
@@ -78,16 +77,16 @@ planner prompts, and retrieval upgrades land once the test suite is green.
 
 ## Milestones
 
-- 0.1.0a1 (2026-09-15, status: in progress): Alpha preview to collect
+- 0.1.0a1 (2025-11-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements.
-- 0.1.0 (2026-10-01, status: planned): Finalized packaging, docs and CI
+- 0.1.0 (2025-12-15, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- 0.1.1 (2026-12-15, status: planned): Bug fixes and documentation updates.
-- 0.2.0 (2027-03-01, status: planned): API stabilization, configuration
+- 0.1.1 (2026-02-15, status: planned): Bug fixes and documentation updates.
+- 0.2.0 (2026-05-15, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
-- 0.3.0 (2027-06-01, status: planned): Distributed execution support and
+- 0.3.0 (2026-09-15, status: planned): Distributed execution support and
   monitoring utilities.
-  - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
+  - 1.0.0 (2027-01-15, status: planned): Full feature set, performance tuning
     and stable interfaces.
   - Stability goals monitor the alpha coordination and archived verification
     work:
@@ -117,9 +116,9 @@ for the alpha release checklist.
 This pre-release will provide an early package for testing once packaging tasks
 are verified. Related issue
 ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
-the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
-coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
-release is re-targeted for **September 15, 2026**. Key activities include:
+the work. Tagging **0.1.0a1** requires `task verify` to run to completion
+with all tests passing. The release is targeted for **November 15, 2025**. 
+Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
@@ -150,11 +149,11 @@ activities include:
 
 - Running all unit, integration and behavior tests (see [STATUS.md](STATUS.md)).
 - Finalizing API reference and user guides.
-- Verifying packaging metadata and TestPyPI uploads.
+- Verifying packaging metadata.
 - Document domain model for agents, queries, storage, and search.
 
 Type checking and unit tests currently fail; see [STATUS.md](STATUS.md) for
-details. The **0.1.0** milestone is targeted for **October 1, 2026** while
+details. The **0.1.0** milestone is targeted for **December 15, 2025** while
 packaging tasks are resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
@@ -173,8 +172,8 @@ Any remaining issues from these tasks will be addressed in 0.1.1.
   (`src/autoresearch/agents/specialized/moderator.py`,
   `src/autoresearch/agents/specialized/domain_specialist.py`,
   `src/autoresearch/agents/specialized/user_agent.py`) and will receive
-  comprehensive unit tests once testing passes. The 0.1.1 release is planned for
-  **December 15, 2026**.
+  comprehensive unit   tests once testing passes. The 0.1.1 release is planned for
+  **February 15, 2026**.
 
 ## Deep Research Enhancement Initiative (2025-2026)
 

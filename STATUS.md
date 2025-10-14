@@ -9,8 +9,7 @@ the CLI is available with `task --version`.
 When the Go Task binary is absent from the active shell, run
 `uv run task release:alpha` to reproduce the full release sweep without
 modifying `PATH`. The wrapper installs the default optional extras (minus
-`gpu`) and executes lint, verify, coverage, build, metadata, and TestPyPI dry
-run checks in order.
+`gpu`) and executes lint, verify, coverage, build, and metadata checks in order.
 
 Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
@@ -37,7 +36,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   payloads, so we interrupted prior to linting to avoid redundant installs while
   the long gates remain blocked.【F:baseline/logs/release-alpha-20251010T000051Z.log†L1-L68】
 - `uv run python scripts/publish_dev.py --dry-run` still builds the wheel and
-  sdist cleanly and skips upload as expected, keeping the TestPyPI stage ready
+  sdist cleanly and skips upload as expected, keeping the packaging stage ready
   for whenever the release sweep goes green.【F:baseline/logs/publish-dev-20251010T000101Z.log†L1-L13】
 - Confirmed `src/autoresearch/__init__.py` still advertises
   `__release_date__ = "2025-10-08"`, matching the release metadata recorded in
@@ -93,14 +92,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   and checksum are archived at
   `baseline/logs/release-alpha-dry-run-20251008T151148Z.*` for diagnosis.
   【F:baseline/logs/release-alpha-dry-run-20251008T151148Z.log†L152-L208】
-- Confirmed the TestPyPI stage by running `uv run python scripts/publish_dev.py`
+- Confirmed the packaging stage by running `uv run python scripts/publish_dev.py`
   `--dry-run` at **15:15 UTC**. The command built the sdist and wheel, skipped
-  upload, and recorded artefacts plus a checksum at
-  `baseline/logs/testpypi-dry-run-20251008T151539Z.*`, so maintainers should
+  upload, and recorded artefacts plus a checksum, so maintainers should
   keep the stage enabled for upcoming rehearsals.
-  【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】 The checksum
-  log documents the digest for compliance tracking.
-  【F:baseline/logs/testpypi-dry-run-20251008T151539Z.sha256†L1-L1】
+  The checksum log documents the digest for compliance tracking.
 - Archived a fresh `uv run task verify EXTRAS="dev-minimal test"` sweep at
   **15:01 UTC**; the run fails when Hypothesis reports
   `tests/unit/legacy/test_cache.py::test_interleaved_storage_paths_share_cache`
@@ -320,8 +316,8 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   fallback assertion, so coverage remains anchored to the prior 92.4 %
   evidence until the deterministic URL fix lands.
   【F:baseline/logs/task-coverage-20251004T144436Z.log†L481-L600】
-- `docs/release_plan.md` and the alpha issue now reiterate that TestPyPI
-  stays paused until the fallback regression clears and cite the fresh
+- `docs/release_plan.md` and the alpha issue now reiterate that packaging
+  verification stays paused until the fallback regression clears and cite the fresh
   verify and coverage logs for traceability.
   【F:docs/release_plan.md†L1-L69】【F:issues/prepare-first-alpha-release.md†L1-L39】
 
@@ -341,11 +337,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:docs/v0.1.0a1_preflight_plan.md†L1-L323】
 - `task check` and `task verify` now invoke `task mypy-strict` before other
   steps, giving the repository an automated strict gate on every local sweep.
-  The CI workflow triggers the same target and keeps the `run_testpypi_dry_run`
+  The CI workflow triggers the same target and keeps the `run_packaging_dry_run`
   input defaulted to false so publish stays paused until we re-enable it.
   【F:Taskfile.yml†L62-L104】【F:.github/workflows/ci.yml†L70-L104】
-- Manual CI dispatches now expose a `run_testpypi_dry_run` flag that defaults
-  to false, keeping the TestPyPI dry run paused while the verify job runs
+- Manual CI dispatches now expose a `run_packaging_dry_run` flag that defaults
+  to false, keeping the packaging dry run paused while the verify job runs
   `task mypy-strict` immediately after spec linting to surface strict typing
   failures sooner.
   【F:.github/workflows/ci.yml†L5-L48】【F:.github/workflows/ci.yml†L70-L104】
@@ -364,7 +360,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:baseline/logs/task-coverage-20251003T013422Z.log†L1-L40】
 - Documented the deterministic storage resident floor in
   `docs/storage_resident_floor.md` and marked the alpha checklist item complete
-  so reviewers can cite the two-node default while the TestPyPI stage remains
+  so reviewers can cite the two-node default while the packaging verification stage remains
   paused.
   【F:docs/storage_resident_floor.md†L1-L23】【F:docs/release_plan.md†L324-L356】
 - PR5 reverification captures claim extraction, retry counters, and persistence
@@ -401,7 +397,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `QueryStateRegistry` cloning with typed deep copies that rehydrate locks. The
   new regression suite covers register, update, and round-trip flows so `_lock`
   handles are never shared between snapshots while the coverage log confirms
-  the gate finishes cleanly with the TestPyPI hold still active.
+  the gate finishes cleanly with the packaging hold still active.
   【F:src/autoresearch/orchestration/state_registry.py†L18-L148】
   【F:tests/unit/orchestration/test_state_registry.py†L21-L138】
   【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
@@ -417,14 +413,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `QueryStateRegistry.register` triggers the `_thread.RLock` cloning failure in
   `test_auto_mode_escalates_to_debate_when_gate_requires_loops`. Coverage holds
   at the prior 92.4 % evidence until the registry clone adopts a typed hand-off,
-  and the TestPyPI dry run stays deferred under the alpha directive.
+  and the packaging dry run stays deferred under the alpha directive.
   【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 - Captured a **15:27 UTC** rerun of the same coverage sweep. With the registry
   lock fix applied, the unit suite now clears the auto-mode cases and fails when
   FastEmbed remains available, leaving
   `test_search_embedding_protocol_falls_back_to_encode` asserting against the
   sentence-transformers fallback. The log records the new failure mode while the
-  TestPyPI dry run stays deferred under the alpha directive.
+  packaging dry run stays deferred under the alpha directive.
   【F:baseline/logs/task-coverage-20251001T152708Z.log†L60-L166】
 - Hardened the search embedding fallback so fastembed stubs are cleared, the
   sentence-transformers import runs once, and AUTO mode logs why the fallback
@@ -441,8 +437,8 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Reran `uv run task release:alpha` at 00:08 UTC; extras synced before
   `uv run flake8 src tests` flagged the unused `os` import in
   `tests/integration/test_streamlit_gui.py`, so the sweep stopped before verify,
-  coverage, packaging, or TestPyPI ran.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
-- Archived a summary noting the TestPyPI stage remains skipped per the active
+  coverage, packaging, or packaging verification ran.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
+- Archived a summary noting the packaging verification stage remains skipped per the active
   directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
 - Captured the 17:36 UTC `task verify` run with the strict typing fixes in
   place; linting passes, but 93 strict errors remain across the HTTP session
@@ -451,7 +447,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   optional extras except GPU and began the unit suite before we interrupted at
   `tests/unit/test_additional_coverage.py`
   (`test_render_evaluation_summary_joins_artifacts`), leaving the coverage
-  evidence incomplete. The TestPyPI dry run remains
+  evidence incomplete. The packaging dry run remains
   deferred until the lint and typing issues clear per the active release
   directive.
   【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
@@ -477,7 +473,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `audit.*` policy toggles settle into the state registry. The paired
   **14:30 UTC** `task coverage` run (limited to base extras) fails in the known
   `A2AMessage` schema regression, ensuring the verification gate has fresh logs
-  after the documentation change without lifting the TestPyPI hold.
+  after the documentation change without lifting the packaging hold.
   【F:docs/deep_research_upgrade_plan.md†L19-L41】【F:docs/release_plan.md†L11-L24】
   【F:docs/specification.md†L60-L83】【F:docs/pseudocode.md†L78-L119】
   【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
@@ -511,7 +507,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   and packaging tickets while the deep research plan records the Phase 1
   completion tied to the September 30 verify and coverage logs.
   【F:docs/release_plan.md†L214-L236】【F:docs/deep_research_upgrade_plan.md†L19-L36】
-- The remaining alpha checklist items center on the TestPyPI dry run stay and
+- The remaining alpha checklist items center on the packaging dry run stay and
   release sign-off coordination. Track the open checkbox in the release plan
   and the acceptance criteria in the alpha ticket for the publish directive
   update.
@@ -632,7 +628,7 @@ harness.py†L63-L404】【F:tests/unit/test_additional_coverage.py†L160-L242�
   `test_search_stub_backend`; the summary documents the TypeError and follow-up
   to align the stub signature before retrying the alpha pipeline.
   【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L40】【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
-- PR 1 also captured new build and TestPyPI dry-run artifacts at
+- PR 1 also captured new build and packaging dry-run artifacts at
   `baseline/logs/build-20250924T033349Z.log` and
   `baseline/logs/publish-dev-20250924T033415Z.log`, showing the 0.1.0a1 wheel
   and sdist generation remains reproducible even while the release sweep is
