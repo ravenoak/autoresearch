@@ -263,36 +263,13 @@ AUTORESEARCH_HEALTHCHECK_URL="" uv run python scripts/deploy.py
 If validation fails, confirm that the environment variables are spelled
 correctly and that the active profile includes the expected backends.
 
-To publish a development build to the TestPyPI repository run:
-
-```bash
-uv run python scripts/publish_dev.py
-```
-
-The script requires the `build` and `twine` packages. Install them with:
-
-```bash
-uv pip install build twine
-```
-
-Use the `--dry-run` flag to verify the process without uploading:
-
-```bash
-uv run python scripts/publish_dev.py --dry-run
-```
-
-The packaging commands `uv run python -m build` and
-`uv run scripts/publish_dev.py --dry-run` were verified.  See the release notes
+The packaging commands `uv run python -m build` were verified. See the release notes
 for the recorded logs.
 
 If the VSS extension cannot be downloaded because the network is unavailable,
 `download_duckdb_extensions.py` loads `.env.offline` and uses the
 `VECTOR_EXTENSION_PATH` value so the service starts without vector search
 support.
-
-For an actual upload, provide a TestPyPI API token by setting
-`TWINE_USERNAME=__token__` and `TWINE_PASSWORD=<token>` before running the
-script without `--dry-run`.
 ## Upgrading
 Run `uv pip install -U autoresearch` to refresh an existing installation.
 For pip based installs use:
@@ -326,16 +303,4 @@ extras.
 ```bash
 uv run python -m build
 ```
-5. Validate the package on TestPyPI without uploading:
-   ```bash
-   uv run python scripts/publish_dev.py --dry-run
-   ```
-6. If the metadata looks correct, publish to the TestPyPI repository:
-   ```bash
-   uv run python scripts/publish_dev.py
-   ```
-7. If everything looks good, publish to the main PyPI repository:
-   ```bash
-   uv run twine upload dist/*
-   ```
 
