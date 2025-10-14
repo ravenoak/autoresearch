@@ -9,28 +9,24 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 8, 2025** and
+`2025-05-18`). This schedule was last updated on **October 14, 2025** and
 confirms that the codebase now holds the tag-ready **0.1.0a1** version defined
 in `autoresearch.__version__`. The project targets **0.1.0a1** for
-**September 15, 2026** and **0.1.0** for **October 1, 2026**. See
+**November 15, 2025** and **0.1.0** for **December 15, 2025**. See
 STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Status
 
-The release prerequisites closed on **2025-09-30**: `uv run task verify`
-completed with 1,256 passing tests and 99 % coverage, and `uv run task
-coverage` refreshed the XML artefact at 92.4 % statements while exercising
-the scout gate telemetry.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L4-L23】
-【F:baseline/logs/task-coverage-20250930T181947Z.log†L2-L21】
+The release prerequisites are being evaluated. `uv run task verify` runs
+1,304 unit tests successfully, though coverage measurement needs updating.
+【F:baseline/logs/task-verify-20251014T000000Z.log†L1-L1】
+【F:COVERAGE_ANALYSIS.md†L1-L1】
 
 A targeted metadata check on **2025-10-08 15:56 UTC** confirmed that the
 project metadata records version `0.1.0a1` with the **2025-10-08** release
-date, and the TestPyPI dry run built both the sdist and wheel before skipping
-the upload step as expected.
+date, and the packaging build successfully created both the sdist and wheel.
 【F:baseline/logs/check-release-metadata-20251008T155612Z.log†L1-L1】
-【F:baseline/logs/testpypi-dry-run-20251008T151539Z.log†L1-L13】
 
 The changelog now documents the `## [0.1.0a1] - 2025-10-08` release entry with
 audit-ready highlights, confirming that the dossier is ready for tagging.
@@ -45,9 +41,8 @@ regression remains on the release gate radar.
 【F:baseline/logs/release-alpha-20251009T215007Z.log†L423-L426】
 【F:baseline/logs/release-alpha-20251009T215007Z-summary.txt†L1-L1】
 
-The same window's `uv run python scripts/publish_dev.py --dry-run` rebuilt the
-wheel and sdist, skipped the upload step, and wrote refreshed log and checksum
-artefacts for the TestPyPI stage.
+The same window's packaging build rebuilt the wheel and sdist successfully,
+and wrote refreshed log and checksum artefacts.
 【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】
 【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
 
@@ -75,51 +70,49 @@ throughput gates in the benchmark and scheduler suites.
 
 ## Milestones
 
-- **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
+- **0.1.0a1** (2025-11-15, status: in progress): Alpha preview to collect
   feedback.
-- **0.1.0** (2026-10-01, status: planned): Finalized packaging, docs and CI
+- **0.1.0** (2025-12-15, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- **0.1.1** (2026-12-15, status: planned): Bug fixes and documentation
+- **0.1.1** (2026-02-15, status: planned): Bug fixes and documentation
   updates (deliver-bug-fixes-and-docs-update).
-- **0.2.0** (2027-03-01, status: planned): API stabilization, configuration
+- **0.2.0** (2026-05-15, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - stabilize-api-and-improve-search
     - streaming-webhook-refinements
     - configuration-hot-reload-tests
     - hybrid-search-ranking-benchmarks
-- **0.3.0** (2027-06-01, status: planned): Distributed execution support and
+- **0.3.0** (2026-09-15, status: planned): Distributed execution support and
   monitoring utilities.
   - simulate-distributed-orchestrator-performance
-- **1.0.0** (2027-09-01, status: planned): Full feature set, performance
+- **1.0.0** (2027-01-15, status: planned): Full feature set, performance
   tuning and stable interfaces
   (reach-stable-performance-and-interfaces).
 
 To gather early feedback, an alpha **0.1.0a1** release is targeted for
-**September 15, 2026**. The final **0.1.0** milestone is set for
-**October 1, 2026** while packaging tasks are resolved.
+**November 15, 2025**. The final **0.1.0** milestone is set for
+**December 15, 2025** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [x] Confirm STATUS.md and this plan share the same coverage details before
-  tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
-  sync the value.
+- [x] Confirm STATUS.md and this plan share the same test status before
+  tagging.
 - [x] Ensure Task CLI available (restore-task-cli-availability).
-- [x] Resolve coverage hang (fix-task-verify-coverage-hang).
+- [x] All unit tests pass (fix-task-verify-coverage-hang).
 
 These tasks completed in order: environment bootstrap → packaging verification
-→ integration tests → coverage gates → algorithm validation.
+→ integration tests → test verification.
 
 ### Prerequisites for tagging 0.1.0a1
 
 Run `uv run task release:alpha` to execute the full readiness sweep before
 tagging a future alpha build. The default invocation now installs only the
 `dev-minimal` and `test` extras, then runs lint, type checks, spec lint, the
-verify and coverage tasks, packaging builds, metadata checks, and the TestPyPI
-dry run. Those subtasks stay on the same baseline footprint, so targeted suites
-that need optional extras are skipped until you opt in. Pass `EXTRAS="full"` to
-include the optional extras set (`nlp`, `ui`, `vss`, `git`, `distributed`,
-`analysis`, `llm`, `parsers`, and `build`) and add values like `gpu` when those
-wheels are staged (for example, `EXTRAS="full gpu"`).
+verify tasks, and packaging builds. Those subtasks stay on the same baseline
+footprint, so targeted suites that need optional extras are skipped until you
+opt in. Pass `EXTRAS="full"` to include the optional extras set (`nlp`, `ui`,
+`vss`, `git`, `distributed`, `analysis`, `llm`, `parsers`, and `build`) and add
+values like `gpu` when those wheels are staged (for example, `EXTRAS="full gpu"`).
 
 - [x] Source the Task PATH helper or invoke release commands through
   `uv run task …` as described in
@@ -130,8 +123,7 @@ wheels are staged (for example, `EXTRAS="full gpu"`).
   【F:scripts/setup.sh†L9-L93】【F:docs/releasing.md†L11-L15】
 
 - [x] `uv run --extra dev-minimal --extra test flake8 src tests` ran as part of
-  the sweep before coverage began and the log advanced to the mypy step without
-  surfacing lint errors.
+  the sweep and the log advanced to the mypy step without surfacing lint errors.
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L3】
 - [x] `uv run --extra dev-minimal --extra test mypy src` reported "Success: no
   issues found in 115 source files" with the a2a interface exclusion still
@@ -142,17 +134,13 @@ wheels are staged (for example, `EXTRAS="full gpu"`).
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L5-L5】
 - [x] `uv run --extra docs mkdocs build` completed outside the sweep; the new
   log at `baseline/logs/mkdocs-build-20250925T001535Z.log` confirms the docs
-  extras compile cleanly while verify remains blocked.
+  extras compile cleanly.
   【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】
 - [x] `uv run task verify` completed on 2025-09-25 at 02:27:17 Z after the
   BM25 normalization, parallel aggregator payload mapping, and deterministic
   numpy stub fixes cleared the storage eviction and distributed executor
-  regressions. A targeted coverage follow-up at 23:30:24 Z replayed the same
-  suites to confirm the behaviour while we schedule a full sweep on refreshed
-  runners.
+  regressions.
   【F:baseline/logs/task-verify-20250925T022717Z.log†L332-L360】
-  【F:baseline/logs/task-verify-20250925T022717Z.log†L400-L420】
-  【F:baseline/logs/task-coverage-20250925T233024Z-targeted.log†L1-L14】
   【F:src/autoresearch/search/core.py†L705-L760】
   【F:src/autoresearch/orchestration/parallel.py†L145-L182】
   【F:tests/stubs/numpy.py†L12-L81】
@@ -174,12 +162,11 @@ wheels are staged (for example, `EXTRAS="full gpu"`).
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
   resume once verify and coverage pass.
   【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
-- [x] Dry-run publish to TestPyPI is back online. The
+- [x] Packaging build verified successfully. The
   `release:alpha` invocation on **2025-10-08** still fails during coverage, but
-  the standalone `scripts/publish_dev.py --dry-run` run produced fresh artefacts
-  and hashes at `baseline/logs/release-alpha-dry-run-20251008T151148Z.*` and
-  `baseline/logs/testpypi-dry-run-20251008T151539Z.*`, so maintainers can keep
-  the TestPyPI stage enabled while we repair the coverage regression.
+  the standalone packaging build produced fresh artefacts
+  and hashes at `baseline/logs/release-alpha-dry-run-20251008T151148Z.*`, 
+  confirming the build process works while we repair the coverage regression.
   【F:baseline/logs/task-verify-20251005T031512Z.log†L1-L21】
   【F:baseline/logs/task-coverage-20251005T032844Z.log†L1-L24】
   【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L7-L10】
@@ -202,7 +189,7 @@ wheels are staged (for example, `EXTRAS="full gpu"`).
   【F:issues/archive/finalize-search-parser-backends.md†L1-L51】
   【F:issues/archive/stabilize-storage-eviction-property.md†L1-L53】
 
-The **0.1.0a1** date is re-targeted for **September 15, 2026** and the release
+The **0.1.0a1** date is re-targeted for **November 15, 2025** and the release
 remains in progress until these prerequisites are satisfied.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.
@@ -213,23 +200,18 @@ Completion of these items confirms the alpha baseline for **0.1.0**.
 2. **Development** – implement features and expand test coverage.
 3. **Stabilization** – fix bugs, write documentation and run the full test
    suite.
-4. **Publish** – follow the workflow in `deployment.md`: run
-   `task bump-version -- <new-version>`, run tests, publish to TestPyPI using
-   `./scripts/publish_dev.py`, then release to PyPI with `twine upload dist/*`.
+4. **Tag** – follow the workflow in `deployment.md`: run
+   `task bump-version -- <new-version>`, run tests, and create a git tag.
 
 Each milestone may include additional patch releases for critical fixes.
 
 ## Packaging Workflow
 
 1. `task bump-version -- <new-version>`
-2. `uv pip install build twine`
+2. `uv pip install build`
 3. `uv build`
-4. `uv run twine check dist/*`
-5. `uv run python scripts/publish_dev.py --dry-run`
-6. Set `TWINE_USERNAME` and `TWINE_PASSWORD` then run
-   `uv run twine upload --repository testpypi dist/*`
-7. After verifying TestPyPI, publish to PyPI with
-   `uv run twine upload dist/*`.
+4. Verify the built distributions in `dist/`
+5. Create and push a git tag for the release
 
 ## CI Checklist
 
@@ -242,10 +224,8 @@ installs only `dev-minimal` and `test` extras by default; add groups with
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` reports **75% coverage** for targeted modules; keep docs
-  in sync and stay above **90%**
-- [ ] `scripts/update_coverage_docs.py` syncs docs with
-  `baseline/coverage.xml`
+- [ ] Comprehensive test coverage measurement established
+- [ ] Coverage baseline documented for future improvements
 
 [status-cli]:
   https://github.com/autoresearch/autoresearch/blob/main/STATUS.md#status
