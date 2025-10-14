@@ -301,6 +301,51 @@ class CapabilityProber:
             cost_per_1k_output_tokens=0.024,
         )
 
+        # Free-tier models for testing and development
+        capabilities["google/gemini-flash-1.5"] = ModelCapabilities(
+            name="google/gemini-flash-1.5",
+            provider="openrouter",
+            context_length=1048576,
+            supports_function_calling=True,
+            supports_vision=True,
+            supports_streaming=True,
+            cost_per_1k_input_tokens=0.0,  # Free tier
+            cost_per_1k_output_tokens=0.0,  # Free tier
+        )
+
+        capabilities["meta-llama/llama-3.2-3b-instruct"] = ModelCapabilities(
+            name="meta-llama/llama-3.2-3b-instruct",
+            provider="openrouter",
+            context_length=131072,
+            supports_function_calling=True,
+            supports_vision=False,
+            supports_streaming=True,
+            cost_per_1k_input_tokens=0.0,  # Free tier
+            cost_per_1k_output_tokens=0.0,  # Free tier
+        )
+
+        capabilities["qwen/qwen-2-7b-instruct"] = ModelCapabilities(
+            name="qwen/qwen-2-7b-instruct",
+            provider="openrouter",
+            context_length=32768,
+            supports_function_calling=True,
+            supports_vision=False,
+            supports_streaming=True,
+            cost_per_1k_input_tokens=0.0,  # Free tier
+            cost_per_1k_output_tokens=0.0,  # Free tier
+        )
+
+        capabilities["nousresearch/hermes-3-llama-3.1-405b"] = ModelCapabilities(
+            name="nousresearch/hermes-3-llama-3.1-405b",
+            provider="openrouter",
+            context_length=131072,
+            supports_function_calling=True,
+            supports_vision=False,
+            supports_streaming=True,
+            cost_per_1k_input_tokens=0.0,  # Free tier
+            cost_per_1k_output_tokens=0.0,  # Free tier
+        )
+
         return capabilities
 
     def _probe_lmstudio(self) -> Dict[str, ModelCapabilities]:
