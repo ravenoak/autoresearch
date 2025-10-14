@@ -12,15 +12,18 @@ Each adapter implements a common interface for generating text from prompts.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, cast
+from typing import Any, Dict
 import os
 import re
+import time
 
 import requests
 
 from ..logging_utils import get_logger
 from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from .pool import get_session
+
+logger = get_logger(__name__)
 
 
 class LLMAdapter(ABC):
@@ -773,7 +776,7 @@ class LMStudioAdapter(LLMAdapter):
                         return best_model
 
             except Exception as e:
-                log.debug(f"Intelligent fallback discovery failed: {e}")
+                logger.debug(f"Intelligent fallback discovery failed: {e}")
 
         # Fallback to conservative defaults based on backend
         if config is not None and hasattr(config, 'llm_backend'):
@@ -935,15 +938,21 @@ class OpenRouterAdapter(LLMAdapter):
         "mistralai/mistral-small": 32768,
         "google/gemini-pro": 32768,
         "google/gemini-1.5-pro": 2097152,
+        "google/gemini-flash-1.5": 1048576,  # Free tier model
         "meta-llama/llama-3-70b-instruct": 8192,
         "meta-llama/llama-3-8b-instruct": 8192,
+        "meta-llama/llama-3.2-3b-instruct": 131072,  # Free tier model
+        "qwen/qwen-2-7b-instruct": 32768,  # Free tier model
+        "nousresearch/hermes-3-llama-3.1-405b": 131072,  # Free tier model
     }
 
     def __init__(self) -> None:
-        """Initialize the OpenRouter adapter with context awareness.
+        """Initialize the OpenRouter adapter with context awareness and adaptive budgeting.
 
         The API key is read from the OPENROUTER_API_KEY environment variable.
         The endpoint can be customized using the OPENROUTER_ENDPOINT environment variable.
+        The cache TTL can be customized using the OPENROUTER_CACHE_TTL environment variable.
+        The timeout can be customized using the OPENROUTER_TIMEOUT environment variable.
         """
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
         self.endpoint = os.getenv(
@@ -953,6 +962,21 @@ class OpenRouterAdapter(LLMAdapter):
         # Cache for model context sizes from API
         self._model_context_sizes: dict[str, int] = {}
         self._context_cache_ttl: dict[str, float] = {}
+
+        # Configurable cache TTL (default: 1 hour)
+        self._cache_ttl = int(os.getenv("OPENROUTER_CACHE_TTL", "3600"))  # seconds
+
+        # Configurable timeout (default: 60 seconds)
+        timeout_env = os.getenv("OPENROUTER_TIMEOUT")
+        try:
+            self.timeout = float(timeout_env) if timeout_env else 60.0
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            self.timeout = 60.0
+
+        # Performance tracking for adaptive budgeting (similar to LMStudioAdapter)
+        self._token_usage_history: dict[str, list[int]] = {}  # Track token usage per model
+        self._performance_metrics: dict[str, dict[str, float]] = {}  # Track performance metrics
+        self._context_warnings: dict[str, str] = {}
 
         # Discover models on initialization
         self._discover_models()
@@ -961,24 +985,6 @@ class OpenRouterAdapter(LLMAdapter):
     def available_models(self) -> list[str]:
         """Return available models for the OpenRouter adapter."""
         return list(self._default_model_contexts.keys())
-
-    def __init__(self) -> None:
-        """Initialize the OpenRouter adapter with context awareness.
-
-        The API key is read from the OPENROUTER_API_KEY environment variable.
-        The endpoint can be customized using the OPENROUTER_ENDPOINT environment variable.
-        """
-        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
-        self.endpoint = os.getenv(
-            "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
-        )
-
-        # Cache for model context sizes from API
-        self._model_context_sizes: dict[str, int] = {}
-        self._context_cache_ttl: dict[str, float] = {}
-
-        # Discover models on initialization
-        self._discover_models()
 
     def _discover_models(self) -> None:
         """Discover models and context sizes from OpenRouter API."""
@@ -1023,12 +1029,12 @@ class OpenRouterAdapter(LLMAdapter):
         Returns:
             Context size in tokens
         """
-        # Check cache first (5 minute TTL)
+        # Check cache first (configurable TTL)
         import time
         current_time = time.time()
         if model in self._model_context_sizes:
             cache_time = self._context_cache_ttl.get(model, 0)
-            if current_time - cache_time < 300:  # 5 minutes
+            if current_time - cache_time < self._cache_ttl:
                 return self._model_context_sizes[model]
 
         # Get from API or defaults
@@ -1044,6 +1050,187 @@ class OpenRouterAdapter(LLMAdapter):
         self._context_cache_ttl[model] = current_time
 
         return context_size
+
+    def refresh_model_cache(self) -> None:
+        """Manually refresh the model discovery cache.
+
+        This forces a fresh discovery of models from the OpenRouter API,
+        bypassing the cache. Useful for getting updated model information.
+        """
+        logger.debug("Manually refreshing OpenRouter model cache")
+        self._model_context_sizes.clear()
+        self._context_cache_ttl.clear()
+        self._discover_models()
+
+    def clear_model_cache(self) -> None:
+        """Clear the model discovery cache.
+
+        This removes all cached model information, forcing fresh discovery
+        on the next context size request.
+        """
+        logger.debug("Clearing OpenRouter model cache")
+        self._model_context_sizes.clear()
+        self._context_cache_ttl.clear()
+
+    def check_context_fit(self, prompt: str, model: str) -> tuple[bool, str | None]:
+        """Check if a prompt will fit within the model's context size.
+
+        Args:
+            prompt: The prompt to check
+            model: The model identifier
+
+        Returns:
+            Tuple of (will_fit, warning_message)
+        """
+        estimated_tokens = self.estimate_prompt_tokens(prompt)
+        context_size = self.get_context_size(model)
+        reserved_for_response = min(512, context_size // 4)
+        available_for_prompt = context_size - reserved_for_response
+
+        if estimated_tokens <= available_for_prompt:
+            return True, None
+
+        # Calculate how much we exceed by
+        excess_tokens = estimated_tokens - available_for_prompt
+        warning = (
+            f"Prompt exceeds context limit by {excess_tokens} tokens. "
+            f"Context size: {context_size}, available: {available_for_prompt}, "
+            f"estimated: {estimated_tokens} tokens."
+        )
+        return False, warning
+
+    def truncate_prompt(self, prompt: str, model: str, max_tokens: int | None = None) -> str:
+        """Truncate a prompt to fit within context size limits using intelligent truncation.
+
+        Args:
+            prompt: The prompt to truncate
+            model: The model identifier to get context size for
+            max_tokens: Optional maximum tokens to allow (overrides model context)
+
+        Returns:
+            Truncated prompt that should fit within context limits
+        """
+        if max_tokens is None:
+            max_tokens = self.get_context_size(model)
+
+        # Reserve tokens for response generation (rough estimate)
+        reserved_for_response = min(512, max_tokens // 4)
+        available_for_prompt = max_tokens - reserved_for_response
+
+        estimated_tokens = self.estimate_prompt_tokens(prompt)
+
+        if estimated_tokens <= available_for_prompt:
+            return prompt
+
+        # Use intelligent truncation that preserves important content
+        return self._intelligently_truncate_prompt(prompt, available_for_prompt)
+
+    def _intelligently_truncate_prompt(self, prompt: str, max_tokens: int) -> str:
+        """Intelligently truncate a prompt to preserve the most important content.
+
+        Args:
+            prompt: The prompt to truncate
+            max_tokens: Maximum tokens to allow
+
+        Returns:
+            Intelligently truncated prompt
+        """
+        # Use conservative character estimate (3 chars per token)
+        max_chars = max_tokens * 3
+
+        if len(prompt) <= max_chars:
+            return prompt
+
+        # Simple truncation for now - could be enhanced with NLP-based importance scoring
+        truncated = prompt[:max_chars]
+
+        # Try to end at a sentence boundary if possible
+        last_period = truncated.rfind('.')
+        last_newline = truncated.rfind('\n')
+
+        if last_period > max_chars * 0.8:  # If period is in last 20% of allowed chars
+            return truncated[:last_period + 1]
+        elif last_newline > max_chars * 0.8:  # If newline is in last 20% of allowed chars
+            return truncated[:last_newline]
+
+        return truncated
+
+    def get_adaptive_token_budget(self, model: str, base_budget: int | None = None) -> int:
+        """Get adaptive token budget based on model capabilities and usage history.
+
+        Args:
+            model: The model identifier
+            base_budget: Optional base budget to start from
+
+        Returns:
+            Adaptive token budget that considers model capabilities and performance
+        """
+        if base_budget is None:
+            base_budget = self.get_context_size(model)
+
+        # Adjust budget based on model capabilities
+        context_size = self.get_context_size(model)
+
+        # Use adaptive scaling based on model size and performance history
+        adaptive_factor = self._calculate_adaptive_factor(model)
+
+        # Apply adaptive factor but stay within safe bounds
+        adaptive_budget = int(base_budget * adaptive_factor)
+
+        # Ensure we don't exceed context size
+        return min(adaptive_budget, context_size)
+
+    def _calculate_adaptive_factor(self, model: str) -> float:
+        """Calculate adaptive factor based on model performance and usage patterns.
+
+        Args:
+            model: The model identifier
+
+        Returns:
+            Adaptive factor (0.5 to 1.0) to scale token budget
+        """
+        # Base factor
+        base_factor = 0.8
+
+        # Adjust based on model size (larger models can handle more tokens)
+        context_size = self.get_context_size(model)
+        if context_size > 100000:
+            base_factor *= 0.9  # Very large models
+        elif context_size > 50000:
+            base_factor *= 0.85  # Large models
+        elif context_size > 10000:
+            base_factor *= 0.8   # Medium models
+        else:
+            base_factor *= 0.7   # Small models
+
+        # Adjust based on usage history (if we have data)
+        if model in self._token_usage_history:
+            usage_history = self._token_usage_history[model]
+            if len(usage_history) >= 5:
+                # If we've had successful generations, be more aggressive
+                recent_usage = usage_history[-5:]
+                success_rate = sum(1 for tokens in recent_usage if tokens > 0) / len(recent_usage)
+                if success_rate > 0.8:
+                    base_factor *= 1.1  # Increase budget for reliable models
+
+        # Ensure factor stays within reasonable bounds
+        return max(0.5, min(1.0, base_factor))
+
+    def record_token_usage(self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True) -> None:
+        """Record token usage for adaptive budgeting.
+
+        Args:
+            model: The model identifier
+            prompt_tokens: Number of tokens in the prompt
+            response_tokens: Number of tokens in the response
+            success: Whether the generation was successful
+        """
+        if model not in self._token_usage_history:
+            self._token_usage_history[model] = []
+
+        # Keep only recent history (last 20 usages)
+        self._token_usage_history[model].append(prompt_tokens + response_tokens)
+        self._token_usage_history[model] = self._token_usage_history[model][-20:]
 
     def estimate_prompt_tokens(self, prompt: str) -> int:
         """Estimate tokens in prompt using appropriate tokenizer.
@@ -1071,7 +1258,7 @@ class OpenRouterAdapter(LLMAdapter):
         return count_tokens_accurate(prompt, model, provider)
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
-        """Generate text using the OpenRouter.ai API.
+        """Generate text using the OpenRouter.ai API with context size awareness.
 
         Args:
             prompt: The prompt to generate text from
@@ -1080,6 +1267,310 @@ class OpenRouterAdapter(LLMAdapter):
 
         Returns:
             The generated text response
+
+        Raises:
+            LLMError: If the API key is missing or there's an error communicating with the OpenRouter API or context size issues
+        """
+        model = self.validate_model(model)
+
+        if not self.api_key:
+            from ..errors import LLMError
+
+            raise LLMError(
+                "OpenRouter API key not found",
+                model=model,
+                suggestion="Set the OPENROUTER_API_KEY environment variable with your API key",
+            )
+
+        # Check if prompt fits within context size (similar to LMStudioAdapter)
+        fits, warning = self.check_context_fit(prompt, model)
+        if not fits and warning:
+            # Try to truncate the prompt
+            truncated_prompt = self.truncate_prompt(prompt, model)
+            if truncated_prompt != prompt:
+                # Use truncated prompt but log the warning
+                logger.warning(f"Prompt truncated for model {model}: {warning}")
+                prompt = truncated_prompt
+
+        return self._generate_with_retries(prompt, model, **kwargs)
+
+    def _generate_with_retries(self, prompt: str, model: str, **kwargs: Any) -> str:
+        """Generate text with retry logic for rate limits and server errors.
+
+        Args:
+            prompt: The prompt to generate text from
+            model: Model name to use
+            **kwargs: Additional arguments to pass to the API
+
+        Returns:
+            The generated text response
+
+        Raises:
+            LLMError: If all retry attempts fail
+        """
+        max_retries = 3
+        base_delay = 1.0  # Start with 1 second
+        max_delay = 60.0  # Maximum 60 seconds
+
+        last_exception = None
+
+        for attempt in range(max_retries):
+            try:
+                return self._make_api_call(prompt, model, **kwargs)
+
+            except requests.RequestException as e:
+                last_exception = e
+
+                # Record failed usage for adaptive budgeting
+                prompt_tokens = self.estimate_prompt_tokens(prompt)
+                self.record_token_usage(model, prompt_tokens, 0, success=False)
+
+                # Check if this is a retryable error
+                if not self._is_retryable_error(e):
+                    logger.debug(f"Non-retryable error on attempt {attempt + 1}: {e}")
+                    break
+
+                # Don't retry on the last attempt
+                if attempt == max_retries - 1:
+                    logger.debug(f"Max retries ({max_retries}) exceeded")
+                    break
+
+                # Calculate delay with exponential backoff
+                delay = min(base_delay * (2 ** attempt), max_delay)
+
+                # Check for Retry-After header
+                retry_after = self._get_retry_after_header(e)
+                if retry_after:
+                    delay = max(delay, retry_after)
+
+                logger.warning(f"OpenRouter API error on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+
+        # All retries failed, raise the last exception
+        from ..errors import LLMError
+
+        raise LLMError(
+            f"Failed to generate response from OpenRouter API after {max_retries} attempts",
+            cause=last_exception,
+            model=model,
+            suggestion="Check your API key, rate limits, and internet connection",
+        )
+
+    def _make_api_call(self, prompt: str, model: str, **kwargs: Any) -> str:
+        """Make a single API call to OpenRouter.
+
+        Args:
+            prompt: The prompt to generate text from
+            model: Model name to use
+            **kwargs: Additional arguments to pass to the API
+
+        Returns:
+            The generated text response
+
+        Raises:
+            requests.RequestException: If the API call fails
+        """
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+
+        # Add max_tokens if specified in kwargs or if we need to limit context (similar to LMStudioAdapter)
+        if "max_tokens" not in kwargs:
+            # Use adaptive token budgeting based on model capabilities and usage history
+            adaptive_budget = self.get_adaptive_token_budget(model)
+            payload["max_tokens"] = adaptive_budget
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
+            "X-Title": "Autoresearch",
+        }
+        session: RequestsSessionProtocol = get_session()
+        response: RequestsResponseProtocol = session.post(
+            self.endpoint, json=payload, headers=headers, timeout=self.timeout
+        )
+
+        # Enhanced error handling for OpenRouter-specific errors
+        if not response.ok:
+            self._handle_openrouter_error(response, model)
+
+        response.raise_for_status()
+        data: Dict[str, Any] = response.json()
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        response_text = str(content) if content is not None else ""
+
+        # Record successful usage for adaptive budgeting
+        prompt_tokens = self.estimate_prompt_tokens(prompt)
+        response_tokens = self.estimate_prompt_tokens(response_text)
+        self.record_token_usage(model, prompt_tokens, response_tokens, success=True)
+
+        return response_text
+
+    def _handle_openrouter_error(self, response: RequestsResponseProtocol, model: str) -> None:
+        """Handle OpenRouter-specific HTTP errors with intelligent recovery suggestions.
+
+        Args:
+            response: The HTTP response object
+            model: The model that was requested
+
+        Raises:
+            requests.HTTPError: With enhanced error message for OpenRouter-specific errors
+        """
+        status_code = response.status_code
+
+        # Try to get error details from response body
+        try:
+            error_data = response.json()
+            error_message = error_data.get("error", {}).get("message", "Unknown error")
+        except (ValueError, AttributeError):
+            error_message = f"HTTP {status_code}"
+
+        # Enhanced error analysis similar to LMStudioAdapter
+        detail = {
+            "status_code": status_code,
+            "response_text": error_message,
+            "context_size": self.get_context_size(model),
+        }
+
+        # Check if this is a context size error and provide intelligent recovery suggestions
+        response_text = detail["response_text"]
+        context_size = detail.get("context_size", self.get_context_size(model))
+
+        if any(keyword in response_text.lower() for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]):
+            # This is likely a context size error - provide intelligent recovery suggestions
+            suggestion = self._generate_context_size_suggestion(model, context_size, 0)
+        elif "rate limit" in response_text.lower() or "too many requests" in response_text.lower():
+            suggestion = (
+                "Rate limit exceeded. Please wait a moment before retrying, "
+                "or consider using a different model with higher rate limits."
+            )
+        elif "model" in response_text.lower() and ("not found" in response_text.lower() or "unavailable" in response_text.lower()):
+            suggestion = (
+                f"Model '{model}' is not available or not loaded in OpenRouter. "
+                "Please ensure the model is properly configured, or select a different model."
+            )
+        else:
+            # Use standard error handling for other cases
+            suggestion = self._get_standard_error_suggestion(status_code, model, error_message)
+
+        # Create a new HTTPError with enhanced message
+        from requests import HTTPError
+        http_error = HTTPError(f"{error_message}. {suggestion}", response=response)
+        raise http_error
+
+    def _generate_context_size_suggestion(self, model: str, context_size: int, prompt_tokens: int) -> str:
+        """Generate intelligent suggestions for context size errors.
+
+        Args:
+            model: The model identifier
+            context_size: The model's context size
+            prompt_tokens: Estimated tokens in the prompt
+
+        Returns:
+            Helpful suggestion for resolving context size issues
+        """
+        if prompt_tokens > context_size:
+            excess = prompt_tokens - context_size
+            return (
+                f"Prompt exceeds context limit by {excess} tokens. "
+                f"Context size: {context_size}, prompt: {prompt_tokens} tokens. "
+                "Consider truncating your prompt or using a model with larger context."
+            )
+        else:
+            return (
+                "Context size error detected. "
+                "Try using a model with larger context window or reducing prompt size."
+            )
+
+    def _get_standard_error_suggestion(self, status_code: int, model: str, error_message: str) -> str:
+        """Get standard error suggestions for common error codes.
+
+        Args:
+            status_code: HTTP status code
+            model: The model identifier
+            error_message: The error message from the API
+
+        Returns:
+            Appropriate suggestion for the error
+        """
+        if status_code == 400:
+            # Bad request - often invalid model
+            return f"Check if model '{model}' is valid and supported by OpenRouter"
+        elif status_code == 401:
+            # Unauthorized - invalid API key
+            return "Check your OPENROUTER_API_KEY environment variable"
+        elif status_code == 402:
+            # Payment required - insufficient credits
+            return "Add credits to your OpenRouter account or use free-tier models"
+        elif status_code == 403:
+            # Forbidden - API key doesn't have access to model
+            return "Check if your API key has access to this model or try a different model"
+        elif status_code == 404:
+            # Not found - model doesn't exist
+            return "Check if the model name is correct or try a different model"
+        elif status_code == 429:
+            # Rate limit exceeded
+            return "Wait before retrying or check your rate limits"
+        elif 500 <= status_code < 600:
+            # Server errors
+            return "This is likely a temporary issue, try again later"
+        else:
+            # Generic error
+            return "Check OpenRouter status page or contact support"
+
+    def _is_retryable_error(self, exception: requests.RequestException) -> bool:
+        """Check if an error is retryable.
+
+        Args:
+            exception: The exception to check
+
+        Returns:
+            True if the error should be retried
+        """
+        if isinstance(exception, requests.HTTPError):
+            response = exception.response
+            if response:
+                status_code = response.status_code
+                # Retry on rate limits (429), server errors (5xx), and some client errors (4xx)
+                return status_code == 429 or (500 <= status_code < 600) or status_code in (408, 502, 503, 504)
+
+        # Retry on connection errors, timeouts, etc.
+        return isinstance(exception, (
+            requests.ConnectionError,
+            requests.Timeout,
+            requests.ConnectTimeout,
+            requests.ReadTimeout,
+        ))
+
+    def _get_retry_after_header(self, exception: requests.RequestException) -> float | None:
+        """Get retry delay from Retry-After header if present.
+
+        Args:
+            exception: The exception to check
+
+        Returns:
+            Delay in seconds, or None if not available
+        """
+        if isinstance(exception, requests.HTTPError) and exception.response:
+            retry_after = exception.response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    return float(retry_after)
+                except ValueError:
+                    pass
+        return None
+
+    def generate_stream(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+        """Generate text using the OpenRouter.ai API with streaming support.
+
+        Args:
+            prompt: The prompt to generate text from
+            model: Optional model name to use, defaults to the first available model
+            **kwargs: Additional arguments to pass to the API
+
+        Returns:
+            The generated text response (streaming not fully implemented yet)
 
         Raises:
             LLMError: If the API key is missing or there's an error communicating with the OpenRouter API
@@ -1095,30 +1586,7 @@ class OpenRouterAdapter(LLMAdapter):
                 suggestion="Set the OPENROUTER_API_KEY environment variable with your API key",
             )
 
-        try:
-            payload = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
-                "X-Title": "Autoresearch",
-            }
-            session: RequestsSessionProtocol = get_session()
-            response: RequestsResponseProtocol = session.post(
-                self.endpoint, json=payload, headers=headers, timeout=60
-            )
-            response.raise_for_status()
-            data: Dict[str, Any] = response.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            return str(content) if content is not None else ""
-        except requests.RequestException as e:
-            from ..errors import LLMError
-
-            raise LLMError(
-                "Failed to generate response from OpenRouter API",
-                cause=e,
-                model=model,
-                suggestion="Check your API key and internet connection, or try a different model",
-            )
+        # For now, fall back to non-streaming generation
+        # TODO: Implement full streaming support with Server-Sent Events
+        logger.warning("Streaming not fully implemented for OpenRouter, falling back to regular generation")
+        return self._generate_with_retries(prompt, model, **kwargs)
