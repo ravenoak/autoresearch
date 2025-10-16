@@ -19,9 +19,7 @@ from . import common_steps  # noqa: F401
 
 
 @given("the API server is running")
-def api_server_running(
-    test_context: BehaviorContext, api_client: Any
-) -> None:
+def api_server_running(test_context: BehaviorContext, api_client: Any) -> None:
     """Provide a test client for API interactions."""
     test_context["client"] = api_client
 
@@ -215,9 +213,7 @@ def submit_batch_error_recovery(
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
-    payload = as_payload(
-        {"queries": [{"query": "good1"}, {"query": "bad"}, {"query": "good2"}]}
-    )
+    payload = as_payload({"queries": [{"query": "good1"}, {"query": "bad"}, {"query": "good2"}]})
     client = test_context["client"]
     resp = client.post("/query/batch", json=payload)
     test_context["response"] = resp

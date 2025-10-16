@@ -8,52 +8,51 @@ a temporary directory with its own configuration files.
 
 import subprocess
 import sys
-import tempfile
 import os
 from pathlib import Path
 
 
-def test_autoresearch_help():
+def test_autoresearch_help() -> int:
     """Test that autoresearch --help works."""
     try:
         result = subprocess.run(
             [sys.executable, "-m", "autoresearch", "--help"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
         if result.returncode == 0 and "Usage:" in result.stdout:
             print("✓ autoresearch --help works correctly")
-            return True
+            return 0
         else:
             print(f"✗ autoresearch --help failed: {result.stderr}")
-            return False
+            return 1
     except Exception as e:
         print(f"✗ autoresearch --help exception: {e}")
-        return False
+        return 1
 
 
-def test_autoresearch_search_help():
+def test_autoresearch_search_help() -> int:
     """Test that autoresearch search --help works."""
     try:
         result = subprocess.run(
             [sys.executable, "-m", "autoresearch", "search", "--help"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
         if result.returncode == 0 and "Run a search query" in result.stdout:
             print("✓ autoresearch search --help works correctly")
-            return True
+            return 0
         else:
             print(f"✗ autoresearch search --help failed: {result.stderr}")
-            return False
+            return 1
     except Exception as e:
         print(f"✗ autoresearch search --help exception: {e}")
-        return False
+        return 1
 
 
-def test_config_loading_from_temp_dir():
+def test_config_loading_from_temp_dir() -> int:
     """Test that autoresearch can load config from temporary directory."""
     # Create a simple test that just checks if the config loading works
     # without actually running a full search (which needs API keys)
@@ -79,27 +78,26 @@ max_results_per_query = 1
         # Test that config loading works by checking if we can import and initialize
         # without errors (this will fail due to missing API keys but should not
         # fail due to import issues)
-        import autoresearch.main.app as app
         from autoresearch.config.loader import ConfigLoader
 
         # Try to load config from our test directory
         loader = ConfigLoader([str(config_path)])
-        config = loader.config
+        _ = loader.config  # Just test that loading doesn't fail
 
         print("✓ Config loading works correctly")
-        return True
+        return 0
 
     except Exception as e:
         # We expect this to fail due to missing API keys, but not due to import errors
         if "No module named" in str(e) or "ImportError" in str(e):
             print(f"✗ Config loading failed due to import error: {e}")
-            return False
+            return 1
         else:
             print("✓ Config loading works (failed as expected due to missing API keys)")
-            return True
+            return 0
 
 
-def test_search_command_initialization():
+def test_search_command_initialization() -> int:
     """Test that search command can initialize without crashing."""
     try:
         # This tests that all the imports work correctly for the search command
@@ -109,21 +107,25 @@ def test_search_command_initialization():
         # We expect it to fail due to missing API keys, but not due to import errors
         try:
             # This should fail due to missing API keys but not import errors
-            result = search("test query", max_results=1, verbose=False)
+            search("test query")
+            print("✓ Search command initialization works")
+            return 0
         except Exception as e:
             if "No module named" in str(e) or "ImportError" in str(e):
                 print(f"✗ Search command initialization failed due to import error: {e}")
-                return False
+                return 1
             else:
-                print("✓ Search command initialization works (failed as expected due to missing API keys)")
-                return True
+                print(
+                    "✓ Search command initialization works (failed as expected due to missing API keys)"
+                )
+                return 0
 
     except ImportError as e:
         print(f"✗ Search command import failed: {e}")
-        return False
+        return 1
 
 
-def run_behavior_tests():
+def run_behavior_tests() -> int:
     """Run all behavior tests."""
     print("Running autoresearch behavior tests...\n")
 

@@ -148,18 +148,14 @@ def get_error_info(exception: Exception) -> ErrorInfo:
     elif isinstance(exception, AgentError):
         suggestions.append("Check the agent implementation for errors.")
         if "agent" in context:
-            suggestions.append(
-                f"Make sure the {context['agent']} agent is properly configured."
-            )
+            suggestions.append(f"Make sure the {context['agent']} agent is properly configured.")
 
     elif isinstance(exception, LLMError):
         suggestions.append("Check your LLM backend configuration.")
         if "model" in context:
             suggestions.append(f"Make sure the {context['model']} model is available.")
         if "api_key" in str(exception).lower():
-            suggestions.append(
-                "Make sure your API key is set correctly in the .env file."
-            )
+            suggestions.append("Make sure your API key is set correctly in the .env file.")
             code_examples.append("OPENAI_API_KEY=your-api-key")
 
     elif isinstance(exception, StorageError):
@@ -189,6 +185,49 @@ def get_error_info(exception: Exception) -> ErrorInfo:
     elif isinstance(exception, BackupError):
         if "suggestion" in context:
             suggestions.append(context["suggestion"])
+
+    # Handle CLI-specific errors
+    elif "Invalid log format" in str(exception):
+        suggestions.append("Valid log formats are: json, console, auto")
+        suggestions.append("Use --log-format json for machine-readable output")
+        suggestions.append("Use --log-format console for human-readable output")
+        suggestions.append("Use --log-format auto for automatic detection (default)")
+        code_examples.append('autoresearch search "query" --log-format console')
+        code_examples.append('autoresearch search "query" --log-format json')
+
+    elif "Invalid shell" in str(exception):
+        if "shell" in context:
+            suggestions.append(f"Valid shells are: {context['shell']}")
+        else:
+            suggestions.append("Valid shells are: bash, zsh, fish")
+
+    elif "Streamlit app file not found" in str(exception):
+        suggestions.append(
+            "Make sure you have installed the streamlit extra: pip install autoresearch[ui]"
+        )
+        suggestions.append("Check that streamlit_app.py exists in the autoresearch package")
+        code_examples.append('uv pip install -e ".[ui]"')
+
+    elif "Configuration file not found" in str(exception):
+        suggestions.append("Initialize configuration with: autoresearch config init")
+        suggestions.append("Check that autoresearch.toml exists in the current directory")
+        code_examples.append("autoresearch config init")
+        code_examples.append("autoresearch config init --force")
+
+    elif "Database connection failed" in str(exception):
+        suggestions.append("Check that the database file exists and is readable")
+        suggestions.append("Try reinitializing the database: autoresearch config init --force")
+        code_examples.append("autoresearch config init --force")
+
+    elif "Network connection failed" in str(exception):
+        suggestions.append("Check your internet connection")
+        suggestions.append("Verify that external APIs are accessible")
+        suggestions.append("Check firewall and proxy settings")
+
+    elif "Invalid configuration" in str(exception):
+        suggestions.append("Validate your configuration: autoresearch config validate")
+        suggestions.append("Check the configuration file for syntax errors")
+        code_examples.append("autoresearch config validate")
 
     # Log the error
     logger.error(f"Error: {message}", exc_info=exception)

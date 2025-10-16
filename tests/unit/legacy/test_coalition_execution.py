@@ -21,6 +21,7 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
     record: list[str] = []
 
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
+
         def get_agent(name):
             return DummyAgent(name, record)
 
@@ -31,9 +32,7 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
             {"loops": 1, "agents": ["team"], "coalitions": {"team": ["A", "B"]}}
         )
 
-        monkeypatch.setattr(
-            "autoresearch.orchestration.orchestrator.AgentFactory.get", get_agent
-        )
+        monkeypatch.setattr("autoresearch.orchestration.orchestrator.AgentFactory.get", get_agent)
         monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
         monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
 

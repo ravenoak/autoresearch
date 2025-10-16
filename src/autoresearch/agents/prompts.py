@@ -556,8 +556,7 @@ Your verification should be objective, balanced, and focused on factual accuracy
             prompt_config = {}
         elif isinstance(prompt_templates_config, Mapping):
             prompt_config = {
-                str(name): dict(template)
-                for name, template in prompt_templates_config.items()
+                str(name): dict(template) for name, template in prompt_templates_config.items()
             }
         else:
             raise ConfigError(

@@ -13,7 +13,7 @@ def _apply_adaptive_token_budget(config: ConfigModel, query: str) -> None:
     if loops > 1:
         budget = max(1, budget // loops)
 
-    query_tokens = len(query.split())
+    query_tokens = max(1, len(query.split()))  # Count words as tokens
     factor = getattr(config, "adaptive_max_factor", 20)
     buffer = getattr(config, "adaptive_min_buffer", 10)
     max_budget = query_tokens * factor

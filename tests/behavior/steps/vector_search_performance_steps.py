@@ -21,6 +21,7 @@ def measure_vector_search_time(persisted_claims, bdd_context: BehaviorContext):
     start = time.time()
     orig_has_vss = StorageManager.has_vss
     from autoresearch import storage as storage_module
+
     orig_vector_search = storage_module.StorageManager.context.db_backend.vector_search
     with patch("autoresearch.storage.StorageManager.has_vss", return_value=True) as mock_has_vss:
         with patch(

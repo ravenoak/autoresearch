@@ -7,34 +7,22 @@ from typing import Any, Dict, List, Mapping
 from ..output_format import DepthPayload, OutputDepth
 
 
-def generate_socratic_prompts(
-    payload: DepthPayload, max_prompts: int = 3
-) -> List[str]:
+def generate_socratic_prompts(payload: DepthPayload, max_prompts: int = 3) -> List[str]:
     """Derive Socratic follow-up prompts from a depth payload."""
 
     prompts: List[str] = []
     if payload.key_findings:
-        prompts.append(
-            f"Which assumptions support the claim '{payload.key_findings[0]}'?"
-        )
+        prompts.append(f"Which assumptions support the claim '{payload.key_findings[0]}'?")
     if payload.citations:
-        prompts.append(
-            "If the top citation were unreliable, how would the conclusion change?"
-        )
+        prompts.append("If the top citation were unreliable, how would the conclusion change?")
     if payload.claim_audits:
         first_claim = payload.claim_audits[0].get("claim_id", "the leading claim")
-        prompts.append(
-            f"What additional evidence would strengthen verification of {first_claim}?"
-        )
+        prompts.append(f"What additional evidence would strengthen verification of {first_claim}?")
     gate_snapshot = payload.metrics.get("scout_gate") if payload.metrics else None
     if isinstance(gate_snapshot, Mapping):
         for signal in triggered_gate_signals(gate_snapshot):
-            prompts.append(
-                f"How could we address the scout gate's {signal} concern before debate?"
-            )
-    prompts.append(
-        "Which counterexamples could challenge the TL;DR and should be investigated?"
-    )
+            prompts.append(f"How could we address the scout gate's {signal} concern before debate?")
+    prompts.append("Which counterexamples could challenge the TL;DR and should be investigated?")
     unique_prompts = []
     for prompt in prompts:
         if prompt not in unique_prompts:
@@ -100,10 +88,8 @@ def section_toggle_defaults(payload: DepthPayload) -> Dict[str, Dict[str, bool]]
             "value": sections.get("claim_audits", False),
         },
         "full_trace": {
-            "available": sections.get("reasoning", False)
-            or sections.get("react_traces", False),
-            "value": sections.get("reasoning", False)
-            or sections.get("react_traces", False),
+            "available": sections.get("reasoning", False) or sections.get("react_traces", False),
+            "value": sections.get("reasoning", False) or sections.get("react_traces", False),
         },
         "knowledge_graph": {
             "available": sections.get("knowledge_graph", False),
@@ -147,9 +133,7 @@ def format_gate_rationales(snapshot: Mapping[str, Any]) -> List[str]:
         override = rationale.get("override")
         description = rationale.get("description", "")
         value_display = f"{value:.2f}" if isinstance(value, (int, float)) else value
-        threshold_display = (
-            f"{threshold:.2f}" if isinstance(threshold, (int, float)) else threshold
-        )
+        threshold_display = f"{threshold:.2f}" if isinstance(threshold, (int, float)) else threshold
         status = "triggered" if triggered else "within threshold"
         line = (
             f"{signal.replace('_', ' ').title()}: {value_display} {comparator} "

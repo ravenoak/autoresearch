@@ -7,9 +7,7 @@ from tests.behavior.context import BehaviorContext
 
 
 @given("the API server is running")
-def api_server_running(
-    test_context: BehaviorContext, api_client, monkeypatch
-) -> None:
+def api_server_running(test_context: BehaviorContext, api_client, monkeypatch) -> None:
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"].append("health")
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)

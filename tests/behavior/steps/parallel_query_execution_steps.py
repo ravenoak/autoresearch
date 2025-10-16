@@ -23,15 +23,17 @@ from autoresearch.models import QueryResponse
 @pytest.fixture
 def test_context():
     """Create a context for storing test state."""
-    return as_payload({
-        "config": None,
-        "agent_groups": [],
-        "executed_groups": [],
-        "result": None,
-        "errors": [],
-        "start_time": 0,
-        "end_time": 0,
-    })
+    return as_payload(
+        {
+            "config": None,
+            "agent_groups": [],
+            "executed_groups": [],
+            "result": None,
+            "errors": [],
+            "start_time": 0,
+            "end_time": 0,
+        }
+    )
 
 
 @pytest.fixture
@@ -64,7 +66,6 @@ def mock_agent_factory():
 )
 def test_running_multiple_agent_groups():
     """Test running multiple agent groups in parallel."""
-    pass
 
 
 @pytest.mark.slow
@@ -74,7 +75,6 @@ def test_running_multiple_agent_groups():
 )
 def test_handling_errors_in_parallel_execution():
     """Test handling errors in parallel execution."""
-    pass
 
 
 @pytest.mark.slow
@@ -84,7 +84,6 @@ def test_handling_errors_in_parallel_execution():
 )
 def test_synthesizing_results_from_multiple_groups():
     """Test synthesizing results from multiple agent groups."""
-    pass
 
 
 # Background steps
@@ -92,9 +91,7 @@ def test_synthesizing_results_from_multiple_groups():
 def system_configured_with_multiple_agent_groups(test_context):
     """Configure the system with multiple agent groups."""
     test_context["config"] = ConfigModel(
-        agents=[
-            "Synthesizer"
-        ],  # Default agents, will be overridden in run_parallel_query
+        agents=["Synthesizer"],  # Default agents, will be overridden in run_parallel_query
         reasoning_mode="direct",
         loops=1,
     )
@@ -113,9 +110,7 @@ def system_using_dummy_llm_adapter(monkeypatch):
 
 # Scenario: Running multiple agent groups in parallel
 @when("I run a parallel query with multiple agent groups")
-def run_parallel_query_with_multiple_groups(
-    test_context, mock_agent_factory, monkeypatch
-):
+def run_parallel_query_with_multiple_groups(test_context, mock_agent_factory, monkeypatch):
     """Run a parallel query with multiple agent groups."""
     # Mock run_query to track executed groups
 
@@ -157,9 +152,7 @@ def run_parallel_query_with_multiple_groups(
 
     # Run the parallel query and measure execution time
     test_context["start_time"] = time.time()
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         test_context["result"] = Orchestrator.run_parallel_query(
             "test query", test_context["config"], test_context["agent_groups"]
         )
@@ -187,9 +180,9 @@ def execution_faster_than_sequential(test_context):
     parallel_time = test_context["end_time"] - test_context["start_time"]
     # In a real test, we would compare to sequential execution time
     # For now, we'll just assert that it completed in a reasonable time
-    assert parallel_time < 10.0, (
-        f"Parallel execution took {parallel_time} seconds, which is too long"
-    )
+    assert (
+        parallel_time < 10.0
+    ), f"Parallel execution took {parallel_time} seconds, which is too long"
 
 
 # Scenario: Handling errors in parallel execution
@@ -266,9 +259,7 @@ def run_parallel_query_with_error_group(test_context, mock_agent_factory, monkey
     mock_agent_factory.get.side_effect = get_agent
 
     # Run the parallel query
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         test_context["result"] = Orchestrator.run_parallel_query(
             "test query", test_context["config"], test_context["agent_groups"]
         )
@@ -306,9 +297,7 @@ def orchestrator_synthesizes_results(test_context, mock_agent_factory):
     assert synthesizer.execute.called
 
 
-@then(
-    "the final result should be a coherent answer that combines insights from all groups"
-)
+@then("the final result should be a coherent answer that combines insights from all groups")
 def result_is_coherent_answer(test_context):
     """Verify that the final result is a coherent answer that combines insights from all groups."""
     # Check that the result includes the synthesized answer

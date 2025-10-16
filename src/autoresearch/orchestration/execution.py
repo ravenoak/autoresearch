@@ -86,9 +86,7 @@ def _deliver_messages(agent_name: str, state: QueryState, config: ConfigModel) -
     msgs = state.get_messages(recipient=agent_name)
     if not msgs:
         return
-    delivered = state.metadata.setdefault("delivered_messages", {}).setdefault(
-        agent_name, []
-    )
+    delivered = state.metadata.setdefault("delivered_messages", {}).setdefault(agent_name, [])
     delivered.extend(msgs)
     log.debug(
         f"Delivered {len(msgs)} messages to {agent_name}",
@@ -122,9 +120,7 @@ def _execute_agent_with_token_counting(
             token_counter,
             wrapped_adapter,
         ):
-            log.debug(
-                f"Executing {agent_name}.execute() with token counting adapter"
-            )
+            log.debug(f"Executing {agent_name}.execute() with token counting adapter")
             result = execute_with_adapter(
                 cast(SupportsExecute, agent), state, config, wrapped_adapter
             )
@@ -175,9 +171,7 @@ def _has_nonempty_sequence(candidate: object) -> bool:
     """Return ``True`` when ``candidate`` is a non-empty, non-string sequence."""
 
     return bool(
-        isinstance(candidate, Sequence)
-        and not isinstance(candidate, (str, bytes))
-        and candidate
+        isinstance(candidate, Sequence) and not isinstance(candidate, (str, bytes)) and candidate
     )
 
 
@@ -282,13 +276,9 @@ def _execute_agent(
             _log_agent_execution(agent_name, state, loop)
             _call_agent_start_callback(agent_name, state, callbacks)
             start_time = time.time()
-            result = _execute_agent_with_token_counting(
-                agent, agent_name, state, config, metrics
-            )
+            result = _execute_agent_with_token_counting(agent, agent_name, state, config, metrics)
             duration = time.time() - start_time
-            _handle_agent_completion(
-                agent_name, result, state, metrics, callbacks, duration, loop
-            )
+            _handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop)
             state.update(result)
             _log_sources(agent_name, result)
             _persist_claims(agent_name, result, storage_manager)
@@ -312,10 +302,7 @@ def _execute_agent(
             metrics.record_circuit_breaker(
                 agent_name, cb_manager.get_circuit_breaker_state(agent_name)
             )
-            if (
-                attempt < retries - 1
-                and error_info.get("error_category") == "transient"
-            ):
+            if attempt < retries - 1 and error_info.get("error_category") == "transient":
                 sleep_time = backoff * (2**attempt)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
@@ -403,9 +390,7 @@ def _execute_cycle(
                 "Aborting dialectical process due to error "
                 f"threshold reached ({state.error_count}/{max_errors})"
             )
-            state.results["error"] = (
-                f"Process aborted after {state.error_count} errors"
-            )
+            state.results["error"] = f"Process aborted after {state.error_count} errors"
             return primus_index
         state.cycle += 1
         primus_index = (primus_index + 1) % len(agents)
@@ -490,9 +475,7 @@ async def _execute_cycle_async(
                 "Aborting dialectical process due to error "
                 f"threshold reached ({state.error_count}/{max_errors})"
             )
-            state.results["error"] = (
-                f"Process aborted after {state.error_count} errors"
-            )
+            state.results["error"] = f"Process aborted after {state.error_count} errors"
             return primus_index
         state.cycle += 1
         primus_index = (primus_index + 1) % len(agents)

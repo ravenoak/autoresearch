@@ -264,9 +264,7 @@ def _drain_multiprocessing_resources() -> TypedFixture[None]:
     tracker = _get_resource_tracker()
     if tracker is None:
         return
-    raw_cache = cast(
-        Mapping[str, str | tuple[str, str]], getattr(tracker, "_cache", {})
-    )
+    raw_cache = cast(Mapping[str, str | tuple[str, str]], getattr(tracker, "_cache", {}))
     cache = dict(raw_cache)
     for name, rtype in cache.items():
         resource_type = rtype[0] if isinstance(rtype, tuple) else rtype
@@ -311,9 +309,7 @@ def _cleanup_multiprocessing_pools(
             seen_ids.add(ident)
             created.append(instance)
 
-    def tracking_pool_init(
-        self: multiprocessing.pool.Pool, *args: Any, **kwargs: Any
-    ) -> None:
+    def tracking_pool_init(self: multiprocessing.pool.Pool, *args: Any, **kwargs: Any) -> None:
         _remember(self)
         original_pool_init(self, *args, **kwargs)
 
@@ -454,8 +450,9 @@ def _gpu_available() -> bool:
     """Check if GPU dependencies (BERTopic) are actually available."""
     try:
         from bertopic import BERTopic
+
         # Check if it's not the stub by checking the version
-        return hasattr(BERTopic, '__version__') and BERTopic.__version__ != "0.0"
+        return hasattr(BERTopic, "__version__") and BERTopic.__version__ != "0.0"
     except Exception:
         return False
 
@@ -566,9 +563,7 @@ def reset_config_loader_instance() -> TypedFixture[None]:
 
 
 @pytest.fixture(autouse=True)
-def isolate_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> TypedFixture[None]:
+def isolate_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Use temporary working directory and cache file for each test."""
     monkeypatch.chdir(tmp_path)
     cache_path = tmp_path / "cache.json"
@@ -613,9 +608,7 @@ def duckdb_path(tmp_path: Path) -> TypedFixture[str]:
 
 
 @pytest.fixture
-def ensure_duckdb_schema(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> TypedFixture[str]:
+def ensure_duckdb_schema(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TypedFixture[str]:
     """Ensure StorageManager setup creates required DuckDB tables."""
     db_file = tmp_path / "kg.duckdb"
     StorageManager.teardown(remove_db=True)
@@ -667,21 +660,22 @@ def stop_config_watcher(
 @pytest.fixture
 def disable_streamlit_metrics(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Completely disable Streamlit metrics thread for tests marked with requires_ui."""
+
     def noop_metrics():
         """No-op replacement for update_metrics_periodically in tests."""
         pass
 
     # Patch the function to do nothing
-    monkeypatch.setattr(
-        "autoresearch.streamlit_app.update_metrics_periodically", noop_metrics
-    )
+    monkeypatch.setattr("autoresearch.streamlit_app.update_metrics_periodically", noop_metrics)
     # Also set short timeout as backup
     monkeypatch.setenv("STREAMLIT_METRICS_TIMEOUT", "1")
     yield
 
 
 @pytest.fixture(autouse=True)
-def cleanup_streamlit_threads(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> TypedFixture[None]:
+def cleanup_streamlit_threads(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> TypedFixture[None]:
     """Ensure Streamlit background threads (MetricsCollector) are cleaned up and disabled in tests."""
     import threading
 
@@ -690,11 +684,11 @@ def cleanup_streamlit_threads(monkeypatch: pytest.MonkeyPatch, request: pytest.F
 
     # For UI tests, also disable the metrics thread completely
     if request.node.get_closest_marker("requires_ui"):
+
         def noop_metrics():
             pass
-        monkeypatch.setattr(
-            "autoresearch.streamlit_app.update_metrics_periodically", noop_metrics
-        )
+
+        monkeypatch.setattr("autoresearch.streamlit_app.update_metrics_periodically", noop_metrics)
 
     # Before test: identify existing threads
     before_threads = {t.name: t for t in threading.enumerate()}
@@ -730,14 +724,13 @@ def reset_orchestration_metrics() -> TypedFixture[None]:
 @pytest.fixture(autouse=True)
 def cleanup_storage() -> TypedFixture[None]:
     """Remove any persistent storage state between tests."""
+
     # Use module-level teardown to avoid delegate recursion
     def _safe_teardown(stage: str) -> None:
         try:
             storage.teardown(remove_db=True)
         except Exception:  # pragma: no cover - defensive cleanup
-            logger.warning(
-                "Storage teardown failed during %s cleanup", stage, exc_info=True
-            )
+            logger.warning("Storage teardown failed during %s cleanup", stage, exc_info=True)
 
     _safe_teardown("setup")
     yield
@@ -1194,3 +1187,27 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             with contextlib.suppress(Exception):
                 cleanup()
     _flush_resource_tracker_cache()
+
+
+@pytest.fixture(autouse=True)
+def suppress_logging_for_clean_stderr(request):
+    """Suppress logging output to stderr during tests that expect empty stderr.
+
+    This fixture automatically removes loguru handlers before each test unless
+    the test uses caplog (which needs logging to be active to capture logs).
+    """
+    # Skip suppression if test uses caplog fixture
+    if "caplog" in request.fixturenames:
+        yield
+        return
+
+    # Remove all loguru handlers to prevent output to stderr
+    import loguru
+
+    # Remove all handlers
+    loguru.logger.remove()
+
+    yield
+
+    # Note: Handlers are not restored as this is just for tests
+    # If logging is needed after tests, it should be reconfigured

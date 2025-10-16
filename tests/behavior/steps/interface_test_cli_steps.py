@@ -12,7 +12,7 @@ from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 from tests.behavior.utils import as_payload
 
 
-@when('I run `autoresearch test_mcp --host 127.0.0.1 --port 8080`')
+@when("I run `autoresearch test_mcp --host 127.0.0.1 --port 8080`")
 def run_test_mcp(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -41,7 +41,7 @@ def run_test_mcp(
     set_cli_result(bdd_context, result)
 
 
-@when('I run `autoresearch test_mcp --port 9`')
+@when("I run `autoresearch test_mcp --port 9`")
 def run_test_mcp_fail(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -66,7 +66,7 @@ def run_test_mcp_fail(
     set_cli_result(bdd_context, result)
 
 
-@when('I run `autoresearch test_a2a --host 127.0.0.1 --port 8765`')
+@when("I run `autoresearch test_a2a --host 127.0.0.1 --port 8765`")
 def run_test_a2a(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -95,7 +95,7 @@ def run_test_a2a(
     set_cli_result(bdd_context, result)
 
 
-@when('I run `autoresearch test_a2a --port 9`')
+@when("I run `autoresearch test_a2a --port 9`")
 def run_test_a2a_fail(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -120,7 +120,7 @@ def run_test_a2a_fail(
     set_cli_result(bdd_context, result)
 
 
-@then('the CLI should exit successfully')
+@then("the CLI should exit successfully")
 def cli_success(bdd_context: BehaviorContext) -> None:
     """Assert that the CLI invocation succeeded."""
 
@@ -129,7 +129,7 @@ def cli_success(bdd_context: BehaviorContext) -> None:
     assert result.stderr == ""
 
 
-@then('the CLI should exit with an error')
+@then("the CLI should exit with an error")
 def cli_error(bdd_context: BehaviorContext) -> None:
     """Assert that the CLI invocation failed."""
 
@@ -138,21 +138,21 @@ def cli_error(bdd_context: BehaviorContext) -> None:
     assert result.stderr != "" or result.exception is not None
 
 
-@scenario('../features/interface_test_cli.feature', 'Run MCP interface tests')
+@scenario("../features/interface_test_cli.feature", "Run MCP interface tests")
 def test_mcp_success() -> None:
     """Scenario: successfully run MCP interface tests."""
 
 
-@scenario('../features/interface_test_cli.feature', 'Fail to connect to MCP server')
+@scenario("../features/interface_test_cli.feature", "Fail to connect to MCP server")
 def test_mcp_failure() -> None:
     """Scenario: fail to connect to the MCP server."""
 
 
-@scenario('../features/interface_test_cli.feature', 'Run A2A interface tests')
+@scenario("../features/interface_test_cli.feature", "Run A2A interface tests")
 def test_a2a_success() -> None:
     """Scenario: successfully run A2A interface tests."""
 
 
-@scenario('../features/interface_test_cli.feature', 'Fail to connect to A2A server')
+@scenario("../features/interface_test_cli.feature", "Fail to connect to A2A server")
 def test_a2a_failure() -> None:
     """Scenario: fail to connect to the A2A server."""

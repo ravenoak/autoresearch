@@ -19,8 +19,7 @@ pytestmark = pytest.mark.slow
 class TokenMetricsProtocol(Protocol):
     """Protocol describing the token metrics recorder used in tests."""
 
-    def record_tokens(self, agent_name: str, in_tokens: int, out_tokens: int) -> None:
-        ...
+    def record_tokens(self, agent_name: str, in_tokens: int, out_tokens: int) -> None: ...
 
 
 class PerfAgent:
@@ -50,9 +49,7 @@ class PerfAgent:
         return {"results": {self.name: "ok"}}
 
 
-def _build_perf_agent(
-    name: str, llm_adapter: Callable[[str], object] | None = None
-) -> PerfAgent:
+def _build_perf_agent(name: str, llm_adapter: Callable[[str], object] | None = None) -> PerfAgent:
     return PerfAgent(name)
 
 
@@ -91,9 +88,7 @@ def test_query_performance(monkeypatch: pytest.MonkeyPatch) -> None:
         try:
             yield token_counts, Adapter()
         finally:
-            metrics.record_tokens(
-                agent_name, token_counts["in"], token_counts["out"]
-            )
+            metrics.record_tokens(agent_name, token_counts["in"], token_counts["out"])
 
     monkeypatch.setattr(Orchestrator, "_capture_token_usage", capture)
 

@@ -39,6 +39,7 @@ class SearchCache:
         # Use a per-instance ephemeral path under pytest to avoid cross-test leakage
         if db_path is None and os.environ.get("PYTEST_CURRENT_TEST"):
             from pathlib import Path as _P
+
             tmpdir = _P(".pytest_cache")
             tmpdir.mkdir(exist_ok=True)
             self._db_path = tmpdir / f"tinydb_{os.getpid()}_{id(self)}.json"
@@ -90,9 +91,7 @@ class SearchCache:
                 "backend": backend,
                 "results": deepcopy(results),
             },
-            (Query().namespace == ns)
-            & (Query().query == query)
-            & (Query().backend == backend),
+            (Query().namespace == ns) & (Query().query == query) & (Query().backend == backend),
         )
 
     def get_cached_results(
@@ -106,9 +105,7 @@ class SearchCache:
         db = self.get_db()
         ns = self._resolve_namespace(namespace)
         condition = (
-            (Query().namespace == ns)
-            & (Query().query == query)
-            & (Query().backend == backend)
+            (Query().namespace == ns) & (Query().query == query) & (Query().backend == backend)
         )
         row = cast(dict[str, Any] | None, db.get(condition))
         if row:
@@ -257,9 +254,7 @@ class _SearchCacheView:
         self._base = base
         self._namespace = namespace
 
-    def cache_results(
-        self, query: str, backend: str, results: list[dict[str, Any]]
-    ) -> None:
+    def cache_results(self, query: str, backend: str, results: list[dict[str, Any]]) -> None:
         self._base.cache_results(
             query,
             backend,
@@ -267,9 +262,7 @@ class _SearchCacheView:
             namespace=self._namespace,
         )
 
-    def get_cached_results(
-        self, query: str, backend: str
-    ) -> list[dict[str, Any]] | None:
+    def get_cached_results(self, query: str, backend: str) -> list[dict[str, Any]] | None:
         return self._base.get_cached_results(
             query,
             backend,

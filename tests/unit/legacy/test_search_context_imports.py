@@ -13,9 +13,7 @@ def _make_cfg(enabled: bool) -> ConfigModelStub:
 
 def _reload_ctx(monkeypatch, enabled: bool):
     ctx = importlib.reload(context)
-    monkeypatch.setattr(
-        "autoresearch.search.context.get_config", lambda: _make_cfg(enabled)
-    )
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: _make_cfg(enabled))
     return ctx
 
 

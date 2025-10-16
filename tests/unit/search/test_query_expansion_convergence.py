@@ -63,6 +63,7 @@ def test_extract_entities_with_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def dummy_nlp(text: str) -> SimpleNamespace:
         return SimpleNamespace(ents=[dummy_ent])
+
     ctx = SearchContext.new_for_tests()
     ctx.nlp = cast(Any, dummy_nlp)
     ctx._extract_entities("Acme")
@@ -78,9 +79,7 @@ def test_build_topic_model_with_insufficient_docs(
     confirming the guard against sparse history.
     """
     cfg = make_config_model(context_overrides={"enabled": True})
-    monkeypatch.setattr(
-        "autoresearch.search.context.get_config", lambda: cfg
-    )
+    monkeypatch.setattr("autoresearch.search.context.get_config", lambda: cfg)
     with SearchContext.temporary_instance() as ctx:
         ctx.search_history = [{"query": "solo", "results": []}]
         ctx.build_topic_model()
@@ -119,6 +118,7 @@ def test_try_import_sentence_transformers_success(
 
     class DummyST:
         pass
+
     dummy_mod = SimpleNamespace(OnnxTextEmbedding=DummyST, TextEmbedding=DummyST)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_mod)
     ctx.SentenceTransformer = None
@@ -147,7 +147,9 @@ def test_search_embedding_protocol_prefers_embed(
             type(self).last_input = sentences
             return [[1.0, 2.0]]
 
-        def encode(self, sentences: Sequence[str]) -> list[list[float]]:  # pragma: no cover - defensive
+        def encode(
+            self, sentences: Sequence[str]
+        ) -> list[list[float]]:  # pragma: no cover - defensive
             raise AssertionError("encode should not be used when embed exists")
 
     monkeypatch.setattr(
@@ -263,7 +265,9 @@ def test_search_embedding_backend_switches_without_reset(
         def embed(self, sentences: Sequence[str]) -> list[list[float]]:
             return [[1.0]]
 
-        def encode(self, sentences: Sequence[str]) -> list[list[float]]:  # pragma: no cover - defensive
+        def encode(
+            self, sentences: Sequence[str]
+        ) -> list[list[float]]:  # pragma: no cover - defensive
             raise AssertionError("encode should not run for fastembed fakes")
 
     class FakeSentenceTransformer:

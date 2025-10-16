@@ -20,7 +20,9 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
         spec.loader.exec_module(_mod)
         import_or_skip = getattr(_mod, "import_or_skip")
     else:  # If even that fails, raise a clear error
-        raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
+        raise ModuleNotFoundError(
+            "Could not import tests.optional_imports via direct path fallback"
+        )
 
 from autoresearch.distributed.broker import (
     AgentResultMessage,
@@ -39,9 +41,7 @@ def test_try_import_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     from autoresearch.search import context
 
     def get_config_override() -> SimpleNamespace:
-        return SimpleNamespace(
-            search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        )
+        return SimpleNamespace(search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True)))
 
     monkeypatch.setattr(context, "get_config", get_config_override)
     assert context._try_import_spacy()
@@ -57,9 +57,7 @@ def test_try_import_bertopic(monkeypatch: pytest.MonkeyPatch) -> None:
     from autoresearch.search import context
 
     def get_config_override() -> SimpleNamespace:
-        return SimpleNamespace(
-            search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        )
+        return SimpleNamespace(search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True)))
 
     monkeypatch.setattr(context, "get_config", get_config_override)
     if not context._try_import_bertopic():
@@ -73,9 +71,7 @@ def test_try_import_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> No
     from autoresearch.search import context
 
     def get_config_override() -> SimpleNamespace:
-        return SimpleNamespace(
-            search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True))
-        )
+        return SimpleNamespace(search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True)))
 
     monkeypatch.setattr(context, "get_config", get_config_override)
     assert context._try_import_sentence_transformers()
@@ -157,9 +153,7 @@ def test_local_git_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     repo_path = Path(__file__).resolve().parents[2]
     cfg = SimpleNamespace(
         search=SimpleNamespace(
-            local_git=SimpleNamespace(
-                repo_path=str(repo_path), branches=["HEAD"], history_depth=1
-            ),
+            local_git=SimpleNamespace(repo_path=str(repo_path), branches=["HEAD"], history_depth=1),
             local_file=SimpleNamespace(file_types=["py"]),
         )
     )
@@ -217,9 +211,7 @@ def test_metrics_dataframe(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_docx(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_local_file_backend_docx(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Local file backend extracts text from DOCX files."""
     docx = import_or_skip("docx")
     from autoresearch.search.core import _local_file_backend
@@ -229,9 +221,7 @@ def test_local_file_backend_docx(
     doc.add_paragraph("hello world")
     doc.save(doc_path)
     cfg = SimpleNamespace(
-        search=SimpleNamespace(
-            local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"])
-        )
+        search=SimpleNamespace(local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"]))
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     results = _local_file_backend("hello", 1)
@@ -239,22 +229,16 @@ def test_local_file_backend_docx(
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_pdf(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_local_file_backend_pdf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Local file backend extracts text from PDF files."""
     import_or_skip("pdfminer.high_level")
     from autoresearch.search.core import _local_file_backend
 
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")
-    monkeypatch.setattr(
-        "autoresearch.search.core.extract_pdf_text", lambda _: "hello pdf"
-    )
+    monkeypatch.setattr("autoresearch.search.core.extract_pdf_text", lambda _: "hello pdf")
     cfg = SimpleNamespace(
-        search=SimpleNamespace(
-            local_file=SimpleNamespace(path=str(tmp_path), file_types=["pdf"])
-        )
+        search=SimpleNamespace(local_file=SimpleNamespace(path=str(tmp_path), file_types=["pdf"]))
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     results = _local_file_backend("hello", 1)

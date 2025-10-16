@@ -46,7 +46,18 @@ def test_current_ram_mb_with_nodes(realistic_claim_batch):
         claim_id = data.pop("id")
         mock_graph.add_node(claim_id, **data)
 
-    with patch.object(StorageManager.context, "graph", mock_graph):
+    # Mock resource.getrusage to return a reasonable memory usage
+    mock_rusage = MagicMock()
+    mock_rusage.ru_maxrss = 100 * 1024  # 100 MB in KB
+
+    with (
+        patch.object(StorageManager.context, "graph", mock_graph),
+        patch.dict("sys.modules", {"psutil": None}),
+        patch("resource.getrusage", return_value=mock_rusage),
+        patch("resource.RUSAGE_SELF", 0),
+    ):
+        # Set baseline to 0 for this test
+        StorageManager.state.baseline_mb = 0
         result = StorageManager._current_ram_mb()
         assert result > 0
 
@@ -61,7 +72,18 @@ def test_current_ram_mb_with_attributes(realistic_claim_batch):
     data.setdefault("attributes", {"key": "val"})
     mock_graph.add_node(claim_id, **data)
 
-    with patch.object(StorageManager.context, "graph", mock_graph):
+    # Mock resource.getrusage to return a reasonable memory usage
+    mock_rusage = MagicMock()
+    mock_rusage.ru_maxrss = 100 * 1024  # 100 MB in KB
+
+    with (
+        patch.object(StorageManager.context, "graph", mock_graph),
+        patch.dict("sys.modules", {"psutil": None}),
+        patch("resource.getrusage", return_value=mock_rusage),
+        patch("resource.RUSAGE_SELF", 0),
+    ):
+        # Set baseline to 0 for this test
+        StorageManager.state.baseline_mb = 0
         result = StorageManager._current_ram_mb()
         assert result > 0
 

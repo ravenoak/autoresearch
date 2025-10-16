@@ -66,8 +66,10 @@ class TestStreamlitApp:
 
     def test_update_metrics_periodically_threading(self) -> None:
         """Test that metrics update runs in background thread."""
-        with patch("autoresearch.streamlit_app.st.session_state") as mock_session_state, \
-             patch("threading.Thread") as mock_thread:
+        with (
+            patch("autoresearch.streamlit_app.st.session_state") as mock_session_state,
+            patch("threading.Thread") as mock_thread,
+        ):
             # Set test mode to prevent infinite loop
             mock_session_state._test_mode = True
             update_metrics_periodically()
@@ -78,13 +80,21 @@ class TestStreamlitApp:
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     def test_display_agent_performance_ui(self) -> None:
         """Test agent performance UI display."""
-        with patch("autoresearch.streamlit_app.st.subheader"), patch("autoresearch.streamlit_app.st.columns"), patch("autoresearch.streamlit_app.st.metric"):
+        with (
+            patch("autoresearch.streamlit_app.st.subheader"),
+            patch("autoresearch.streamlit_app.st.columns"),
+            patch("autoresearch.streamlit_app.st.metric"),
+        ):
             display_agent_performance()
 
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     def test_display_metrics_dashboard(self) -> None:
         """Test metrics dashboard display."""
-        with patch("autoresearch.streamlit_app.st.title"), patch("autoresearch.streamlit_app.st.columns"), patch("autoresearch.streamlit_app.st.metric"):
+        with (
+            patch("autoresearch.streamlit_app.st.title"),
+            patch("autoresearch.streamlit_app.st.columns"),
+            patch("autoresearch.streamlit_app.st.metric"),
+        ):
             display_metrics_dashboard()
 
     def test_setup_logging(self) -> None:
@@ -98,7 +108,11 @@ class TestStreamlitApp:
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     def test_display_log_viewer(self) -> None:
         """Test log viewer display functionality."""
-        with patch("autoresearch.streamlit_app.st.title"), patch("autoresearch.streamlit_app.st.empty"), patch("autoresearch.streamlit_app.st.code"):
+        with (
+            patch("autoresearch.streamlit_app.st.title"),
+            patch("autoresearch.streamlit_app.st.empty"),
+            patch("autoresearch.streamlit_app.st.code"),
+        ):
             display_log_viewer()
 
     def test_initialize_session_state(self) -> None:
@@ -112,7 +126,11 @@ class TestStreamlitApp:
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     def test_display_query_input(self) -> None:
         """Test query input display functionality."""
-        with patch("autoresearch.streamlit_app.st.title"), patch("autoresearch.streamlit_app.st.text_input"), patch("autoresearch.streamlit_app.st.button"):
+        with (
+            patch("autoresearch.streamlit_app.st.title"),
+            patch("autoresearch.streamlit_app.st.text_input"),
+            patch("autoresearch.streamlit_app.st.button"),
+        ):
             display_query_input()
 
     def test_store_query_history(self) -> None:
@@ -132,19 +150,28 @@ class TestStreamlitApp:
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     def test_display_query_history(self) -> None:
         """Test query history display."""
-        with patch("autoresearch.streamlit_app.st.title"), patch("autoresearch.streamlit_app.st.expander"), patch("autoresearch.streamlit_app.st.json"):
+        with (
+            patch("autoresearch.streamlit_app.st.title"),
+            patch("autoresearch.streamlit_app.st.expander"),
+            patch("autoresearch.streamlit_app.st.json"),
+        ):
             display_query_history()
 
     @pytest.mark.skip(reason="UI test requiring Streamlit runtime")
     @patch("autoresearch.streamlit_app.initialize_session_state")
     @patch("threading.enumerate")
     @patch("threading.Thread")
-    def test_main_initialization(self, mock_thread: Mock, mock_enumerate: Mock, mock_init_state: Mock) -> None:
+    def test_main_initialization(
+        self, mock_thread: Mock, mock_enumerate: Mock, mock_init_state: Mock
+    ) -> None:
         """Test main function initialization."""
         # Mock that no MetricsCollector thread exists
         mock_enumerate.return_value = []
 
-        with patch("autoresearch.streamlit_app.st.set_page_config"), patch("autoresearch.streamlit_app.st.title"):
+        with (
+            patch("autoresearch.streamlit_app.st.set_page_config"),
+            patch("autoresearch.streamlit_app.st.title"),
+        ):
             main()
 
             # Should initialize session state

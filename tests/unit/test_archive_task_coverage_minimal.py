@@ -33,14 +33,16 @@ def test_validate_log_tail_rejects_incorrect_tail(tmp_path: Path) -> None:
 
 def _write_coverage_xml(tmp_path: Path, line_rate: str | None) -> Path:
     attributes = [] if line_rate is None else [f' line-rate="{line_rate}"']
-    xml = "".join([
-        "<?xml version=\"1.0\" ?>\n",
-        "<coverage",
-        *attributes,
-        ">\n",
-        "    <packages></packages>\n",
-        "</coverage>\n",
-    ])
+    xml = "".join(
+        [
+            '<?xml version="1.0" ?>\n',
+            "<coverage",
+            *attributes,
+            ">\n",
+            "    <packages></packages>\n",
+            "</coverage>\n",
+        ]
+    )
     coverage_file = tmp_path / "coverage.xml"
     coverage_file.write_text(xml, encoding="utf-8")
     return coverage_file

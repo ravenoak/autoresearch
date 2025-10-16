@@ -95,9 +95,7 @@ class TaskCoordinator:
         nodes.sort(key=lambda node: node.ordering_key())
         return [self._tasks[node.id] for node in nodes if node.is_available()]
 
-    def schedule_next(
-        self, *, preferred_tool: str | None = None
-    ) -> dict[str, Any] | None:
+    def schedule_next(self, *, preferred_tool: str | None = None) -> dict[str, Any] | None:
         """Return the next task to execute respecting affinity ordering."""
 
         candidates: list[tuple[tuple[Any, ...], TaskGraphNode]] = []
@@ -179,7 +177,9 @@ class TaskCoordinator:
             status = self._status.get(candidate)
             if status not in {TaskStatus.PENDING, TaskStatus.RUNNING}:
                 continue
-            if all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._tasks):
+            if all(
+                self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._tasks
+            ):
                 candidates.append(self._build_graph_node(candidate))
         candidates.sort(key=lambda node: node.ordering_key())
         return [node.id for node in candidates]
@@ -290,9 +290,7 @@ class TaskCoordinator:
             metadata_payload.setdefault("unlock_events", [])
         if tool is not None:
             metadata_payload["affinity_delta"] = self._affinity_delta(task_id, tool)
-        metadata_payload.setdefault(
-            "task_depth", self._dependency_depth.get(task_id, 0)
-        )
+        metadata_payload.setdefault("task_depth", self._dependency_depth.get(task_id, 0))
         task_metadata = self._tasks.get(task_id, {}).get("metadata", {})
         if task_metadata:
             metadata_payload.setdefault("task_metadata", dict(task_metadata))
@@ -329,12 +327,10 @@ class TaskCoordinator:
 
         task = self._tasks[task_id]
         status = self._status.get(task_id, TaskStatus.PENDING).value
-        dependencies = [dep for dep in self._dependency_cache.get(task_id, []) if dep in self._tasks]
-        pending_deps = [
-            dep
-            for dep in dependencies
-            if self._status.get(dep) != TaskStatus.COMPLETE
+        dependencies = [
+            dep for dep in self._dependency_cache.get(task_id, []) if dep in self._tasks
         ]
+        pending_deps = [dep for dep in dependencies if self._status.get(dep) != TaskStatus.COMPLETE]
         ready = not pending_deps
         affinity = dict(self._affinity_map.get(task_id, {}))
         tools_payload = task.get("tools") or []
@@ -354,9 +350,7 @@ class TaskCoordinator:
             else None
         )
         metadata_payload = task.get("metadata")
-        metadata = (
-            dict(metadata_payload) if isinstance(metadata_payload, Mapping) else {}
-        )
+        metadata = dict(metadata_payload) if isinstance(metadata_payload, Mapping) else {}
         provided_depth = self._coerce_depth(task.get("dependency_depth"))
         dependency_depth = (
             provided_depth if provided_depth is not None else self._dependency_depth.get(task_id, 0)
@@ -401,9 +395,7 @@ class TaskCoordinator:
 
         def adapt_value(value: Any) -> Any:
             if isinstance(value, Mapping):
-                return {
-                    str(k): adapt_value(v) for k, v in value.items() if v is not None
-                }
+                return {str(k): adapt_value(v) for k, v in value.items() if v is not None}
             if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
                 return [adapt_value(item) for item in value]
             if isinstance(value, (str, int, float, bool)) or value is None:

@@ -12,11 +12,14 @@ from autoresearch.typing.http import RequestsAdapterProtocol, RequestsSessionPro
 
 
 class RecordingResponse:
+    """Mock response that implements the required protocol for testing."""
+
     def __init__(self, payload: dict[str, Any]) -> None:
         self._payload = payload
         self.raise_called = False
         self._headers: dict[str, str] = {}
         self.status_code = 200
+        self.ok = self.status_code < 400
 
     def json(self, **kwargs: Any) -> dict[str, Any]:
         return self._payload
@@ -130,7 +133,7 @@ def test_adapter_generate_wraps_request_exceptions(
             self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
             self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
-        def post(self, *args: Any, **kwargs: Any) -> RecordingResponse:
+        def post(self, url: str, *args: Any, **kwargs: Any) -> RecordingResponse:
             return boom(*args, **kwargs)
 
         def mount(
@@ -141,10 +144,14 @@ def test_adapter_generate_wraps_request_exceptions(
         def close(self) -> None:  # pragma: no cover - not invoked
             return None
 
-        def get(self, *args: Any, **kwargs: Any) -> RecordingResponse:  # pragma: no cover - type stub
+        def get(
+            self, url: str, *args: Any, **kwargs: Any
+        ) -> RecordingResponse:  # pragma: no cover - type stub
             return boom(*args, **kwargs)
 
-        def request(self, *args: Any, **kwargs: Any) -> RecordingResponse:  # pragma: no cover - type stub
+        def request(
+            self, method: str, url: str, *args: Any, **kwargs: Any
+        ) -> RecordingResponse:  # pragma: no cover - type stub
             return boom(*args, **kwargs)
 
         def get_adapter(self, url: str) -> RequestsAdapterProtocol:

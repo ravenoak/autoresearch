@@ -42,9 +42,7 @@ class FactChecker(Agent):
         if isinstance(overrides, Mapping):
             override_map = {str(key): value for key, value in overrides.items()}
         broaden_sources = bool(override_map.get("broaden_sources"))
-        max_results = getattr(
-            config, "max_results_per_query", 5
-        )  # Default to 5 if not specified
+        max_results = getattr(config, "max_results_per_query", 5)  # Default to 5 if not specified
         override_max_results = override_map.get("max_results")
         if override_max_results is not None:
             try:
@@ -90,7 +88,9 @@ class FactChecker(Agent):
         else:
             base_candidates = list(getattr(lookup_bundle, "results", []))
             retrieval_handle = {
-                "cache_namespace": getattr(getattr(lookup_bundle, "cache", None), "namespace", None),
+                "cache_namespace": getattr(
+                    getattr(lookup_bundle, "cache", None), "namespace", None
+                ),
             }
             by_backend = getattr(lookup_bundle, "by_backend", None)
 
@@ -209,9 +209,7 @@ class FactChecker(Agent):
                 for paraphrase in sample_paraphrases(claim_text, max_samples=2):
                     retry_count += 1
                     paraphrases_used.append(paraphrase)
-                    new_candidates = Search.external_lookup(
-                        paraphrase, max_results=max_results
-                    )
+                    new_candidates = Search.external_lookup(paraphrase, max_results=max_results)
                     registered = _register_sources(
                         new_candidates,
                         query_text=paraphrase,
@@ -243,9 +241,7 @@ class FactChecker(Agent):
 
             claim_id = str(claim.get("id", "")) or None
             relevant_events = [
-                dict(event)
-                for event in retrieval_log
-                if event.get("claim_id") in {claim_id, None}
+                dict(event) for event in retrieval_log if event.get("claim_id") in {claim_id, None}
             ]
             provenance = {
                 "retrieval": {
@@ -327,9 +323,7 @@ class FactChecker(Agent):
             for score in [audit.get("entailment_score")]
             if isinstance(score, (int, float))
         ]
-        aggregate_score = (
-            sum(valid_scores) / len(valid_scores) if valid_scores else None
-        )
+        aggregate_score = sum(valid_scores) / len(valid_scores) if valid_scores else None
         aggregate_status = classify_entailment(aggregate_score or 0.0)
 
         variance_values = [
@@ -397,7 +391,9 @@ class FactChecker(Agent):
                 "max_results": max_results,
             },
             "evidence": {
-                "top_source_ids": [src.get("source_id") for src in top_sources if src.get("source_id")],
+                "top_source_ids": [
+                    src.get("source_id") for src in top_sources if src.get("source_id")
+                ],
                 "claim_audit_ids": [payload.get("audit_id") for payload in claim_audits],
             },
             "prompt": {

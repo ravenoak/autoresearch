@@ -7,9 +7,7 @@ from tests.behavior.context import BehaviorContext
 
 
 @given("the API server is running with config permissions")
-def api_server_with_permissions(
-    test_context: BehaviorContext, api_client, monkeypatch
-) -> None:
+def api_server_with_permissions(test_context: BehaviorContext, api_client, monkeypatch) -> None:
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"].append("config")
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -70,9 +68,7 @@ def test_update_config() -> None:
     pass
 
 
-@scenario(
-    "../features/api_config.feature", "Replace configuration via the config endpoint"
-)
+@scenario("../features/api_config.feature", "Replace configuration via the config endpoint")
 def test_replace_config() -> None:
     pass
 

@@ -24,21 +24,16 @@ from autoresearch.llm.adapters import LLMAdapter
 )
 def test_config_error_with_invalid_reasoning_mode():
     """Test configuration error with invalid reasoning mode."""
-    pass
 
 
-@scenario(
-    "../features/error_handling.feature", "Storage error with uninitialized components"
-)
+@scenario("../features/error_handling.feature", "Storage error with uninitialized components")
 def test_storage_error_with_uninitialized_components():
     """Test storage error with uninitialized components."""
-    pass
 
 
 @scenario("../features/error_handling.feature", "Orchestration error with failed agent")
 def test_orchestration_error_with_failed_agent(capture_orchestration_error):
     """Test orchestration error with failed agent."""
-    pass
 
 
 @pytest.fixture
@@ -61,21 +56,16 @@ def capture_orchestration_error(monkeypatch):
 @scenario("../features/error_handling.feature", "LLM error with invalid model")
 def test_llm_error_with_invalid_model():
     """Test LLM error with invalid model."""
-    pass
 
 
-@scenario(
-    "../features/error_handling.feature", "Search error with invalid search backend"
-)
+@scenario("../features/error_handling.feature", "Search error with invalid search backend")
 def test_search_error_with_invalid_backend():
     """Test search error with invalid backend."""
-    pass
 
 
 @scenario("../features/error_handling.feature", "Abort when max error threshold is exceeded")
 def test_max_error_threshold():
     """Test abort when error threshold is reached."""
-    pass
 
 
 # Common step definitions
@@ -141,7 +131,7 @@ def failing_agent(monkeypatch):
     pytest.expected_error = None
 
 
-@given(parsers.parse('max errors is set to {limit:d} in configuration'))
+@given(parsers.parse("max errors is set to {limit:d} in configuration"))
 def set_max_errors(limit):
     pytest.config.max_errors = limit
 
@@ -161,9 +151,7 @@ def run_query_with_failing_agent():
         Orchestrator.run_query("test query", pytest.config)
         print("Orchestrator.run_query completed without error (unexpected)")
     except Exception as e:
-        print(
-            f"Caught exception in run_query_with_failing_agent: {type(e).__name__} - {e}"
-        )
+        print(f"Caught exception in run_query_with_failing_agent: {type(e).__name__} - {e}")
         # Store the actual error for later assertions
         pytest.expected_error = e
         print(
@@ -230,9 +218,7 @@ def try_perform_search():
 def error_message_contains(text):
     """Check that the error message contains the specified text."""
     assert pytest.expected_error is not None, "Expected an error but none was raised"
-    assert text in str(pytest.expected_error), (
-        f"Error message does not contain '{text}'"
-    )
+    assert text in str(pytest.expected_error), f"Error message does not contain '{text}'"
 
 
 @then("the error message should list the valid reasoning modes")
@@ -241,21 +227,19 @@ def error_message_lists_valid_modes():
     error_message = str(pytest.expected_error)
     assert "valid_modes" in error_message, "Error message does not list valid modes"
     assert "direct" in error_message, "Error message does not include 'direct' mode"
-    assert "dialectical" in error_message, (
-        "Error message does not include 'dialectical' mode"
-    )
-    assert "chain-of-thought" in error_message, (
-        "Error message does not include 'chain-of-thought' mode"
-    )
+    assert "dialectical" in error_message, "Error message does not include 'dialectical' mode"
+    assert (
+        "chain-of-thought" in error_message
+    ), "Error message does not include 'chain-of-thought' mode"
 
 
 @then("the error message should suggest how to fix the issue")
 def error_message_suggests_fix():
     """Check that the error message suggests how to fix the issue."""
     error_message = str(pytest.expected_error)
-    assert "Try using one of the valid modes" in error_message, (
-        "Error message does not suggest how to fix the issue"
-    )
+    assert (
+        "Try using one of the valid modes" in error_message
+    ), "Error message does not suggest how to fix the issue"
 
 
 @then("the error message should contain the specific component that is not initialized")
@@ -279,21 +263,19 @@ def error_message_contains_component(storage_error_handler):
     if storage_error:
         error_message = str(storage_error).lower()
         print(f"Actual error message: {error_message}")
-        assert any(component.lower() in error_message for component in components), (
-            f"Error message does not specify which component is not initialized. Message: {error_message}"
-        )
+        assert any(
+            component.lower() in error_message for component in components
+        ), f"Error message does not specify which component is not initialized. Message: {error_message}"
     else:
         # Fallback to the old approach if storage_error is not in the context
         error_message = str(pytest.expected_error)
         print(f"Actual error message: {error_message}")
-        assert any(component.lower() in error_message for component in components), (
-            f"Error message does not specify which component is not initialized. Message: {error_message}"
-        )
+        assert any(
+            component.lower() in error_message for component in components
+        ), f"Error message does not specify which component is not initialized. Message: {error_message}"
 
 
-@then(
-    "I should receive an error message containing the specific component that is not initialized"
-)
+@then("I should receive an error message containing the specific component that is not initialized")
 def error_message_contains_component_alt(storage_error_handler):
     """Alternative wording for the same check."""
     error_message_contains_component(storage_error_handler)
@@ -315,9 +297,7 @@ def error_message_includes_agent_name():
     print(f"Expected error type: {type(pytest.expected_error)}")
     error_message = str(pytest.expected_error)
     print(f"Error message: {error_message}")
-    assert "FailingAgent" in error_message, (
-        "Error message does not include the agent name"
-    )
+    assert "FailingAgent" in error_message, "Error message does not include the agent name"
 
 
 @then("I should receive an error message containing the name of the failed agent")
@@ -330,9 +310,9 @@ def error_message_contains_agent_name():
 def error_message_includes_failure_reason():
     """Check that the error message includes the specific reason for the failure."""
     error_message = str(pytest.expected_error)
-    assert "Agent execution failed" in error_message, (
-        "Error message does not include the failure reason"
-    )
+    assert (
+        "Agent execution failed" in error_message
+    ), "Error message does not include the failure reason"
 
 
 @then("the error message should suggest possible solutions")
@@ -341,23 +321,19 @@ def error_message_suggests_solutions():
     error_message = str(pytest.expected_error)
     # The actual error message contains "ensure all agents are properly configured"
     # instead of "Check the agent configuration"
-    assert "ensure all agents are properly configured" in error_message, (
-        "Error message does not suggest possible solutions"
-    )
+    assert (
+        "ensure all agents are properly configured" in error_message
+    ), "Error message does not suggest possible solutions"
 
 
 @then("the error message should contain the invalid model name")
 def error_message_contains_model_name():
     """Check that the error message contains the invalid model name."""
     error_message = str(pytest.expected_error)
-    assert "invalid_model" in error_message, (
-        "Error message does not contain the invalid model name"
-    )
+    assert "invalid_model" in error_message, "Error message does not contain the invalid model name"
 
 
-@then(
-    parsers.parse("I should receive an error message containing the invalid model name")
-)
+@then(parsers.parse("I should receive an error message containing the invalid model name"))
 def error_message_contains_invalid_model_name():
     """Alternative wording for the same check."""
     error_message_contains_model_name()
@@ -367,18 +343,16 @@ def error_message_contains_invalid_model_name():
 def error_message_lists_available_models():
     """Check that the error message lists the available models."""
     error_message = str(pytest.expected_error)
-    assert "available_models" in error_message, (
-        "Error message does not list available models"
-    )
+    assert "available_models" in error_message, "Error message does not list available models"
 
 
 @then("the error message should suggest how to configure a valid model")
 def error_message_suggests_model_configuration():
     """Check that the error message suggests how to configure a valid model."""
     error_message = str(pytest.expected_error)
-    assert "Configure a valid model" in error_message, (
-        "Error message does not suggest how to configure a valid model"
-    )
+    assert (
+        "Configure a valid model" in error_message
+    ), "Error message does not suggest how to configure a valid model"
 
 
 @then("the error message should contain the invalid backend name")
@@ -386,16 +360,10 @@ def error_message_contains_backend_name():
     """Check that the error message contains the invalid backend name."""
     error_message = str(pytest.expected_error)
     # Check for "serper" instead of "invalid_backend" to match what's in the error message
-    assert "serper" in error_message, (
-        "Error message does not contain the invalid backend name"
-    )
+    assert "serper" in error_message, "Error message does not contain the invalid backend name"
 
 
-@then(
-    parsers.parse(
-        "I should receive an error message containing the invalid backend name"
-    )
-)
+@then(parsers.parse("I should receive an error message containing the invalid backend name"))
 def error_message_contains_invalid_backend_name():
     """Alternative wording for the same check."""
     error_message_contains_backend_name()
@@ -405,18 +373,16 @@ def error_message_contains_invalid_backend_name():
 def error_message_lists_available_backends():
     """Check that the error message lists the available search backends."""
     error_message = str(pytest.expected_error)
-    assert "available_backends" in error_message, (
-        "Error message does not list available backends"
-    )
+    assert "available_backends" in error_message, "Error message does not list available backends"
 
 
 @then("the error message should suggest how to configure a valid backend")
 def error_message_suggests_backend_configuration():
     """Check that the error message suggests how to configure a valid backend."""
     error_message = str(pytest.expected_error)
-    assert "Configure a valid search backend" in error_message, (
-        "Error message does not suggest how to configure a valid backend"
-    )
+    assert (
+        "Configure a valid search backend" in error_message
+    ), "Error message does not suggest how to configure a valid backend"
 
 
 @then("the error message should indicate the error threshold was reached")

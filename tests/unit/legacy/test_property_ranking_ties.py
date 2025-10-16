@@ -20,9 +20,7 @@ def _setup(monkeypatch) -> None:
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0] * len(r))
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0] * len(r)))
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
@@ -42,9 +40,7 @@ def _setup(monkeypatch) -> None:
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_rank_results_preserves_input_order(monkeypatch, titles) -> None:
     """Ranking should be stable when scores are identical."""
-    results = [
-        {"title": t, "url": f"https://example.com/{i}"} for i, t in enumerate(titles)
-    ]
+    results = [{"title": t, "url": f"https://example.com/{i}"} for i, t in enumerate(titles)]
     _setup(monkeypatch)
     ranked = Search.rank_results("q", results)
     assert [r["title"] for r in ranked] == [r["title"] for r in results]

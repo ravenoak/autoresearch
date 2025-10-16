@@ -20,9 +20,7 @@ def redis_client() -> FailingRedis:
 
 
 @when("I attempt a Redis operation")
-def attempt_redis_operation(
-    redis_client: FailingRedis, bdd_context: BehaviorContext
-) -> None:
+def attempt_redis_operation(redis_client: FailingRedis, bdd_context: BehaviorContext) -> None:
     try:
         redis_client.ping()
     except Exception as err:  # pragma: no cover - error path

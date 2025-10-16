@@ -85,8 +85,7 @@ class WatchfilesModule(Protocol):
         poll_delay_ms: int = 300,
         recursive: bool = True,
         ignore_permission_denied: bool | None = None,
-    ) -> Iterable[WatchEventBatch]:
-        ...
+    ) -> Iterable[WatchEventBatch]: ...
 
 
 class _WatchfilesModule(ModuleType):

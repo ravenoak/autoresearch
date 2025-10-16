@@ -66,9 +66,7 @@ def test_search_storage_hot_reload(
             backend_results: SearchResults = Search.backends[b](query, max_results)
             results.extend(backend_results)
         for r in results:
-            StorageManager.persist_claim(
-                {"id": r["url"], "type": "source", "content": r["title"]}
-            )
+            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)
@@ -129,9 +127,7 @@ def test_search_storage_hot_reload_realistic(
             backend_results: SearchResults = Search.backends[b](query, max_results)
             results.extend(backend_results)
         for r in results:
-            StorageManager.persist_claim(
-                {"id": r["url"], "type": "source", "content": r["title"]}
-            )
+            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)

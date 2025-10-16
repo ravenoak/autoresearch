@@ -29,7 +29,7 @@ pytestmark = [
     pytest.mark.slow,
     pytest.mark.skipif(
         not os.getenv("OPENROUTER_API_KEY"),
-        reason="OPENROUTER_API_KEY environment variable not set"
+        reason="OPENROUTER_API_KEY environment variable not set",
     ),
 ]
 
@@ -206,7 +206,7 @@ class TestOpenRouterLiveIntegration:
 
         # Should have some results (even if some fail due to rate limits)
         assert len(results) >= 0  # At least some threads completed
-        assert len(errors) >= 0   # Some might have errors, that's acceptable
+        assert len(errors) >= 0  # Some might have errors, that's acceptable
 
 
 class TestOpenRouterFreeModels:
@@ -287,7 +287,7 @@ class TestOpenRouterErrorScenarios:
         # The adapter should handle empty responses in _make_api_call
         # We can't easily test this without mocking, but we can verify
         # that the method exists and handles the case
-        assert hasattr(adapter, '_make_api_call')
+        assert hasattr(adapter, "_make_api_call")
 
     def test_timeout_handling(self) -> None:
         """Test that timeouts are handled appropriately."""
@@ -296,9 +296,10 @@ class TestOpenRouterErrorScenarios:
         # Try to make a request with a very short timeout
         # (This would require modifying the adapter or mocking)
         # For now, just verify that timeout handling exists in the retry logic
-        assert hasattr(adapter, '_is_retryable_error')
+        assert hasattr(adapter, "_is_retryable_error")
 
         # Connection timeouts should be retryable
-        import requests
-        timeout_error = requests.ConnectTimeout()
+        from requests.exceptions import ConnectTimeout
+
+        timeout_error = ConnectTimeout()
         assert adapter._is_retryable_error(timeout_error)

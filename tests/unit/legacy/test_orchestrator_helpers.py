@@ -20,9 +20,7 @@ class DummyAgent:
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         return True
 
-    def execute(
-        self, state: QueryState, config: ConfigModel, **_: object
-    ) -> dict[str, object]:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict[str, object]:
         return {"results": {"dummy": "ok"}}
 
 

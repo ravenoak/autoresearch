@@ -33,9 +33,7 @@ def test_rank_results_idempotent(monkeypatch) -> None:
     ranked = Search.rank_results("q", results)
     reranked = Search.rank_results("q", ranked)
     assert [r["url"] for r in ranked] == [r["url"] for r in reranked]
-    assert [r["relevance_bucket"] for r in ranked] == [
-        r["relevance_bucket"] for r in reranked
-    ]
+    assert [r["relevance_bucket"] for r in ranked] == [r["relevance_bucket"] for r in reranked]
     assert [r["raw_relevance_bucket"] for r in ranked] == [
         r["raw_relevance_bucket"] for r in reranked
     ]

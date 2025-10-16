@@ -33,9 +33,7 @@ def test_distributed_storage(tmp_path: Path) -> None:
     db_path: Path = tmp_path / "kg.duckdb"
     cfg: ConfigModel = ConfigModel(
         distributed=True,
-        distributed_config=DistributedConfig(
-            enabled=True, num_cpus=2, message_broker="memory"
-        ),
+        distributed_config=DistributedConfig(enabled=True, num_cpus=2, message_broker="memory"),
         storage=StorageConfig(duckdb_path=str(db_path)),
     )
 
@@ -72,9 +70,7 @@ def test_distributed_storage(tmp_path: Path) -> None:
     StorageManager.setup(str(db_path), context=context, state=state)
     try:
         conn = StorageManager.get_duckdb_conn()
-        rows: list[tuple[str]] = conn.execute(
-            "SELECT id FROM nodes ORDER BY id"
-        ).fetchall()
+        rows: list[tuple[str]] = conn.execute("SELECT id FROM nodes ORDER BY id").fetchall()
     finally:
         StorageManager.teardown(remove_db=True, context=context, state=state)
         StorageManager.state = StorageState()

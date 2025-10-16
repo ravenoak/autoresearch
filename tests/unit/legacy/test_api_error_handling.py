@@ -39,9 +39,7 @@ def test_query_endpoint_runtime_error(
 
     orch: Orchestrator = orchestrator
 
-    def raise_error(
-        q: str, c: ConfigModel, callbacks: Any | None = None
-    ) -> NoReturn:
+    def raise_error(q: str, c: ConfigModel, callbacks: Any | None = None) -> NoReturn:
         raise RuntimeError("fail")
 
     monkeypatch.setattr(orch, "run_query", raise_error)

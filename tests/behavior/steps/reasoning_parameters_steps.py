@@ -19,8 +19,14 @@ def test_adaptive_budget_flags(bdd_context: BehaviorContext):
     pass
 
 
-@when(parsers.parse('I run `autoresearch search "{query}" --circuit-breaker-threshold {threshold:d} --circuit-breaker-cooldown {cooldown:d} --no-ontology-reasoning'))
-def run_breaker_cli(query, threshold, cooldown, monkeypatch, cli_runner, bdd_context: BehaviorContext):
+@when(
+    parsers.parse(
+        'I run `autoresearch search "{query}" --circuit-breaker-threshold {threshold:d} --circuit-breaker-cooldown {cooldown:d} --no-ontology-reasoning'
+    )
+)
+def run_breaker_cli(
+    query, threshold, cooldown, monkeypatch, cli_runner, bdd_context: BehaviorContext
+):
     ConfigLoader.reset_instance()
 
     def mock_run_query(
@@ -51,7 +57,11 @@ def run_breaker_cli(query, threshold, cooldown, monkeypatch, cli_runner, bdd_con
     bdd_context["result"] = result
 
 
-@then(parsers.parse("the search config should set circuit breaker threshold {threshold:d} and cooldown {cooldown:d}"))
+@then(
+    parsers.parse(
+        "the search config should set circuit breaker threshold {threshold:d} and cooldown {cooldown:d}"
+    )
+)
 def check_breaker_config(bdd_context: BehaviorContext, threshold, cooldown):
     cfg = bdd_context.get("cfg")
     assert cfg.circuit_breaker_threshold == threshold
@@ -62,7 +72,11 @@ def check_breaker_config(bdd_context: BehaviorContext, threshold, cooldown):
     assert result.stderr == ""
 
 
-@when(parsers.parse('I run `autoresearch search "{query}" --adaptive-max-factor {factor:d} --adaptive-min-buffer {buffer:d} --no-ontology-reasoning'))
+@when(
+    parsers.parse(
+        'I run `autoresearch search "{query}" --adaptive-max-factor {factor:d} --adaptive-min-buffer {buffer:d} --no-ontology-reasoning'
+    )
+)
 def run_adaptive_cli(query, factor, buffer, monkeypatch, cli_runner, bdd_context: BehaviorContext):
     ConfigLoader.reset_instance()
 
@@ -94,7 +108,9 @@ def run_adaptive_cli(query, factor, buffer, monkeypatch, cli_runner, bdd_context
     bdd_context["result"] = result
 
 
-@then(parsers.parse("the search config should have adaptive factor {factor:d} and buffer {buffer:d}"))
+@then(
+    parsers.parse("the search config should have adaptive factor {factor:d} and buffer {buffer:d}")
+)
 def check_adaptive_config(bdd_context: BehaviorContext, factor, buffer):
     cfg = bdd_context.get("cfg")
     assert cfg.adaptive_max_factor == factor

@@ -14,7 +14,6 @@ from autoresearch.storage import StorageManager, teardown
 )
 def test_infer_subclass_relations():
     """Infer subclass relations through orchestrator."""
-    pass
 
 
 @given("the storage system is configured for in-memory RDF")
@@ -62,11 +61,7 @@ def infer_via_orchestrator():
     Orchestrator.infer_relations()
 
 
-@then(
-    "querying the ontology for the superclass via the orchestrator should include the instance"
-)
+@then("querying the ontology for the superclass via the orchestrator should include the instance")
 def check_query_via_orchestrator():
-    res = Orchestrator.query_ontology(
-        "ASK { <http://example.com/x> a <http://example.com/B> }"
-    )
+    res = Orchestrator.query_ontology("ASK { <http://example.com/x> a <http://example.com/B> }")
     assert res.askAnswer

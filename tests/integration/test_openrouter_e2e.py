@@ -9,6 +9,7 @@ This file focuses on the complete user experience and system behavior.
 
 import os
 import time
+from typing import Any
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
@@ -21,7 +22,7 @@ pytestmark = [
     pytest.mark.slow,
     pytest.mark.skipif(
         not os.getenv("OPENROUTER_API_KEY"),
-        reason="OPENROUTER_API_KEY environment variable not set"
+        reason="OPENROUTER_API_KEY environment variable not set",
     ),
 ]
 
@@ -49,7 +50,11 @@ class TestOpenRouterEndToEndWorkflow:
         assert len(models) >= 10
 
         # Step 3: Verify free-tier models are present
-        free_models = [m for m in models if any(free in m for free in ["gemini-flash", "llama-3.2", "qwen", "hermes"])]
+        free_models = [
+            m
+            for m in models
+            if any(free in m for free in ["gemini-flash", "llama-3.2", "qwen", "hermes"])
+        ]
         assert len(free_models) >= 1
 
         # Step 4: Test context size retrieval for multiple models
@@ -73,7 +78,11 @@ class TestOpenRouterEndToEndWorkflow:
         """Test complete generation workflow with free-tier models."""
         # Step 1: Identify free models
         models = adapter.available_models
-        free_models = [m for m in models if any(free in m for free in ["gemini-flash", "llama-3.2", "qwen", "hermes"])]
+        free_models = [
+            m
+            for m in models
+            if any(free in m for free in ["gemini-flash", "llama-3.2", "qwen", "hermes"])
+        ]
 
         if not free_models:
             pytest.skip("No free-tier models available")
@@ -93,7 +102,9 @@ class TestOpenRouterEndToEndWorkflow:
 
         # Should have at least one successful generation
         successful_results = [r for r in results if r["success"]]
-        assert len(successful_results) >= 1, f"Should have at least one successful generation, got: {results}"
+        assert (
+            len(successful_results) >= 1
+        ), f"Should have at least one successful generation, got: {results}"
 
     def test_error_handling_and_recovery_workflow(self, adapter: OpenRouterAdapter) -> None:
         """Test complete error handling and recovery workflow."""
@@ -157,7 +168,9 @@ class TestOpenRouterEndToEndWorkflow:
             assert size1 == size2
             assert second_call_time <= first_call_time * 2
 
-    def test_configuration_and_environment_workflow(self, adapter: OpenRouterAdapter, config: ConfigLoader) -> None:
+    def test_configuration_and_environment_workflow(
+        self, adapter: OpenRouterAdapter, config: ConfigLoader
+    ) -> None:
         """Test configuration and environment variable handling."""
         # Step 1: Verify API key is properly loaded
         assert adapter.api_key == os.getenv("OPENROUTER_API_KEY")
@@ -176,7 +189,7 @@ class TestOpenRouterEndToEndWorkflow:
         """Test concurrent usage patterns."""
         import threading
 
-        results = []
+        results: list[dict[str, Any]] = []
 
         def create_and_use_adapter(thread_id: int) -> None:
             """Create adapter and perform operations in separate thread."""
@@ -253,7 +266,9 @@ class TestOpenRouterPerformanceAndReliability:
             avg_time = sum(response_times) / len(response_times)
             for response_time in response_times:
                 # Allow up to 3x variance for network conditions
-                assert response_time <= avg_time * 3, f"Inconsistent response time: {response_time}s vs avg {avg_time}s"
+                assert (
+                    response_time <= avg_time * 3
+                ), f"Inconsistent response time: {response_time}s vs avg {avg_time}s"
 
     def test_memory_usage_stability(self) -> None:
         """Test that memory usage remains stable during extended use."""
@@ -324,7 +339,7 @@ class TestOpenRouterErrorScenariosEndToEnd:
 
         # This test attempts to trigger rate limiting by making rapid requests
         # In practice, this might be hard to trigger reliably with free models
-        responses = []
+        responses: list[dict[str, Any]] = []
 
         # Make several rapid requests
         for i in range(5):
@@ -439,7 +454,9 @@ class TestOpenRouterIntegrationWithAutoresearch:
         assert len(capabilities) >= 1
 
         # Check that free models have zero cost
-        free_models = [model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens == 0.0]
+        free_models = [
+            model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens == 0.0
+        ]
         if free_models:
             assert len(free_models) >= 1
 
@@ -455,6 +472,6 @@ class TestOpenRouterIntegrationWithAutoresearch:
             assert False, "Should have raised LLMError"
         except LLMError as e:
             # Should be an LLMError with proper context
-            assert hasattr(e, 'model')
-            assert hasattr(e, 'suggestion')
+            assert hasattr(e, "model")
+            assert hasattr(e, "suggestion")
             assert e.model is not None

@@ -132,9 +132,7 @@ def test_serve_command(mock_create_server, monkeypatch, config_loader):
 
     # Run the command with Ctrl+C simulation
     mock_server_instance.run.side_effect = KeyboardInterrupt()
-    result = runner.invoke(
-        _main().app, ["serve", "--host", "localhost", "--port", "8888"]
-    )
+    result = runner.invoke(_main().app, ["serve", "--host", "localhost", "--port", "8888"])
 
     # Verify the command executed successfully
     assert result.exit_code == 0

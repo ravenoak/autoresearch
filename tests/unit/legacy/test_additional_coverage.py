@@ -50,9 +50,7 @@ class DummyTable(Protocol[RowT]):
         ...
 
 
-def test_log_release_tokens_invalid_json(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_log_release_tokens_invalid_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     path = tmp_path / "rel.json"
     path.write_text("not json")
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(path))

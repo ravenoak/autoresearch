@@ -31,9 +31,7 @@ class LimitsModule(Protocol):
 class _LimitsModule(ModuleType):
     def __init__(self) -> None:
         super().__init__("limits")
-        self.util = cast(
-            LimitsUtilModule, install_stub_module("limits.util", _LimitsUtilModule)
-        )
+        self.util = cast(LimitsUtilModule, install_stub_module("limits.util", _LimitsUtilModule))
 
 
 limits = cast(LimitsModule, install_stub_module("limits", _LimitsModule))

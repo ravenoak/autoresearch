@@ -22,18 +22,15 @@ class _BERTopicModule(ModuleType):
 
 
 if importlib.util.find_spec("bertopic") is None:
-    bertopic = cast(
-        BERTopicModule, install_stub_module("bertopic", _BERTopicModule)
-    )
+    bertopic = cast(BERTopicModule, install_stub_module("bertopic", _BERTopicModule))
 else:  # pragma: no cover
     try:
         import bertopic as _bertopic  # pragma: no cover
+
         bertopic = cast(BERTopicModule, _bertopic)
     except ImportError:
         # BERTopic has import issues, use stub instead
-        bertopic = cast(
-            BERTopicModule, install_stub_module("bertopic", _BERTopicModule)
-        )
+        bertopic = cast(BERTopicModule, install_stub_module("bertopic", _BERTopicModule))
 
 
 __all__ = ["BERTopicModule", "bertopic"]

@@ -17,9 +17,7 @@ def _setup(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
 
-def test_rejects_unknown_version(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_rejects_unknown_version(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """Requests with an unsupported version fail validation."""
     _setup(monkeypatch)
     resp = api_client.post("/query", json={"query": "hi", "version": "2"})
@@ -52,9 +50,7 @@ def test_async_endpoint_returns_version(
     _setup(monkeypatch)
 
     class Dummy:
-        async def run_query_async(
-            self, query: str, config: ConfigModel
-        ) -> QueryResponseV1:
+        async def run_query_async(self, query: str, config: ConfigModel) -> QueryResponseV1:
             return QueryResponseV1(answer=query, citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: Dummy())

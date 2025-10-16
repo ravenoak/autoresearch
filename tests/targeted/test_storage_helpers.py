@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from tests.helpers.modules import ensure_stub_module
 
+from autoresearch import storage  # noqa: E402 - import after stub setup
+from autoresearch.distributed.broker import (  # noqa: E402 - import after stub setup
+    PersistClaimMessage,
+    StorageQueueProtocol,
+)
+
 ensure_stub_module(
     "pydantic_settings",
     {
@@ -12,9 +18,6 @@ ensure_stub_module(
         "SettingsConfigDict": dict,
     },
 )
-
-from autoresearch import storage  # noqa: E402 - import after stub setup
-from autoresearch.distributed.broker import PersistClaimMessage, StorageQueueProtocol  # noqa: E402 - import after stub setup
 
 
 class DummyManager(storage.StorageManager):

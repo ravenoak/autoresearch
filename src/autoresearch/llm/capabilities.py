@@ -244,9 +244,7 @@ class CapabilityProber:
                     name=model_id,
                     provider="openrouter",
                     context_length=context_length,
-                    supports_function_calling=model.get(
-                        "supports_function_calling", False
-                    ),
+                    supports_function_calling=model.get("supports_function_calling", False),
                     supports_vision=model.get("supports_vision", False),
                     supports_streaming=model.get("supports_streaming", True),
                     cost_per_1k_input_tokens=pricing.get("input", 0.0),

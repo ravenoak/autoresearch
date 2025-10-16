@@ -20,6 +20,7 @@ class RequestsResponseProtocol(Protocol):
     """Structural type for ``requests.Response`` objects."""
 
     status_code: int
+    ok: bool
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -49,9 +50,7 @@ class RequestsSessionProtocol(Protocol):
     def close(self) -> None:
         """Release any pooled network resources."""
 
-    def request(
-        self, method: str, url: str, *args: Any, **kwargs: Any
-    ) -> RequestsResponseProtocol:
+    def request(self, method: str, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
         """Issue an HTTP request with the provided method and URL."""
 
     def get(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:

@@ -26,17 +26,13 @@ def start_monitor(
     cli_runner: CliRunner,
 ) -> None:
     responses: Iterator[str] = iter([text, "", "q"])
-    monkeypatch.setattr(
-        "autoresearch.main.Prompt.ask", lambda *args, **kwargs: next(responses)
-    )
-    monkeypatch.setattr(
-        "autoresearch.monitor.Prompt.ask", lambda *args, **kwargs: next(responses)
-    )
+    monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *args, **kwargs: next(responses))
+    monkeypatch.setattr("autoresearch.monitor.Prompt.ask", lambda *args, **kwargs: next(responses))
     result = cli_runner.invoke(cli_app, ["monitor", "run"])
     set_value(bdd_context, "monitor_result", result)
 
 
-@when('I run `autoresearch monitor metrics`')
+@when("I run `autoresearch monitor metrics`")
 def run_metrics(
     monkeypatch: pytest.MonkeyPatch,
     bdd_context: BehaviorContext,
@@ -51,30 +47,26 @@ def run_metrics(
     set_value(bdd_context, "monitor_result", result)
 
 
-@when('I run `autoresearch monitor graph`')
+@when("I run `autoresearch monitor graph`")
 def run_graph(
     monkeypatch: pytest.MonkeyPatch,
     bdd_context: BehaviorContext,
     cli_runner: CliRunner,
 ) -> None:
     graph_data: dict[str, list[str]] = {"A": ["B", "C"]}
-    monkeypatch.setattr(
-        "autoresearch.monitor._collect_graph_data", lambda: graph_data
-    )
+    monkeypatch.setattr("autoresearch.monitor._collect_graph_data", lambda: graph_data)
     result = cli_runner.invoke(cli_app, ["monitor", "graph"])
     set_value(bdd_context, "monitor_result", result)
 
 
-@when('I run `autoresearch monitor graph --tui`')
+@when("I run `autoresearch monitor graph --tui`")
 def run_graph_tui(
     monkeypatch: pytest.MonkeyPatch,
     bdd_context: BehaviorContext,
     cli_runner: CliRunner,
 ) -> None:
     graph_data: dict[str, list[str]] = {"A": ["B", "C"]}
-    monkeypatch.setattr(
-        "autoresearch.monitor._collect_graph_data", lambda: graph_data
-    )
+    monkeypatch.setattr("autoresearch.monitor._collect_graph_data", lambda: graph_data)
     result = cli_runner.invoke(cli_app, ["monitor", "graph", "--tui"])
     set_value(bdd_context, "monitor_result", result)
 
@@ -88,9 +80,7 @@ def run_search_visualize(
 ) -> None:
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     graph_data: dict[str, list[str]] = {"A": ["B"]}
-    monkeypatch.setattr(
-        "autoresearch.monitor._collect_graph_data", lambda: graph_data
-    )
+    monkeypatch.setattr("autoresearch.monitor._collect_graph_data", lambda: graph_data)
 
     def dummy_run_query(*_args: Any, **_kwargs: Any) -> QueryResponse:
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics=empty_metrics())
@@ -100,7 +90,7 @@ def run_search_visualize(
     set_value(bdd_context, "visual_result", result)
 
 
-@when('I run `autoresearch monitor resources --duration 1`')
+@when("I run `autoresearch monitor resources --duration 1`")
 def run_monitor_resources(
     monkeypatch: pytest.MonkeyPatch,
     bdd_context: BehaviorContext,
@@ -128,13 +118,11 @@ def run_monitor_resources(
         "autoresearch.monitor.orch_metrics.OrchestrationMetrics", lambda: DummyMetrics()
     )
     monkeypatch.setattr("time.sleep", lambda *_: None)
-    result = cli_runner.invoke(
-        cli_app, ["monitor", "resources", "--duration", "1"]
-    )
+    result = cli_runner.invoke(cli_app, ["monitor", "resources", "--duration", "1"])
     set_value(bdd_context, "monitor_result", result)
 
 
-@when('I run `autoresearch monitor start --interval 0.1`')
+@when("I run `autoresearch monitor start --interval 0.1`")
 def run_monitor_start(
     monkeypatch: pytest.MonkeyPatch,
     bdd_context: BehaviorContext,

@@ -35,11 +35,12 @@ from .model_routing import (
     ingest_state_overrides,
     resolve_agent_directives,
 )
+
 # ModelConfigMixin import removed to avoid circular imports
 from .reasoning_payloads import FrozenReasoningStep
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ..config.models import ConfigModel
+    from ..config.models import AgentConfig, ConfigModel
     from .orchestration_utils import ScoutGateDecision
     from .state import QueryState
 
@@ -57,8 +58,6 @@ def _select_model_enhanced(config: "ConfigModel", agent_name: str) -> str:
     5. Global default model from config
     6. Intelligent fallback based on discovered models and context size (if adapter available)
     """
-    import os
-
     # 1. Check for environment variable overrides
     env_model = _get_env_model_override(agent_name)
     if env_model:
@@ -113,7 +112,9 @@ def _get_env_model_override(agent_name: str) -> str | None:
     return None
 
 
-def _get_lmstudio_discovered_model(config: "ConfigModel", agent_name: str, model_cfg) -> str | None:
+def _get_lmstudio_discovered_model(
+    config: "ConfigModel", agent_name: str, model_cfg: "AgentConfig | None"
+) -> str | None:
     """Get model from LM Studio discovery when available."""
     try:
         from ..llm.adapters import LMStudioAdapter
@@ -131,17 +132,17 @@ def _get_lmstudio_discovered_model(config: "ConfigModel", agent_name: str, model
             if model_cfg and model_cfg.allowed_models:
                 for allowed_model in model_cfg.allowed_models:
                     if allowed_model in discovered_models:
-                        return allowed_model
+                        return str(allowed_model)
 
             # Then try agent-specific preferred models
             if model_cfg and model_cfg.preferred_models:
                 for preferred_model in model_cfg.preferred_models:
                     if preferred_model in discovered_models:
-                        return preferred_model
+                        return str(preferred_model)
 
             # Finally, use the first discovered model
             if discovered_models:
-                return discovered_models[0]
+                return str(discovered_models[0])
 
     except Exception as e:
         log.debug(f"LM Studio model discovery failed: {e}")
@@ -186,7 +187,7 @@ def _get_intelligent_fallback(config: "ConfigModel", agent_name: str) -> str:
                         continue
 
                 if best_model:
-                    return best_model
+                    return str(best_model)
 
         except Exception as e:
             log.debug(f"Intelligent fallback discovery failed: {e}")
@@ -202,18 +203,10 @@ def _get_intelligent_fallback(config: "ConfigModel", agent_name: str) -> str:
         return "mistral"  # Global conservative default
 
 
-QUERY_COUNTER = Counter(
-    "autoresearch_queries_total", "Total number of queries processed"
-)
-ERROR_COUNTER = Counter(
-    "autoresearch_errors_total", "Total number of errors during processing"
-)
-TOKENS_IN_COUNTER = Counter(
-    "autoresearch_tokens_in_total", "Total input tokens processed"
-)
-TOKENS_OUT_COUNTER = Counter(
-    "autoresearch_tokens_out_total", "Total output tokens produced"
-)
+QUERY_COUNTER = Counter("autoresearch_queries_total", "Total number of queries processed")
+ERROR_COUNTER = Counter("autoresearch_errors_total", "Total number of errors during processing")
+TOKENS_IN_COUNTER = Counter("autoresearch_tokens_in_total", "Total input tokens processed")
+TOKENS_OUT_COUNTER = Counter("autoresearch_tokens_out_total", "Total output tokens produced")
 EVICTION_COUNTER = Counter(
     "autoresearch_duckdb_evictions_total",
     "Total nodes evicted from RAM to DuckDB",
@@ -363,9 +356,7 @@ def _normalize_latency_mapping(
                 else:
                     result[name] = 0.0
                 continue
-            if isinstance(value, Sequence) and not isinstance(
-                value, (str, bytes, bytearray)
-            ):
+            if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
                 nested = _normalize_latency_mapping(value, prefix=name)
                 if nested:
                     result.update(nested)
@@ -828,15 +819,11 @@ class OrchestrationMetrics:
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
 
-    def record_circuit_breaker(
-        self, agent_name: str, state: CircuitBreakerState
-    ) -> None:
+    def record_circuit_breaker(self, agent_name: str, state: CircuitBreakerState) -> None:
         """Record the circuit breaker ``state`` for ``agent_name``."""
         self.circuit_breakers[agent_name] = state
 
-    def _register_override(
-        self, override: RoutingOverrideRequest
-    ) -> RoutingOverrideRequest:
+    def _register_override(self, override: RoutingOverrideRequest) -> RoutingOverrideRequest:
         """Deduplicate and record routing overrides."""
 
         for existing in self.routing_override_requests:
@@ -944,9 +931,7 @@ class OrchestrationMetrics:
             entity_count = max(0.0, _safe_float(ingestion_meta.get("entity_count")))
             relation_count = max(0.0, _safe_float(ingestion_meta.get("relation_count")))
             ingestion_seconds = max(0.0, _safe_float(ingestion_meta.get("seconds")))
-            storage_latency = _normalize_latency_mapping(
-                ingestion_meta.get("storage_latency")
-            )
+            storage_latency = _normalize_latency_mapping(ingestion_meta.get("storage_latency"))
 
         if entity_count <= 0.0 and relation_count <= 0.0 and not metadata.get("paths"):
             # Skip empty ingestions that did not add any graph structure.
@@ -989,15 +974,11 @@ class OrchestrationMetrics:
                     )
                     if len(contradiction_sample) >= 5:
                         break
-            raw_contradiction_score = max(
-                0.0, _coerce_float(contradictions_meta.get("raw_score"))
-            )
+            raw_contradiction_score = max(0.0, _coerce_float(contradictions_meta.get("raw_score")))
             weighted_contradiction_score = max(
                 0.0, _coerce_float(contradictions_meta.get("weighted_score"))
             )
-            contradiction_weight = max(
-                0.0, _coerce_float(contradictions_meta.get("weight"))
-            )
+            contradiction_weight = max(0.0, _coerce_float(contradictions_meta.get("weight")))
         if contradiction_count > 0:
             GRAPH_CONTRADICTION_COUNTER.inc(contradiction_count)
 
@@ -1050,9 +1031,7 @@ class OrchestrationMetrics:
         similarity_weight = 0.0
         if isinstance(similarity_meta, Mapping):
             similarity_raw = max(0.0, _coerce_float(similarity_meta.get("raw_score")))
-            similarity_weighted = max(
-                0.0, _coerce_float(similarity_meta.get("weighted_score"))
-            )
+            similarity_weighted = max(0.0, _coerce_float(similarity_meta.get("weighted_score")))
             similarity_weight = max(0.0, _coerce_float(similarity_meta.get("weight")))
 
         provenance_count = 0
@@ -1138,9 +1117,7 @@ class OrchestrationMetrics:
         latency_summary: dict[str, float] = {}
         avg_tokens_summary: dict[str, float] = {}
         for agent, samples in self.agent_token_samples.items():
-            latencies = [
-                duration * 1000.0 for duration in self.agent_timings.get(agent, [])
-            ]
+            latencies = [duration * 1000.0 for duration in self.agent_timings.get(agent, [])]
             stats = AgentUsageStats.from_samples(samples, latencies)
             if stats is None:
                 continue
@@ -1167,9 +1144,7 @@ class OrchestrationMetrics:
                 if isinstance(latency_meta, Mapping):
                     for key, value in latency_meta.items():
                         name = str(key)
-                        storage_totals[name] = storage_totals.get(name, 0.0) + _safe_float(
-                            value
-                        )
+                        storage_totals[name] = storage_totals.get(name, 0.0) + _safe_float(value)
             averages: dict[str, float | dict[str, float]] = {
                 key: (totals[key] / runs if runs else 0.0) for key in totals
             }
@@ -1186,26 +1161,18 @@ class OrchestrationMetrics:
                     latest_raw[key] = {str(name): _safe_float(v) for name, v in value.items()}
                     continue
                 if key == "contradiction_sample" and isinstance(value, Sequence):
-                    latest_raw[key] = [
-                        dict(item) for item in value if isinstance(item, Mapping)
-                    ]
+                    latest_raw[key] = [dict(item) for item in value if isinstance(item, Mapping)]
                     continue
                 if key == "neighbor_sample" and isinstance(value, Mapping):
                     latest_raw[key] = {
-                        str(node): [
-                            dict(edge)
-                            for edge in edges
-                            if isinstance(edge, Mapping)
-                        ]
+                        str(node): [dict(edge) for edge in edges if isinstance(edge, Mapping)]
                         for node, edges in value.items()
                         if isinstance(edges, Sequence)
                     }
                     continue
                 if key == "path_sample" and isinstance(value, Sequence):
                     latest_raw[key] = [
-                        [str(node) for node in path]
-                        for path in value
-                        if isinstance(path, Sequence)
+                        [str(node) for node in path] for path in value if isinstance(path, Sequence)
                     ]
                     continue
                 latest_raw[key] = value
@@ -1221,8 +1188,7 @@ class OrchestrationMetrics:
         return {
             "total_duration_seconds": total_duration,
             "cycles_completed": len(self.cycle_durations),
-            "avg_cycle_duration_seconds": total_duration
-            / max(1, len(self.cycle_durations)),
+            "avg_cycle_duration_seconds": total_duration / max(1, len(self.cycle_durations)),
             "total_tokens": {
                 "input": total_tokens_in,
                 "output": total_tokens_out,
@@ -1231,9 +1197,7 @@ class OrchestrationMetrics:
             "agent_timings": {
                 agent: list(samples) for agent, samples in self.agent_timings.items()
             },
-            "agent_tokens": {
-                agent: dict(tokens) for agent, tokens in self.token_counts.items()
-            },
+            "agent_tokens": {agent: dict(tokens) for agent, tokens in self.token_counts.items()},
             "errors": {"total": total_errors, "by_agent": dict(self.error_counts)},
             "circuit_breakers": {
                 agent: dict(state) for agent, state in self.circuit_breakers.items()
@@ -1251,9 +1215,7 @@ class OrchestrationMetrics:
             ],
             "agent_latency_p95_ms": latency_summary,
             "agent_avg_tokens": avg_tokens_summary,
-            "model_routing_decisions": [
-                decision.to_dict() for decision in self.routing_decisions
-            ],
+            "model_routing_decisions": [decision.to_dict() for decision in self.routing_decisions],
             "model_routing_cost_savings": {
                 "total": total_savings,
                 "by_agent": savings_by_agent,
@@ -1278,9 +1240,7 @@ class OrchestrationMetrics:
         samples = self.agent_token_samples.get(agent_name)
         if not samples:
             return None
-        latencies = [
-            duration * 1000.0 for duration in self.agent_timings.get(agent_name, [])
-        ]
+        latencies = [duration * 1000.0 for duration in self.agent_timings.get(agent_name, [])]
         stats = AgentUsageStats.from_samples(samples, latencies)
         if stats is None:
             return None
@@ -1310,11 +1270,7 @@ class OrchestrationMetrics:
         """Return a budget-aware model recommendation without mutating ``config``."""
 
         routing_cfg = getattr(config, "model_routing", None)
-        if (
-            routing_cfg is None
-            or not routing_cfg.enabled
-            or not routing_cfg.model_profiles
-        ):
+        if routing_cfg is None or not routing_cfg.enabled or not routing_cfg.model_profiles:
             return None
 
         self.routing_strategy = routing_cfg.strategy_name
@@ -1353,9 +1309,7 @@ class OrchestrationMetrics:
         # Use enhanced model selection logic (inline to avoid circular imports)
         current_model = _select_model_enhanced(config, agent_name)
 
-        usage = self.get_agent_usage_stats(
-            agent_name, routing_cfg.default_latency_slo_ms
-        )
+        usage = self.get_agent_usage_stats(agent_name, routing_cfg.default_latency_slo_ms)
         router = BudgetRouter(
             routing_cfg.model_profiles,
             default_model=config.default_model,
@@ -1460,9 +1414,7 @@ class OrchestrationMetrics:
             "agent_latency_p95_ms": summary.get("agent_latency_p95_ms", {}),
             "agent_avg_tokens": summary.get("agent_avg_tokens", {}),
             "agent_constraints": summary.get("model_routing_agent_constraints", {}),
-            "agent_recommendations": summary.get(
-                "model_routing_recommendations", {}
-            ),
+            "agent_recommendations": summary.get("model_routing_recommendations", {}),
         }
         if path is None:
             path = Path(
@@ -1475,9 +1427,7 @@ class OrchestrationMetrics:
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record) + "\n")
 
-    def check_query_regression(
-        self, query: str, baseline_path: Path, threshold: int = 0
-    ) -> bool:
+    def check_query_regression(self, query: str, baseline_path: Path, threshold: int = 0) -> bool:
         """Return ``True`` if token usage exceeds the baseline."""
         import json
 
@@ -1520,7 +1470,7 @@ class OrchestrationMetrics:
             reached.
         """
 
-        tokens = len(prompt.split())
+        tokens = max(1, len(prompt.split()))  # Count words as tokens for consistency
         self.prompt_lengths.append(tokens)
         avg_tokens = sum(self.prompt_lengths) / len(self.prompt_lengths)
 
@@ -1593,22 +1543,14 @@ class OrchestrationMetrics:
         return max(desired, 1)
 
     def record_context_utilization(
-        self,
-        model: str,
-        used_tokens: int,
-        available_tokens: int
+        self, model: str, used_tokens: int, available_tokens: int
     ) -> None:
         """Record context utilization for a model."""
         if model not in self._context_utilization:
             self._context_utilization[model] = []
         self._context_utilization[model].append((used_tokens, available_tokens))
 
-    def record_truncation(
-        self,
-        model: str,
-        original_tokens: int,
-        truncated_tokens: int
-    ) -> None:
+    def record_truncation(self, model: str, original_tokens: int, truncated_tokens: int) -> None:
         """Record a truncation event."""
         if model not in self._truncation_events:
             self._truncation_events[model] = []
@@ -1620,29 +1562,17 @@ class OrchestrationMetrics:
             self._chunking_events[model] = []
         self._chunking_events[model].append(num_chunks)
 
-    def record_context_error(
-        self,
-        model: str,
-        error_type: str,
-        recovered: bool
-    ) -> None:
+    def record_context_error(self, model: str, error_type: str, recovered: bool) -> None:
         """Record a context-related error."""
         if model not in self._context_errors:
             self._context_errors[model] = []
-        self._context_errors[model].append({
-            "error_type": error_type,
-            "recovered": recovered,
-            "timestamp": time.time()
-        })
+        self._context_errors[model].append(
+            {"error_type": error_type, "recovered": recovered, "timestamp": time.time()}
+        )
 
     def get_context_stats(self) -> dict[str, Any]:
         """Get context-related statistics."""
-        stats = {
-            "utilization": {},
-            "truncations": {},
-            "chunking": {},
-            "errors": {}
-        }
+        stats: dict[str, Any] = {"utilization": {}, "truncations": {}, "chunking": {}, "errors": {}}
 
         # Calculate utilization percentages
         for model, data in self._context_utilization.items():
@@ -1654,7 +1584,7 @@ class OrchestrationMetrics:
                     "avg_used": int(avg_used),
                     "avg_available": int(avg_available),
                     "avg_percent": round(avg_percent, 1),
-                    "count": len(data)
+                    "count": len(data),
                 }
 
         # Truncation stats
@@ -1662,21 +1592,23 @@ class OrchestrationMetrics:
             if data:
                 avg_original = sum(o for o, _ in data) / len(data)
                 avg_truncated = sum(t for _, t in data) / len(data)
-                avg_reduction = ((avg_original - avg_truncated) / avg_original * 100) if avg_original > 0 else 0
+                avg_reduction = (
+                    ((avg_original - avg_truncated) / avg_original * 100) if avg_original > 0 else 0
+                )
                 stats["truncations"][model] = {
                     "count": len(data),
                     "avg_original": int(avg_original),
                     "avg_truncated": int(avg_truncated),
-                    "avg_reduction_percent": round(avg_reduction, 1)
+                    "avg_reduction_percent": round(avg_reduction, 1),
                 }
 
         # Chunking stats
-        for model, data in self._chunking_events.items():
-            if data:
+        for model, chunk_data in self._chunking_events.items():
+            if chunk_data:
                 stats["chunking"][model] = {
-                    "count": len(data),
-                    "avg_chunks": round(sum(data) / len(data), 1),
-                    "max_chunks": max(data)
+                    "count": len(chunk_data),
+                    "avg_chunks": round(sum(chunk_data) / len(chunk_data), 1),
+                    "max_chunks": max(chunk_data),
                 }
 
         # Error stats
@@ -1687,7 +1619,7 @@ class OrchestrationMetrics:
                 stats["errors"][model] = {
                     "total": total,
                     "recovered": recovered,
-                    "recovery_rate": round(recovered / total * 100, 1) if total > 0 else 0
+                    "recovery_rate": round(recovered / total * 100, 1) if total > 0 else 0,
                 }
 
         return stats

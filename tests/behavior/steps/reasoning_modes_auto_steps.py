@@ -247,9 +247,7 @@ def run_auto_planner_cycle(
                     sources=["src-verify"],
                 ),
             ]
-            metadata = build_scout_metadata(
-                audit_badges={"supported": 1, "needs_review": 1}
-            )
+            metadata = build_scout_metadata(audit_badges={"supported": 1, "needs_review": 1})
             return build_scout_payload(
                 claim_audits=audits,
                 metadata=metadata,
@@ -294,12 +292,15 @@ def run_auto_planner_cycle(
         return decision
 
     with SearchContext.temporary_instance():
-        with patch(
-            "autoresearch.orchestration.orchestrator.AgentFactory.get",
-            side_effect=get_agent,
-        ), patch(
-            "autoresearch.orchestration.orchestrator.OrchestrationUtils.evaluate_scout_gate_policy",
-            side_effect=capture_gate,
+        with (
+            patch(
+                "autoresearch.orchestration.orchestrator.AgentFactory.get",
+                side_effect=get_agent,
+            ),
+            patch(
+                "autoresearch.orchestration.orchestrator.OrchestrationUtils.evaluate_scout_gate_policy",
+                side_effect=capture_gate,
+            ),
         ):
             response: QueryResponse = Orchestrator.run_query(query, config)
 
@@ -408,10 +409,9 @@ def assert_auto_planner_routing(auto_cycle_result: dict[str, Any]) -> None:
     assert routing_summary.get("strategy") == routing_strategy
 
     planner_summary = auto_cycle_result.get("planner", {})
-    cli_depth = (
-        planner_summary.get("task_graph", {}).get("max_depth")
-        or planner_summary.get("task_graph", {}).get("depth")
-    )
+    cli_depth = planner_summary.get("task_graph", {}).get("max_depth") or planner_summary.get(
+        "task_graph", {}
+    ).get("depth")
     assert cli_depth == depth
 
 
@@ -472,14 +472,8 @@ def assert_auto_gate_telemetry(auto_cycle_result: dict[str, Any]) -> None:
     assert scout_stage.get("search_self_critique") == critique
 
 
-@then(
-    parsers.parse(
-        'the auto mode audit badges should include "{first}" and "{second}"'
-    )
-)
-def assert_audit_badges(
-    auto_cycle_result: dict[str, Any], first: str, second: str
-) -> None:
+@then(parsers.parse('the auto mode audit badges should include "{first}" and "{second}"'))
+def assert_audit_badges(auto_cycle_result: dict[str, Any], first: str, second: str) -> None:
     response: QueryResponse = auto_cycle_result["response"]
     statuses = {str(audit.get("status", "")).lower() for audit in response.claim_audits}
     assert first.lower() in statuses
@@ -507,9 +501,7 @@ def assert_planner_snapshot(
 
 @given("planner graph conditioning is enabled in configuration")
 def enable_planner_graph_conditioning(config: ConfigModel) -> ConfigModel:
-    stub = make_config_model(
-        context_overrides={"planner_graph_conditioning": True}
-    )
+    stub = make_config_model(context_overrides={"planner_graph_conditioning": True})
     context_stub = stub.search.context_aware
     context_cfg = config.search.context_aware
     context_cfg.enabled = context_stub.enabled
@@ -518,9 +510,7 @@ def enable_planner_graph_conditioning(config: ConfigModel) -> ConfigModel:
     context_cfg.use_search_history = context_stub.use_search_history
     context_cfg.max_history_items = context_stub.max_history_items
     context_cfg.graph_signal_weight = context_stub.graph_signal_weight
-    context_cfg.planner_graph_conditioning = (
-        context_stub.planner_graph_conditioning
-    )
+    context_cfg.planner_graph_conditioning = context_stub.planner_graph_conditioning
     context_cfg.graph_pipeline_enabled = True
     config.reasoning_mode = ReasoningMode.DIRECT
     return config
@@ -650,28 +640,26 @@ def execute_planner_with_graph_context(
             search_context._graph_summary = dict(graph_summary)
             result = planner.execute(state, config)
 
-    trace_entries = [
-        entry for entry in state.react_log if entry.get("event") == "planner.trace"
-    ]
+    trace_entries = [entry for entry in state.react_log if entry.get("event") == "planner.trace"]
     if not trace_entries:
         msg = "Planner trace was not recorded during graph conditioning run"
         raise AssertionError(msg)
     prompt = trace_entries[-1]["payload"]["prompt"]
     telemetry = state.metadata.get("planner", {}).get("telemetry", {})
 
-    return as_payload({
-        "state": state,
-        "result": result,
-        "prompt": prompt,
-        "telemetry": telemetry,
-        "adapter_prompts": adapter_prompts,
-    })
+    return as_payload(
+        {
+            "state": state,
+            "result": result,
+            "prompt": prompt,
+            "telemetry": telemetry,
+            "adapter_prompts": adapter_prompts,
+        }
+    )
 
 
 @then("the planner prompt should include contradiction and neighbour cues")
-def assert_planner_prompt_cues(
-    planner_graph_conditioning_result: dict[str, Any]
-) -> None:
+def assert_planner_prompt_cues(planner_graph_conditioning_result: dict[str, Any]) -> None:
     prompt = planner_graph_conditioning_result["prompt"]
     assert "Knowledge graph signals:" in prompt
     assert "- Contradiction score: 0.40 (raw 0.80)" in prompt
@@ -684,9 +672,7 @@ def assert_planner_prompt_cues(
 
 
 @then("the planner telemetry should record objectives and tasks")
-def assert_planner_graph_telemetry(
-    planner_graph_conditioning_result: dict[str, Any]
-) -> None:
+def assert_planner_graph_telemetry(planner_graph_conditioning_result: dict[str, Any]) -> None:
     telemetry = planner_graph_conditioning_result["telemetry"]
     tasks = telemetry.get("tasks", [])
     assert tasks, "Planner telemetry should record task snapshots"

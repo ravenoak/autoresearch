@@ -3,8 +3,6 @@
 from tests.behavior.context import BehaviorContext
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import patch
-
 
 
 @pytest.fixture(autouse=True)
@@ -43,14 +41,11 @@ def uninit_storage(monkeypatch):
     Returns:
         A function that does nothing, for backward compatibility
     """
-    from unittest.mock import patch
     import autoresearch.storage as storage
     from autoresearch.errors import StorageError
 
     # Save the original methods
-    original_ensure_storage_initialized = (
-        storage.StorageManager._ensure_storage_initialized
-    )
+    original_ensure_storage_initialized = storage.StorageManager._ensure_storage_initialized
 
     # Mock the _ensure_storage_initialized method to raise a StorageError
     def mock_ensure_storage_initialized():
@@ -103,9 +98,7 @@ def agent_asserts_claim(valid_claim):
 @then("the claim node should be added to the NetworkX graph in RAM")
 def check_networkx_graph(valid_claim, claim_factory):
     """Verify that the claim node is added to the NetworkX graph in RAM."""
-    assert claim_factory.verify_in_networkx(valid_claim), (
-        "Claim not found in NetworkX graph"
-    )
+    assert claim_factory.verify_in_networkx(valid_claim), "Claim not found in NetworkX graph"
 
 
 @when("an agent commits a new claim")
@@ -120,17 +113,13 @@ def agent_commits_claim(valid_claim):
 @then("a row should be inserted into the `nodes` table")
 def check_duckdb_nodes(valid_claim, claim_factory):
     """Verify that a row is inserted into the nodes table in DuckDB."""
-    assert claim_factory.verify_in_duckdb(valid_claim), (
-        "Claim not found in DuckDB nodes table"
-    )
+    assert claim_factory.verify_in_duckdb(valid_claim), "Claim not found in DuckDB nodes table"
 
     # Additional verification of specific fields
     from autoresearch.storage import StorageManager
 
     conn = StorageManager.get_duckdb_conn()
-    result = conn.execute(
-        f"SELECT * FROM nodes WHERE id = '{valid_claim['id']}'"
-    ).fetchall()
+    result = conn.execute(f"SELECT * FROM nodes WHERE id = '{valid_claim['id']}'").fetchall()
     assert result[0][1] == valid_claim["type"], "Claim type mismatch"
     assert result[0][2] == valid_claim["content"], "Claim content mismatch"
     assert result[0][3] == valid_claim["confidence"]
@@ -142,18 +131,14 @@ def check_duckdb_edges(valid_claim, claim_factory):
     from autoresearch.storage import StorageManager
 
     conn = StorageManager.get_duckdb_conn()
-    result = conn.execute(
-        f"SELECT * FROM edges WHERE src = '{valid_claim['id']}'"
-    ).fetchall()
-    assert len(result) == len(valid_claim["relations"]), (
-        "Number of edges doesn't match number of relations"
-    )
+    result = conn.execute(f"SELECT * FROM edges WHERE src = '{valid_claim['id']}'").fetchall()
+    assert len(result) == len(
+        valid_claim["relations"]
+    ), "Number of edges doesn't match number of relations"
     assert result[0][0] == valid_claim["relations"][0]["src"], "Source ID mismatch"
     assert result[0][1] == valid_claim["relations"][0]["dst"], "Destination ID mismatch"
     assert result[0][2] == valid_claim["relations"][0]["rel"], "Relation type mismatch"
-    assert result[0][3] == valid_claim["relations"][0]["weight"], (
-        "Relation weight mismatch"
-    )
+    assert result[0][3] == valid_claim["relations"][0]["weight"], "Relation weight mismatch"
 
 
 @then("the embedding should be stored in the `embeddings` vector column")
@@ -198,7 +183,6 @@ def check_rdflib_store(valid_claim, claim_factory):
 def check_sparql_query(valid_claim):
     """Verify that SPARQL queries can retrieve the claim from the RDF store."""
     from autoresearch.storage import StorageManager
-    import rdflib
 
     store = StorageManager.get_rdf_store()
     query = f"""
@@ -214,19 +198,16 @@ def check_sparql_query(valid_claim):
 @scenario("../features/dkg_persistence.feature", "Persist claim in RAM")
 def test_persist_ram():
     """Test scenario: Persist claim in RAM."""
-    pass
 
 
 @scenario("../features/dkg_persistence.feature", "Persist claim in DuckDB")
 def test_persist_duckdb():
     """Test scenario: Persist claim in DuckDB."""
-    pass
 
 
 @scenario("../features/dkg_persistence.feature", "Persist claim in RDF quad-store")
 def test_persist_rdf():
     """Test scenario: Persist claim in RDF quad-store."""
-    pass
 
 
 @when("I clear the knowledge graph")
@@ -253,21 +234,16 @@ def duckdb_tables_empty():
     from autoresearch.storage import StorageManager
 
     conn = StorageManager.get_duckdb_conn()
-    assert conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0] == 0, (
-        "Nodes table is not empty"
-    )
-    assert conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 0, (
-        "Edges table is not empty"
-    )
-    assert conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0, (
-        "Embeddings table is not empty"
-    )
+    assert conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0] == 0, "Nodes table is not empty"
+    assert conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 0, "Edges table is not empty"
+    assert (
+        conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0
+    ), "Embeddings table is not empty"
 
 
 @scenario("../features/dkg_persistence.feature", "Clear DKG removes persisted data")
 def test_clear_dkg():
     """Test scenario: Clear DKG removes persisted data."""
-    pass
 
 
 @when("I try to persist the claim")
@@ -307,7 +283,7 @@ def try_persist_valid_claim_uninit(
 def perform_vector_search(persisted_claims):
     """Perform a vector search with a query embedding and return the results."""
     from autoresearch.storage import StorageManager
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import patch
 
     # Use a query embedding that is exactly the same as the first persisted claim
     # to ensure we get a match with similarity 1.0
@@ -368,19 +344,15 @@ def check_vector_search_results(perform_vector_search):
     """Verify that vector search returns the nearest claims by vector similarity."""
     results = perform_vector_search
     assert len(results) > 0, "No results returned from vector search"
-    assert all("node_id" in result for result in results), (
-        "Some results are missing node_id"
-    )
-    assert all("embedding" in result for result in results), (
-        "Some results are missing embedding"
-    )
+    assert all("node_id" in result for result in results), "Some results are missing node_id"
+    assert all("embedding" in result for result in results), "Some results are missing embedding"
 
     # Verify that results are ordered by similarity (closest first)
     if len(results) > 1:
         for i in range(len(results) - 1):
-            assert results[i]["similarity"] >= results[i + 1]["similarity"], (
-                "Results are not ordered by similarity (closest first)"
-            )
+            assert (
+                results[i]["similarity"] >= results[i + 1]["similarity"]
+            ), "Results are not ordered by similarity (closest first)"
 
 
 @scenario("../features/dkg_persistence.feature", "Handle missing claim ID")
@@ -390,7 +362,6 @@ def test_handle_missing_id():
     This test verifies that attempting to persist a claim without an ID
     raises a StorageError with an appropriate error message.
     """
-    pass
 
 
 @scenario("../features/dkg_persistence.feature", "Handle uninitialized storage")
@@ -400,19 +371,15 @@ def test_handle_uninit_storage():
     This test verifies that attempting to persist a claim to uninitialized storage
     raises a StorageError with an appropriate error message.
     """
-    pass
 
 
-@scenario(
-    "../features/dkg_persistence.feature", "Vector search returns nearest neighbors"
-)
+@scenario("../features/dkg_persistence.feature", "Vector search returns nearest neighbors")
 def test_vector_search():
     """Test scenario: Vector search returns nearest neighbors.
 
     This test verifies that vector search returns the nearest claims by vector similarity,
     ordered by similarity (closest first).
     """
-    pass
 
 
 @given("I have loaded an ontology defining subclasses")
@@ -471,9 +438,7 @@ def apply_reasoning(monkeypatch):
 def check_superclass_query():
     from autoresearch.storage import StorageManager
 
-    res = StorageManager.query_rdf(
-        "ASK { <http://example.com/x> a <http://example.com/B> }"
-    )
+    res = StorageManager.query_rdf("ASK { <http://example.com/x> a <http://example.com/B> }")
     assert res.askAnswer
 
 
@@ -492,7 +457,7 @@ def add_simple_triple():
     )
 
 
-@when(parsers.parse("I visualize the RDF graph to \"{file}\""), target_fixture="viz_path")
+@when(parsers.parse('I visualize the RDF graph to "{file}"'), target_fixture="viz_path")
 def visualize_graph(tmp_path, file):
     from autoresearch.storage import StorageManager
 
@@ -501,7 +466,7 @@ def visualize_graph(tmp_path, file):
     return out
 
 
-@then(parsers.parse("the visualization file \"{file}\" should exist"))
+@then(parsers.parse('the visualization file "{file}" should exist'))
 def check_visualization(tmp_path, file, viz_path):
     path = viz_path
     assert path.exists() and path.stat().st_size > 0
@@ -511,10 +476,8 @@ def check_visualization(tmp_path, file, viz_path):
 @scenario("../features/dkg_persistence.feature", "Ontology reasoning infers subclass relationships")
 def test_ontology_reasoning():
     """Test scenario: Ontology reasoning infers subclass relationships."""
-    pass
 
 
 @scenario("../features/dkg_persistence.feature", "RDF graph visualization")
 def test_rdf_visualization():
     """Test scenario: RDF graph visualization."""
-    pass

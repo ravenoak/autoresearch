@@ -9,7 +9,9 @@ from autoresearch.models import QueryResponse
 
 def test_get_memory_usage_psutil(monkeypatch):
     fake_psutil = types.SimpleNamespace(
-        Process=lambda: types.SimpleNamespace(memory_info=lambda: types.SimpleNamespace(rss=42 * 1024 * 1024))
+        Process=lambda: types.SimpleNamespace(
+            memory_info=lambda: types.SimpleNamespace(rss=42 * 1024 * 1024)
+        )
     )
     monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
     assert utils.get_memory_usage() == 42.0

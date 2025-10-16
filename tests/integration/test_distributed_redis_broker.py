@@ -37,9 +37,7 @@ def _make_agent_result_message(
     return payload
 
 
-def test_redis_broker_roundtrip(
-    monkeypatch: pytest.MonkeyPatch, redis_client: object
-) -> None:
+def test_redis_broker_roundtrip(monkeypatch: pytest.MonkeyPatch, redis_client: object) -> None:
     def _from_url(url: str, *args: object, **kwargs: object) -> object:
         del url, args, kwargs
         return redis_client

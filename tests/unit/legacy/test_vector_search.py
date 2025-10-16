@@ -65,9 +65,7 @@ def _mock_config():
 def test_create_hnsw_index(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(
-        StorageManager.context, "db_backend", mock_backend, raising=False
-    )
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -86,9 +84,7 @@ def test_create_hnsw_index(monkeypatch):
 def test_vector_search_builds_query(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(
-        StorageManager.context, "db_backend", mock_backend, raising=False
-    )
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -109,9 +105,7 @@ def test_vector_search_builds_query(monkeypatch):
 def test_vector_search_uses_config_nprobe(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(
-        StorageManager.context, "db_backend", mock_backend, raising=False
-    )
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: _mock_config())
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
@@ -134,9 +128,7 @@ class FailingBackend(MockDuckDBBackend):
 def test_vector_search_failure(monkeypatch):
     dummy = FailingConn()
     mock_backend = FailingBackend(dummy)
-    monkeypatch.setattr(
-        StorageManager.context, "db_backend", mock_backend, raising=False
-    )
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -187,9 +179,7 @@ def test_embedding_update_triggers_index_refresh(monkeypatch):
 
     monkeypatch.setattr(StorageManager, "refresh_vector_index", refresh)
 
-    StorageManager.persist_claim(
-        {"id": "c1", "type": "fact", "content": "c", "embedding": [0.1]}
-    )
+    StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "c", "embedding": [0.1]})
     StorageManager.persist_claim(
         {"id": "c1", "type": "fact", "content": "c", "embedding": [0.2]},
         partial_update=True,

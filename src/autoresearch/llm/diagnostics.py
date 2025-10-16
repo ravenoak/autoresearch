@@ -1,12 +1,10 @@
 """Context size diagnostics and reporting."""
 
 from typing import Dict, Any
-import logging
 
 from ..llm.registry import get_available_adapters
 from ..llm.context_management import get_context_manager
 from ..llm.token_counting import is_tiktoken_available
-from ..config import get_config
 from ..logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -14,14 +12,9 @@ logger = get_logger(__name__)
 
 def diagnose_context_capabilities() -> Dict[str, Any]:
     """Diagnose context capabilities across all adapters."""
-    config = get_config()
     context_mgr = get_context_manager()
 
-    report: Dict[str, Any] = {
-        "providers": {},
-        "tiktoken_available": False,
-        "recommendations": []
-    }
+    report: Dict[str, Any] = {"providers": {}, "tiktoken_available": False, "recommendations": []}
 
     # Check tiktoken availability
     report["tiktoken_available"] = is_tiktoken_available()
@@ -36,10 +29,7 @@ def diagnose_context_capabilities() -> Dict[str, Any]:
         try:
             adapter = adapter_cls()
 
-            provider_info = {
-                "models": [],
-                "available": True
-            }
+            provider_info: Dict[str, Any] = {"models": [], "available": True}
 
             # Get available models
             models = adapter.available_models
@@ -48,7 +38,7 @@ def diagnose_context_capabilities() -> Dict[str, Any]:
                 model_info = {
                     "name": model,
                     "context_size": context_size,
-                    "context_mb": round(context_size * 4 / 1024, 1)  # Rough estimate
+                    "context_mb": round(context_size * 4 / 1024, 1),  # Rough estimate
                 }
                 provider_info["models"].append(model_info)
 
@@ -56,10 +46,7 @@ def diagnose_context_capabilities() -> Dict[str, Any]:
 
         except Exception as e:
             logger.debug(f"Could not diagnose {provider_name}: {e}")
-            report["providers"][provider_name] = {
-                "available": False,
-                "error": str(e)
-            }
+            report["providers"][provider_name] = {"available": False, "error": str(e)}
 
     # Generate recommendations
     if not report["tiktoken_available"] and "openai" in report["providers"]:
@@ -84,7 +71,9 @@ def print_context_report(report: Dict[str, Any]) -> None:
     """Print context diagnostics report."""
     print("\n=== Context Size Diagnostics ===\n")
 
-    print(f"Accurate Token Counting: {'✓ Available' if report['tiktoken_available'] else '✗ Unavailable'}")
+    print(
+        f"Accurate Token Counting: {'✓ Available' if report['tiktoken_available'] else '✗ Unavailable'}"
+    )
     print()
 
     for provider, info in report["providers"].items():
@@ -94,7 +83,9 @@ def print_context_report(report: Dict[str, Any]) -> None:
 
         print(f"  {provider}: ✓ Available")
         for model in info["models"]:
-            print(f"    - {model['name']}: {model['context_size']:,} tokens (~{model['context_mb']} MB)")
+            print(
+                f"    - {model['name']}: {model['context_size']:,} tokens (~{model['context_mb']} MB)"
+            )
         print()
 
     if report["recommendations"]:
@@ -120,14 +111,18 @@ def print_context_metrics_report(report: Dict[str, Any]) -> None:
     if report.get("utilization"):
         print("Context Utilization:")
         for model, stats in report["utilization"].items():
-            print(f"  {model}: {stats['avg_percent']:.1f}% ({stats['avg_used']:,}/{stats['avg_available']:,} tokens)")
+            print(
+                f"  {model}: {stats['avg_percent']:.1f}% ({stats['avg_used']:,}/{stats['avg_available']:,} tokens)"
+            )
         print()
 
     # Truncation stats
     if report.get("truncations"):
         print("Truncation Events:")
         for model, stats in report["truncations"].items():
-            print(f"  {model}: {stats['count']} events, {stats['avg_reduction_percent']:.1f}% reduction")
+            print(
+                f"  {model}: {stats['count']} events, {stats['avg_reduction_percent']:.1f}% reduction"
+            )
         print()
 
     # Chunking stats
@@ -141,7 +136,9 @@ def print_context_metrics_report(report: Dict[str, Any]) -> None:
     if report.get("errors"):
         print("Context Errors:")
         for model, stats in report["errors"].items():
-            print(f"  {model}: {stats['total']} errors, {stats['recovery_rate']:.1f}% recovery rate")
+            print(
+                f"  {model}: {stats['total']} errors, {stats['recovery_rate']:.1f}% recovery rate"
+            )
         print()
 
 

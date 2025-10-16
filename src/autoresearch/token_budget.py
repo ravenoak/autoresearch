@@ -72,9 +72,7 @@ class AgentUsageStats:
         """Estimate currency cost using ``profile`` per-token pricing."""
 
         prompt_cost = (self.avg_prompt_tokens / 1000.0) * profile.prompt_cost_per_1k
-        completion_cost = (
-            self.avg_completion_tokens / 1000.0
-        ) * profile.completion_cost_per_1k
+        completion_cost = (self.avg_completion_tokens / 1000.0) * profile.completion_cost_per_1k
         return prompt_cost + completion_cost
 
     @classmethod
@@ -232,9 +230,7 @@ class BudgetRouter:
             return decision
 
         latency_constrained = [
-            name
-            for name in candidates
-            if self._profiles[name].latency_p95_ms <= latency_cap
+            name for name in candidates if self._profiles[name].latency_p95_ms <= latency_cap
         ]
         if not latency_constrained:
             latency_constrained = list(candidates)
@@ -242,9 +238,7 @@ class BudgetRouter:
         baseline = self._choose_preferred(latency_constrained, preferred_models)
         if baseline is None:
             baseline = (
-                current_model
-                if current_model in latency_constrained
-                else latency_constrained[0]
+                current_model if current_model in latency_constrained else latency_constrained[0]
             )
 
         reason = "preferred"

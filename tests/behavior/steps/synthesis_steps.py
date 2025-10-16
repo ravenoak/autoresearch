@@ -102,6 +102,8 @@ def test_no_answer():
     pass
 
 
-@scenario("../features/synthesis.feature", "Compressing prompts and claims when token budget is exceeded")
+@scenario(
+    "../features/synthesis.feature", "Compressing prompts and claims when token budget is exceeded"
+)
 def test_compression():
     pass

@@ -68,9 +68,7 @@ def test_execute_parallel_query_basic(monkeypatch, orchestrator_factory):
         "autoresearch.orchestration.parallel.get_tracer",
         lambda name: DummyTracer(),
     )
-    monkeypatch.setattr(
-        "autoresearch.orchestration.parallel.setup_tracing", lambda enabled: None
-    )
+    monkeypatch.setattr("autoresearch.orchestration.parallel.setup_tracing", lambda enabled: None)
 
     def run_query_stub(
         query,
@@ -147,9 +145,7 @@ def test_execute_parallel_query_agent_error(monkeypatch, caplog, orchestrator_fa
         "autoresearch.orchestration.parallel.get_tracer",
         lambda name: DummyTracer(),
     )
-    monkeypatch.setattr(
-        "autoresearch.orchestration.parallel.setup_tracing", lambda enabled: None
-    )
+    monkeypatch.setattr("autoresearch.orchestration.parallel.setup_tracing", lambda enabled: None)
 
     def run_query_error(
         query,

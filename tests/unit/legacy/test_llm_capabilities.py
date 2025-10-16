@@ -170,9 +170,7 @@ class TestCapabilityProber:
         )
 
         # Set up the cache
-        prober._capabilities_cache = {
-            "test-provider": {"test-model": test_capabilities}
-        }
+        prober._capabilities_cache = {"test-provider": {"test-model": test_capabilities}}
 
         # Execute
         result = prober.get_model_capabilities("test-model", "test-provider")
@@ -198,9 +196,7 @@ class TestCapabilityProber:
         )
 
         # Set up the cache
-        prober._capabilities_cache = {
-            "test-provider": {"test-model": test_capabilities}
-        }
+        prober._capabilities_cache = {"test-provider": {"test-model": test_capabilities}}
 
         # Execute
         result = prober.get_model_capabilities("test-model")
@@ -333,9 +329,7 @@ class TestCapabilityProber:
             result = prober._probe_openrouter()
 
         # Verify
-        assert (
-            "anthropic/claude-3-opus" in result
-        )  # Should fall back to default capabilities
+        assert "anthropic/claude-3-opus" in result  # Should fall back to default capabilities
         assert "anthropic/claude-3-sonnet" in result
         assert "mistralai/mistral-large" in result
 
@@ -444,6 +438,4 @@ class TestHelperFunctions:
 
         # Verify
         assert result == test_capabilities
-        mock_prober.get_model_capabilities.assert_called_once_with(
-            "test-model", "test-provider"
-        )
+        mock_prober.get_model_capabilities.assert_called_once_with("test-model", "test-provider")

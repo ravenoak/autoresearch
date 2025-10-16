@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, TypeAlias
 from uuid import uuid4
 
 from ..config.models import AgentConfig, ConfigModel
+from ..llm.adapters import LLMAdapter
 from ..logging_utils import get_logger
 from ..storage import ClaimAuditRecord, ClaimAuditStatus
 from .prompts import render_prompt
@@ -40,7 +41,9 @@ class PromptGeneratorMixin:
 class ModelConfigMixin:
     """Mixin for handling model configuration."""
 
-    def get_model_config(self, config: ConfigModel, agent_name: str, adapter: "LLMAdapter | None" = None) -> str:
+    def get_model_config(
+        self, config: ConfigModel, agent_name: str, adapter: LLMAdapter | None = None
+    ) -> str:
         """Get the model configuration for this agent with enhanced selection logic.
 
         Model selection priority (highest to lowest):
@@ -126,7 +129,7 @@ class ModelConfigMixin:
         return None
 
     @staticmethod
-    def _validate_model_with_adapter(model: str, adapter: "LLMAdapter") -> bool:
+    def _validate_model_with_adapter(model: str, adapter: LLMAdapter) -> bool:
         """Validate if a model is available through the adapter.
 
         Args:
@@ -144,7 +147,7 @@ class ModelConfigMixin:
             return True
 
     @staticmethod
-    def _get_intelligent_fallback(adapter: "LLMAdapter") -> str | None:
+    def _get_intelligent_fallback(adapter: LLMAdapter) -> str | None:
         """Get an intelligent fallback model based on discovered models.
 
         Prefers models in this order:
@@ -171,7 +174,7 @@ class ModelConfigMixin:
             model_context_sizes = {}
             for model in available_models:
                 try:
-                    if hasattr(adapter, 'get_context_size'):
+                    if hasattr(adapter, "get_context_size"):
                         context_size = adapter.get_context_size(model)
                         model_context_sizes[model] = context_size
                 except Exception:
@@ -179,11 +182,7 @@ class ModelConfigMixin:
                     model_context_sizes[model] = 4096
 
             # Sort by context size (largest first)
-            sorted_models = sorted(
-                model_context_sizes.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )
+            sorted_models = sorted(model_context_sizes.items(), key=lambda x: x[1], reverse=True)
 
             # Return the model with largest context size
             return sorted_models[0][0]

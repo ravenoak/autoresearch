@@ -7,18 +7,18 @@ including intelligent truncation, adaptive budgeting, and graceful error handlin
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import logging
 
-from ..errors import LLMError
 
 logger = logging.getLogger(__name__)
 
 
 class ContextOverflowStrategy(str, Enum):
     """Strategy for handling context overflow."""
+
     TRUNCATE = "truncate"
     CHUNK = "chunk"
     ERROR = "error"
@@ -27,6 +27,7 @@ class ContextOverflowStrategy(str, Enum):
 @dataclass
 class ValidationResult:
     """Result of context validation."""
+
     fits: bool
     estimated_tokens: int
     available_tokens: int
@@ -79,6 +80,7 @@ class ContextManager:
     def estimate_tokens(self, text: str, model: str) -> int:
         """Estimate tokens using provider-appropriate method."""
         from .token_counting import count_tokens_accurate
+
         provider = self.get_provider(model)
         return count_tokens_accurate(text, model, provider)
 
@@ -94,7 +96,9 @@ class ContextManager:
         # Conservative token estimation: ~4 characters per token for English text
         return len(text) // 4
 
-    def check_fit(self, prompt: str, model: str, reserved_tokens: int = 512) -> Tuple[bool, Optional[str]]:
+    def check_fit(
+        self, prompt: str, model: str, reserved_tokens: int = 512
+    ) -> Tuple[bool, Optional[str]]:
         """Check if a prompt will fit within the model's context size.
 
         Args:
@@ -119,11 +123,7 @@ class ContextManager:
         )
 
     def validate_prompt_fit(
-        self,
-        prompt: str,
-        model: str,
-        provider: str,
-        reserved_tokens: int = 512
+        self, prompt: str, model: str, provider: str, reserved_tokens: int = 512
     ) -> ValidationResult:
         """Validate if prompt fits within model's context size.
 
@@ -159,10 +159,12 @@ class ContextManager:
             overflow_tokens=overflow_tokens,
             should_chunk=should_chunk,
             should_truncate=should_truncate,
-            recommendation=recommendation
+            recommendation=recommendation,
         )
 
-    def suggest_recovery_strategies(self, model: str, context_size: int, prompt_tokens: int) -> List[str]:
+    def suggest_recovery_strategies(
+        self, model: str, context_size: int, prompt_tokens: int
+    ) -> List[str]:
         """Suggest recovery strategies for context size errors.
 
         Args:
@@ -204,7 +206,9 @@ class ContextManager:
 
         return strategies
 
-    def record_usage(self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True) -> None:
+    def record_usage(
+        self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True
+    ) -> None:
         """Record token usage for performance tracking.
 
         Args:
@@ -225,7 +229,11 @@ class ContextManager:
 
         # Update performance metrics
         if model not in self._performance_metrics:
-            self._performance_metrics[model] = {"success_count": 0, "total_count": 0, "total_tokens": 0}
+            self._performance_metrics[model] = {
+                "success_count": 0,
+                "total_count": 0,
+                "total_tokens": 0,
+            }
 
         self._performance_metrics[model]["total_count"] += 1
         self._performance_metrics[model]["total_tokens"] += total_tokens
@@ -245,8 +253,16 @@ class ContextManager:
         if model:
             if model in self._performance_metrics:
                 metrics = self._performance_metrics[model]
-                success_rate = metrics["success_count"] / metrics["total_count"] if metrics["total_count"] > 0 else 0
-                avg_tokens = metrics["total_tokens"] / metrics["total_count"] if metrics["total_count"] > 0 else 0
+                success_rate = (
+                    metrics["success_count"] / metrics["total_count"]
+                    if metrics["total_count"] > 0
+                    else 0
+                )
+                avg_tokens = (
+                    metrics["total_tokens"] / metrics["total_count"]
+                    if metrics["total_count"] > 0
+                    else 0
+                )
 
                 return {
                     "model": model,
@@ -261,7 +277,9 @@ class ContextManager:
         else:
             return {
                 "models": list(self._performance_metrics.keys()),
-                "context_sizes": {m: self.get_context_size(m) for m in self._performance_metrics.keys()},
+                "context_sizes": {
+                    m: self.get_context_size(m) for m in self._performance_metrics.keys()
+                },
                 "performance_metrics": self._performance_metrics,
                 "usage_history": self._usage_history,
             }
@@ -282,7 +300,9 @@ class ContextManager:
         reserve = max(512, int(context_size * safety_margin))
         return context_size - reserve
 
-    def truncate_intelligently(self, prompt: str, model: str, max_tokens: Optional[int] = None) -> str:
+    def truncate_intelligently(
+        self, prompt: str, model: str, max_tokens: Optional[int] = None
+    ) -> str:
         """Intelligently truncate a prompt to fit within context limits.
 
         Args:
@@ -322,7 +342,7 @@ class ContextManager:
             return prompt
 
         # Split into sentences and try to preserve complete sentences
-        sentences = re.split(r'[.!?]+', prompt)
+        sentences = re.split(r"[.!?]+", prompt)
         current_prompt = ""
 
         for sentence in sentences:
@@ -345,8 +365,10 @@ class ContextManager:
             # Fallback to simple character truncation
             return prompt[:max_chars] + "... [prompt truncated to fit context]"
 
+
 # Global context manager instance
 _context_manager_instance: Optional[ContextManager] = None
+
 
 def get_context_manager() -> ContextManager:
     """Get the singleton context manager instance."""
@@ -372,7 +394,7 @@ def _register_provider_adapters(context_mgr: ContextManager) -> None:
 
                 for model in models:
                     try:
-                        if hasattr(adapter, 'get_context_size'):
+                        if hasattr(adapter, "get_context_size"):
                             context_size = adapter.get_context_size(model)
                             context_sizes[model] = context_size
                         else:
@@ -384,11 +406,12 @@ def _register_provider_adapters(context_mgr: ContextManager) -> None:
 
                 if context_sizes:
                     context_mgr.register_adapter(provider_name, context_sizes)
-                    logger.debug(f"Registered {provider_name} adapter with {len(context_sizes)} models")
+                    logger.debug(
+                        f"Registered {provider_name} adapter with {len(context_sizes)} models"
+                    )
 
             except Exception as e:
                 logger.debug(f"Could not initialize {provider_name} adapter for registration: {e}")
 
     except Exception as e:
         logger.debug(f"Could not register provider adapters: {e}")
-

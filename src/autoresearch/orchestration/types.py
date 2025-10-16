@@ -10,31 +10,32 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
-from typing import Any, Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 
-if TYPE_CHECKING:  # pragma: no cover - typing helpers only
-    from .state import QueryState
-else:  # pragma: no cover - runtime guard for coverage runs
-    try:
-        from .state import QueryState  # type: ignore  # circular-safe import
-    except ImportError:  # pragma: no cover - fallback when state is unavailable
-        QueryState = "QueryState"  # type: ignore[misc, assignment]
+if TYPE_CHECKING:
+    from autoresearch.orchestration.state import QueryState
 
+    # ``AgentExecutionResult`` captures the minimum contract expected from agent
+    # ``execute`` implementations. The concrete object is typically a ``dict`` but a
+    # mapping keeps the annotations flexible for tests that substitute custom
+    # containers.
+    AgentExecutionResult = Mapping[str, Any]
 
-# ``AgentExecutionResult`` captures the minimum contract expected from agent
-# ``execute`` implementations. The concrete object is typically a ``dict`` but a
-# mapping keeps the annotations flexible for tests that substitute custom
-# containers.
-AgentExecutionResult = Mapping[str, Any]
+    # ``CallbackMap`` mirrors the callback dictionaries passed through the
+    # orchestrator. Individual helpers down-cast the stored ``Callable`` into the
+    # expected signature before invocation.
+    CallbackMap = Mapping[str, Callable[..., object]]
 
-# ``CallbackMap`` mirrors the callback dictionaries passed through the
-# orchestrator. Individual helpers down-cast the stored ``Callable`` into the
-# expected signature before invocation.
-CallbackMap = Mapping[str, Callable[..., object]]
-
-AgentStartCallback = Callable[[str, QueryState], None]
-AgentEndCallback = Callable[[str, AgentExecutionResult, QueryState], None]
-CycleCallback = Callable[[int, QueryState], None]
+    AgentStartCallback = Callable[[str, QueryState], None]
+    AgentEndCallback = Callable[[str, AgentExecutionResult, QueryState], None]
+    CycleCallback = Callable[[int, QueryState], None]
+else:
+    # Runtime versions without QueryState dependency
+    AgentExecutionResult = Mapping[str, Any]
+    CallbackMap = Mapping[str, Callable[..., object]]
+    AgentStartCallback = Callable[[str, object], None]
+    AgentEndCallback = Callable[[str, AgentExecutionResult, object], None]
+    CycleCallback = Callable[[int, object], None]
 
 
 class TracerProtocol(Protocol):

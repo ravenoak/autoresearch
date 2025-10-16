@@ -252,9 +252,7 @@ def assert_prdv_react_log(prdv_context: PlannerTelemetryContext) -> None:
     trace_events = [entry for entry in state.react_log if entry["event"] == "planner.trace"]
     assert trace_events
     assert trace_events[-1]["metadata"]["warnings"]
-    telemetry_events = [
-        entry for entry in state.react_log if entry["event"] == "planner.telemetry"
-    ]
+    telemetry_events = [entry for entry in state.react_log if entry["event"] == "planner.telemetry"]
     assert telemetry_events
     telemetry_payload = telemetry_events[-1]["payload"]
     assert telemetry_payload["telemetry"]["tasks"], "Telemetry tasks should persist"

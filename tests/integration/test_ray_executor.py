@@ -141,7 +141,9 @@ class DummyRay(types.ModuleType):
     def put(self, obj: object) -> DummyObjectRef:  # pragma: no cover - trivial
         return DummyObjectRef(obj)
 
-    def remote(self, func: Callable[..., BrokerMessage]) -> DummyRemote:  # pragma: no cover - trivial
+    def remote(
+        self, func: Callable[..., BrokerMessage]
+    ) -> DummyRemote:  # pragma: no cover - trivial
         return DummyRemote(func)
 
     def cluster_resources(self) -> dict[str, int]:  # pragma: no cover - trivial

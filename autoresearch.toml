@@ -1,12 +1,16 @@
-# Autoresearch configuration using LM Studio
 [core]
 llm_backend = "lmstudio"
 loops = 2
 reasoning_mode = "dialectical"
 default_model = "mistralai/magistral-small-2509"
 
+[core.core]
+test = "value"
+
 [search]
-backends = ["serper"]
+backends = [
+    "serper",
+]
 max_results_per_query = 5
 hybrid_query = false
 use_semantic_similarity = false

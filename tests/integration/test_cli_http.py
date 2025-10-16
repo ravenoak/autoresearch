@@ -63,9 +63,7 @@ def _install_run_query_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_orchestrator_run_query(monkeypatch, response=_runner)
 
 
-def _common_patches(
-    monkeypatch: pytest.MonkeyPatch, *, loops: int = 1
-) -> ConfigModel:
+def _common_patches(monkeypatch: pytest.MonkeyPatch, *, loops: int = 1) -> ConfigModel:
     cfg = configure_api_defaults(monkeypatch, loops=loops)
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
     monkeypatch.setattr(
@@ -236,9 +234,7 @@ def test_stream_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     _reset_storage()
 
 
-def test_webhook_notification(
-    monkeypatch: pytest.MonkeyPatch, httpx_mock: Any
-) -> None:
+def test_webhook_notification(monkeypatch: pytest.MonkeyPatch, httpx_mock: Any) -> None:
     """Final responses are POSTed to supplied webhook URLs."""
 
     _common_patches(monkeypatch)

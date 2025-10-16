@@ -22,6 +22,7 @@ def open_modal(title: str, **kwargs: Any) -> ContextManager[None]:
         modal_callable = None
 
     if modal_callable is None:
+
         @contextlib.contextmanager
         def _fallback_modal(*_: Any, **__: Any) -> Iterator[None]:
             yield None

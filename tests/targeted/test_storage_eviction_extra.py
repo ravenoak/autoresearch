@@ -4,6 +4,7 @@ from pathlib import Path
 from threading import Thread
 
 import pytest  # noqa: E402
+
 pytestmark = pytest.mark.skip("requires storage extras")
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel, StorageConfig  # noqa: E402
@@ -36,9 +37,7 @@ def test_initialize_storage_idempotent() -> None:
     StorageManager.context = StorageContext()
 
 
-def test_ram_budget_eviction(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ram_budget_eviction(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Concurrent writers respect the configured RAM budget."""
     cfg = ConfigModel(
         storage=StorageConfig(
@@ -96,9 +95,7 @@ def test_deterministic_eviction_across_runs(
         StorageManager.setup(db_path=cfg.storage.duckdb_path, context=ctx, state=st)
 
         def persist(idx: int) -> None:
-            StorageManager.persist_claim(
-                {"id": f"c{idx}", "type": "fact", "content": "c"}
-            )
+            StorageManager.persist_claim({"id": f"c{idx}", "type": "fact", "content": "c"})
             StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
 
         threads = [Thread(target=persist, args=(i,)) for i in range(5)]

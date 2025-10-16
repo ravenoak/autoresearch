@@ -50,16 +50,11 @@ class SummarizerAgent(Agent):
 
         # Extract content from claims
         content_text = "\n\n".join(
-            [
-                f"Content ({item['type']}): {item['content']}"
-                for item in content_to_summarize
-            ]
+            [f"Content ({item['type']}): {item['content']}" for item in content_to_summarize]
         )
 
         # Generate summary using the prompt template
-        prompt = self.generate_prompt(
-            "summarizer.concise", query=state.query, content=content_text
-        )
+        prompt = self.generate_prompt("summarizer.concise", query=state.query, content=content_text)
 
         if getattr(config, "enable_feedback", False):
             fb = self.format_feedback(state)

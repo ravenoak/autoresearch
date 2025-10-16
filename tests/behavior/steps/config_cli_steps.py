@@ -58,7 +58,7 @@ def run_config_validate(
 
 @when(
     parsers.re(
-        r'^I run `autoresearch config reasoning --mode (?P<mode>\w+) --loops (?P<loops>\d+)`$'
+        r"^I run `autoresearch config reasoning --mode (?P<mode>\w+) --loops (?P<loops>\d+)`$"
     )
 )
 def run_config_reasoning(
@@ -78,7 +78,7 @@ def run_config_reasoning(
     set_cli_result(bdd_context, result)
 
 
-@when(parsers.parse('I run `autoresearch config reasoning --mode {mode}`'))
+@when(parsers.parse("I run `autoresearch config reasoning --mode {mode}`"))
 def run_config_reasoning_mode_only(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,

@@ -51,7 +51,7 @@ class DomainSpecialistAgent(Agent):
             domain=self.domain,
             domain_context=domain_context,
             claims=claims_text,
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         if getattr(config, "enable_feedback", False):
@@ -67,7 +67,7 @@ class DomainSpecialistAgent(Agent):
             query=state.query,
             domain=self.domain,
             analysis=analysis,
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         if getattr(config, "enable_feedback", False):
@@ -91,7 +91,7 @@ class DomainSpecialistAgent(Agent):
             results={
                 "domain_analysis": analysis,
                 "domain_recommendations": recommendations,
-                "domain": self.domain
+                "domain": self.domain,
             },
         )
 
@@ -117,7 +117,9 @@ class DomainSpecialistAgent(Agent):
 
         # Otherwise, only execute if the query is relevant to this domain
         domain_relevance = self._check_domain_relevance(state.query, self.domain)
-        return super().can_execute(state, config) and domain_relevance > 0.7  # Threshold for relevance
+        return (
+            super().can_execute(state, config) and domain_relevance > 0.7
+        )  # Threshold for relevance
 
     def _determine_domain(self, query: str) -> str:
         """Determine the most relevant domain for the query."""
@@ -130,7 +132,7 @@ class DomainSpecialistAgent(Agent):
             "finance": ["money", "investment", "stock", "financial", "economy", "market"],
             "science": ["scientific", "experiment", "research", "physics", "chemistry", "biology"],
             "law": ["legal", "law", "court", "justice", "regulation", "compliance"],
-            "education": ["learning", "teaching", "school", "education", "student", "academic"]
+            "education": ["learning", "teaching", "school", "education", "student", "academic"],
         }
 
         query_lower = query.lower()
@@ -160,7 +162,7 @@ class DomainSpecialistAgent(Agent):
             "finance": ["money", "investment", "stock", "financial", "economy", "market"],
             "science": ["scientific", "experiment", "research", "physics", "chemistry", "biology"],
             "law": ["legal", "law", "court", "justice", "regulation", "compliance"],
-            "education": ["learning", "teaching", "school", "education", "student", "academic"]
+            "education": ["learning", "teaching", "school", "education", "student", "academic"],
         }
 
         if domain not in domain_keywords:
@@ -206,10 +208,13 @@ class DomainSpecialistAgent(Agent):
             "finance": "Finance deals with the management of money, investments, and other financial assets.",
             "science": "Science is the systematic study of the structure and behavior of the physical and natural world through observation and experiment.",
             "law": "Law is a system of rules created and enforced through social or governmental institutions to regulate behavior.",
-            "education": "Education is the process of facilitating learning, or the acquisition of knowledge, skills, values, beliefs, and habits."
+            "education": "Education is the process of facilitating learning, or the acquisition of knowledge, skills, values, beliefs, and habits.",
         }
 
-        return domain_descriptions.get(domain, f"The domain of {domain} involves specialized knowledge and methodologies specific to this field.")
+        return domain_descriptions.get(
+            domain,
+            f"The domain of {domain} involves specialized knowledge and methodologies specific to this field.",
+        )
 
     def _get_relevant_claims(self, state: QueryState, domain: str) -> List[Dict[str, Any]]:
         """Get claims from the state that are relevant to the specified domain."""
@@ -223,7 +228,7 @@ class DomainSpecialistAgent(Agent):
             "finance": ["money", "investment", "stock", "financial", "economy", "market"],
             "science": ["scientific", "experiment", "research", "physics", "chemistry", "biology"],
             "law": ["legal", "law", "court", "justice", "regulation", "compliance"],
-            "education": ["learning", "teaching", "school", "education", "student", "academic"]
+            "education": ["learning", "teaching", "school", "education", "student", "academic"],
         }
 
         keywords = domain_keywords.get(domain, [])

@@ -64,9 +64,7 @@ def test_topic_model_imports_when_built(monkeypatch):
     monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
     ctx = module.SearchContext.new_for_tests()
-    ctx.search_history = [
-        {"query": "foo", "results": [{"title": "bar", "snippet": "baz"}]}
-    ]
+    ctx.search_history = [{"query": "foo", "results": [{"title": "bar", "snippet": "baz"}]}]
 
     assert not module.BERTOPIC_AVAILABLE
     assert not module.SENTENCE_TRANSFORMERS_AVAILABLE
@@ -102,9 +100,7 @@ def test_topic_model_imports_with_legacy_fastembed(monkeypatch):
     monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
     ctx = module.SearchContext.new_for_tests()
-    ctx.search_history = [
-        {"query": "foo", "results": [{"title": "bar", "snippet": "baz"}]}
-    ]
+    ctx.search_history = [{"query": "foo", "results": [{"title": "bar", "snippet": "baz"}]}]
 
     ctx.build_topic_model()
 

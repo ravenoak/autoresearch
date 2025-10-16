@@ -55,9 +55,7 @@ def test_backup_create_missing_tables(monkeypatch):
 def test_backup_create_success(monkeypatch):
     runner = CliRunner()
     info = DummyInfo(path="p", size=1, compressed=False)
-    monkeypatch.setattr(
-        "autoresearch.cli_backup.BackupManager.create_backup", lambda **_: info
-    )
+    monkeypatch.setattr("autoresearch.cli_backup.BackupManager.create_backup", lambda **_: info)
     result = runner.invoke(backup_app, ["create", "--dir", "d", "--no-compress"])
     assert result.exit_code == 0
     assert "Backup created successfully" in result.stdout

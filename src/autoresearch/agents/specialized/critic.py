@@ -64,9 +64,7 @@ class CriticAgent(Agent):
         )
 
         # Generate critique using the prompt template
-        prompt = self.generate_prompt(
-            "critic.evaluation", query=state.query, claims=claims_text
-        )
+        prompt = self.generate_prompt("critic.evaluation", query=state.query, claims=claims_text)
         critique = adapter.generate(prompt, model=model)
 
         # Create and return the result

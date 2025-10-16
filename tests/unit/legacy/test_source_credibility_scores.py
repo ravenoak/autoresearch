@@ -38,9 +38,7 @@ def test_rank_results_prefers_higher_credibility():
             "calculate_bm25_scores",
             staticmethod(lambda q, d: [0.5, 0.5]),
         ),
-        patch.object(
-            Search, "calculate_semantic_similarity", return_value=[0.5, 0.5]
-        ),
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.5, 0.5]),
     ):
         ranked = Search.rank_results("query", docs)
     assert [r["url"] for r in ranked] == [

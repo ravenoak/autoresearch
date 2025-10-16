@@ -95,9 +95,7 @@ def test_orchestrator_all_agent_combinations(
         del agent_name, metrics, config
 
         class _Adapter:
-            def generate(
-                self, prompt: str, model: str | None = None, **kwargs: object
-            ) -> str:
+            def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
                 del prompt, model, kwargs
                 return ""
 
@@ -114,9 +112,5 @@ def test_orchestrator_all_agent_combinations(
     assert search_calls == agent_list
     expected_claim_ids = [f"{agent.lower()}-claim" for agent in agent_list]
     assert [call.claim["id"] for call in persist_calls] == expected_claim_ids
-    expected = (
-        "Answer from Synthesizer"
-        if "Synthesizer" in agents
-        else "No answer synthesized"
-    )
+    expected = "Answer from Synthesizer" if "Synthesizer" in agents else "No answer synthesized"
     assert response.answer == expected

@@ -67,10 +67,7 @@ class CircuitBreakerManager:
         if error_category in ["critical", "recoverable"]:
             breaker["failure_count"] += 1
             breaker["last_failure_time"] = current_time
-            if (
-                breaker["failure_count"] >= self.threshold
-                and breaker["state"] == "closed"
-            ):
+            if breaker["failure_count"] >= self.threshold and breaker["state"] == "closed":
                 breaker["state"] = "open"
                 log.warning(
                     f"Circuit breaker for agent {agent_name} is now OPEN due to repeated failures",
@@ -152,9 +149,7 @@ def simulate_circuit_breaker(
     def now() -> float:
         return time_steps[0]
 
-    mgr = CircuitBreakerManager(
-        threshold=threshold, cooldown=cooldown, time_func=now
-    )
+    mgr = CircuitBreakerManager(threshold=threshold, cooldown=cooldown, time_func=now)
     states: List[str] = []
 
     for event in events:

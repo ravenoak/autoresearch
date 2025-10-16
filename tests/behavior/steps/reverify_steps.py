@@ -37,45 +37,47 @@ def stored_query_state(bdd_context: BehaviorContext, monkeypatch):
     def fake_execute(self, run_state, run_config):
         overrides = run_state.metadata.get("_reverify_options", {})
         bdd_context["captured_options"] = dict(overrides)
-        return as_payload({
-            "claims": [],
-            "metadata": {},
-            "results": {},
-            "sources": [
-                {
-                    "title": "Expanded source",
-                    "snippet": "Evidence snippet",
-                    "source_id": "src-1",
-                }
-            ],
-            "claim_audits": [
-                {
-                    "claim_id": "c1",
-                    "status": "supported",
-                    "notes": "Broadened verification",
-                    "sources": [
-                        {
-                            "title": "Expanded source",
-                            "snippet": "Evidence snippet",
-                            "source_id": "src-1",
-                        }
-                    ],
-                    "provenance": {
-                        "retrieval": {
-                            "events": [],
-                            "options": dict(overrides),
-                            "max_variations": overrides.get("max_variations", 2),
+        return as_payload(
+            {
+                "claims": [],
+                "metadata": {},
+                "results": {},
+                "sources": [
+                    {
+                        "title": "Expanded source",
+                        "snippet": "Evidence snippet",
+                        "source_id": "src-1",
+                    }
+                ],
+                "claim_audits": [
+                    {
+                        "claim_id": "c1",
+                        "status": "supported",
+                        "notes": "Broadened verification",
+                        "sources": [
+                            {
+                                "title": "Expanded source",
+                                "snippet": "Evidence snippet",
+                                "source_id": "src-1",
+                            }
+                        ],
+                        "provenance": {
+                            "retrieval": {
+                                "events": [],
+                                "options": dict(overrides),
+                                "max_variations": overrides.get("max_variations", 2),
+                            },
+                            "backoff": {
+                                "retry_count": 0,
+                                "paraphrases": [],
+                                "max_results": overrides.get("max_results", 5),
+                            },
+                            "evidence": {"claim_id": "c1"},
                         },
-                        "backoff": {
-                            "retry_count": 0,
-                            "paraphrases": [],
-                            "max_results": overrides.get("max_results", 5),
-                        },
-                        "evidence": {"claim_id": "c1"},
-                    },
-                }
-            ],
-        })
+                    }
+                ],
+            }
+        )
 
     monkeypatch.setattr(
         "autoresearch.orchestration.reverify.FactChecker.execute",

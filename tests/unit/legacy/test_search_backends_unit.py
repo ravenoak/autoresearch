@@ -43,6 +43,7 @@ def _make_hybrid_stub(
 
 def test_register_backend_and_lookup(monkeypatch):
     with Search.temporary_state() as search:
+
         @search.register_backend("dummy")
         def dummy_backend(query: str, max_results: int = 5):
             return [{"title": "t", "url": "u"}]
@@ -152,15 +153,9 @@ def test_rank_results_merges_scores(monkeypatch):
 
     docs = [{"title": "a", "snippet": ""}, {"title": "b", "snippet": ""}]
 
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, d: [1.0, 0.0])
-    )
-    monkeypatch.setattr(
-        Search, "calculate_semantic_similarity", lambda self, q, d, e: [0.0, 1.0]
-    )
-    monkeypatch.setattr(
-        Search, "assess_source_credibility", lambda self, d: [0.0, 0.0]
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, d: [1.0, 0.0]))
+    monkeypatch.setattr(Search, "calculate_semantic_similarity", lambda self, q, d, e: [0.0, 1.0])
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda self, d: [0.0, 0.0])
 
     ranked = Search.rank_results("q", docs)
     assert ranked[0]["title"] == "a"

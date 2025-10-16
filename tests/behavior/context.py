@@ -60,8 +60,7 @@ def set_value(context: BehaviorContext, key: str, value: T) -> T:
 
 
 @overload
-def get_required(context: BehaviorContext, key: str, /) -> Any:
-    ...
+def get_required(context: BehaviorContext, key: str, /) -> Any: ...
 
 
 @overload
@@ -70,8 +69,7 @@ def get_required(
     key: str,
     expected_type: type[T] | tuple[type[T], ...],
     /,
-) -> T:
-    ...
+) -> T: ...
 
 
 def get_required(
@@ -108,8 +106,7 @@ def get_required(
 
 
 @overload
-def get_optional(context: BehaviorContext, key: str, /) -> Any | None:
-    ...
+def get_optional(context: BehaviorContext, key: str, /) -> Any | None: ...
 
 
 @overload
@@ -118,8 +115,7 @@ def get_optional(
     key: str,
     expected_type: type[T] | tuple[type[T], ...],
     /,
-) -> T | None:
-    ...
+) -> T | None: ...
 
 
 @overload
@@ -129,8 +125,7 @@ def get_optional(
     expected_type: type[T] | tuple[type[T], ...] | None,
     default: T,
     /,
-) -> T:
-    ...
+) -> T: ...
 
 
 def get_optional(

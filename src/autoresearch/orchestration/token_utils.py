@@ -118,9 +118,7 @@ def _capture_token_usage(
                 def __init__(self, inner: AdapterProtocol) -> None:
                     self.inner = inner
 
-                def generate(
-                    self, prompt: str, model: str | None = None, **kwargs: object
-                ) -> str:
+                def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
                     prompt = metrics.compress_prompt_if_needed(prompt, tb)
                     return self.inner.generate(prompt, model=model, **kwargs)
 
@@ -173,8 +171,6 @@ def _execute_with_adapter(
         result = agent.execute(state, config)
 
     if not is_agent_execution_result(result):
-        raise TypeError(
-            "Agent.execute must return a mapping compatible with QueryState.update"
-        )
+        raise TypeError("Agent.execute must return a mapping compatible with QueryState.update")
 
     return result

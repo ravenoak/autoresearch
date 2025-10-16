@@ -167,8 +167,12 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
         data = dict(entry)
         data["claim_ids"] = tuple(data.get("claim_ids", ()))
         claims_field = data.get("claims", ())
-        if isinstance(claims_field, Sequence) and not isinstance(claims_field, (str, bytes, bytearray)):
-            data["claims"] = tuple(dict(claim) for claim in claims_field if isinstance(claim, Mapping))
+        if isinstance(claims_field, Sequence) and not isinstance(
+            claims_field, (str, bytes, bytearray)
+        ):
+            data["claims"] = tuple(
+                dict(claim) for claim in claims_field if isinstance(claim, Mapping)
+            )
         canonical_auto_warnings.append(data)
 
     canonical_response_warnings = []
@@ -176,8 +180,12 @@ def test_auto_mode_returns_direct_answer_when_gate_exits(monkeypatch: pytest.Mon
         data = dict(warning)
         data["claim_ids"] = tuple(data.get("claim_ids", []))
         claims_field = data.get("claims", [])
-        if isinstance(claims_field, Sequence) and not isinstance(claims_field, (str, bytes, bytearray)):
-            data["claims"] = tuple(dict(claim) for claim in claims_field if isinstance(claim, Mapping))
+        if isinstance(claims_field, Sequence) and not isinstance(
+            claims_field, (str, bytes, bytearray)
+        ):
+            data["claims"] = tuple(
+                dict(claim) for claim in claims_field if isinstance(claim, Mapping)
+            )
         canonical_response_warnings.append(data)
     assert canonical_auto_warnings == canonical_response_warnings
     with pytest.raises(TypeError):

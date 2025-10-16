@@ -35,10 +35,7 @@ def simulate(node_count: int = 1, duration: float = 0.5) -> ResourceMetrics:
     monitor.start()
     queue: Queue[float] = Queue()
     try:
-        procs = [
-            Process(target=_worker, args=(duration, queue))
-            for _ in range(node_count)
-        ]
+        procs = [Process(target=_worker, args=(duration, queue)) for _ in range(node_count)]
         for proc in procs:
             proc.start()
         for proc in procs:

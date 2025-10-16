@@ -16,9 +16,7 @@ BenchmarkResults = Iterable[BenchmarkResult]
 
 
 @pytest.fixture(scope="module")
-def scheduler_memory_budget_kb(
-    scheduler_benchmark_baseline: Mapping[str, Any]
-) -> int:
+def scheduler_memory_budget_kb(scheduler_benchmark_baseline: Mapping[str, Any]) -> int:
     """Return the calibrated scheduler memory budget in kilobytes."""
 
     workers = scheduler_benchmark_baseline.get("workers", {})
@@ -28,9 +26,7 @@ def scheduler_memory_budget_kb(
 
 
 @pytest.fixture(scope="module")
-def scheduler_cpu_overhead(
-    scheduler_benchmark_baseline: Mapping[str, Any]
-) -> float:
+def scheduler_cpu_overhead(scheduler_benchmark_baseline: Mapping[str, Any]) -> float:
     """Return allowable CPU overhead derived from the throughput baseline."""
 
     workers = scheduler_benchmark_baseline.get("workers", {})

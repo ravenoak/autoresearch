@@ -15,6 +15,7 @@ def test_local_file_backend_pdf(tmp_path, monkeypatch, config_factory):
     monkeypatch.setitem(sys.modules, "pdfminer", types.SimpleNamespace(high_level=stub_pdf))
     monkeypatch.setitem(sys.modules, "pdfminer.high_level", stub_pdf)
     from autoresearch.search import core
+
     importlib.reload(core)
 
     cfg = config_factory(

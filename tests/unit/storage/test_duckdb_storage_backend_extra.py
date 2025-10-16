@@ -36,14 +36,20 @@ class TestDuckDBStorageBackend:
         assert backend._conn is not None
         assert backend._path == ":memory:"
 
-    def test_setup_with_file_database(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    def test_setup_with_file_database(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test setup with file-based database."""
         backend.setup(db_path=str(temp_db_path))
         assert backend._conn is not None
         assert temp_db_path.exists()  # Database file should be created
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_setup_schema_initialization(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_setup_schema_initialization(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test that schema initialization works correctly."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -60,7 +66,9 @@ class TestDuckDBStorageBackend:
         assert "relations" in tables
         assert "embeddings" in tables
 
-    def test_schema_version_management(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    def test_schema_version_management(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test schema version tracking and updates."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -73,8 +81,12 @@ class TestDuckDBStorageBackend:
         version = backend.get_schema_version()
         assert version == 5
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_persist_claim_functionality(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_persist_claim_functionality(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test claim persistence works correctly."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -91,7 +103,9 @@ class TestDuckDBStorageBackend:
 
         # Verify it was stored
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT id, type, content FROM claims WHERE id = ?", (test_claim["id"],))
+        cursor = backend._conn.execute(
+            "SELECT id, type, content FROM claims WHERE id = ?", (test_claim["id"],)
+        )
         row = cursor.fetchone()
 
         assert row is not None
@@ -99,8 +113,12 @@ class TestDuckDBStorageBackend:
         assert row[1] == test_claim["type"]
         assert row[2] == test_claim["content"]
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_persist_multiple_claims(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_persist_multiple_claims(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test persisting multiple claims."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -126,8 +144,12 @@ class TestDuckDBStorageBackend:
         count = result[0]
         assert count == 5
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_update_claim_functionality(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_update_claim_functionality(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test claim update functionality."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -150,14 +172,20 @@ class TestDuckDBStorageBackend:
 
         # Verify update
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT content, score FROM claims WHERE id = ?", (update_data["id"],))
+        cursor = backend._conn.execute(
+            "SELECT content, score FROM claims WHERE id = ?", (update_data["id"],)
+        )
         row = cursor.fetchone()
         assert row is not None
         assert row[0] == "Updated content"
         assert row[1] == 0.9
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_persist_graph_entities(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_persist_graph_entities(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test persisting graph entities."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -194,8 +222,12 @@ class TestDuckDBStorageBackend:
         assert row[1] == "John Doe"
         assert row[2] == "person"
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_persist_graph_relations(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_persist_graph_relations(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test persisting graph relations."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -227,7 +259,9 @@ class TestDuckDBStorageBackend:
         assert row[1] == "entity-2"
         assert row[2] == "works_for"
 
-    @pytest.mark.xfail(reason="Test expects different audit data format than current implementation")
+    @pytest.mark.xfail(
+        reason="Test expects different audit data format than current implementation"
+    )
     def test_persist_claim_audit(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
         """Test persisting claim audit records."""
         backend.setup(db_path=str(temp_db_path))
@@ -250,14 +284,19 @@ class TestDuckDBStorageBackend:
         assert count == 1
 
         # Verify audit data
-        cursor.execute("SELECT claim_id, action, metadata FROM claim_audits WHERE claim_id = ?", ("test-claim",))
+        cursor.execute(
+            "SELECT claim_id, action, metadata FROM claim_audits WHERE claim_id = ?",
+            ("test-claim",),
+        )
         row = cursor.fetchone()
         assert row is not None
         assert row[0] == "test-claim"
         assert row[1] == "created"
         # Metadata should be stored as JSON
 
-    @pytest.mark.xfail(reason="Test expects different audit data format than current implementation")
+    @pytest.mark.xfail(
+        reason="Test expects different audit data format than current implementation"
+    )
     def test_list_claim_audits(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
         """Test listing claim audits."""
         backend.setup(db_path=str(temp_db_path))
@@ -295,15 +334,21 @@ class TestDuckDBStorageBackend:
 
         # Verify index exists
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE '%hnsw%'")
+        cursor = backend._conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE '%hnsw%'"
+        )
         indexes = [row[0] for row in cursor.fetchall()]
         assert len(indexes) > 0
 
-    @pytest.mark.xfail(reason="Test expects schema version 4 but migration logic may not match expectations")
-    def test_migration_functionality(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test expects schema version 4 but migration logic may not match expectations"
+    )
+    def test_migration_functionality(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test database migration functionality."""
         # Create a database with an older schema version
-        with patch.object(backend, 'get_schema_version', return_value=1):
+        with patch.object(backend, "get_schema_version", return_value=1):
             backend.setup(db_path=str(temp_db_path))
 
             # Run migrations
@@ -319,8 +364,12 @@ class TestDuckDBStorageBackend:
         with pytest.raises(Exception):  # Should raise some form of database error
             backend.setup(db_path="/invalid/path/that/does/not/exist/test.db")
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_transaction_rollback_on_error(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_transaction_rollback_on_error(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test that transactions are properly rolled back on errors."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -330,14 +379,20 @@ class TestDuckDBStorageBackend:
 
         # Verify claim was stored
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT COUNT(*) FROM claims WHERE id = ?", (test_claim["id"],))
+        cursor = backend._conn.execute(
+            "SELECT COUNT(*) FROM claims WHERE id = ?", (test_claim["id"],)
+        )
         result = cursor.fetchone()
         assert result is not None
         count = result[0]
         assert count == 1
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_concurrent_access_safety(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_concurrent_access_safety(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test thread safety for concurrent database access."""
         backend.setup(db_path=str(temp_db_path))
 
@@ -366,7 +421,9 @@ class TestDuckDBStorageBackend:
         # This would normally be called by the vector search system
         # For testing, we'll verify the embeddings table structure
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='embeddings'")
+        cursor = backend._conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='embeddings'"
+        )
         tables = cursor.fetchall()
         assert len(tables) == 1
 
@@ -383,8 +440,12 @@ class TestDuckDBStorageBackend:
         # Verify cleanup
         assert backend._conn is None
 
-    @pytest.mark.xfail(reason="Test written for old schema that used 'claims' table instead of 'nodes' table")
-    def test_backend_reuse_after_close(self, backend: DuckDBStorageBackend, temp_db_path: Path) -> None:
+    @pytest.mark.xfail(
+        reason="Test written for old schema that used 'claims' table instead of 'nodes' table"
+    )
+    def test_backend_reuse_after_close(
+        self, backend: DuckDBStorageBackend, temp_db_path: Path
+    ) -> None:
         """Test that backend can be reused after being closed."""
         # Setup, use, close
         backend.setup(db_path=str(temp_db_path))
@@ -397,7 +458,9 @@ class TestDuckDBStorageBackend:
 
         # Should still have the data
         assert backend._conn is not None
-        cursor = backend._conn.execute("SELECT COUNT(*) FROM claims WHERE id = ?", (test_claim["id"],))
+        cursor = backend._conn.execute(
+            "SELECT COUNT(*) FROM claims WHERE id = ?", (test_claim["id"],)
+        )
         result = cursor.fetchone()
         assert result is not None
         count = result[0]

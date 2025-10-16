@@ -91,28 +91,19 @@ def test_fallback_multiple_ips(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
     limit_obj = api_mod.parse(api_mod.dynamic_limit())
 
-    assert (
-        client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code
-        == 200
-    )
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 200
     if api_mod.SLOWAPI_STUB:
         assert api_mod.get_request_logger(app).get("1") == 1
     else:
         assert app.state.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
-    assert (
-        client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code
-        == 200
-    )
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code == 200
     if api_mod.SLOWAPI_STUB:
         assert api_mod.get_request_logger(app).get("2") == 1
     else:
         assert app.state.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
 
-    assert (
-        client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code
-        == 429
-    )
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 429
     if api_mod.SLOWAPI_STUB:
         assert api_mod.get_request_logger(app).get("1") == 2
     else:
@@ -165,17 +156,17 @@ def test_query_failure_includes_socratic_reasoning(
     client = TestClient(app)
     response = client.post("/query", json={"query": "q"})
 
-    assert response.status_code == 200, (
-        "Socratic check: Did the API gracefully recover from orchestrator failures?"
-    )
+    assert (
+        response.status_code == 200
+    ), "Socratic check: Did the API gracefully recover from orchestrator failures?"
     payload = response.json()
 
-    assert payload["answer"].startswith("Error:"), (
-        "Socratic check: Did the API signal the orchestrator error to callers?"
-    )
-    assert any("Suggestion" in step for step in payload["reasoning"]), (
-        "Socratic check: Did the API provide actionable recovery prompts?"
-    )
-    assert "error_details" in payload["metrics"], (
-        "Socratic check: Are diagnostics preserved for subsequent investigation?"
-    )
+    assert payload["answer"].startswith(
+        "Error:"
+    ), "Socratic check: Did the API signal the orchestrator error to callers?"
+    assert any(
+        "Suggestion" in step for step in payload["reasoning"]
+    ), "Socratic check: Did the API provide actionable recovery prompts?"
+    assert (
+        "error_details" in payload["metrics"]
+    ), "Socratic check: Are diagnostics preserved for subsequent investigation?"

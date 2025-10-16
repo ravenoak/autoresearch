@@ -297,8 +297,7 @@ class StreamlitSessionState(MutableMapping[str, object]):
 class MarkdownRenderer(Protocol):
     """Protocol for ``st.markdown`` compatible callables."""
 
-    def __call__(self, body: str, *, unsafe_allow_html: bool = ...) -> None:
-        ...
+    def __call__(self, body: str, *, unsafe_allow_html: bool = ...) -> None: ...
 
 
 @dataclass(slots=True)

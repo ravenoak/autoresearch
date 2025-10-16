@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 import logging
-from typing import List, Tuple, Optional, Callable, Protocol
+from typing import Any, List, Tuple, Optional, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -45,17 +45,17 @@ def chunk_prompt(
     # Priority: 1) Sections (##, ###), 2) Paragraphs, 3) Sentences
 
     # First try section headers
-    sections = re.split(r'\n(#{1,3}\s+.+)\n', prompt)
+    sections = re.split(r"\n(#{1,3}\s+.+)\n", prompt)
     if len(sections) > 1:
         return _chunk_by_delimiter(sections, max_tokens, overlap, tokenizer)
 
     # Try paragraphs
-    paragraphs = prompt.split('\n\n')
+    paragraphs = prompt.split("\n\n")
     if len(paragraphs) > 1:
         return _chunk_by_delimiter(paragraphs, max_tokens, overlap, tokenizer)
 
     # Fall back to sentences
-    sentences = re.split(r'([.!?]+\s+)', prompt)
+    sentences = re.split(r"([.!?]+\s+)", prompt)
     return _chunk_by_delimiter(sentences, max_tokens, overlap, tokenizer)
 
 
@@ -77,7 +77,7 @@ def _chunk_by_delimiter(
         List of (chunk_text, start_token, end_token) tuples
     """
     chunks = []
-    current_chunk = []
+    current_chunk: List[str] = []
     current_tokens = 0
     start_token = 0
 
@@ -98,22 +98,22 @@ def _chunk_by_delimiter(
 
         if current_tokens + part_tokens > max_tokens and current_chunk:
             # Save current chunk
-            chunk_text = ''.join(current_chunk)
+            chunk_text = "".join(current_chunk)
             end_token = start_token + get_token_count(chunk_text)
             chunks.append((chunk_text, start_token, end_token))
 
             # Start new chunk with overlap
-            overlap_parts = current_chunk[-(overlap // len(current_chunk)):]
+            overlap_parts = current_chunk[-(overlap // len(current_chunk)) :]
             current_chunk = overlap_parts + [part]
-            start_token = start_token + current_tokens - get_token_count(''.join(overlap_parts))
-            current_tokens = get_token_count(''.join(current_chunk))
+            start_token = start_token + current_tokens - get_token_count("".join(overlap_parts))
+            current_tokens = get_token_count("".join(current_chunk))
         else:
             current_chunk.append(part)
             current_tokens += part_tokens
 
     # Add final chunk
     if current_chunk:
-        chunk_text = ''.join(current_chunk)
+        chunk_text = "".join(current_chunk)
         end_token = start_token + get_token_count(chunk_text)
         chunks.append((chunk_text, start_token, end_token))
 
@@ -148,7 +148,7 @@ def synthesize_chunk_results(
 Synthesize a coherent, comprehensive response that integrates all parts while maintaining logical flow and avoiding redundancy."""
 
     try:
-        return adapter.generate(synthesis_prompt, model=model)
+        return str(adapter.generate(synthesis_prompt, model=model))
     except Exception as e:
         logger.warning(f"Failed to synthesize chunk results: {e}")
         # Fall back to simple concatenation

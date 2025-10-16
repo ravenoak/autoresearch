@@ -6,9 +6,7 @@ from tests.helpers.modules import ensure_stub_module
 # Stub heavy modules before importing distributed
 ensure_stub_module("ray", {"remote": lambda f: f})
 ensure_stub_module("autoresearch.orchestration.state", {"QueryState": object})
-ensure_stub_module(
-    "autoresearch.orchestration.orchestrator", {"AgentFactory": object}
-)
+ensure_stub_module("autoresearch.orchestration.orchestrator", {"AgentFactory": object})
 ensure_stub_module("autoresearch.models")
 
 from autoresearch.distributed import (  # noqa: E402

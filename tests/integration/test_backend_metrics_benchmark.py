@@ -53,6 +53,7 @@ def test_backend_metrics(
     for row in rows:
         grouped.setdefault(row["backend"], []).append(row)
     for backend, data in grouped.items():
+
         def run() -> None:
             for _ in range(1000):
                 compute_metrics(data)

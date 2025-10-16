@@ -46,8 +46,7 @@ class AgentDouble:
         """Record visible coalitions while returning the configured decision."""
 
         self.seen_coalitions[self.name] = {
-            coalition: list(members)
-            for coalition, members in state.coalitions.items()
+            coalition: list(members) for coalition, members in state.coalitions.items()
         }
         return self.can_execute_value
 
@@ -164,9 +163,7 @@ def patch_storage_persist(
     records: list[PersistClaimCall] = calls if calls is not None else []
 
     def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
-        records.append(
-            PersistClaimCall(claim=dict(claim), partial_update=partial_update)
-        )
+        records.append(PersistClaimCall(claim=dict(claim), partial_update=partial_update))
 
     monkeypatch.setattr(StorageManager, "persist_claim", persist_claim)
     return persist_claim

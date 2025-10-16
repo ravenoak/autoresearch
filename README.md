@@ -186,7 +186,7 @@ preparing for the upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
 planned for **July 20, 2025**, but the schedule slipped. An
-**0.1.0a1** preview is targeted for **September 15, 2026**, with
+**0.1.0a1** is planned for release after integration test fixes and documentation corrections, with
 the final **0.1.0** milestone targeted for **October 1, 2026**. These
 targets are mirrored in `ROADMAP.md`, `STATUS.md`, and
 `docs/release_plan.md`. See

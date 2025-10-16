@@ -23,9 +23,7 @@ def test_concurrency_benchmark() -> None:
 
 def _ram_budget_run(items: int) -> int:
     cfg: ConfigModel = ConfigModel(
-        storage=StorageConfig(
-            duckdb_path=":memory:", ontology_reasoner_max_triples=1
-        ),
+        storage=StorageConfig(duckdb_path=":memory:", ontology_reasoner_max_triples=1),
         ram_budget_mb=1,
         graph_eviction_policy="lru",
     )

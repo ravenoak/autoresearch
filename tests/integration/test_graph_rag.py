@@ -79,9 +79,7 @@ def test_graph_rag_ingestion_contradictions_and_metrics() -> None:
             should_debate=False,
             target_loops=1,
             heuristics={
-                "graph_contradiction": float(
-                    contradictions_meta.get("weighted_score", 0.0)
-                )
+                "graph_contradiction": float(contradictions_meta.get("weighted_score", 0.0))
             },
             thresholds={"graph_contradiction": 0.1},
             reason="telemetry_test",
@@ -90,9 +88,7 @@ def test_graph_rag_ingestion_contradictions_and_metrics() -> None:
             telemetry={
                 "coverage": {},
                 "retrieval_confidence": {},
-                "contradiction_total": float(
-                    contradictions_meta.get("weighted_score", 0.0)
-                ),
+                "contradiction_total": float(contradictions_meta.get("weighted_score", 0.0)),
                 "contradiction_samples": len(contradiction_items),
                 "graph": graph_meta,
             },

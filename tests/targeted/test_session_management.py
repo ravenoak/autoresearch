@@ -33,6 +33,10 @@ class DummyResponse:
         self._headers: dict[str, str] = {}
         self.status_code = 200
 
+    @property
+    def ok(self) -> bool:
+        return self.status_code < 400
+
     def raise_for_status(self) -> None:
         self.raise_called = True
 
@@ -61,11 +65,9 @@ class DummySession:
         self._adapters: list[tuple[str, RequestsAdapterProtocol]] = []
         self._default_adapter: RequestsAdapterProtocol = DummyAdapter()
 
-    def request(
-        self, method: str, url: str, *args: Any, **kwargs: Any
-    ) -> RequestsResponseProtocol:
+    def request(self, method: str, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
         self.requests.append((method, url))
-        return DummyResponse()
+        return DummyResponse()  # type: ignore[return-value]
 
     def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         self.mounted.append((prefix, adapter))
@@ -84,14 +86,10 @@ class DummySession:
     def headers(self) -> dict[str, str]:
         return self._headers
 
-    def get(
-        self, url: str, *args: Any, **kwargs: Any
-    ) -> RequestsResponseProtocol:
+    def get(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
         return self.request("GET", url, *args, **kwargs)
 
-    def post(
-        self, url: str, *args: Any, **kwargs: Any
-    ) -> RequestsResponseProtocol:
+    def post(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
         return self.request("POST", url, *args, **kwargs)
 
 

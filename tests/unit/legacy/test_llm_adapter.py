@@ -14,16 +14,29 @@ def test_dummy_adapter_generation():
 @responses.activate
 def test_lmstudio_adapter(monkeypatch):
     endpoint = "http://testserver/v1/chat/completions"
+    models_endpoint = "http://testserver/v1/models"
     monkeypatch.setenv("LMSTUDIO_ENDPOINT", endpoint)
     adapter = get_llm_adapter("lmstudio")
+
+    # Mock both the models discovery call and the chat completions call
+    responses.add(
+        responses.GET,
+        models_endpoint,
+        json={"data": [{"id": "test-model", "model": "test-model"}]},
+    )
     responses.add(
         responses.POST,
         endpoint,
         json={"choices": [{"message": {"content": "hi"}}]},
     )
+
     text = adapter.generate("hello")
     assert text == "hi"
-    assert responses.calls[0].request.url == endpoint
+
+    # The first call should be to models for discovery, second to chat/completions
+    assert len(responses.calls) >= 2
+    assert responses.calls[0].request.url == models_endpoint
+    assert responses.calls[1].request.url == endpoint
 
 
 @responses.activate

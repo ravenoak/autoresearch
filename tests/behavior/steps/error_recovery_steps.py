@@ -764,9 +764,7 @@ def assert_state_restored(
 
 @then(parsers.parse('the logs should include "{message}"'))
 def assert_logs(
-    run_result: RunResult | None = None,
-    error_result: ErrorResult | None = None,
-    message: str = ""
+    run_result: RunResult | None = None, error_result: ErrorResult | None = None, message: str = ""
 ) -> None:
     result = run_result or error_result
     assert result is not None, "Expected a run or error result"

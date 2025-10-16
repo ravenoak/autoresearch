@@ -21,7 +21,14 @@ def test_create_interaction_trace_contains_steps(steps):
         assert f"step{idx}" in graph
 
 
-@given(st.dictionaries(st.text(min_size=1, max_size=5), st.integers(min_value=0, max_value=5), min_size=1, max_size=4))
+@given(
+    st.dictionaries(
+        st.text(min_size=1, max_size=5),
+        st.integers(min_value=0, max_value=5),
+        min_size=1,
+        max_size=4,
+    )
+)
 def test_create_progress_graph(agent_execs):
     perf = {k: {"executions": v} for k, v in agent_execs.items()}
     graph = create_progress_graph(perf)
@@ -34,9 +41,21 @@ def test_create_progress_graph(agent_execs):
 
 
 @given(
-    answer=st.text(min_size=1, max_size=30, alphabet=st.characters(min_codepoint=32, max_codepoint=126)),
-    citations=st.lists(st.text(min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)), max_size=3),
-    reasoning=st.lists(st.text(min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)), max_size=3),
+    answer=st.text(
+        min_size=1, max_size=30, alphabet=st.characters(min_codepoint=32, max_codepoint=126)
+    ),
+    citations=st.lists(
+        st.text(
+            min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)
+        ),
+        max_size=3,
+    ),
+    reasoning=st.lists(
+        st.text(
+            min_size=1, max_size=15, alphabet=st.characters(min_codepoint=32, max_codepoint=126)
+        ),
+        max_size=3,
+    ),
 )
 def test_format_result_markdown_json(answer, citations, reasoning):
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})

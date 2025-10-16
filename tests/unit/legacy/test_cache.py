@@ -85,9 +85,7 @@ def property_search(
                     new=staticmethod(lambda: None),
                 )
             )
-        stack.enter_context(
-            patch("autoresearch.search.core.get_config", lambda: cfg)
-        )
+        stack.enter_context(patch("autoresearch.search.core.get_config", lambda: cfg))
         search = Search(cache=cache)
         with search.temporary_state() as state:
             yield state
@@ -386,12 +384,12 @@ def test_cache_key_normalizes_queries(monkeypatch: pytest.MonkeyPatch) -> None:
 
         first = s.external_lookup("  Python  ")
         second = s.external_lookup("python")
-        assert calls["count"] == 1, (
-            "If cache keys ignore normalization, how will repeated queries avoid redundant fetches?"
-        )
-        assert second == first, (
-            "When normalized forms diverge, what stops the cache from fragmenting identical intents?"
-        )
+        assert (
+            calls["count"] == 1
+        ), "If cache keys ignore normalization, how will repeated queries avoid redundant fetches?"
+        assert (
+            second == first
+        ), "When normalized forms diverge, what stops the cache from fragmenting identical intents?"
 
 
 def test_cache_key_respects_embedding_flags(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -435,15 +433,17 @@ def test_cache_key_respects_embedding_flags(monkeypatch: pytest.MonkeyPatch) -> 
 
         cfg.search.use_semantic_similarity = False
         result = s.external_lookup("python")
-        assert calls["count"] == 2, (
-            "If embedding toggles share cache keys, how would we detect stale similarity mixes?"
-        )
+        assert (
+            calls["count"] == 2
+        ), "If embedding toggles share cache keys, how would we detect stale similarity mixes?"
         assert result[0]["title"] == "embedding"
 
 
 @settings(max_examples=15, deadline=None)
 @given(
-    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    query=st.text(
+        alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12
+    ),
     hybrid=st.booleans(),
     semantic=st.booleans(),
 )
@@ -485,10 +485,12 @@ def test_legacy_cache_entries_upgrade_on_hit(
         search_default.cache.cache_results(cache_key.legacy, "legacy", payload)
 
         results = search_default.external_lookup(query)
-        assert calls["count"] == 0, (
-            "If legacy cache entries fail to migrate, why would the backend stay idle on the first hit?"
-        )
-        assert results, "Without cached payloads, what documents justify skipping the backend entirely?"
+        assert (
+            calls["count"] == 0
+        ), "If legacy cache entries fail to migrate, why would the backend stay idle on the first hit?"
+        assert (
+            results
+        ), "Without cached payloads, what documents justify skipping the backend entirely?"
         assert results[0]["url"] == "https://cached"
 
         slots = build_cache_slots(
@@ -502,9 +504,9 @@ def test_legacy_cache_entries_upgrade_on_hit(
             "how will hashed entries persist for future hits?"
         )
         upgraded = search_default.cache.get_cached_results(cache_key.primary, "legacy")
-        assert upgraded is not None, (
-            "When migration runs, shouldn't the hashed key inherit the legacy payload for future hits?"
-        )
+        assert (
+            upgraded is not None
+        ), "When migration runs, shouldn't the hashed key inherit the legacy payload for future hits?"
 
     alt_namespace = "alt-namespace"
     with property_search(cache.namespaced(alt_namespace), cfg) as search_alt:
@@ -519,14 +521,16 @@ def test_legacy_cache_entries_upgrade_on_hit(
             storage_hints=storage_hints,
         )
         first = search_alt.external_lookup(query)
-        assert calls["count"] == 1, (
-            "If namespaces share cache slots, how would the alternate view trigger a backend fetch?"
-        )
-        assert first, "Without backend payloads, what documents prove the alternate namespace executed?"
+        assert (
+            calls["count"] == 1
+        ), "If namespaces share cache slots, how would the alternate view trigger a backend fetch?"
+        assert (
+            first
+        ), "Without backend payloads, what documents prove the alternate namespace executed?"
         second = search_alt.external_lookup(query)
-        assert calls["count"] == 1, (
-            "When a namespace caches the result, shouldn't subsequent hits reuse the payload?"
-        )
+        assert (
+            calls["count"] == 1
+        ), "When a namespace caches the result, shouldn't subsequent hits reuse the payload?"
         assert second == first
         alt_slots = build_cache_slots(
             alt_cache_key,
@@ -542,7 +546,9 @@ def test_legacy_cache_entries_upgrade_on_hit(
 
 @settings(max_examples=15, deadline=None)
 @given(
-    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12),
+    query=st.text(
+        alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=12
+    ),
     hybrid=st.booleans(),
     semantic=st.booleans(),
     storage_hint=st.sampled_from(["external", "embedding"]),
@@ -592,15 +598,17 @@ def test_v2_cache_entries_upgrade_on_hit(
 
         results = search_default.external_lookup(query)
         expected_calls = 0 if storage_hint == "external" else 1
-        assert calls["count"] == expected_calls, (
-            "If v2 cache entries failed to migrate, why would the backend fire before leveraging the alias?"
-        )
-        assert results, "Without cached payloads, how would the alias prove compatibility across versions?"
+        assert (
+            calls["count"] == expected_calls
+        ), "If v2 cache entries failed to migrate, why would the backend fire before leveraging the alias?"
+        assert (
+            results
+        ), "Without cached payloads, how would the alias prove compatibility across versions?"
 
         repeat_default = search_default.external_lookup(query)
-        assert calls["count"] == expected_calls, (
-            "Once the alias migrates, why would repeated hits increment backend invocations?"
-        )
+        assert (
+            calls["count"] == expected_calls
+        ), "Once the alias migrates, why would repeated hits increment backend invocations?"
         assert repeat_default == results
 
         slots = build_cache_slots(
@@ -629,18 +637,16 @@ def test_v2_cache_entries_upgrade_on_hit(
             embedding_backend=None,
             storage_hints=("external",),
         )
-        assert search_default.cache.get_cached_results(
-            canonical_slots[0], "legacy"
-        ) is not None, (
-            "After migrating an alias, how could the canonical slot remain empty?"
-        )
+        assert (
+            search_default.cache.get_cached_results(canonical_slots[0], "legacy") is not None
+        ), "After migrating an alias, how could the canonical slot remain empty?"
         upgraded = search_default.cache.get_cached_results(
             canonical_cache_key.primary if storage_hint != "external" else cache_key.primary,
             "legacy",
         )
-        assert upgraded is not None, (
-            "Once accessed via an alias, shouldn't the upgraded cache persist under the new primary hash?"
-        )
+        assert (
+            upgraded is not None
+        ), "Once accessed via an alias, shouldn't the upgraded cache persist under the new primary hash?"
 
     alt_namespace = "alt-v2"
     with property_search(cache.namespaced(alt_namespace), cfg) as search_alt:
@@ -656,14 +662,14 @@ def test_v2_cache_entries_upgrade_on_hit(
         )
         baseline_calls = calls["count"]
         first = search_alt.external_lookup(query)
-        assert calls["count"] == baseline_calls + 1, (
-            "If alias hits leaked across namespaces, why would the alternate view touch the backend at all?"
-        )
+        assert (
+            calls["count"] == baseline_calls + 1
+        ), "If alias hits leaked across namespaces, why would the alternate view touch the backend at all?"
         assert first, "Without backend payloads, how would the alternate namespace prove isolation?"
         second = search_alt.external_lookup(query)
-        assert calls["count"] == baseline_calls + 1, (
-            "After caching per-namespace, shouldn't repeated hits fall back to the stored payload?"
-        )
+        assert (
+            calls["count"] == baseline_calls + 1
+        ), "After caching per-namespace, shouldn't repeated hits fall back to the stored payload?"
         assert second == first
         alt_slots = build_cache_slots(
             alt_cache_key,
@@ -691,16 +697,16 @@ def test_v2_cache_entries_upgrade_on_hit(
             embedding_backend=None,
             storage_hints=("external",),
         )
-        assert search_alt.cache.get_cached_results(
-            canonical_alt_slots[0], "legacy"
-        ) is not None, (
-            "Without canonical slot upgrades, why would the namespace avoid repeated backend calls?"
-        )
+        assert (
+            search_alt.cache.get_cached_results(canonical_alt_slots[0], "legacy") is not None
+        ), "Without canonical slot upgrades, why would the namespace avoid repeated backend calls?"
 
 
 @settings(max_examples=20, deadline=None)
 @given(
-    query=st.text(alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=16),
+    query=st.text(
+        alphabet=st.characters(min_codepoint=97, max_codepoint=122), min_size=1, max_size=16
+    ),
     embedding_backends=st.lists(
         st.sampled_from(["duckdb", "faiss", "azure"]),
         unique=True,
@@ -743,12 +749,12 @@ def test_cache_key_primary_reflects_hybrid_flags(
         storage_hints=("external",),
     )
 
-    assert key_a.primary != key_b.primary, (
-        "If hybrid toggles left the hash untouched, how would the cache distinguish hybrid reranks?"
-    )
-    assert key_b.primary != key_c.primary, (
-        "When semantic similarity flips, shouldn't the cache key reflect the new retrieval plan?"
-    )
+    assert (
+        key_a.primary != key_b.primary
+    ), "If hybrid toggles left the hash untouched, how would the cache distinguish hybrid reranks?"
+    assert (
+        key_b.primary != key_c.primary
+    ), "When semantic similarity flips, shouldn't the cache key reflect the new retrieval plan?"
 
 
 @settings(max_examples=15, deadline=None)
@@ -822,9 +828,9 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
 
             prev_default = calls["default"]
             default_results = search_default.external_lookup(query)
-            assert default_results, (
-                "Without results, what evidence shows the cache preserved payloads?"
-            )
+            assert (
+                default_results
+            ), "Without results, what evidence shows the cache preserved payloads?"
             default_key = search_default._build_cache_key(
                 backend="sequence",
                 query=query,
@@ -837,23 +843,23 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
             assume(default_key.fingerprint is not None)
 
             if key in default_fingerprints:
-                assert calls["default"] == prev_default, (
-                    "If cache fingerprints collide, why would sequential repeats hit the backend again?"
-                )
-                assert default_key.fingerprint == default_fingerprints[key], (
-                    "How could identical toggle states yield differing fingerprints and still reuse cache entries?"
-                )
+                assert (
+                    calls["default"] == prev_default
+                ), "If cache fingerprints collide, why would sequential repeats hit the backend again?"
+                assert (
+                    default_key.fingerprint == default_fingerprints[key]
+                ), "How could identical toggle states yield differing fingerprints and still reuse cache entries?"
             else:
-                assert calls["default"] == prev_default + 1, (
-                    "When encountering a new toggle combination, shouldn't the backend fetch occur exactly once?"
-                )
+                assert (
+                    calls["default"] == prev_default + 1
+                ), "When encountering a new toggle combination, shouldn't the backend fetch occur exactly once?"
                 default_fingerprints[key] = default_key.fingerprint
 
             prev_alt = calls["alt"]
             alt_results = search_alt.external_lookup(query)
-            assert alt_results == default_results, (
-                "If namespaces drifted cache slots, why would the alternate view produce different results?"
-            )
+            assert (
+                alt_results == default_results
+            ), "If namespaces drifted cache slots, why would the alternate view produce different results?"
             alt_key = search_alt._build_cache_key(
                 backend="sequence",
                 query=query,
@@ -866,24 +872,24 @@ def test_sequential_hybrid_sequences_respect_cache_fingerprint(
             assume(alt_key.fingerprint is not None)
 
             if key in alt_fingerprints:
-                assert calls["alt"] == prev_alt, (
-                    "How would cached namespaces regress if repeated draws still triggered backend calls?"
-                )
-                assert alt_key.fingerprint == alt_fingerprints[key], (
-                    "When namespaces reuse fingerprints, shouldn't repeated hits remain stable?"
-                )
+                assert (
+                    calls["alt"] == prev_alt
+                ), "How would cached namespaces regress if repeated draws still triggered backend calls?"
+                assert (
+                    alt_key.fingerprint == alt_fingerprints[key]
+                ), "When namespaces reuse fingerprints, shouldn't repeated hits remain stable?"
             else:
-                assert calls["alt"] == prev_alt + 1, (
-                    "Why would a fresh namespace skip backend execution for a new toggle combination?"
-                )
+                assert (
+                    calls["alt"] == prev_alt + 1
+                ), "Why would a fresh namespace skip backend execution for a new toggle combination?"
                 alt_fingerprints[key] = alt_key.fingerprint
 
-    assert calls["default"] == len(default_fingerprints), (
-        "If caching failed, how could backend calls exceed the number of unique toggle combinations?"
-    )
-    assert calls["alt"] == len(alt_fingerprints), (
-        "When namespaces reuse cached payloads, shouldn't backend calls still match unique combinations?"
-    )
+    assert calls["default"] == len(
+        default_fingerprints
+    ), "If caching failed, how could backend calls exceed the number of unique toggle combinations?"
+    assert calls["alt"] == len(
+        alt_fingerprints
+    ), "When namespaces reuse cached payloads, shouldn't backend calls still match unique combinations?"
 
 
 @settings(max_examples=20, deadline=None)
@@ -985,21 +991,17 @@ def test_interleaved_storage_paths_share_cache(
 
             first = search_default.external_lookup("topic")
             first_trace = search_default.cache_trace
-            assert calls["backend"] == 1, (
-                "Without a cache miss on the first lookup, how would the backend ever run?"
-            )
+            assert (
+                calls["backend"] == 1
+            ), "Without a cache miss on the first lookup, how would the backend ever run?"
             assert any(
-                event.stage == "store"
-                and event.backend == "primary"
-                and event.fingerprint
+                event.stage == "store" and event.backend == "primary" and event.fingerprint
                 for event in first_trace.events
-            ), (
-                "If namespace traces failed to capture fingerprints, what evidence would confirm the initial store?"
-            )
+            ), "If namespace traces failed to capture fingerprints, what evidence would confirm the initial store?"
             expected_namespace = search_default._cache_namespace or "__default__"
-            assert first_trace.namespace == expected_namespace, (
-                "When traces omit the active namespace, how could Hypothesis reason about isolation?"
-            )
+            assert (
+                first_trace.namespace == expected_namespace
+            ), "When traces omit the active namespace, how could Hypothesis reason about isolation?"
 
             def primary_cache_key() -> CacheKey:
                 return search_default._build_cache_key(
@@ -1083,7 +1085,9 @@ def test_interleaved_storage_paths_share_cache(
                     storage_hints=duckdb_hints,
                 )
 
-            def event_counter(trace: CacheTrace) -> Counter[tuple[str, str, str | None, tuple[str, ...]]]:
+            def event_counter(
+                trace: CacheTrace,
+            ) -> Counter[tuple[str, str, str | None, tuple[str, ...]]]:
                 return Counter(
                     (
                         event.backend,
@@ -1097,43 +1101,47 @@ def test_interleaved_storage_paths_share_cache(
             first_counter = event_counter(first_trace)
             first_expected: Counter[tuple[str, str, str | None, tuple[str, ...]]] = Counter()
             first_expected[("primary", "miss", primary_key.fingerprint, primary_hints)] = 1
-            first_expected[("primary", "store", primary_key.fingerprint, primary_hints)] = len(primary_slots)
+            first_expected[("primary", "store", primary_key.fingerprint, primary_hints)] = len(
+                primary_slots
+            )
             first_expected[("duckdb", "miss", duckdb_topic_key.fingerprint, duckdb_hints)] = 1
             if duckdb_store_expected:
-                first_expected[("duckdb", "store", duckdb_topic_key.fingerprint, duckdb_hints)] = len(
-                    duckdb_topic_slots
+                first_expected[("duckdb", "store", duckdb_topic_key.fingerprint, duckdb_hints)] = (
+                    len(duckdb_topic_slots)
                 )
             if duckdb_backend_invoked and duckdb_embedding_key is not None:
-                first_expected[("duckdb", "miss", duckdb_embedding_key.fingerprint, duckdb_hints)] = 1
-                first_expected[("duckdb", "store", duckdb_embedding_key.fingerprint, duckdb_hints)] = len(
-                    duckdb_embedding_slots
-                )
+                first_expected[
+                    ("duckdb", "miss", duckdb_embedding_key.fingerprint, duckdb_hints)
+                ] = 1
+                first_expected[
+                    ("duckdb", "store", duckdb_embedding_key.fingerprint, duckdb_hints)
+                ] = len(duckdb_embedding_slots)
 
-            assert first_counter == first_expected, (
-                "If cache traces skipped canonical fingerprints, how could we validate deterministic storage events?"
-            )
+            assert (
+                first_counter == first_expected
+            ), "If cache traces skipped canonical fingerprints, how could we validate deterministic storage events?"
 
-            assert calls["duckdb"] == duckdb_backend_invoked, (
-                "When duckdb lookup paths change, shouldn't backend calls align with the expected storage coverage?"
-            )
+            assert (
+                calls["duckdb"] == duckdb_backend_invoked
+            ), "When duckdb lookup paths change, shouldn't backend calls align with the expected storage coverage?"
 
             initial_backend_calls = calls["backend"]
             initial_duckdb_calls = calls["duckdb"]
             second = search_default.external_lookup("topic")
             second_trace = search_default.cache_trace
 
-            assert calls["backend"] == initial_backend_calls, (
-                "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
-            )
-            assert calls["duckdb"] == initial_duckdb_calls, (
-                "When duckdb coverage is deterministic, why would repeated lookups trigger additional backend calls?"
-            )
-            assert second_trace.namespace == first_trace.namespace, (
-                "If namespaces drifted across lookups, how would cache hits stay deterministic?"
-            )
-            assert second == first, (
-                "Without stable cache keys, how could sequential storage blends return identical payloads?"
-            )
+            assert (
+                calls["backend"] == initial_backend_calls
+            ), "If storage interleaving broke cache hashes, why didn't the backend fire twice?"
+            assert (
+                calls["duckdb"] == initial_duckdb_calls
+            ), "When duckdb coverage is deterministic, why would repeated lookups trigger additional backend calls?"
+            assert (
+                second_trace.namespace == first_trace.namespace
+            ), "If namespaces drifted across lookups, how would cache hits stay deterministic?"
+            assert (
+                second == first
+            ), "Without stable cache keys, how could sequential storage blends return identical payloads?"
 
             second_counter = event_counter(second_trace)
             second_expected: Counter[tuple[str, str, str | None, tuple[str, ...]]] = Counter()
@@ -1147,9 +1155,9 @@ def test_interleaved_storage_paths_share_cache(
             else:
                 second_expected[("duckdb", "miss", duckdb_topic_key.fingerprint, duckdb_hints)] = 1
 
-            assert second_counter == second_expected, (
-                "If cache hits were non-deterministic, how could we reconcile the trace with expected slot usage?"
-            )
+            assert (
+                second_counter == second_expected
+            ), "If cache hits were non-deterministic, how could we reconcile the trace with expected slot usage?"
 
             canonical_hints = search_default._embedding_storage_hints("duckdb")
             scrambled_hints = tuple(reversed(canonical_hints + canonical_hints))
@@ -1182,9 +1190,9 @@ def test_interleaved_storage_paths_share_cache(
                 embedding_backend="duckdb",
                 storage_hints=scrambled_hints,
             )
-            assert canonical_slots == scrambled_slots, (
-                "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
-            )
+            assert (
+                canonical_slots == scrambled_slots
+            ), "If storage hints were not canonicalised, why would shuffled duplicates map to identical cache slots?"
 
             key = search_default._build_cache_key(
                 backend="primary",
@@ -1205,16 +1213,16 @@ def test_interleaved_storage_paths_share_cache(
                 query_embedding=vector,
                 storage_hints=("external",),
             )
-            assert repeat.fingerprint == key.fingerprint, (
-                "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
-            )
+            assert (
+                repeat.fingerprint == key.fingerprint
+            ), "If interleaved storage altered the fingerprint, what mechanism would keep cache hits deterministic?"
 
-        assert calls["backend"] == 1, (
-            "If cache slots multiplied, how could backend calls stay capped at a single execution?"
-        )
-        assert calls["duckdb"] == duckdb_backend_invoked, (
-            "When cache keys stabilise embeddings, shouldn't vector fetches match the expected backend usage?"
-        )
+        assert (
+            calls["backend"] == 1
+        ), "If cache slots multiplied, how could backend calls stay capped at a single execution?"
+        assert (
+            calls["duckdb"] == duckdb_backend_invoked
+        ), "When cache keys stabilise embeddings, shouldn't vector fetches match the expected backend usage?"
     finally:
         cache.teardown(remove_file=True)
         shutil.rmtree(temp_dir, ignore_errors=True)

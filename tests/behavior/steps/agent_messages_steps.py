@@ -65,9 +65,7 @@ class TeamReceiver(Agent):
         return as_payload({})
 
 
-@scenario(
-    "../features/agent_messages.feature", "Agents share data through the orchestrator"
-)
+@scenario("../features/agent_messages.feature", "Agents share data through the orchestrator")
 def test_agent_message_exchange() -> None:
     pass
 
@@ -77,9 +75,7 @@ def test_coalition_broadcast() -> None:
     pass
 
 
-@scenario(
-    "../features/agent_messages.feature", "Messaging disabled prevents communication"
-)
+@scenario("../features/agent_messages.feature", "Messaging disabled prevents communication")
 def test_messaging_disabled() -> None:
     pass
 

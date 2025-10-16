@@ -16,7 +16,7 @@ def test_budget_scaled_by_loops_and_capped() -> None:
 def test_budget_increased_when_too_low() -> None:
     cfg = ConfigModel(token_budget=5, loops=1, adaptive_min_buffer=2)
     _apply_adaptive_token_budget(cfg, "one two three four five six seven")
-    assert cfg.token_budget == 9
+    assert cfg.token_budget == 9  # query_tokens (7) + adaptive_min_buffer (2)
 
 
 @pytest.mark.requires_llm

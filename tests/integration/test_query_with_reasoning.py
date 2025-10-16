@@ -11,9 +11,7 @@ from autoresearch.storage_typing import GraphProtocol, RDFQueryResultProtocol
 
 
 def _configure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    cfg = ConfigModel(
-        storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf"))
-    )
+    cfg = ConfigModel(storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf")))
     cfg.api.role_permissions["anonymous"] = ["query"]
 
     def load_config_override(self: ConfigLoader) -> ConfigModel:
@@ -23,9 +21,7 @@ def _configure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     ConfigLoader()._config = None
 
 
-def test_query_with_reasoning_engine(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_query_with_reasoning_engine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 

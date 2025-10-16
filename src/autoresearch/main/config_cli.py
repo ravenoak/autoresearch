@@ -168,17 +168,10 @@ def config_reasoning(
         typer.echo(f"  max_errors={data.get('max_errors', 3)}")
         typer.echo(f"  gate_policy_enabled={data.get('gate_policy_enabled')}")
         typer.echo(
-            "  gate_retrieval_overlap_threshold="
-            f"{data.get('gate_retrieval_overlap_threshold')}"
+            "  gate_retrieval_overlap_threshold=" f"{data.get('gate_retrieval_overlap_threshold')}"
         )
-        typer.echo(
-            "  gate_nli_conflict_threshold="
-            f"{data.get('gate_nli_conflict_threshold')}"
-        )
-        typer.echo(
-            "  gate_complexity_threshold="
-            f"{data.get('gate_complexity_threshold')}"
-        )
+        typer.echo("  gate_nli_conflict_threshold=" f"{data.get('gate_nli_conflict_threshold')}")
+        typer.echo("  gate_complexity_threshold=" f"{data.get('gate_complexity_threshold')}")
         typer.echo(f"  gate_user_overrides={data.get('gate_user_overrides')}")
         return
     updates: dict[str, Any] = {}

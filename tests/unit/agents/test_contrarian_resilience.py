@@ -19,19 +19,19 @@ class _FailingAdapter:
 
 
 def _patch_agent(monkeypatch: pytest.MonkeyPatch, agent: ContrarianAgent) -> None:
-    monkeypatch.setattr(agent, "get_adapter", lambda config: _FailingAdapter())
-    monkeypatch.setattr(agent, "get_model", lambda config: "lmstudio")
+    monkeypatch.setattr(ContrarianAgent, "get_adapter", lambda self, config: _FailingAdapter())
+    monkeypatch.setattr(ContrarianAgent, "get_model", lambda self, config: "lmstudio")
     monkeypatch.setattr(
-        agent,
+        ContrarianAgent,
         "generate_prompt",
-        lambda template, **kwargs: f"tmpl::{kwargs.get('thesis', '')}",
+        lambda self, template, **kwargs: f"tmpl::{kwargs.get('thesis', '')}",
     )
 
 
 def test_contrarian_handles_llm_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Contrarian should record LM errors and emit a fallback antithesis."""
 
-    agent = ContrarianAgent()
+    agent = ContrarianAgent(name="test_contrarian")
     _patch_agent(monkeypatch, agent)
 
     config = ConfigModel(reasoning_mode=ReasoningMode.DIALECTICAL)

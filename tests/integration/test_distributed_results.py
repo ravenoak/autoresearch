@@ -11,7 +11,11 @@ from autoresearch.config.models import ConfigModel, DistributedConfig
 from autoresearch.distributed import RayExecutor, ResultAggregator
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
-from tests.integration._orchestrator_stubs import AgentDouble, AgentResultFactory, patch_agent_factory_get
+from tests.integration._orchestrator_stubs import (
+    AgentDouble,
+    AgentResultFactory,
+    patch_agent_factory_get,
+)
 
 pytestmark = pytest.mark.slow
 

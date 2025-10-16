@@ -26,9 +26,7 @@ from tests.typing_helpers import TypedFixture
 
 def test_run_query_with_coalitions(
     stub_agent_factory: TypedFixture[Callable[[Iterable[AgentDouble]], AgentGetter]],
-    stub_storage_persist: TypedFixture[
-        Callable[[list[PersistClaimCall] | None], PersistCallable]
-    ],
+    stub_storage_persist: TypedFixture[Callable[[list[PersistClaimCall] | None], PersistCallable]],
 ) -> None:
     calls: list[str] = []
     seen: dict[str, dict[str, list[str]]] = {}
@@ -85,12 +83,8 @@ def test_run_parallel_query_aggregates_results(
         storage_manager: type[StorageManager] | None = None,
     ) -> QueryResponse:
         if config.agents == ["A"]:
-            return QueryResponse(
-                answer="a", citations=[], reasoning=["claim A"], metrics={}
-            )
-        return QueryResponse(
-            answer="b", citations=[], reasoning=["claim B"], metrics={}
-        )
+            return QueryResponse(answer="a", citations=[], reasoning=["claim A"], metrics={})
+        return QueryResponse(answer="b", citations=[], reasoning=["claim B"], metrics={})
 
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
@@ -127,9 +121,7 @@ def test_circuit_breaker_opens(monkeypatch: pytest.MonkeyPatch) -> None:
         ) -> dict[str, object]:
             raise RuntimeError("boom")
 
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim, partial_update=False: None
-    )
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim, partial_update=False: None)
     synthesizer = AgentDouble(name="Synthesizer")
 
     def _noop_recovery(
@@ -148,9 +140,7 @@ def test_circuit_breaker_opens(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda name: FailingAgent() if name == "Bad" else synthesizer,
     )
 
-    cfg = ConfigModel(
-        agents=["Bad", "Synthesizer"], loops=1, circuit_breaker_threshold=1
-    )
+    cfg = ConfigModel(agents=["Bad", "Synthesizer"], loops=1, circuit_breaker_threshold=1)
 
     orch = Orchestrator()
     with pytest.raises(Exception):

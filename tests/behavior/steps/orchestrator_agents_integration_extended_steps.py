@@ -60,15 +60,17 @@ def system_using_dummy_llm_adapter(
 @pytest.fixture
 def extended_test_context() -> ExtendedTestContext:
     """Create a context for storing test state."""
-    return as_payload({
-        "config": None,
-        "agents": [],
-        "executed_agents": [],
-        "agent_states": {},
-        "loop_executions": {},
-        "result": None,
-        "errors": [],
-    })
+    return as_payload(
+        {
+            "config": None,
+            "agents": [],
+            "executed_agents": [],
+            "agent_states": {},
+            "loop_executions": {},
+            "result": None,
+            "errors": [],
+        }
+    )
 
 
 # Scenarios
@@ -79,7 +81,6 @@ def extended_test_context() -> ExtendedTestContext:
 )
 def test_orchestrator_executes_multiple_loops() -> None:
     """Test that the orchestrator executes multiple loops correctly."""
-    pass
 
 
 @pytest.mark.slow
@@ -89,7 +90,6 @@ def test_orchestrator_executes_multiple_loops() -> None:
 )
 def test_orchestrator_supports_different_reasoning_modes() -> None:
     """Test that the orchestrator supports different reasoning modes."""
-    pass
 
 
 @pytest.mark.slow
@@ -99,7 +99,6 @@ def test_orchestrator_supports_different_reasoning_modes() -> None:
 )
 def test_orchestrator_preserves_agent_state() -> None:
     """Test that the orchestrator preserves agent state between loops."""
-    pass
 
 
 # Step definitions for "Orchestrator executes multiple loops correctly"
@@ -167,15 +166,11 @@ def run_query_with_multiple_loops(
         agent_states[key] = state.copy()
 
         # Track all executed agents
-        executed_agents = cast(
-            list[str], extended_test_context.setdefault("executed_agents", [])
-        )
+        executed_agents = cast(list[str], extended_test_context.setdefault("executed_agents", []))
         executed_agents.append(agent_name)
 
         # Call the original function
-        original = cast(
-            Callable[..., None], extended_test_context["original_execute_agent"]
-        )
+        original = cast(Callable[..., None], extended_test_context["original_execute_agent"])
         original(
             agent_name,
             state,
@@ -192,9 +187,7 @@ def run_query_with_multiple_loops(
     monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
     # Run the query
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         config = extended_test_context.get("config")
         orchestrator = Orchestrator()
         try:
@@ -220,16 +213,14 @@ def each_loop_executes_agents_in_correct_sequence(
 
     # Verify that we have the expected number of loops
     loop_executions = cast(dict[int, list[str]], extended_test_context["loop_executions"])
-    assert len(loop_executions) == 3, (
-        "Should have executed 3 loops"
-    )
+    assert len(loop_executions) == 3, "Should have executed 3 loops"
 
     # Verify that each loop executed the agents in the correct sequence
     expected_sequence = cast(list[str], extended_test_context["agents"])
     for loop, agents in loop_executions.items():
-        assert agents == expected_sequence, (
-            f"Loop {loop} did not execute agents in the correct sequence"
-        )
+        assert (
+            agents == expected_sequence
+        ), f"Loop {loop} did not execute agents in the correct sequence"
 
 
 @then("the state should be preserved between loops")
@@ -251,9 +242,7 @@ def state_preserved_between_loops(extended_test_context: ExtendedTestContext) ->
 
     # The state should be preserved (at least contain the same keys)
     for key in last_agent_state:
-        assert key in first_agent_state, (
-            f"State key {key} was not preserved between loops"
-        )
+        assert key in first_agent_state, f"State key {key} was not preserved between loops"
 
 
 @then("the final result should include contributions from all loops")
@@ -270,9 +259,7 @@ def result_includes_all_loop_contributions(
     result_str = str(extended_test_context.get("result"))
     for loop in range(1, 4):  # Loops 1, 2, 3
         for agent in cast(list[str], extended_test_context["agents"]):
-            assert agent in result_str, (
-                f"Result should include agent {agent} from loop {loop}"
-            )
+            assert agent in result_str, f"Result should include agent {agent} from loop {loop}"
 
 
 # Step definitions for "Orchestrator supports different reasoning modes"
@@ -289,9 +276,7 @@ def system_configured_with_direct_reasoning_mode(
         default_model="dummy-model",
     )
     extended_test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
-    extended_test_context["primary_agent"] = (
-        "Synthesizer"  # The primary agent in direct mode
-    )
+    extended_test_context["primary_agent"] = "Synthesizer"  # The primary agent in direct mode
 
 
 @when("I run a query with the direct reasoning mode")
@@ -332,15 +317,11 @@ def run_query_with_direct_reasoning_mode(
         storage_manager: Any,
         loop: int,
     ) -> None:
-        executed_agents = cast(
-            list[str], extended_test_context.setdefault("executed_agents", [])
-        )
+        executed_agents = cast(list[str], extended_test_context.setdefault("executed_agents", []))
         executed_agents.append(agent_name)
         agent_states = cast(dict[str, dict[str, Any]], extended_test_context["agent_states"])
         agent_states[agent_name] = state.copy()
-        original = cast(
-            Callable[..., None], extended_test_context["original_execute_agent"]
-        )
+        original = cast(Callable[..., None], extended_test_context["original_execute_agent"])
         original(
             agent_name,
             state,
@@ -357,9 +338,7 @@ def run_query_with_direct_reasoning_mode(
     monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
     # Run the query
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         config = extended_test_context.get("config")
         orchestrator = Orchestrator()
         try:
@@ -382,15 +361,10 @@ def only_primary_agent_executed(extended_test_context: ExtendedTestContext) -> N
 
     # In direct mode, only the primary agent (Synthesizer) should be executed
     executed_agents = cast(list[str], extended_test_context.get("executed_agents", []))
-    assert len(executed_agents) == 1, (
-        "Only one agent should be executed in direct mode"
-    )
+    assert len(executed_agents) == 1, "Only one agent should be executed in direct mode"
     assert (
-        executed_agents[0]
-        == extended_test_context["primary_agent"]
-    ), (
-        f"The primary agent ({extended_test_context['primary_agent']}) should be the only one executed"
-    )
+        executed_agents[0] == extended_test_context["primary_agent"]
+    ), f"The primary agent ({extended_test_context['primary_agent']}) should be the only one executed"
 
 
 @then("the final result should include only the primary agent's contribution")
@@ -406,9 +380,9 @@ def result_includes_only_primary_agent_contribution(
     # The result should include only the primary agent
     result_str = str(extended_test_context.get("result"))
     primary_agent = cast(str, extended_test_context["primary_agent"])
-    assert primary_agent in result_str, (
-        f"Result should include the primary agent ({extended_test_context['primary_agent']})"
-    )
+    assert (
+        primary_agent in result_str
+    ), f"Result should include the primary agent ({extended_test_context['primary_agent']})"
 
     # The result should not include other agents
     for agent in cast(list[str], extended_test_context["agents"]):
@@ -435,11 +409,13 @@ def agent_that_modifies_state(
             state["counter"] = 1
         else:
             state["counter"] += 1
-        return as_payload({
-            "agent": "StateModifier",
-            "result": f"Result from StateModifier (counter: {state['counter']})",
-            "counter": state["counter"],
-        })
+        return as_payload(
+            {
+                "agent": "StateModifier",
+                "result": f"Result from StateModifier (counter: {state['counter']})",
+                "counter": state["counter"],
+            }
+        )
 
     state_modifying_agent.execute.side_effect = execute_with_state_modification
 
@@ -474,9 +450,9 @@ def state_modifications_preserved_between_loops(
         if agent_key in agent_states:
             state = agent_states[agent_key]
             assert "counter" in state, f"Counter should be in state for loop {loop}"
-            assert state["counter"] == loop, (
-                f"Counter should be {loop} in loop {loop}, got {state['counter']}"
-            )
+            assert (
+                state["counter"] == loop
+            ), f"Counter should be {loop} in loop {loop}, got {state['counter']}"
 
 
 @then("the final result should reflect the cumulative state changes")
@@ -491,6 +467,4 @@ def result_reflects_cumulative_state_changes(
 
     # The result should include the final counter value
     result_str = str(extended_test_context.get("result"))
-    assert "counter: 3" in result_str, (
-        "Result should include the final counter value (3)"
-    )
+    assert "counter: 3" in result_str, "Result should include the final counter value (3)"

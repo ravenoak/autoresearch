@@ -75,9 +75,9 @@ def test_example_weights_and_ranking(monkeypatch):
 
         # Basic structure checks
         assert isinstance(ranked, list), "Ranked results should be returned as a list"
-        assert len(ranked) == len(docs), (
-            f"Expected {len(docs)} ranked docs for query '{query}', got {len(ranked)}"
-        )
+        assert len(ranked) == len(
+            docs
+        ), f"Expected {len(docs)} ranked docs for query '{query}', got {len(ranked)}"
         for result in ranked:
             assert isinstance(result, dict), "Each ranked entry must be a dict"
             assert "id" in result, "Each ranked result must contain an 'id'"
@@ -90,9 +90,7 @@ def test_example_weights_and_ranking(monkeypatch):
                 cfg.search.bm25_weight * d["bm25"]
                 + cfg.search.semantic_similarity_weight * embedding_score
             )
-            final_score = (
-                merged_score + cfg.search.source_credibility_weight * d["credibility"]
-            )
+            final_score = merged_score + cfg.search.source_credibility_weight * d["credibility"]
             expected_components.append(
                 {
                     "bm25_score": d["bm25"],
@@ -117,33 +115,31 @@ def test_example_weights_and_ranking(monkeypatch):
             )
         ]
         ranked_order = [r["id"] for r in ranked]
-        assert ranked_order == expected_order, (
-            f"Ranking mismatch for query '{query}': {ranked_order} != {expected_order}"
-        )
+        assert (
+            ranked_order == expected_order
+        ), f"Ranking mismatch for query '{query}': {ranked_order} != {expected_order}"
 
         # Ensure results are sorted by relevance_score
         for i in range(len(ranked) - 1):
-            assert ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"], (
-                f"Results not sorted by relevance_score for query '{query}'"
-            )
+            assert (
+                ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"]
+            ), f"Results not sorted by relevance_score for query '{query}'"
 
         # Verify each result contains the full set of scores
         for result in ranked:
             expected = expected_components[result["id"]]
             for key, value in expected.items():
                 assert key in result, f"Missing '{key}' in ranked result for '{query}'"
-                assert result[key] == pytest.approx(value), (
-                    f"{key} mismatch for doc {result['id']} in query '{query}'"
-                )
+                assert result[key] == pytest.approx(
+                    value
+                ), f"{key} mismatch for doc {result['id']} in query '{query}'"
 
         # Ensure the top result is one of the highest scoring documents
         max_score = max(expected_scores)
-        top_indices = [
-            i for i, s in enumerate(expected_scores) if abs(s - max_score) <= 1e-9
-        ]
-        assert ranked[0]["id"] in top_indices, (
-            f"Top result id {ranked[0]['id']} not in expected top indices {top_indices}"
-        )
+        top_indices = [i for i, s in enumerate(expected_scores) if abs(s - max_score) <= 1e-9]
+        assert (
+            ranked[0]["id"] in top_indices
+        ), f"Top result id {ranked[0]['id']} not in expected top indices {top_indices}"
 
 
 def test_rank_results_empty_list():

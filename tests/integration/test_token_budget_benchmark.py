@@ -19,8 +19,7 @@ pytestmark = pytest.mark.requires_llm
 class TokenAdapterProtocol(Protocol):
     """Protocol for adapters that generate LLM responses."""
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
-        ...
+    def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str: ...
 
 
 class DummyAgent:

@@ -45,9 +45,7 @@ class AgentConfig(BaseModel):
         """Validate prompt templates."""
         for name, template in v.items():
             if "template" not in template:
-                raise ValueError(
-                    f"Prompt template '{name}' must have a 'template' field"
-                )
+                raise ValueError(f"Prompt template '{name}' must have a 'template' field")
         return v
 
 
@@ -101,18 +99,11 @@ class Agent(
         adapter = self.get_adapter(config)
         return self.get_model_config(config, self.role.value, adapter)
 
-    def _validate_and_adjust_prompt(
-        self,
-        prompt: str,
-        model: str,
-        config: ConfigModel
-    ) -> str:
+    def _validate_and_adjust_prompt(self, prompt: str, model: str, config: ConfigModel) -> str:
         """Validate prompt fits context and adjust if needed."""
         from ..llm.context_management import get_context_manager
-        from ..llm.chunking import chunk_prompt, synthesize_chunk_results
 
         context_mgr = get_context_manager()
-        adapter = self.get_adapter(config)
         provider = config.llm_backend
 
         validation = context_mgr.validate_prompt_fit(prompt, model, provider)
@@ -139,19 +130,15 @@ class Agent(
         else:
             # Raise error if strategy is "error"
             from ..errors import LLMError
+
             raise LLMError(
                 f"Prompt exceeds context size: {validation.estimated_tokens} tokens "
                 f"(max: {validation.available_tokens})",
                 model=model,
-                suggestion=validation.recommendation
+                suggestion=validation.recommendation,
             )
 
-    def _handle_chunked_generation(
-        self,
-        prompt: str,
-        model: str,
-        config: ConfigModel
-    ) -> str:
+    def _handle_chunked_generation(self, prompt: str, model: str, config: ConfigModel) -> str:
         """Handle prompt that needs to be chunked."""
         from ..llm.context_management import get_context_manager
         from ..llm.chunking import chunk_prompt, synthesize_chunk_results
@@ -177,10 +164,7 @@ class Agent(
             return chunk_results[0]
         else:
             return synthesize_chunk_results(
-                chunk_results,
-                prompt[:200],  # Use beginning as query reference
-                adapter,
-                model
+                chunk_results, prompt[:200], adapter, model  # Use beginning as query reference
             )
 
     # ------------------------------------------------------------------
@@ -234,9 +218,7 @@ class Agent(
     ) -> List[AgentMessage]:
         """Retrieve messages addressed to this agent."""
 
-        raw = state.get_messages(
-            recipient=self.name, coalition=coalition, protocol=protocol
-        )
+        raw = state.get_messages(recipient=self.name, coalition=coalition, protocol=protocol)
         if from_agent:
             raw = [m for m in raw if m.get("from") == from_agent]
         return [AgentMessage(**m) for m in raw]

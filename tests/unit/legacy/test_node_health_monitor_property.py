@@ -23,6 +23,4 @@ def test_check_once_updates_gauges(redis_up: bool, ray_up: bool) -> None:
 
     assert registry.get_sample_value("autoresearch_redis_up") == int(redis_up)
     assert registry.get_sample_value("autoresearch_ray_up") == int(ray_up)
-    assert registry.get_sample_value("autoresearch_node_health") == int(
-        redis_up and ray_up
-    )
+    assert registry.get_sample_value("autoresearch_node_health") == int(redis_up and ray_up)

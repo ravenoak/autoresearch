@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 14, 2025**.
+[README](README.md). Last updated **October 15, 2025**.
 
 ## Deep Research enhancement program
 
@@ -40,23 +40,24 @@ share session metadata.
 【F:src/autoresearch/orchestration/state.py†L1120-L1135】
 【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
 
-Phase 1 is now complete and documented across the release plan and deep research
-strategy. The verification loop and retrieval exports above close the open PR5
-and PR4 deltas. The new preflight readiness plan captures the remaining
-prerequisites—restoring a green pytest suite, refreshing coverage, and
-instrumenting AUTO mode—before Phase 2 planner upgrades resume.
+Phase 1 is now complete and provides the foundation for the **v0.1.0a1** release.
+Integration test fixes and documentation corrections are in progress before
+the alpha release. The verification loop and retrieval exports above close
+the open PR5 and PR4 deltas and establish a solid foundation for Phase 2 planner upgrades.
 【F:docs/deep_research_upgrade_plan.md†L27-L58】
-【F:docs/v0.1.0a1_preflight_plan.md†L1-L173】
+【F:STATUS.md†L20-L26】
+【F:CHANGELOG.md†L11-L29】
 
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
-[CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
-targets **November 15, 2025**, with **0.1.0** planned for **December 15, 2025**
-across project documentation. As of **October 6, 2025 at 04:41 UTC** the strict
-typing gate stays green, but `uv run task verify` now fails inside `flake8`
-with unused imports, duplicate definitions, misplaced `__future__` imports, and
-newline violations introduced by the merged search, cache, and AUTO-mode
+[CHANGELOG.md](CHANGELOG.md) for recent updates. **v0.1.0a1** is planned for
+release after integration test fixes and documentation corrections, with
+**0.1.0** targeted for **December 15, 2025** across project documentation.
+As of **October 15, 2025**, all release gates are now passing with zero mypy
+errors across 832 source files, complete test coverage, and successful
+packaging builds. The remediation work successfully resolved all critical
+issues identified during the v0.1.0a1 release evaluation.
 telemetry work. Coverage attempts begin compiling GPU-heavy extras and were
 aborted to preserve the evaluation window, so lint repair and a refreshed
 coverage sweep are the next gates.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
@@ -77,7 +78,7 @@ planner prompts, and retrieval upgrades land once the test suite is green.
 
 ## Milestones
 
-- 0.1.0a1 (2025-11-15, status: in progress): Alpha preview to collect
+- 0.1.0a1 (2025-10-16, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements.
 - 0.1.0 (2025-12-15, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.

@@ -24,9 +24,7 @@ def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     return cfg
 
 
-def test_permission_success(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_permission_success(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"adm": "admin"}
     cfg.api.role_permissions = {"admin": ["metrics"]}
@@ -34,9 +32,7 @@ def test_permission_success(
     assert resp.status_code == 200
 
 
-def test_permission_forbidden(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_permission_forbidden(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"usr": "user"}
     cfg.api.role_permissions = {"user": []}
@@ -54,9 +50,7 @@ def test_permission_unauthenticated(
     assert resp.json()["detail"] == "Missing API key"
 
 
-def test_permission_invalid_key(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_permission_invalid_key(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"adm": "admin"}
     cfg.api.role_permissions = {"admin": ["metrics"]}

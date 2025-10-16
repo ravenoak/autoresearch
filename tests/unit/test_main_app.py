@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 from autoresearch.config import ConfigModel
 from autoresearch.main import app as cli_app
+from autoresearch.main.app import _config_loader
 from autoresearch.cli_evaluation import evaluation_app, _normalise_suite
 from autoresearch.evaluation import available_datasets
 from autoresearch.distributed.executors import (
@@ -25,12 +26,12 @@ class TestMainApp:
         """Test that the CLI app is created successfully."""
         # The CLI app should be a Typer instance
         assert cli_app is not None
-        assert hasattr(cli_app, 'add_typer')
+        assert hasattr(cli_app, "add_typer")
 
     def test_cli_app_has_search_command(self) -> None:
         """Test that the CLI app has a search command."""
         # Check that search command is registered
-        assert hasattr(cli_app, 'registered_commands')
+        assert hasattr(cli_app, "registered_commands")
         # The search command should be available
         runner = CliRunner()
         result = runner.invoke(cli_app, ["search", "--help"])
@@ -90,14 +91,14 @@ class TestMainApp:
             state_id="alias-run",
         )
         mock_orchestrator.return_value.run_query.return_value = response
-        monkeypatch.setattr(
-            "autoresearch.main.app._config_loader.load_config",
-            lambda: ConfigModel(),
-        )
+        # Patch the config loader method
 
-        result = runner.invoke(
-            cli_app, ["search", "--depth", "concise", "alias coverage"]
-        )
+        def mock_load_config():
+            return ConfigModel()
+
+        monkeypatch.setattr(_config_loader, "load_config", mock_load_config)
+
+        result = runner.invoke(cli_app, ["search", "--depth", "concise", "alias coverage"])
 
         assert result.exit_code == 0, result.stdout
         mock_orchestrator.return_value.run_query.assert_called_once()
@@ -109,7 +110,7 @@ class TestCliEvaluation:
     def test_evaluation_app_creation(self):
         """Test that the evaluation app is created successfully."""
         assert evaluation_app is not None
-        assert hasattr(evaluation_app, 'add_typer')
+        assert hasattr(evaluation_app, "add_typer")
 
     def test_evaluation_app_has_run_command(self):
         """Test that the evaluation app has a run command."""
@@ -125,7 +126,9 @@ class TestCliEvaluation:
 
     def test_normalise_suite_all_datasets(self):
         """Test _normalise_suite with 'all'."""
-        with patch("autoresearch.cli_evaluation.available_datasets", return_value=["truthfulqa", "fever"]):
+        with patch(
+            "autoresearch.cli_evaluation.available_datasets", return_value=["truthfulqa", "fever"]
+        ):
             result = _normalise_suite("all")
             assert result == ["truthfulqa", "fever"]
 
@@ -156,6 +159,7 @@ class TestDistributedExecutors:
     def test_resolve_requests_session_direct(self):
         """Test _resolve_requests_session with direct session."""
         from autoresearch.typing.http import RequestsSessionProtocol
+
         mock_session = Mock(spec=RequestsSessionProtocol)
         result = _resolve_requests_session(mock_session)
         assert result is mock_session
@@ -174,6 +178,7 @@ class TestDistributedExecutors:
     def test_annotation_supports_mapping_generic(self):
         """Test _annotation_supports_mapping with generic types."""
         from typing import List, Dict
+
         assert _annotation_supports_mapping(Dict[str, int])
         assert not _annotation_supports_mapping(List[str])
 

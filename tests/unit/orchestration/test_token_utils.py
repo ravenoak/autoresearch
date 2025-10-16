@@ -59,9 +59,7 @@ class MutableAgent:
     def get_adapter(self) -> AdapterProtocol:
         return self._adapter
 
-    def execute(
-        self, state: QueryState, config: ConfigModel, **_: object
-    ) -> dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict[str, Any]:
         return {
             "agent": "mutable",
             "adapter_id": id(self._adapter),
@@ -73,9 +71,7 @@ class MutableAgent:
 class StatelessAgent:
     """Agent lacking adapter mutation hooks."""
 
-    def execute(
-        self, state: QueryState, config: ConfigModel, **_: object
-    ) -> dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict[str, Any]:
         return {"agent": "stateless", "query": state.query, "backend": config.llm_backend}
 
 
@@ -109,7 +105,9 @@ def test_execute_with_adapter_kwarg(query_state: QueryState, config_model: Confi
     assert kwarg_agent.adapter is adapter
 
 
-def test_execute_with_mutation_hooks_restores_original(query_state: QueryState, config_model: ConfigModel) -> None:
+def test_execute_with_mutation_hooks_restores_original(
+    query_state: QueryState, config_model: ConfigModel
+) -> None:
     agent = MutableAgent()
     original_adapter = agent.get_adapter()
     replacement = RecordingAdapter()
@@ -129,7 +127,9 @@ def test_execute_without_adapter_hooks(query_state: QueryState, config_model: Co
     assert result["agent"] == "stateless"
 
 
-def test_execute_raises_for_non_mapping_result(query_state: QueryState, config_model: ConfigModel) -> None:
+def test_execute_raises_for_non_mapping_result(
+    query_state: QueryState, config_model: ConfigModel
+) -> None:
     agent = cast(SupportsExecute, InvalidResultAgent())
     adapter = RecordingAdapter()
 

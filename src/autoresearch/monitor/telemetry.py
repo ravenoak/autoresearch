@@ -76,9 +76,7 @@ def normalize_audit_payload(audit: Mapping[str, Any]) -> dict[str, Any]:
     status = str(status_raw) if status_raw is not None else ""
     sources_raw = audit.get("sources")
     sources: list[dict[str, Any]] = []
-    if isinstance(sources_raw, Sequence) and not isinstance(
-        sources_raw, (str, bytes, bytearray)
-    ):
+    if isinstance(sources_raw, Sequence) and not isinstance(sources_raw, (str, bytes, bytearray)):
         for source in sources_raw:
             if isinstance(source, Mapping):
                 sources.append(dict(source))

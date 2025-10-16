@@ -887,12 +887,10 @@ class SessionGraphPipeline:
                 details.append(f"source {source.strip()}")
             snippet = record.get("snippet")
             if isinstance(snippet, str) and snippet.strip():
-                details.append(f"snippet \"{_truncate_snippet(snippet, 120)}\"")
+                details.append(f'snippet "{_truncate_snippet(snippet, 120)}"')
             formats = record.get("formats")
             if isinstance(formats, Sequence):
-                formatted = ", ".join(
-                    str(fmt) for fmt in formats if isinstance(fmt, str) and fmt
-                )
+                formatted = ", ".join(str(fmt) for fmt in formats if isinstance(fmt, str) and fmt)
                 if formatted:
                     details.append(f"formats {formatted}")
             if isinstance(claim_id, str) and claim_id.strip():

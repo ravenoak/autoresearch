@@ -15,12 +15,12 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.types import CallbackMap
 from tests.typing_helpers import QueryRunner
 
-QueryResponseFactory = Callable[[str, ConfigModel, CallbackMap | None, dict[str, Any]], QueryResponse]
+QueryResponseFactory = Callable[
+    [str, ConfigModel, CallbackMap | None, dict[str, Any]], QueryResponse
+]
 
 
-def configure_api_defaults(
-    monkeypatch: MonkeyPatch, *, loops: int = 1
-) -> ConfigModel:
+def configure_api_defaults(monkeypatch: MonkeyPatch, *, loops: int = 1) -> ConfigModel:
     """Return a ``ConfigModel`` with API permissions suitable for tests."""
 
     ConfigLoader.reset_instance()

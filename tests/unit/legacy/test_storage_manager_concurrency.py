@@ -66,7 +66,9 @@ def test_persist_claim_thread_safe(monkeypatch):
             def get_connection(self):  # pragma: no cover - stub
                 return self
 
-            def _create_tables(self, skip_migrations: bool = False) -> None:  # pragma: no cover - stub
+            def _create_tables(
+                self, skip_migrations: bool = False
+            ) -> None:  # pragma: no cover - stub
                 pass
 
         StorageManager.context.db_backend = DummyBackend()
@@ -82,10 +84,7 @@ def test_persist_claim_thread_safe(monkeypatch):
         monkeypatch.setattr(StorageManager, "_enforce_ram_budget", lambda b: None)
         monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
 
-        claims = [
-            {"id": f"c{i}", "type": "fact", "content": f"content {i}"}
-            for i in range(10)
-        ]
+        claims = [{"id": f"c{i}", "type": "fact", "content": f"content {i}"} for i in range(10)]
 
         def worker(claim: dict) -> None:
             StorageManager.persist_claim(claim)

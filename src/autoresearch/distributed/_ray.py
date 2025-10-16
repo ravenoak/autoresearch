@@ -43,28 +43,23 @@ class RayLike(Protocol):
     def remote(self, func: Callable[..., R]) -> RemoteFunction[R]:
         """Decorate ``func`` for remote execution."""
 
-    def get(self, ref: RayObjectRef[T] | Sequence[RayObjectRef[T]]) -> T | list[T]:
-        ...
+    def get(self, ref: RayObjectRef[T] | Sequence[RayObjectRef[T]]) -> T | list[T]: ...
 
 
 class RayQueueProtocol(Protocol):
     """Minimal queue interface used by :class:`RayBroker`."""
 
-    def put(self, item: Mapping[str, Any]) -> None:
-        ...
+    def put(self, item: Mapping[str, Any]) -> None: ...
 
-    def get(self, *, block: bool = True, timeout: float | None = None) -> dict[str, Any]:
-        ...
+    def get(self, *, block: bool = True, timeout: float | None = None) -> dict[str, Any]: ...
 
-    def shutdown(self) -> None:
-        ...
+    def shutdown(self) -> None: ...
 
 
 class RayQueueFactory(Protocol):
     """Callable that constructs Ray queue instances."""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> RayQueueProtocol:
-        ...
+    def __call__(self, *args: Any, **kwargs: Any) -> RayQueueProtocol: ...
 
 
 @dataclass

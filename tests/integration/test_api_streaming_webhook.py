@@ -16,9 +16,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 @pytest.mark.slow
-def test_stream_emits_keepalive(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_stream_emits_keepalive(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """Long-running queries should keep streams alive with heartbeat lines."""
 
     cfg = ConfigModel(api=APIConfig())
@@ -47,9 +45,7 @@ def test_stream_emits_keepalive(
 
 
 @pytest.mark.slow
-def test_stream_webhook_final_only(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_stream_webhook_final_only(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """Streaming should POST only the final result to the webhook."""
 
     cfg = ConfigModel(api=APIConfig(webhook_timeout=1, webhook_retries=2, webhook_backoff=0.1))

@@ -54,7 +54,9 @@ class DummyAgent:
     ) -> None:
         self.name = name
 
-    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:  # pragma: no cover - dummy
+    def can_execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> bool:  # pragma: no cover - dummy
         return True
 
     def execute(
@@ -96,9 +98,7 @@ def test_query_performance_memory_tokens(
     assert memory_after - memory_before < 10
 
 
-def _build_dummy_agent(
-    name: str, llm_adapter: Callable[[str], object] | None = None
-) -> DummyAgent:
+def _build_dummy_agent(name: str, llm_adapter: Callable[[str], object] | None = None) -> DummyAgent:
     return DummyAgent(name)
 
 

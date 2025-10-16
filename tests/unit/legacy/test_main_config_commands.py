@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 import shutil
-from importlib.abc import Traversable
+
+try:
+    from importlib.resources.abc import Traversable
+except ImportError:  # Python < 3.11
+    from importlib.abc import Traversable
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -23,9 +27,7 @@ def mock_config_loader() -> MagicMock:
 
 
 @pytest.fixture
-def example_resources(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Path:
+def example_resources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Provide temporary example config files."""
     src_dir = importlib_resources.files("autoresearch.examples")
     temp_dir = tmp_path / "examples"

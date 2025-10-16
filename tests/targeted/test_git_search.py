@@ -30,9 +30,7 @@ def git_components() -> TypedFixture[GitComponentTypes]:
 
 
 @pytest.mark.requires_git
-def test_build_index_tracks_files(
-    tmp_path: Path, git_components: GitComponentTypes
-) -> None:
+def test_build_index_tracks_files(tmp_path: Path, git_components: GitComponentTypes) -> None:
     """File contents are indexed by relative path."""
 
     GitSearcher, Repo, _ = git_components
@@ -47,9 +45,7 @@ def test_build_index_tracks_files(
 
 
 @pytest.mark.requires_git
-def test_search_finds_file_and_commit(
-    tmp_path: Path, git_components: GitComponentTypes
-) -> None:
+def test_search_finds_file_and_commit(tmp_path: Path, git_components: GitComponentTypes) -> None:
     """Search returns matches from files and commit messages."""
 
     GitSearcher, Repo, SearchResultCls = git_components
@@ -62,9 +58,7 @@ def test_search_finds_file_and_commit(
     searcher.build_index()
     results: Iterable["SearchResult"] = searcher.search("hello")
     assert any(
-        isinstance(result, SearchResultCls)
-        and result.path == Path("note.txt")
-        and result.line == 1
+        isinstance(result, SearchResultCls) and result.path == Path("note.txt") and result.line == 1
         for result in results
     )
     commit_hits: Iterable["SearchResult"] = searcher.search("greeting")

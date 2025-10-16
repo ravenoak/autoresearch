@@ -49,7 +49,7 @@ class TestRelevanceScores:
             DocScores(bm25=0.0, semantic=1.0, credibility=0.0),
             DocScores(bm25=0.0, semantic=0.0, credibility=1.0),
         ]
-        weights = [1/3, 1/3, 1/3]
+        weights = [1 / 3, 1 / 3, 1 / 3]
         scores = relevance_scores(docs, weights)
         assert len(scores) == 3
         # All should be equal since weights are equal and each doc has one perfect score

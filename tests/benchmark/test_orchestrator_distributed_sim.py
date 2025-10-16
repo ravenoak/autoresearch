@@ -30,12 +30,8 @@ def test_recovery_ratio_reflects_fail_rate() -> None:
         task_time=0.005,
         fail_rate=0.2,
     )
-    assert metrics["recovery_ratio"] == pytest.approx(
-        BASELINE_METRICS["recovery_ratio"], rel=0.5
-    )
-    assert metrics["throughput"] == pytest.approx(
-        BASELINE_METRICS["throughput"], rel=0.25
-    )
+    assert metrics["recovery_ratio"] == pytest.approx(BASELINE_METRICS["recovery_ratio"], rel=0.5)
+    assert metrics["throughput"] == pytest.approx(BASELINE_METRICS["throughput"], rel=0.25)
 
 
 def test_invalid_parameters_raise() -> None:

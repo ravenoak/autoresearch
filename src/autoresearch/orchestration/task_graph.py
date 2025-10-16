@@ -202,15 +202,9 @@ class TaskGraph:
             question = _extract_question(node)
             tools = _coerce_tools(node.get("tools"))
             depends_on = _coerce_strings(node.get("depends_on"))
-            criteria = _coerce_strings(
-                node.get("criteria") or node.get("exit_criteria")
-            )
-            sub_questions = _coerce_strings(
-                node.get("sub_questions") or node.get("objectives")
-            )
-            affinity = _coerce_affinity(
-                node.get("affinity") or node.get("tool_affinity")
-            )
+            criteria = _coerce_strings(node.get("criteria") or node.get("exit_criteria"))
+            sub_questions = _coerce_strings(node.get("sub_questions") or node.get("objectives"))
+            affinity = _coerce_affinity(node.get("affinity") or node.get("tool_affinity"))
             raw_depth = node.get("dependency_depth")
             if raw_depth is None:
                 raw_depth = node.get("depth")
@@ -222,9 +216,7 @@ class TaskGraph:
                 node.get("socratic_checks") or node.get("self_check")
             )
             metadata_field = node.get("metadata")
-            task_metadata = (
-                dict(metadata_field) if isinstance(metadata_field, Mapping) else {}
-            )
+            task_metadata = dict(metadata_field) if isinstance(metadata_field, Mapping) else {}
             explanation_field = node.get("explanation")
             explanation = (
                 explanation_field.strip()
@@ -267,8 +259,7 @@ class TaskGraph:
             metadata = {}
 
         dependency_overview = _coerce_dependency_overview(
-            payload.get("dependency_overview")
-            or metadata.get("dependency_overview")
+            payload.get("dependency_overview") or metadata.get("dependency_overview")
         )
         if dependency_overview:
             metadata["dependency_overview"] = dependency_overview
@@ -317,9 +308,7 @@ class TaskGraph:
             return cls.from_mapping(payload)
         if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
             return cls.from_mapping({"tasks": list(payload)})
-        raise TypeError(
-            "planner output must be a mapping, sequence, TaskGraph, or JSON string"
-        )
+        raise TypeError("planner output must be a mapping, sequence, TaskGraph, or JSON string")
 
 
 def _coerce_strings(value: Any, *, split_pattern: str = r",|;|/|\n") -> List[str]:
@@ -328,11 +317,7 @@ def _coerce_strings(value: Any, *, split_pattern: str = r",|;|/|\n") -> List[str
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return [str(item).strip() for item in value if str(item).strip()]
     if isinstance(value, str):
-        return [
-            segment.strip()
-            for segment in re.split(split_pattern, value)
-            if segment.strip()
-        ]
+        return [segment.strip() for segment in re.split(split_pattern, value) if segment.strip()]
     return []
 
 
@@ -420,9 +405,7 @@ def _coerce_dependency_overview(value: Any) -> List[Dict[str, Any]]:
             depth_value = item.get("dependency_depth")
         depth = _coerce_int(depth_value)
         rationale = _coerce_text(
-            item.get("rationale")
-            or item.get("dependency_rationale")
-            or item.get("note")
+            item.get("rationale") or item.get("dependency_rationale") or item.get("note")
         )
         entry: Dict[str, Any] = {}
         if task_id:

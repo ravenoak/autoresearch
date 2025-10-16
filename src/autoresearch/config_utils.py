@@ -9,11 +9,27 @@ from __future__ import annotations
 import tomllib
 from typing import Any, Dict
 
-import streamlit as st
-
 from .config.loader import ConfigLoader
 from .errors import ConfigError
 from .orchestration import ReasoningMode
+
+# Lazy import streamlit - only when needed for error display
+_streamlit_available = None
+_st = None
+
+
+def _get_streamlit() -> Any | None:
+    """Get streamlit module if available, otherwise None."""
+    global _streamlit_available, _st
+    if _streamlit_available is None:
+        try:
+            import streamlit as st  # noqa: F401
+
+            _st = st
+            _streamlit_available = True
+        except ImportError:
+            _streamlit_available = False
+    return _st
 
 
 def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
@@ -75,8 +91,10 @@ def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
         with open(config_path, "wb") as f:
             tomli_w.dump(existing_config, f)
         return True
-    except Exception as e:  # pragma: no cover - Streamlit displays the error
-        st.error(f"Error saving configuration: {e}")
+    except Exception as e:  # pragma: no cover - Streamlit displays the error if available
+        st = _get_streamlit()
+        if st:
+            st.error(f"Error saving configuration: {e}")
         return False
 
 

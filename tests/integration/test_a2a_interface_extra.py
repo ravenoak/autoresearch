@@ -8,8 +8,23 @@ from typing import Any
 import httpx
 import pytest
 
-# Ensure real a2a SDK is used instead of the test stub
 # noqa: E402 - imports after stub setup
+from a2a.types import Message, MessageSendParams
+from a2a.utils.message import (
+    get_message_text,
+    new_agent_text_message,
+)
+
+# noqa: E402 - imports after stub setup
+from autoresearch.a2a_interface import (
+    A2A_AVAILABLE,
+    A2AInterface,
+    create_message_send_params,
+    get_message_model_cls,
+)
+
+# Ensure real a2a SDK is used instead of the test stub
+# noqa: E402 - stub setup after imports
 try:  # pragma: no cover - best effort
     import pydantic.root_model as _rm  # noqa: E402
 except Exception:  # pragma: no cover - fallback
@@ -21,16 +36,6 @@ sys.modules.setdefault("pydantic.root_model", _rm)
 for name in list(sys.modules):
     if name.startswith("a2a"):
         del sys.modules[name]
-
-from a2a.types import Message, MessageSendParams  # noqa: E402 - imports after stub setup
-from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: E402 - imports after stub setup
-
-from autoresearch.a2a_interface import (  # noqa: E402 - imports after stub setup
-    A2A_AVAILABLE,
-    A2AInterface,
-    create_message_send_params,
-    get_message_model_cls,
-)
 from autoresearch.config.loader import ConfigLoader  # noqa: E402 - imports after stub setup
 from autoresearch.config.models import ConfigModel  # noqa: E402 - imports after stub setup
 from autoresearch.models import QueryResponse  # noqa: E402 - imports after stub setup
@@ -75,9 +80,7 @@ def running_server(
         start_times.append(time.perf_counter())
         time.sleep(0.1)
 
-        return QueryResponse(
-            answer=f"answer for {query}", citations=[], reasoning=[], metrics={}
-        )
+        return QueryResponse(answer=f"answer for {query}", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator.run_query",

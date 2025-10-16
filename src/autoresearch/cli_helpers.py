@@ -1,4 +1,5 @@
 """Small helper utilities used by the CLI."""
+
 from __future__ import annotations
 
 import difflib
@@ -81,8 +82,7 @@ def report_missing_tables(tables: Sequence[str], console: Console | None = None)
     else:
         console.print(f"[bold red]Missing required tables: {names}[/bold red]")
         console.print(
-            "[yellow]Suggestion:[/yellow] "
-            "Ensure the storage schema has been initialized."
+            "[yellow]Suggestion:[/yellow] " "Ensure the storage schema has been initialized."
         )
 
 
@@ -145,7 +145,4 @@ def depth_help_text() -> str:
             desc = f"{desc} (answer only)"
         parts.append(f"{depth.label.lower()}: {desc}")
     aliases = sorted({k for k in get_depth_aliases().keys() if k.isalpha()})
-    return (
-        " | ".join(parts)
-        + f". Aliases: {', '.join(aliases)} or 0-3."
-    )
+    return " | ".join(parts) + f". Aliases: {', '.join(aliases)} or 0-3."

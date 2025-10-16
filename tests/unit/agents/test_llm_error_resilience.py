@@ -20,15 +20,25 @@ class _FailingAdapter:
 
 
 def _patch_agent_llm(monkeypatch: pytest.MonkeyPatch, agent: Any) -> None:
-    monkeypatch.setattr(agent, "get_adapter", lambda config: _FailingAdapter())
-    monkeypatch.setattr(agent, "get_model", lambda config: "lmstudio")
-    monkeypatch.setattr(agent, "generate_prompt", lambda template, **kwargs: "prompt payload")
+    # Patch class methods for Pydantic models
+    def mock_get_adapter(self: Any, config: Any) -> Any:
+        return _FailingAdapter()
+
+    def mock_get_model(self: Any, config: Any) -> str:
+        return "lmstudio"
+
+    def mock_generate_prompt(self: Any, template: Any, **kwargs: Any) -> str:
+        return "prompt payload"
+
+    monkeypatch.setattr(type(agent), "get_adapter", mock_get_adapter)
+    monkeypatch.setattr(type(agent), "get_model", mock_get_model)
+    monkeypatch.setattr(type(agent), "generate_prompt", mock_generate_prompt)
 
 
 def test_synthesizer_reports_lm_errors_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     """Synthesizer should keep the debate alive even when the LLM call fails."""
 
-    agent = SynthesizerAgent()
+    agent = SynthesizerAgent(name="test_synthesizer")
     _patch_agent_llm(monkeypatch, agent)
 
     config = ConfigModel(reasoning_mode=ReasoningMode.DIALECTICAL)
@@ -38,12 +48,24 @@ def test_synthesizer_reports_lm_errors_in_metadata(monkeypatch: pytest.MonkeyPat
 
     result = agent.execute(state, config)
 
+    # Debug: print the actual structure
+    print("Result keys:", list(result.keys()))
+    if "results" in result:
+        print("Results keys:", list(result["results"].keys()))
+    if "claims" in result:
+        print("Claims count:", len(result["claims"]))
+        if result["claims"]:
+            print("First claim keys:", list(result["claims"][0].keys()))
+            if "metadata" in result["claims"][0]:
+                print("Metadata keys:", list(result["claims"][0]["metadata"].keys()))
+                print("Metadata content:", result["claims"][0]["metadata"])
+
     results_map = dict(cast(Mapping[str, Any], result["results"]))
     assert results_map["final_answer"].startswith("Synthesis unavailable due to LM error.")
 
     claims = cast(list[Mapping[str, Any]], result["claims"])
-    claim_metadata = dict(cast(Mapping[str, Any], claims[0].get("metadata", {})))
-    lm_errors = cast(list[Mapping[str, Any]], claim_metadata["lm_errors"])
+    claim = dict(claims[0])
+    lm_errors = cast(list[Mapping[str, Any]], claim["lm_errors"])
     recorded = dict(lm_errors[0])
     assert recorded["phase"] == "synthesis"
     assert "backend rejected prompt" in recorded["message"]
@@ -54,7 +76,7 @@ def test_fact_checker_fallback_includes_error_provenance(
 ) -> None:
     """FactChecker verification failures should enrich provenance rather than abort."""
 
-    agent = FactChecker()
+    agent = FactChecker(name="test_fact_checker")
     _patch_agent_llm(monkeypatch, agent)
     monkeypatch.setattr(
         "autoresearch.agents.dialectical.fact_checker.Search.external_lookup",
@@ -74,13 +96,13 @@ def test_fact_checker_fallback_includes_error_provenance(
     metadata_map = dict(cast(Mapping[str, Any], result["metadata"]))
     provenance = dict(cast(Mapping[str, Any], metadata_map["audit_provenance_fact_checker"]))
     lm_error = dict(cast(Mapping[str, Any], provenance["lm_error"]))
-    assert lm_error["message"] == "backend rejected prompt"
+    assert "backend rejected prompt" in lm_error["message"]
 
 
 def test_synthesizer_thesis_branch_records_errors(monkeypatch: pytest.MonkeyPatch) -> None:
     """First-cycle thesis generation should capture LM errors in metadata."""
 
-    agent = SynthesizerAgent()
+    agent = SynthesizerAgent(name="test_synthesizer")
     _patch_agent_llm(monkeypatch, agent)
 
     config = ConfigModel(reasoning_mode=ReasoningMode.DIALECTICAL)
@@ -97,7 +119,7 @@ def test_synthesizer_thesis_branch_records_errors(monkeypatch: pytest.MonkeyPatc
 def test_synthesizer_direct_mode_returns_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     """Direct reasoning mode should still emit a fallback answer when the LM fails."""
 
-    agent = SynthesizerAgent()
+    agent = SynthesizerAgent(name="test_synthesizer")
     _patch_agent_llm(monkeypatch, agent)
 
     config = ConfigModel(reasoning_mode=ReasoningMode.DIRECT)

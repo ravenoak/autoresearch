@@ -43,9 +43,7 @@ def setup_state_and_metrics():
     return state, metrics
 
 
-def test_execute_agent_records_errors_and_circuit_breaker(
-    monkeypatch, test_config, failing_agent
-):
+def test_execute_agent_records_errors_and_circuit_breaker(monkeypatch, test_config, failing_agent):
     """_execute_agent captures exceptions and exposes circuit breaker status."""
 
     cb_manager = CircuitBreakerManager()
@@ -85,10 +83,7 @@ def test_execute_agent_records_errors_and_circuit_breaker(
     assert diagnostic_claim["debug"]["agent"] == "FailingAgent"
     assert "circuit_breakers" in resp.metrics["execution_metrics"]
     assert (
-        resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"][
-            "failure_count"
-        ]
-        > 0
+        resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"]["failure_count"] > 0
     )
 
 
@@ -137,10 +132,7 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     assert error_record["claim"]["debug"]["agent"] == "RetryAgent"
     assert error_record["claim"]["content"].startswith("Agent RetryAgent encountered")
     # Circuit breaker should be closed after successful retry
-    assert (
-        resp.metrics["execution_metrics"]["circuit_breakers"]["RetryAgent"]["state"]
-        == "closed"
-    )
+    assert resp.metrics["execution_metrics"]["circuit_breakers"]["RetryAgent"]["state"] == "closed"
 
     # Diagnostic step may not be present in reasoning - core retry functionality verified above
     # assert any(
@@ -151,9 +143,7 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     # )
 
 
-def test_orchestrator_raises_after_error(
-    monkeypatch, test_config, failing_agent, orchestrator
-):
+def test_orchestrator_raises_after_error(monkeypatch, test_config, failing_agent, orchestrator):
     """Test that the orchestrator raises an OrchestrationError after an agent error.
 
     This test verifies that when an agent raises an exception during execution,
@@ -229,9 +219,7 @@ def test_callback_error_propagates(test_config, orchestrator):
         (RuntimeError, "runtime error"),
     ],
 )
-def test_agent_error_is_wrapped(
-    monkeypatch, test_config, error_type, error_message, orchestrator
-):
+def test_agent_error_is_wrapped(monkeypatch, test_config, error_type, error_message, orchestrator):
     """Test that agent errors are wrapped in AgentError.
 
     This test verifies that when an agent raises an exception during execution,

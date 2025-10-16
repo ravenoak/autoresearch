@@ -110,9 +110,7 @@ def run_query_with_dialectical_reasoning(
     cleanup_context["mocks"].append(mock_agent_factory)
 
     # Run the query
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         orchestrator = Orchestrator()
         try:
             cleanup_context["result"] = orchestrator.run_query("test query", config)
@@ -137,13 +135,11 @@ def monkeypatches_properly_cleaned_up(cleanup_context: CleanupContext) -> None:
         # If original was None, verify current is not None
         # Otherwise, verify they're the same object
         if original_value is None:
-            assert current_value is not None, (
-                f"Monkeypatch for {path} was not properly cleaned up"
-            )
+            assert current_value is not None, f"Monkeypatch for {path} was not properly cleaned up"
         else:
-            assert current_value == original_value, (
-                f"Monkeypatch for {path} was not properly cleaned up"
-            )
+            assert (
+                current_value == original_value
+            ), f"Monkeypatch for {path} was not properly cleaned up"
 
 
 @then("all mocks should be properly cleaned up")
@@ -171,9 +167,9 @@ def temp_files_properly_cleaned_up(cleanup_context: CleanupContext) -> None:
     """Verify that all temporary files are properly cleaned up."""
     # Check that environment variables are restored
     for key, value in cleanup_context["initial_env_vars"].items():
-        assert os.environ.get(key) == value, (
-            f"Environment variable {key} was not properly cleaned up"
-        )
+        assert (
+            os.environ.get(key) == value
+        ), f"Environment variable {key} was not properly cleaned up"
 
     # Check that no new modules were added to sys.modules
     current_modules = set(sys.modules.keys())

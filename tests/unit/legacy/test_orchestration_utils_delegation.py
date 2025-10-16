@@ -18,8 +18,6 @@ def test_capture_token_usage_delegates(monkeypatch):
     def dummy(agent_name, metrics, config):
         return "ctx"
 
-    monkeypatch.setattr(
-        "autoresearch.orchestration.token_utils._capture_token_usage", dummy
-    )
+    monkeypatch.setattr("autoresearch.orchestration.token_utils._capture_token_usage", dummy)
     mod = importlib.reload(ou)
     assert mod.OrchestrationUtils.capture_token_usage("A", 1, 2) == "ctx"

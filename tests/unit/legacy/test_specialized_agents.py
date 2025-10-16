@@ -21,9 +21,7 @@ from autoresearch.config.models import ConfigModel
 def mock_llm_adapter() -> Iterator[MagicMock]:
     """Create a mock LLM adapter for testing."""
     # Create a proper mock of the LLMAdapter class
-    with patch(
-        "autoresearch.agents.base.LLMAdapter", autospec=True
-    ) as mock_adapter_class:
+    with patch("autoresearch.agents.base.LLMAdapter", autospec=True) as mock_adapter_class:
         # Create an instance of the mocked class
         adapter = mock_adapter_class.return_value
         adapter.generate.return_value = "Mock response from LLM"
@@ -132,17 +130,12 @@ def test_critic_agent_execute(
     assert result["results"]["critique"] == "Mock response from LLM"
     assert "metadata" in result
     assert "evaluated_claims" in result["metadata"]
-    assert (
-        len(result["metadata"]["evaluated_claims"]) == 2
-    )  # thesis and research_findings
+    assert len(result["metadata"]["evaluated_claims"]) == 2  # thesis and research_findings
 
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
-    assert (
-        "You are a Critic agent responsible for evaluating the quality of research"
-        in args[0]
-    )
+    assert "You are a Critic agent responsible for evaluating the quality of research" in args[0]
     assert (
         "Your critique should be balanced, highlighting both strengths and areas for improvement"
         in args[0]
@@ -178,13 +171,9 @@ def test_summarizer_agent_execute(
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
     assert (
-        "You are a Summarizer agent responsible for generating concise, clear summaries"
-        in args[0]
+        "You are a Summarizer agent responsible for generating concise, clear summaries" in args[0]
     )
-    assert (
-        "Your summary should be significantly shorter than the original content"
-        in args[0]
-    )
+    assert "Your summary should be significantly shorter than the original content" in args[0]
     assert kwargs["model"] == "test-model"
 
 
@@ -216,10 +205,7 @@ def test_planner_agent_execute(
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
-    assert (
-        "You are a Planner agent responsible for structuring complex research tasks"
-        in args[0]
-    )
+    assert "You are a Planner agent responsible for structuring complex research tasks" in args[0]
     assert "Your research plan should be comprehensive, well-organized" in args[0]
     assert kwargs["model"] == "test-model"
 
@@ -230,9 +216,7 @@ def test_planner_agent_parses_json_plan(mock_config: ConfigModel) -> None:
     class StubAdapter(LLMAdapter):
         available_models = ["stub"]
 
-        def generate(
-            self, prompt: str, model: str | None = None, **_: object
-        ) -> str:
+        def generate(self, prompt: str, model: str | None = None, **_: object) -> str:
             return json.dumps(
                 {
                     "tasks": [
@@ -262,9 +246,7 @@ def test_planner_agent_parses_json_plan(mock_config: ConfigModel) -> None:
     assert state.task_graph["edges"], "edges should capture dependencies"
 
 
-def test_researcher_agent_can_execute(
-    mock_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_researcher_agent_can_execute(mock_state: QueryState, mock_config: ConfigModel) -> None:
     """Test that the ResearcherAgent can_execute method works correctly."""
     # Arrange
     agent = ResearcherAgent(name="Researcher")
@@ -277,9 +259,7 @@ def test_researcher_agent_can_execute(
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_critic_agent_can_execute(
-    mock_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_critic_agent_can_execute(mock_state: QueryState, mock_config: ConfigModel) -> None:
     """Test that the CriticAgent can_execute method works correctly."""
     # Arrange
     agent = CriticAgent(name="Critic")
@@ -296,9 +276,7 @@ def test_critic_agent_can_execute(
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_summarizer_agent_can_execute(
-    mock_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_summarizer_agent_can_execute(mock_state: QueryState, mock_config: ConfigModel) -> None:
     """Test that the SummarizerAgent can_execute method works correctly."""
     # Arrange
     agent = SummarizerAgent(name="Summarizer")
@@ -315,9 +293,7 @@ def test_summarizer_agent_can_execute(
     assert agent.can_execute(mock_state, mock_config) is False
 
 
-def test_planner_agent_can_execute(
-    mock_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_planner_agent_can_execute(mock_state: QueryState, mock_config: ConfigModel) -> None:
     """Test that the PlannerAgent can_execute method works correctly."""
     # Arrange
     agent = PlannerAgent(name="Planner")
@@ -348,9 +324,7 @@ def test_researcher_agent_processes_feedback(
     agent = ResearcherAgent(name="Researcher", llm_adapter=mock_llm_adapter)
     mock_config.enable_feedback = True
     mock_state.add_feedback_event(
-        FeedbackEvent(
-            source="Critic", target="Researcher", content="More stats", cycle=0
-        )
+        FeedbackEvent(source="Critic", target="Researcher", content="More stats", cycle=0)
     )
 
     with patch("autoresearch.search.Search.external_lookup") as mock_search:

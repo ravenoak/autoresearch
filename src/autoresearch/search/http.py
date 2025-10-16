@@ -22,9 +22,7 @@ _http_lock = threading.Lock()
 _atexit_registered = False
 
 
-def _build_search_adapter(
-    pool_size: int, retries: Retry
-) -> RequestsAdapterProtocol:
+def _build_search_adapter(pool_size: int, retries: Retry) -> RequestsAdapterProtocol:
     """Return a configured HTTP adapter for search traffic."""
 
     return HTTPAdapter(

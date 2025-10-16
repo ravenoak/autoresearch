@@ -41,9 +41,7 @@ def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context: BehaviorConte
         ]
         history_file.write_text(json.dumps(serializable))
 
-    monkeypatch.setattr(
-        "autoresearch.streamlit_app.store_query_history", fake_store
-    )
+    monkeypatch.setattr("autoresearch.streamlit_app.store_query_history", fake_store)
 
     # Store an initial query in history
     result = QueryResponse(
@@ -55,15 +53,17 @@ def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context: BehaviorConte
     cfg = ConfigModel()
     fake_store("What is AI?", result, cfg)
 
-    bdd_context.update({
-        "history_file": history_file,
-        "original_result": result,
-    })
+    bdd_context.update(
+        {
+            "history_file": history_file,
+            "original_result": result,
+        }
+    )
 
 
 @when("I view the query history")
 def view_query_history(bdd_context: BehaviorContext):
-    import streamlit as st
+    pass
 
     @contextmanager
     def fake_form(*args, **kwargs):
@@ -131,4 +131,3 @@ def rerun_matches_original(bdd_context: BehaviorContext):
 @scenario("../features/gui_history.feature", "View and rerun a previous query")
 def test_gui_history():
     """Scenario for viewing and rerunning queries from history."""
-    pass

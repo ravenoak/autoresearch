@@ -41,9 +41,7 @@ def test_record_and_check_query_tokens(tmp_path: Path) -> None:
     assert metrics.check_query_regression("search", file_path)
 
 
-def test_metrics_coverage_threshold(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_metrics_coverage_threshold(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Executed lines in metrics exceed 80 percent of statements.
 
     This approximation focuses on functions exercised in this test to prevent

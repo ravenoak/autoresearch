@@ -17,9 +17,7 @@ def _setup(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
 
-def test_query_returns_version(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_query_returns_version(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """The standard query endpoint returns a versioned response."""
     _setup(monkeypatch)
     monkeypatch.setattr(

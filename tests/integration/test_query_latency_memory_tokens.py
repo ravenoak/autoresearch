@@ -19,8 +19,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.slow]
 class TokenMetricsProtocol(Protocol):
     """Protocol capturing the metrics recorder interface used by the tests."""
 
-    def record_tokens(self, agent_name: str, in_tokens: int, out_tokens: int) -> None:
-        ...
+    def record_tokens(self, agent_name: str, in_tokens: int, out_tokens: int) -> None: ...
 
 
 class BenchAgent:
@@ -48,9 +47,7 @@ class BenchAgent:
         return {"results": {self.name: "ok"}}
 
 
-def _build_bench_agent(
-    name: str, llm_adapter: Callable[[str], object] | None = None
-) -> BenchAgent:
+def _build_bench_agent(name: str, llm_adapter: Callable[[str], object] | None = None) -> BenchAgent:
     return BenchAgent(name)
 
 

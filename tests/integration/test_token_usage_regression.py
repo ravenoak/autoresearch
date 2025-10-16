@@ -24,8 +24,7 @@ THRESHOLD = 0.10  # allow up to 10% more tokens than baseline
 class TokenAdapterProtocol(Protocol):
     """Protocol for adapters used during token accounting."""
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
-        ...
+    def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str: ...
 
 
 class DummyAgent:

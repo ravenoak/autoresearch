@@ -86,9 +86,7 @@ def test_orchestrator_agent_combinations(
         del agent_name, metrics, config
 
         class _Adapter:
-            def generate(
-                self, prompt: str, model: str | None = None, **kwargs: object
-            ) -> str:
+            def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
                 del prompt, model, kwargs
                 return ""
 
@@ -169,9 +167,7 @@ def test_orchestrator_agent_pairings(
         del agent_name, metrics, config
 
         class _Adapter:
-            def generate(
-                self, prompt: str, model: str | None = None, **kwargs: object
-            ) -> str:
+            def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
                 del prompt, model, kwargs
                 return ""
 
@@ -268,9 +264,7 @@ def test_orchestrator_failure_modes(
         del agent_name, metrics, config
 
         class _Adapter:
-            def generate(
-                self, prompt: str, model: str | None = None, **kwargs: object
-            ) -> str:
+            def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
                 del prompt, model, kwargs
                 return ""
 

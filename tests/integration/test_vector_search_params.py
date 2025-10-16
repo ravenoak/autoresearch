@@ -50,9 +50,7 @@ class _DummyConn(DuckDBConnectionProtocol):
         return None
 
 
-def test_vector_search_uses_params(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_vector_search_uses_params(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel(
         storage=StorageConfig(
             vector_extension=True,

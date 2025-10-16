@@ -47,7 +47,7 @@ def test_planner_prompt_builder_injects_graph_context() -> None:
     assert "Multi-hop paths" in prompt
     assert "Policy A → Policy B → Policy C" in prompt
     assert "Provenance sources: https://example.com/policy-a" in prompt
-    assert 'Derive dependency depth per task' in prompt
+    assert "Derive dependency depth per task" in prompt
     assert 'Add at least two "socratic_checks"' in prompt
 
 

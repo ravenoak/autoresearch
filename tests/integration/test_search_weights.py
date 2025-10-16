@@ -23,9 +23,7 @@ def test_optimize_script_updates_weights(
 
     baseline: float = Search.evaluate_weights((0.5, 0.3, 0.2), sample_eval_data)
 
-    script = (
-        Path(__file__).resolve().parents[2] / "scripts" / "optimize_search_weights.py"
-    )
+    script = Path(__file__).resolve().parents[2] / "scripts" / "optimize_search_weights.py"
     subprocess.run(
         [sys.executable, str(script), str(dataset), str(cfg)],
         check=True,

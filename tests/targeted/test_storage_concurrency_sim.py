@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 try:
     from scripts.storage_concurrency_sim import _run as run_simulation
 except Exception as exc:  # pragma: no cover - robust under --noconftest

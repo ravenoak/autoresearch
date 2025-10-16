@@ -57,10 +57,7 @@ class TestVSSExtensionLoader:
         conn.execute.assert_has_calls(
             [
                 call("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"),
-                call(
-                    "SELECT 1 FROM information_schema.tables "
-                    "WHERE table_name='vss_stub'"
-                ),
+                call("SELECT 1 FROM information_schema.tables " "WHERE table_name='vss_stub'"),
             ]
         )
 
@@ -143,9 +140,7 @@ class TestVSSExtensionLoader:
         conn = MagicMock()
 
         # Mock verify_extension to return False for filesystem but True for download
-        with patch.object(
-            VSSExtensionLoader, "verify_extension", side_effect=[False, True]
-        ):
+        with patch.object(VSSExtensionLoader, "verify_extension", side_effect=[False, True]):
             # Load the extension
             result = VSSExtensionLoader.load_extension(conn)
 
@@ -229,9 +224,7 @@ class TestVSSExtensionLoader:
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_download_failure_non_strict(
-        self, mock_config_loader, caplog
-    ):
+    def test_load_extension_download_failure_non_strict(self, mock_config_loader, caplog):
         """Test downloading and installing the extension fails but in non-strict mode."""
         # Configure the mock config loader
         mock_config = MagicMock()
@@ -243,8 +236,10 @@ class TestVSSExtensionLoader:
         conn.execute.side_effect = duckdb.Error("Failed to install extension")
 
         # Mock os.getenv to return "false" for AUTORESEARCH_STRICT_EXTENSIONS
-        with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "false"}), caplog.at_level("ERROR"), patch(
-            "pathlib.Path.exists", return_value=False
+        with (
+            patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "false"}),
+            caplog.at_level("ERROR"),
+            patch("pathlib.Path.exists", return_value=False),
         ):
             # Load the extension
             result = VSSExtensionLoader.load_extension(conn)

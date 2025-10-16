@@ -247,11 +247,7 @@ def test_orchestrator_uses_config_context(
         stored.append({key: str(claim[key]) for key in ("id", "type", "content")})
 
     def _list_claim_audits_stub(claim_id: str | None = None) -> list[JSONDict]:
-        matching = (
-            [entry for entry in stored if entry["id"] == claim_id]
-            if claim_id
-            else stored
-        )
+        matching = [entry for entry in stored if entry["id"] == claim_id] if claim_id else stored
         return [
             {
                 "claim_id": entry["id"],

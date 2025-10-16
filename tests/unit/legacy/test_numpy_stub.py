@@ -19,5 +19,6 @@ def test_numpy_stub_manual_install(monkeypatch):
     assert stub.array(1) == []
     # Test the rand function directly from the stub module
     from tests.stubs.numpy import rand
+
     result = rand(1)
     assert isinstance(result, list) and result == []

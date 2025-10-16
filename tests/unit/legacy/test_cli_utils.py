@@ -15,9 +15,7 @@ def test_attach_cli_hooks_exposes_attributes() -> None:
     def visualize_query() -> None:  # pragma: no cover - simple stub
         return None
 
-    hooks = attach_cli_hooks(
-        app, visualize=visualize, visualize_query=visualize_query, name="demo"
-    )
+    hooks = attach_cli_hooks(app, visualize=visualize, visualize_query=visualize_query, name="demo")
 
     assert getattr(app, "name") == "demo"
     assert hooks.visualize is visualize

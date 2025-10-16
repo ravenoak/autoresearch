@@ -74,7 +74,6 @@ def assert_status_410(test_context: BehaviorContext) -> None:
 @scenario("../features/api_edge_cases.feature", "Invalid JSON returns 422")
 def test_invalid_json() -> None:
     """Scenario: invalid JSON payload is rejected."""
-    pass
 
 
 @scenario(
@@ -83,7 +82,6 @@ def test_invalid_json() -> None:
 )
 def test_permission_denied_metrics() -> None:
     """Scenario: accessing metrics without permissions fails."""
-    pass
 
 
 @scenario(
@@ -92,4 +90,3 @@ def test_permission_denied_metrics() -> None:
 )
 def test_deprecated_version() -> None:
     """Scenario: server rejects deprecated API versions."""
-    pass

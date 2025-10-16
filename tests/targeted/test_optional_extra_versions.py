@@ -13,7 +13,9 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
         spec.loader.exec_module(_mod)
         import_or_skip = getattr(_mod, "import_or_skip")
     else:
-        raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
+        raise ModuleNotFoundError(
+            "Could not import tests.optional_imports via direct path fallback"
+        )
 
 
 @pytest.mark.parametrize(

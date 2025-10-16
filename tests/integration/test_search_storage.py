@@ -88,20 +88,15 @@ class _DummySession(RequestsSessionProtocol):
 class StorageBackendProtocol(Protocol):
     """Minimal protocol covering the backend methods used in these tests."""
 
-    def persist_claim(self, claim: Claim) -> None:
-        ...
+    def persist_claim(self, claim: Claim) -> None: ...
 
-    def update_claim(self, claim: Claim, partial_update: bool = False) -> None:
-        ...
+    def update_claim(self, claim: Claim, partial_update: bool = False) -> None: ...
 
-    def get_claim(self, claim_id: str) -> Claim:
-        ...
+    def get_claim(self, claim_id: str) -> Claim: ...
 
-    def has_vss(self) -> bool:
-        ...
+    def has_vss(self) -> bool: ...
 
-    def clear(self) -> None:
-        ...
+    def clear(self) -> None: ...
 
 
 class DummyBackend(StorageBackendProtocol):
@@ -135,11 +130,9 @@ class DummyBackend(StorageBackendProtocol):
 class CacheProtocol(Protocol):
     """Protocol describing the subset of cache behaviour required for tests."""
 
-    def get_cached_results(self, query: str, backend: str) -> VectorSearchResults | None:
-        ...
+    def get_cached_results(self, query: str, backend: str) -> VectorSearchResults | None: ...
 
-    def cache_results(self, query: str, backend: str, results: VectorSearchResults) -> None:
-        ...
+    def cache_results(self, query: str, backend: str, results: VectorSearchResults) -> None: ...
 
 
 @dataclass
@@ -387,14 +380,13 @@ def test_search_persists_multiple_backend_results(
     assert set(stored) == {"u1", "u2"}
 
 
-def test_duckdb_persistence_roundtrip(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_duckdb_persistence_roundtrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Claims persist across DuckDB sessions."""
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
     import autoresearch.storage as storage_module
+
     storage_module._cached_config = None
 
     StorageManager.teardown(remove_db=True)

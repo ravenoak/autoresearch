@@ -35,9 +35,7 @@ def test_search_visualize_option(monkeypatch, dummy_storage, orchestrator):
 
     orch = orchestrator
     run_query_mock = MagicMock(
-        return_value=QueryResponse(
-            answer="ok", citations=[], reasoning=[], metrics={"m": 1}
-        )
+        return_value=QueryResponse(answer="ok", citations=[], reasoning=[], metrics={"m": 1})
     )
     monkeypatch.setattr(orch, "run_query", run_query_mock)
 

@@ -41,9 +41,7 @@ def test_knn_latency_benchmark(tmp_path, monkeypatch):
     nodes = [(f"n{i}", "", "", 0.0) for i in range(n)]
     vectors = [(f"n{i}", np.random.rand(dim).astype(float).tolist()) for i in range(n)]
 
-    conn.executemany(
-        "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)", nodes
-    )
+    conn.executemany("INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)", nodes)
     conn.executemany("INSERT INTO embeddings VALUES (?, ?)", vectors)
 
     StorageManager.refresh_vector_index()

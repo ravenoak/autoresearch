@@ -84,6 +84,4 @@ def test_local_git_backend_finds_commit_message(tmp_path, monkeypatch, config_fa
     monkeypatch.setattr(StorageManager, "connection", staticmethod(_dummy_connection))
 
     results = _local_git_backend("commitmarker", max_results=5)
-    assert any(
-        r["title"] == "commit message" and "commitmarker" in r["snippet"] for r in results
-    )
+    assert any(r["title"] == "commit message" and "commitmarker" in r["snippet"] for r in results)

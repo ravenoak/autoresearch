@@ -60,15 +60,11 @@ def test_search_visualize_option_integration(
     assert "m" in result.stdout
 
 
-def test_visualize_command_integration(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_visualize_command_integration(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _setup(monkeypatch)
     saved: dict[str, str] = {}
 
-    def fake_save(
-        result: QueryResponse, path: Path, layout: str = "spring"
-    ) -> None:
+    def fake_save(result: QueryResponse, path: Path, layout: str = "spring") -> None:
         saved["path"] = str(path)
 
     monkeypatch.setattr("autoresearch.visualization.save_knowledge_graph", fake_save)
@@ -81,9 +77,7 @@ def test_visualize_command_integration(
     assert "Metrics Summary" in result.stdout
 
 
-def test_graph_export_options(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_graph_export_options(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _setup(monkeypatch)
     runner = CliRunner()
     graphml_path = tmp_path / "graph.graphml"

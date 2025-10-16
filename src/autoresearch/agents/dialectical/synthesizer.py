@@ -37,7 +37,9 @@ class SynthesizerAgent(Agent):
         is_first_cycle = state.cycle == 0
         lm_errors: list[dict[str, Any]] = []
 
-        def guarded_generate(prompt_name: str, prompt_text: str, fallback: str) -> tuple[str, LLMError | None]:
+        def guarded_generate(
+            prompt_name: str, prompt_text: str, fallback: str
+        ) -> tuple[str, LLMError | None]:
             """Invoke the LLM adapter while capturing recoverable failures."""
 
             try:
@@ -61,6 +63,7 @@ class SynthesizerAgent(Agent):
 
         # Initialize metrics for context utilization recording
         from autoresearch.orchestration.metrics import get_orchestration_metrics
+
         metrics = get_orchestration_metrics()
 
         if mode == ReasoningMode.DIRECT:
@@ -68,8 +71,9 @@ class SynthesizerAgent(Agent):
             prompt = self.generate_prompt("synthesizer.direct", query=state.query)
 
             # Record context utilization for metrics
-            if model and hasattr(metrics, 'record_context_utilization'):
+            if model and hasattr(metrics, "record_context_utilization"):
                 from ...llm.context_management import get_context_manager
+
                 context_mgr = get_context_manager()
                 context_size = context_mgr.get_context_size(model)
                 # Estimate tokens used (rough approximation)
@@ -97,9 +101,7 @@ class SynthesizerAgent(Agent):
             claim_audits = self._assemble_claim_audits(claim, support_audits)
             return self.create_result(
                 claims=[claim],
-                metadata=self._augment_metadata(
-                    {"phase": DialoguePhase.SYNTHESIS}, metadata_extra
-                ),
+                metadata=self._augment_metadata({"phase": DialoguePhase.SYNTHESIS}, metadata_extra),
                 results={"final_answer": answer, "synthesis": answer},
                 claim_audits=claim_audits,
             )
@@ -109,8 +111,9 @@ class SynthesizerAgent(Agent):
             prompt = self.generate_prompt("synthesizer.thesis", query=state.query)
 
             # Record context utilization for metrics
-            if model and hasattr(metrics, 'record_context_utilization'):
+            if model and hasattr(metrics, "record_context_utilization"):
                 from ...llm.context_management import get_context_manager
+
                 context_mgr = get_context_manager()
                 context_size = context_mgr.get_context_size(model)
                 # Estimate tokens used (rough approximation)
@@ -139,8 +142,9 @@ class SynthesizerAgent(Agent):
             prompt = self.generate_prompt("synthesizer.synthesis", claims=claims_text)
 
             # Record context utilization for metrics
-            if model and hasattr(metrics, 'record_context_utilization'):
+            if model and hasattr(metrics, "record_context_utilization"):
                 from ...llm.context_management import get_context_manager
+
                 context_mgr = get_context_manager()
                 context_size = context_mgr.get_context_size(model)
                 # Estimate tokens used (rough approximation)
@@ -168,9 +172,7 @@ class SynthesizerAgent(Agent):
             claim_audits = self._assemble_claim_audits(claim, support_audits)
             return self.create_result(
                 claims=[claim],
-                metadata=self._augment_metadata(
-                    {"phase": DialoguePhase.SYNTHESIS}, metadata_extra
-                ),
+                metadata=self._augment_metadata({"phase": DialoguePhase.SYNTHESIS}, metadata_extra),
                 results={"final_answer": synthesis_text, "synthesis": synthesis_text},
                 claim_audits=claim_audits,
             )
@@ -302,9 +304,7 @@ class SynthesizerAgent(Agent):
         return metadata, audit_kwargs, support_audits
 
     @staticmethod
-    def _augment_metadata(
-        base: dict[str, Any], extras: dict[str, Any] | None
-    ) -> dict[str, Any]:
+    def _augment_metadata(base: dict[str, Any], extras: dict[str, Any] | None) -> dict[str, Any]:
         """Merge optional metadata dictionaries."""
 
         merged = dict(base)

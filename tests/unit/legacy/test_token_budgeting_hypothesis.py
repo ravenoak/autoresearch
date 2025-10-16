@@ -73,9 +73,7 @@ def test_capture_token_usage_respects_budget(
 
 
 @given(start=START_STRATEGY, usage=USAGE_STRATEGY, margin=NEG_MARGIN_STRATEGY)
-def test_negative_margin_treated_as_zero(
-    start: int, usage: int, margin: float
-) -> None:
+def test_negative_margin_treated_as_zero(start: int, usage: int, margin: float) -> None:
     """Negative margins behave identically to zero margin."""
     metrics = OrchestrationMetrics()
     metrics.record_tokens("agent", usage, 0)

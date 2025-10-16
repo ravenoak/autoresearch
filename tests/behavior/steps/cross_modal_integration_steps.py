@@ -20,37 +20,30 @@ def autoresearch_system_running(tmp_path, monkeypatch):
 @scenario("../features/cross_modal_integration.feature", "Shared Query History")
 def test_shared_query_history():
     """Test shared query history across interfaces."""
-    pass
 
 
 @pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "Consistent Error Handling")
 def test_consistent_error_handling():
     """Test consistent error handling across interfaces."""
-    pass
 
 
 @pytest.mark.slow
-@scenario(
-    "../features/cross_modal_integration.feature", "Configuration Synchronization"
-)
+@scenario("../features/cross_modal_integration.feature", "Configuration Synchronization")
 def test_configuration_synchronization():
     """Test configuration synchronization across interfaces."""
-    pass
 
 
 @pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "A2A Interface Consistency")
 def test_a2a_interface_consistency():
     """Test A2A interface consistency."""
-    pass
 
 
 @pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "MCP Interface Consistency")
 def test_mcp_interface_consistency():
     """Test MCP interface consistency."""
-    pass
 
 
 @when(parsers.parse('I execute a query "{query}" via CLI'))
@@ -92,9 +85,7 @@ def open_streamlit_gui(bdd_context: BehaviorContext):
 
         # Add CLI query to history if it exists
         if "cli_query" in bdd_context and "cli_result" in bdd_context:
-            history.append(
-                {"query": bdd_context["cli_query"], "result": bdd_context["cli_result"]}
-            )
+            history.append({"query": bdd_context["cli_query"], "result": bdd_context["cli_result"]})
 
         bdd_context["streamlit_session"] = session_state
 
@@ -158,9 +149,7 @@ def execute_invalid_query_cli(bdd_context: BehaviorContext):
     """Execute an invalid query via CLI."""
     # Mock CLI query execution with an error
     with patch("autoresearch.main.search") as mock_query_command:
-        mock_query_command.side_effect = ValueError(
-            "Invalid query: Query cannot be empty"
-        )
+        mock_query_command.side_effect = ValueError("Invalid query: Query cannot be empty")
 
         # Execute the query and catch the error
         from autoresearch.main import search
@@ -209,9 +198,7 @@ def update_config_via_cli(bdd_context: BehaviorContext):
     from autoresearch.config.loader import ConfigLoader
 
     new_config = ConfigModel(loops=3)
-    with patch(
-        "autoresearch.config.loader.ConfigLoader.load_config", return_value=new_config
-    ):
+    with patch("autoresearch.config.loader.ConfigLoader.load_config", return_value=new_config):
         loader = ConfigLoader()
         loader._config = loader.load_config()
 
@@ -239,9 +226,7 @@ def update_config_via_gui(bdd_context: BehaviorContext):
     from autoresearch.config.loader import ConfigLoader
 
     new_cfg = ConfigModel(loops=5)
-    with patch(
-        "autoresearch.config.loader.ConfigLoader.load_config", return_value=new_cfg
-    ):
+    with patch("autoresearch.config.loader.ConfigLoader.load_config", return_value=new_cfg):
         loader = ConfigLoader()
         loader._config = loader.load_config()
 

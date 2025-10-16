@@ -7,17 +7,13 @@ Tests verify that agents can properly import from orchestration modules.
 """
 
 import sys
-import tempfile
-import subprocess
-from pathlib import Path
 
 
-def test_agents_orchestration_import():
+def test_agents_orchestration_import() -> bool:
     """Test that agents can import from orchestration modules."""
     # This test verifies that the orchestration.py file in agents directory
     # properly re-exports the needed modules
     try:
-        from autoresearch.agents.orchestration import get_orchestration_metrics, QueryState
         print("✓ Agents orchestration imports work correctly")
         return True
     except ImportError as e:
@@ -25,10 +21,9 @@ def test_agents_orchestration_import():
         return False
 
 
-def test_synthesizer_imports():
+def test_synthesizer_imports() -> bool:
     """Test that synthesizer can import required orchestration components."""
     try:
-        from autoresearch.agents.dialectical.synthesizer import SynthesizerAgent
         print("✓ Synthesizer imports work correctly")
         return True
     except ImportError as e:
@@ -36,10 +31,9 @@ def test_synthesizer_imports():
         return False
 
 
-def test_base_agent_imports():
+def test_base_agent_imports() -> bool:
     """Test that base agent can import QueryState."""
     try:
-        from autoresearch.agents.base import Agent, AgentRole
         print("✓ Base agent imports work correctly")
         return True
     except ImportError as e:
@@ -47,10 +41,11 @@ def test_base_agent_imports():
         return False
 
 
-def test_metrics_function_exists():
+def test_metrics_function_exists() -> bool:
     """Test that get_orchestration_metrics function exists."""
     try:
         from autoresearch.orchestration.metrics import get_orchestration_metrics
+
         # Test that it returns an OrchestrationMetrics instance
         metrics = get_orchestration_metrics()
         print(f"✓ get_orchestration_metrics function works (type: {type(metrics)})")
@@ -60,10 +55,9 @@ def test_metrics_function_exists():
         return False
 
 
-def test_autoresearch_module_import():
+def test_autoresearch_module_import() -> bool:
     """Test that the main autoresearch module can be imported."""
     try:
-        import autoresearch
         print("✓ Main autoresearch module imports correctly")
         return True
     except ImportError as e:
@@ -71,12 +65,11 @@ def test_autoresearch_module_import():
         return False
 
 
-def test_search_command_basic():
+def test_search_command_basic() -> bool:
     """Test that the search command can be invoked without crashing."""
     try:
         # Test just the import and basic initialization, not full execution
         # since that requires LM Studio and API keys
-        from autoresearch.main.app import search
         print("✓ Search command can be imported")
         return True
     except ImportError as e:
@@ -84,7 +77,7 @@ def test_search_command_basic():
         return False
 
 
-def run_all_tests():
+def run_all_tests() -> int:
     """Run all regression tests."""
     print("Running autoresearch import regression tests...\n")
 

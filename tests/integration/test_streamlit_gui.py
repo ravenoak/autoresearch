@@ -18,6 +18,7 @@ AppTest = import_or_skip(
 try:  # pragma: no cover - optional dependency in UI extras
     import pandas  # noqa: F401  # pylint: disable=unused-import
 except Exception:  # pragma: no cover - provide a stub for tests
+
     class _PandasModule(ModuleType):
         DataFrame: type[object]
 
@@ -37,7 +38,10 @@ def test_skip_link_has_aria_label() -> None:
     at.session_state["_test_mode"] = True  # Enable test mode to prevent background threads
     at.run()
     bodies = [m.proto.body for m in at.markdown]
-    assert any("aria-label='Skip to main content'" in b or "aria-label=\"Skip to main content\"" in b for b in bodies)
+    assert any(
+        "aria-label='Skip to main content'" in b or 'aria-label="Skip to main content"' in b
+        for b in bodies
+    )
 
 
 def test_guided_tour_dialog_role() -> None:
@@ -46,7 +50,7 @@ def test_guided_tour_dialog_role() -> None:
     at.session_state["_test_mode"] = True  # Enable test mode to prevent background threads
     at.run()
     bodies = [m.proto.body for m in at.markdown]
-    assert any("role=\"dialog\"" in b for b in bodies)
+    assert any('role="dialog"' in b for b in bodies)
 
 
 def test_guided_tour_modal_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -65,7 +69,7 @@ def test_main_content_live_region() -> None:
     at.session_state["_test_mode"] = True  # Enable test mode to prevent background threads
     at.run()
     bodies = [m.proto.body for m in at.markdown]
-    assert any("aria-live='polite'" in b or "aria-live=\"polite\"" in b for b in bodies)
+    assert any("aria-live='polite'" in b or 'aria-live="polite"' in b for b in bodies)
 
 
 def test_dark_mode_injects_styles() -> None:
@@ -133,9 +137,8 @@ def test_graph_toggles_initialize(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def noop_metrics():
         pass
-    monkeypatch.setattr(
-        "autoresearch.streamlit_app.update_metrics_periodically", noop_metrics
-    )
+
+    monkeypatch.setattr("autoresearch.streamlit_app.update_metrics_periodically", noop_metrics)
     monkeypatch.setenv("STREAMLIT_METRICS_TIMEOUT", "1")
     monkeypatch.setattr("streamlit.form_submit_button", lambda *_, **__: True)
 

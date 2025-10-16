@@ -35,12 +35,8 @@ def two_agent_groups() -> RunResult:
 def run_parallel(run_result: RunResult) -> None:
     """Simulate parallel execution producing one claim per group."""
     run_result["reasoning"] = [
-        normalize_reasoning_step(
-            {"group": run_result["groups"][0], "claim": "claim 1"}
-        ),
-        normalize_reasoning_step(
-            {"group": run_result["groups"][1], "claim": "claim 2"}
-        ),
+        normalize_reasoning_step({"group": run_result["groups"][0], "claim": "claim 1"}),
+        normalize_reasoning_step({"group": run_result["groups"][1], "claim": "claim 2"}),
     ]
 
 

@@ -52,8 +52,23 @@ _VERBOSITY_PRIORITIES: Mapping["Verbosity", int] = {
 # Global verbosity setting (default: NORMAL)
 VERBOSITY = Verbosity.NORMAL
 
-# Global console instance
-console = Console()
+
+def _is_bare_mode() -> bool:
+    """Check if bare mode is enabled via environment variable."""
+    return os.getenv("AUTORESEARCH_BARE_MODE", "false").lower() in ("true", "1", "yes", "on")
+
+
+def _get_console() -> Console:
+    """Get console instance with appropriate configuration for current mode."""
+    if _is_bare_mode():
+        # In bare mode, disable colors and styling
+        return Console(color_system=None, force_terminal=False)
+    else:
+        return Console()
+
+
+# Global console instance - initialized with bare mode consideration
+console = _get_console()
 
 
 if TYPE_CHECKING:
@@ -141,7 +156,12 @@ def format_success(message: str, symbol: bool = True) -> str:
     Returns:
         The formatted message
     """
-    if symbol:
+    if _is_bare_mode():
+        # In bare mode, use plain text labels without colors or symbols
+        if symbol:
+            return f"SUCCESS: {message}"
+        return f"SUCCESS: {message}"
+    elif symbol:
         return f"[bold green]✓[/bold green] {message}"
     return f"[bold green]{message}[/bold green]"
 
@@ -156,7 +176,12 @@ def format_error(message: str, symbol: bool = True) -> str:
     Returns:
         The formatted message
     """
-    if symbol:
+    if _is_bare_mode():
+        # In bare mode, use plain text labels without colors or symbols
+        if symbol:
+            return f"ERROR: {message}"
+        return f"ERROR: {message}"
+    elif symbol:
         return f"[bold red]✗[/bold red] {message}"
     return f"[bold red]Error:[/bold red] {message}"
 
@@ -171,7 +196,12 @@ def format_warning(message: str, symbol: bool = True) -> str:
     Returns:
         The formatted message
     """
-    if symbol:
+    if _is_bare_mode():
+        # In bare mode, use plain text labels without colors or symbols
+        if symbol:
+            return f"WARNING: {message}"
+        return f"WARNING: {message}"
+    elif symbol:
         return f"[bold yellow]⚠[/bold yellow] {message}"
     return f"[bold yellow]Warning:[/bold yellow] {message}"
 
@@ -186,7 +216,12 @@ def format_info(message: str, symbol: bool = True) -> str:
     Returns:
         The formatted message
     """
-    if symbol:
+    if _is_bare_mode():
+        # In bare mode, use plain text labels without colors or symbols
+        if symbol:
+            return f"INFO: {message}"
+        return f"INFO: {message}"
+    elif symbol:
         return f"[bold blue]ℹ[/bold blue] {message}"
     return f"[bold blue]Info:[/bold blue] {message}"
 

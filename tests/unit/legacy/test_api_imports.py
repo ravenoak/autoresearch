@@ -24,4 +24,6 @@ def test_no_unused_imports():
             "from .orchestration.orchestrator import Orchestrator, OrchestrationError",
             "",
         )
-    ), "OrchestrationError is imported but not used in api.py"
+    ), (
+        "OrchestrationError is imported but not used in api.py"
+    )

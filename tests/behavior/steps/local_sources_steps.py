@@ -4,10 +4,8 @@ from tests.behavior.context import BehaviorContext
 import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
-from .common_steps import app_running, app_running_with_default, application_running
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
-from pdfminer.high_level import extract_text
 from docx import Document
 import pytest
 import importlib.util
@@ -32,8 +30,6 @@ def directory_with_text_files(tmp_path, bdd_context: BehaviorContext):
     file_path.write_text("hello from file")
     bdd_context["docs_dir"] = docs_dir
     bdd_context["file_path"] = file_path
-
-
 
 
 @when(parsers.parse('I search the directory for "{query}"'))
@@ -128,7 +124,6 @@ def local_git_repository_with_diff(tmp_path, bdd_context: BehaviorContext, term)
     subprocess.run(["git", "commit", "-m", f"Add {term}"], cwd=repo_path, check=True)
     bdd_context["repo_path"] = repo_path
     bdd_context["term"] = term
-
 
 
 @when(parsers.parse('I search the repository for "{query}"'))

@@ -8,9 +8,7 @@ from typing import Any, Optional
 class AutoresearchError(Exception):
     """Base class for all Autoresearch errors."""
 
-    def __init__(
-        self, message: str, cause: Optional[Exception] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, message: str, cause: Optional[Exception] = None, **kwargs: Any) -> None:
         """Initialize the error.
 
         Args:
@@ -42,9 +40,7 @@ class ConfigError(AutoresearchError):
 class AgentError(AutoresearchError):
     """Error related to agent operations."""
 
-    def __init__(
-        self, message: str, cause: Optional[Exception] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, message: str, cause: Optional[Exception] = None, **kwargs: Any) -> None:
         """Initialize the error with agent-specific context.
 
         Args:
@@ -62,9 +58,7 @@ class AgentError(AutoresearchError):
 class LLMError(AutoresearchError):
     """Error related to LLM operations."""
 
-    def __init__(
-        self, message: str, cause: Optional[Exception] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, message: str, cause: Optional[Exception] = None, **kwargs: Any) -> None:
         """Initialize the error with LLM-specific context.
 
         Args:
