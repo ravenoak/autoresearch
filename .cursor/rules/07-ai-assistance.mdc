@@ -214,9 +214,27 @@ Document learned patterns:
 
 ### Autoresearch Context
 When working with AI on this project:
-- Mention we use uv for package management
-- Reference existing architecture patterns
-- Point to relevant docs in `docs/`
-- Specify test requirements and markers
-- Note the importance of type hints
-- Emphasize error handling and logging
+- Mention we use uv for package management and virtual environment management
+- Reference existing architecture patterns and project vitals monitoring
+- Point to relevant docs in `docs/` and project structure rules
+- Specify test requirements and markers for comprehensive validation
+- Note the importance of type hints and holistic quality assessment
+- Emphasize error handling, logging, and security considerations
+- Apply systems thinking to understand component interactions
+- Document reasoning and trade-offs in code and commits
+
+### Cursor IDE Integration
+
+**Enhanced Development Workflow**:
+1. **Context Awareness**: Leverage project rules for comprehensive understanding
+2. **Quality Gates**: Apply holistic thinking to all code changes
+3. **Vitals Monitoring**: Track project health indicators during development
+4. **Knowledge Integration**: Use distributed AGENTS.md files for contextual guidance
+5. **Continuous Learning**: Update rules and practices based on experience
+
+**Best Practices for Cursor Usage**:
+- Use rule search to find relevant project guidance
+- Apply multi-dimensional quality assessment to all changes
+- Document significant decisions with dialectical reasoning
+- Monitor project vitals and address any degradation
+- Share learnings and improvements with the team

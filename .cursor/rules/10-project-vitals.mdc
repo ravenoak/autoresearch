@@ -1,0 +1,297 @@
+---
+description: Project vitals monitoring, holistic development practices, and continuous improvement
+alwaysApply: true
+---
+
+# Project Vitals & Holistic Development
+
+## Project Vitals Monitoring
+
+### What Are Project Vitals?
+
+Project vitals are key metrics and indicators that reflect the health, progress, and sustainability of the development process:
+
+**Health Indicators**:
+- Test coverage percentage and trends
+- Code quality metrics (complexity, maintainability)
+- Security vulnerability status
+- Dependency health and update status
+- Performance benchmarks
+
+**Progress Indicators**:
+- Feature completion rates
+- Issue resolution velocity
+- Documentation coverage
+- Community engagement metrics
+
+**Sustainability Indicators**:
+- Technical debt accumulation
+- Team velocity and satisfaction
+- CI/CD pipeline reliability
+- Documentation freshness
+
+### Monitoring Tools & Commands
+
+```bash
+# Comprehensive health check
+task verify
+
+# Coverage analysis
+task coverage
+
+# Security scanning
+uv run pip-audit
+
+# Performance benchmarks
+task benchmark:critical
+
+# Documentation validation
+task docs
+
+# Environment health
+task check-env
+
+# Code quality metrics
+uv run radon cc src/ --total-average  # Cyclomatic complexity
+uv run radon mi src/ --total-average  # Maintainability index
+```
+
+### Vital Signs Dashboard
+
+**Critical Metrics to Track**:
+- **Test Coverage**: ≥90% overall, 100% for critical paths
+- **Security Score**: Zero high/critical vulnerabilities
+- **Performance**: Benchmarks within 10% of baseline
+- **Code Quality**: Maintainability index ≥70
+- **Documentation**: All public APIs documented
+
+## Holistic Development Philosophy
+
+### Systems Thinking Applied
+
+**Thesis**: Individual changes affect the entire system.
+
+**Antithesis**: Local optimizations can harm global performance.
+
+**Synthesis**: Consider cascading effects, feedback loops, and emergent behaviors in every decision.
+
+**Framework for Holistic Decision Making**:
+
+1. **Scope Analysis**: What components does this change affect?
+2. **Interaction Mapping**: How do changes propagate through the system?
+3. **Feedback Loop Identification**: What reinforcing or balancing loops exist?
+4. **Emergent Behavior Prediction**: What unexpected patterns might emerge?
+5. **Constraint Analysis**: What limits might this change encounter?
+
+### Multi-Dimensional Quality Assessment
+
+For every significant change, evaluate across multiple dimensions:
+
+| Dimension | Questions | Success Criteria |
+|-----------|-----------|------------------|
+| **Functionality** | Does it solve the intended problem? | All requirements met, no regressions |
+| **Performance** | Is it fast enough? Scalable? | Benchmarks pass, no performance regressions |
+| **Maintainability** | Can others understand and modify it? | Clear code, comprehensive tests, good documentation |
+| **Security** | Are there vulnerabilities? | Security scan passes, follows security guidelines |
+| **Usability** | Is the API/user experience intuitive? | Clear interfaces, helpful error messages |
+| **Testability** | Can we verify it works correctly? | Comprehensive test coverage, clear assertions |
+
+## Continuous Improvement Framework
+
+### Learning Loops
+
+**Individual Learning Loop**:
+1. **Plan**: Set clear objectives and success criteria
+2. **Do**: Implement with monitoring and measurement
+3. **Check**: Evaluate results against criteria
+4. **Act**: Adjust approach based on learnings
+
+**Team Learning Loop**:
+1. **Share**: Document learnings and best practices
+2. **Standardize**: Update guidelines and templates
+3. **Train**: Share knowledge across team
+4. **Improve**: Refine processes based on collective experience
+
+### Reflection Practices
+
+**Post-Task Reflection**:
+- What worked well in this implementation?
+- What could have been done differently?
+- What assumptions were challenged or validated?
+- How can similar tasks be improved?
+
+**Weekly/Monthly Review**:
+- Review project vitals and trends
+- Identify patterns in successes and failures
+- Update team practices and guidelines
+- Plan improvements for next cycle
+
+## Development Process Optimization
+
+### Workflow Enhancement
+
+**Daily Development Cycle**:
+```bash
+# Start: Environment & context
+task install                    # Ensure environment is ready
+task check-env                  # Validate tool versions
+
+# Code: Write with quality gates
+# (IDE provides real-time feedback)
+
+# Test: Fast feedback loop
+task check                      # Lint + types + fast tests
+
+# Commit: Quality assurance
+task verify                     # Full validation before commit
+```
+
+**Feature Development Workflow**:
+1. **Discovery**: Understand requirements and constraints
+2. **Design**: Apply systems thinking to solution design
+3. **Implementation**: Write code with holistic quality in mind
+4. **Validation**: Comprehensive testing across all dimensions
+5. **Documentation**: Update relevant documentation
+6. **Review**: Multi-dimensional code review
+7. **Deployment**: Monitor impact on project vitals
+
+### Quality Gates
+
+**Pre-Commit Gates**:
+- [ ] Code passes all linters (`task check`)
+- [ ] Type checking passes (`mypy --strict`)
+- [ ] Tests pass (`task test:fast`)
+- [ ] Documentation builds (`task docs`)
+
+**Pre-Merge Gates**:
+- [ ] All tests pass (`task verify`)
+- [ ] Coverage meets requirements (`task coverage`)
+- [ ] Security scan passes (`uv run pip-audit`)
+- [ ] Performance benchmarks pass (`task benchmark:critical`)
+
+## Knowledge Management
+
+### Documentation Philosophy
+
+**Living Documentation**:
+- Documentation evolves with code
+- Examples are tested and current
+- Complex decisions are explained
+- Trade-offs are documented
+
+**Knowledge Sharing**:
+- Significant decisions documented in commits
+- Complex logic explained in code comments
+- Team learnings captured in guidelines
+- Best practices shared across projects
+
+### Continuous Documentation
+
+```bash
+# Validate documentation builds
+task docs
+
+# Check documentation coverage
+task check-coverage-docs
+
+# Update documentation if needed
+uv run mkdocs build
+```
+
+## Performance & Sustainability
+
+### Performance Monitoring
+
+**Benchmarking Strategy**:
+```bash
+# Run critical performance benchmarks
+task benchmark:critical
+
+# Profile specific operations
+uv run python -m cProfile -s time script.py
+
+# Memory profiling
+uv run python -m memory_profiler script.py
+
+# Async performance
+uv run python scripts/orchestrator_perf_sim.py --benchmark
+```
+
+**Performance Guidelines**:
+- Profile before optimizing
+- Target bottlenecks, not micro-optimizations
+- Maintain performance test coverage
+- Document performance requirements
+
+### Sustainability Practices
+
+**Technical Debt Management**:
+- Track debt accumulation in project vitals
+- Regular refactoring sprints
+- Technical debt retirement in planning
+- Balance feature development with debt reduction
+
+**Team Sustainability**:
+- Monitor team velocity and satisfaction
+- Regular retrospectives and process improvement
+- Knowledge sharing and mentoring
+- Work-life balance considerations
+
+## Integration with Cursor IDE
+
+### Vitals Integration
+
+**Real-time Monitoring**:
+- Project vitals accessible in Cursor context
+- Quality gates enforced during development
+- Performance insights available during coding
+- Documentation validation on file changes
+
+**Workflow Optimization**:
+- Cursor rules guide holistic thinking
+- Context-aware suggestions for improvements
+- Automated quality checks during development
+- Knowledge base for decision support
+
+### Best Practices for Cursor Usage
+
+**Leverage Context**:
+- Use project rules for comprehensive understanding
+- Reference specific guidelines for tasks
+- Apply holistic thinking to all decisions
+- Document significant choices and reasoning
+
+**Continuous Learning**:
+- Update rules based on experience
+- Share effective patterns with team
+- Refine guidelines as project evolves
+- Maintain alignment between rules and practice
+
+## Migration & Evolution
+
+### From Legacy Practices
+
+**Previous State**: Scattered documentation, inconsistent processes
+
+**Current State**: Systematic vitals monitoring, holistic development framework
+
+**Future State**: AI-assisted optimization, predictive quality assurance
+
+### Rule Evolution Process
+
+1. **Identify Gap**: Notice missing guidance or process
+2. **Propose Enhancement**: Document improvement rationale
+3. **Implement**: Update rules with concrete examples
+4. **Validate**: Ensure enhancement improves outcomes
+5. **Share**: Communicate changes to team
+
+### Measuring Improvement
+
+**Success Metrics**:
+- Reduced time to resolve issues
+- Improved code quality scores
+- Higher team satisfaction scores
+- Better project predictability
+- Enhanced documentation quality
+
+This rule file establishes the foundation for holistic, sustainable software development practices that balance technical excellence with human factors and long-term maintainability.

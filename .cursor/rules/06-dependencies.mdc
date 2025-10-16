@@ -9,29 +9,64 @@ alwaysApply: false
 # Dependency Management Guidelines
 
 ## Package Manager: uv
-This project uses `uv` for fast, reliable Python package management.
+This project uses `uv` for fast, reliable Python package management with built-in virtual environment support.
 
-### Basic Commands
+### Environment Setup & Management
+
+**Virtual Environment Lifecycle**:
 ```bash
-# Install project and dependencies
-uv sync
+# Initialize project with virtual environment
+uv venv
+# Creates .venv/ directory with isolated Python environment
 
-# Add a dependency
-uv add package-name
+# Alternative: Create custom named environment
+uv venv my-project-env --python 3.12
 
-# Add a dev dependency
-uv add --dev package-name
+# Activate environment (required for direct tool usage)
+source .venv/bin/activate    # macOS/Linux
+# .venv\Scripts\activate     # Windows
 
-# Add an optional dependency (extras)
-uv add --optional extra-name package-name
-
-# Run a command in the virtual environment
+# Alternative: Use uv run for all commands (recommended)
 uv run python script.py
-uv run pytest
+uv run pytest tests/
+uv run black src/
 uv run task verify
 
-# Update dependencies
+# Deactivate when done
+deactivate
+```
+
+### Dependency Management Commands
+
+```bash
+# Install project in development mode
+uv pip install -e .
+
+# Install with specific extras
+uv sync --extra nlp --extra ui --extra vss --extra distributed
+
+# Add new dependencies
+uv add package-name                    # Runtime dependency
+uv add --dev package-name             # Development dependency
+uv add --optional extra-name package  # Optional dependency
+
+# Update all dependencies
 uv lock --upgrade
+
+# Update specific package
+uv lock --upgrade-package package-name
+
+# Remove dependency
+uv remove package-name
+
+# Show dependency tree
+uv tree
+
+# Check for security vulnerabilities
+uv run pip-audit
+
+# Clean cache if issues arise
+uv clean
 ```
 
 ## Dependency Organization
