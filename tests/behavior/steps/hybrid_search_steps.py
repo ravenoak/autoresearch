@@ -15,7 +15,6 @@ from tests.behavior.context import BehaviorContext
 @scenario("../features/hybrid_search.feature", "Combine keyword and vector results")
 def test_hybrid_search() -> None:
     """Hybrid search mixes vector and keyword results."""
-    pass
 
 
 @when(parsers.parse('I perform a hybrid search for "{query}"'))
@@ -35,17 +34,13 @@ def perform_hybrid_search(
     cfg.search.local_file.path = str(docs_dir_obj)
     cfg.search.local_file.file_types = ["txt"]
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    hybrid_results = cast(
-        list[dict[str, Any]], Search.external_lookup(query, max_results=5)
-    )
+    hybrid_results = cast(list[dict[str, Any]], Search.external_lookup(query, max_results=5))
     bdd_context["search_results"] = hybrid_results
     bdd_context["hybrid_results"] = hybrid_results
     cfg_sem = cfg.model_copy(deep=True)
     cfg_sem.search.hybrid_query = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg_sem)
-    semantic_results = cast(
-        list[dict[str, Any]], Search.external_lookup(query, max_results=5)
-    )
+    semantic_results = cast(list[dict[str, Any]], Search.external_lookup(query, max_results=5))
     bdd_context["semantic_results"] = semantic_results
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 

@@ -33,7 +33,9 @@ def adapter() -> _DummyAdapter:
     return _DummyAdapter()
 
 
-def test_fact_checker_audit_provenance(adapter: _DummyAdapter, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fact_checker_audit_provenance(
+    adapter: _DummyAdapter, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """FactChecker should emit provenance-rich audits with stable source ids."""
 
     def fake_lookup(*args: Any, **_: Any):
@@ -74,9 +76,9 @@ def test_fact_checker_audit_provenance(adapter: _DummyAdapter, monkeypatch: pyte
         assert "source_id" in source
 
     claim_audit = result["claims"][0]["audit"]
-    assert claim_audit["provenance"]["evidence"]["top_source_ids"], (
-        "top source ids should be tracked"
-    )
+    assert claim_audit["provenance"]["evidence"][
+        "top_source_ids"
+    ], "top source ids should be tracked"
     per_claim = claim_audit["provenance"]["backoff"]["per_claim"]
     assert per_claim["claim-1"]["retry_count"] == 0
     assert "paraphrases" in per_claim["claim-1"]
@@ -103,9 +105,9 @@ def test_synthesizer_support_audit_provenance(adapter: _DummyAdapter) -> None:
     audits = {audit["claim_id"]: audit for audit in result["claim_audits"]}
     support_audit = audits["claim-1"]
     assert support_audit["provenance"]["retrieval"]["mode"] == "hypothesis_vs_claim"
-    assert support_audit["provenance"]["evidence"]["source_ids"], (
-        "support source ids should be present"
-    )
+    assert support_audit["provenance"]["evidence"][
+        "source_ids"
+    ], "support source ids should be present"
 
     claim = result["claims"][0]
     summary_audit = audits[claim["id"]]

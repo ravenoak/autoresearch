@@ -60,22 +60,16 @@ def test_calculate_result_confidence(num_citations, reasoning_len, error_count):
 
 def test_apply_recovery_strategy():
     state = QueryState(query="q")
-    info = OrchestrationUtils.apply_recovery_strategy(
-        "A", "transient", Exception("e"), state
-    )
+    info = OrchestrationUtils.apply_recovery_strategy("A", "transient", Exception("e"), state)
     assert info["recovery_strategy"] == "retry_with_backoff"
     assert "fallback" in state.results
 
     state = QueryState(query="q")
-    info = OrchestrationUtils.apply_recovery_strategy(
-        "A", "recoverable", Exception("e"), state
-    )
+    info = OrchestrationUtils.apply_recovery_strategy("A", "recoverable", Exception("e"), state)
     assert info["recovery_strategy"] == "fallback_agent"
     assert "fallback" in state.results
 
     state = QueryState(query="q")
-    info = OrchestrationUtils.apply_recovery_strategy(
-        "A", "critical", Exception("e"), state
-    )
+    info = OrchestrationUtils.apply_recovery_strategy("A", "critical", Exception("e"), state)
     assert info["recovery_strategy"] == "fail_gracefully"
     assert "error" in state.results

@@ -32,6 +32,7 @@ def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> Non
         _: str, __: Sequence[Mapping[str, object]]
     ) -> list[float]:  # pragma: no cover - deterministic stub
         return bm25
+
     semantic: list[float] = [0.4, 0.9]
     cred: list[float] = [0.5, 0.1]
     docs: list[Mapping[str, object]] = [
@@ -41,9 +42,7 @@ def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> Non
 
     with (
         patch.object(Search, "calculate_bm25_scores", staticmethod(_bm25_scores)),
-        patch.object(
-            Search, "calculate_semantic_similarity", return_value=semantic
-        ),
+        patch.object(Search, "calculate_semantic_similarity", return_value=semantic),
         patch.object(Search, "assess_source_credibility", return_value=cred),
     ):
         ranked: SearchResults = Search.rank_results("q", docs)
@@ -52,19 +51,21 @@ def test_convex_combination_matches_docs(monkeypatch: pytest.MonkeyPatch) -> Non
     w_b = search_cfg.bm25_weight
     w_c = search_cfg.source_credibility_weight
     bm25_min, bm25_max = min(bm25), max(bm25)
-    bm25_norm = [0.0 if bm25_max == bm25_min else (b - bm25_min) / (bm25_max - bm25_min) for b in bm25]
-    sem_min, sem_max = min(semantic), max(semantic)
-    sem_norm = [0.0 if sem_max == sem_min else (s - sem_min) / (sem_max - sem_min) for s in semantic]
-    cred_min, cred_max = min(cred), max(cred)
-    cred_norm = [0.0 if cred_max == cred_min else (c - cred_min) / (cred_max - cred_min) for c in cred]
-    expected = [
-        w_b * bm25_norm[i] + w_s * sem_norm[i] + w_c * cred_norm[i]
-        for i in range(2)
+    bm25_norm = [
+        0.0 if bm25_max == bm25_min else (b - bm25_min) / (bm25_max - bm25_min) for b in bm25
     ]
+    sem_min, sem_max = min(semantic), max(semantic)
+    sem_norm = [
+        0.0 if sem_max == sem_min else (s - sem_min) / (sem_max - sem_min) for s in semantic
+    ]
+    cred_min, cred_max = min(cred), max(cred)
+    cred_norm = [
+        0.0 if cred_max == cred_min else (c - cred_min) / (cred_max - cred_min) for c in cred
+    ]
+    expected = [w_b * bm25_norm[i] + w_s * sem_norm[i] + w_c * cred_norm[i] for i in range(2)]
     exp_min, exp_max = min(expected), max(expected)
     normalized = [
-        0.0 if exp_max == exp_min else (e - exp_min) / (exp_max - exp_min)
-        for e in expected
+        0.0 if exp_max == exp_min else (e - exp_min) / (exp_max - exp_min) for e in expected
     ]
 
     ranked_ids = [r["id"] for r in ranked]

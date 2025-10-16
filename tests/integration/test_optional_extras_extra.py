@@ -113,9 +113,7 @@ def test_inmemory_broker_roundtrip() -> None:
     broker = get_message_broker("memory")
     message = _build_agent_result_message(payload={"status": "ok"})
     broker.publish(message)
-    queue: StorageBrokerQueueProtocol = cast(
-        StorageBrokerQueueProtocol, broker.queue
-    )
+    queue: StorageBrokerQueueProtocol = cast(StorageBrokerQueueProtocol, broker.queue)
     queue_protocol: MessageQueueProtocol = queue
     queued: BrokerMessage = queue_protocol.get()
     assert cast(AgentResultMessage, queued) == message
@@ -158,9 +156,7 @@ def test_local_file_backend_docx(tmp_path) -> None:
 
 
 @pytest.mark.requires_parsers
-def test_local_file_backend_pdf(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_local_file_backend_pdf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The parsers extra allows reading ``.pdf`` files."""
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")

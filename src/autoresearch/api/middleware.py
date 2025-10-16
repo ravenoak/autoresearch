@@ -81,9 +81,7 @@ def dynamic_limit() -> str:
 class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
     """Simplified rate limiting used when SlowAPI is unavailable."""
 
-    def __init__(
-        self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter
-    ) -> None:
+    def __init__(self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter) -> None:
         super().__init__(app)
         self.request_logger = request_logger
         self.limiter = limiter
@@ -125,9 +123,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting using SlowAPI's limiter with dynamic configuration."""
 
-    def __init__(
-        self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter
-    ) -> None:
+    def __init__(self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter) -> None:
         super().__init__(app)
         self.request_logger = request_logger
         self.limiter = limiter

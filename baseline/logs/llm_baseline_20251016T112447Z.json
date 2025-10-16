@@ -1,0 +1,65 @@
+{
+  "system_info": {
+    "os": "Darwin",
+    "os_version": "Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:31 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T6030",
+    "machine": "arm64",
+    "processor": "arm",
+    "python_version": "3.12.12",
+    "timestamp": "2025-10-16T11:21:27.205582",
+    "model_name": "MacBook Pro",
+    "chip": "Apple M3 Pro",
+    "cpu_cores": "11 (5 performance and 6 efficiency)",
+    "memory": "36 GB"
+  },
+  "model": "deepseek/deepseek-r1-0528-qwen3-8b",
+  "results": {
+    "simple_query": {
+      "description": "Simple query (llm_simple tier)",
+      "prompt_length": 15,
+      "max_tokens": 100,
+      "attempts": 3,
+      "mean": 4.184032281239827,
+      "median": 4.1707000732421875,
+      "min": 4.114761829376221,
+      "max": 4.266634941101074,
+      "stdev": 0.07680931807936268,
+      "recommended_timeout_3x": 12.799904823303223
+    },
+    "medium_research": {
+      "description": "Medium research synthesis (llm_medium tier)",
+      "prompt_length": 238,
+      "max_tokens": 300,
+      "attempts": 3,
+      "mean": 12.20350448290507,
+      "median": 12.02505612373352,
+      "min": 11.863392114639282,
+      "max": 12.722065210342407,
+      "stdev": 0.45630333550102475,
+      "recommended_timeout_3x": 38.16619563102722
+    },
+    "large_context": {
+      "description": "Large context analysis (llm_complex tier)",
+      "prompt_length": 4439,
+      "max_tokens": 500,
+      "attempts": 3,
+      "mean": 22.143837610880535,
+      "median": 22.279770851135254,
+      "min": 20.154479026794434,
+      "max": 23.997262954711914,
+      "stdev": 1.9249949255828793,
+      "recommended_timeout_3x": 71.99178886413574
+    },
+    "dialectical_reasoning": {
+      "description": "Complex dialectical reasoning (llm_complex tier)",
+      "prompt_length": 266,
+      "max_tokens": 600,
+      "attempts": 3,
+      "mean": 24.13718859354655,
+      "median": 24.1770658493042,
+      "min": 23.738786935806274,
+      "max": 24.495712995529175,
+      "stdev": 0.3800354083726669,
+      "recommended_timeout_3x": 73.48713898658752
+    }
+  }
+}

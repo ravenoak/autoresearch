@@ -51,9 +51,7 @@ pytestmark = [pytest.mark.slow]
 
 
 @pytest.mark.parametrize("backend", ["bm25", "semantic", "hybrid"])
-def test_hybrid_ranking(
-    backend: str, benchmark: Any, metrics_baseline: MetricsBaselineFn
-) -> None:
+def test_hybrid_ranking(backend: str, benchmark: Any, metrics_baseline: MetricsBaselineFn) -> None:
     """Record metrics for each backend and check against baselines."""
     rows = load_data()
     data = [r for r in rows if r["backend"] == backend]

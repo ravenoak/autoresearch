@@ -79,9 +79,7 @@ def test_bertopic_integration(
 
 
 @pytest.mark.requires_parsers
-def test_docx_backend_search(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_docx_backend_search(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Local file backend indexes DOCX files when parsers extras are installed."""
 
     docx = import_or_skip("docx")
@@ -109,9 +107,7 @@ def test_docx_backend_search(
             self.paragraphs = TrackingParagraphs([SimpleNamespace(text=seed_text)])
 
     cfg = SimpleNamespace(
-        search=SimpleNamespace(
-            local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"])
-        )
+        search=SimpleNamespace(local_file=SimpleNamespace(path=str(tmp_path), file_types=["docx"]))
     )
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.search.core.Document", StubDocument)

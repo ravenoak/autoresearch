@@ -194,9 +194,7 @@ def test_monitor_resources_cli(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "GPU MB" in out
 
 
-def test_metrics_requires_api_key(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_metrics_requires_api_key(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = ConfigModel(api=APIConfig(api_key="secret", monitoring_enabled=True))
     cfg.api.role_permissions["user"] = ["metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)

@@ -69,7 +69,7 @@ def api_client() -> TypedFixture[TestClient]:
 def reset_api_state():
     """Reset FastAPI app state between tests to prevent interference."""
     # Clear async tasks that might accumulate between tests
-    if hasattr(api_app.state, 'async_tasks'):
+    if hasattr(api_app.state, "async_tasks"):
         api_app.state.async_tasks.clear()
 
     yield
@@ -107,9 +107,7 @@ def token_baseline(
 @pytest.fixture
 def metrics_baseline(
     request: pytest.FixtureRequest,
-) -> TypedFixture[
-    Callable[[str, float, float, float, float], None]
-]:
+) -> TypedFixture[Callable[[str, float, float, float, float], None]]:
     """Record and compare backend metrics across test runs."""
 
     def _check(
@@ -134,9 +132,7 @@ def metrics_baseline(
         METRIC_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
     return cast(
-        TypedFixture[
-            Callable[[str, float, float, float, float], None]
-        ],
+        TypedFixture[Callable[[str, float, float, float, float], None]],
         _check,
     )
 

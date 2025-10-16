@@ -6,9 +6,7 @@ from typing import Any, Type
 
 import pytest
 
-pytestmark = pytest.mark.skip(
-    reason="CollectorRegistry duplication in test environment"
-)
+pytestmark = pytest.mark.skip(reason="CollectorRegistry duplication in test environment")
 
 
 def _load_module() -> ModuleType:
@@ -34,9 +32,7 @@ def test_ranking_converges() -> None:
         Doc(0.9, 0.1, 0.0),
     ]
     weights: tuple[float, float, float] = (0.4, 0.4, 0.2)
-    orderings: list[list[int]] = module.simulate_ranking_convergence(
-        docs, weights, iterations=3
-    )
+    orderings: list[list[int]] = module.simulate_ranking_convergence(docs, weights, iterations=3)
     assert orderings[0] == orderings[1] == orderings[2]
 
 

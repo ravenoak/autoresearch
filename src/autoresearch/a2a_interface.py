@@ -63,6 +63,7 @@ if TYPE_CHECKING:
         SendMessageResponse,
     )
 else:
+
     @runtime_checkable
     class Message(Protocol):
         """Structural type for messages exchanged with the A2A SDK."""
@@ -70,11 +71,9 @@ else:
         metadata: Mapping[str, Any] | None
 
         @classmethod
-        def model_validate(cls, data: Mapping[str, Any]) -> Self:
-            ...
+        def model_validate(cls, data: Mapping[str, Any]) -> Self: ...
 
-        def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
-            ...
+        def model_dump(self, *, mode: str = ...) -> dict[str, Any]: ...
 
     class MessageSendParams(Protocol):
         """Structural type describing message send parameters."""
@@ -82,8 +81,9 @@ else:
         message: Message
         metadata: Mapping[str, Any] | None
 
-        def __init__(self, *, message: Message, metadata: Mapping[str, Any] | None = ...) -> None:
-            ...
+        def __init__(
+            self, *, message: Message, metadata: Mapping[str, Any] | None = ...
+        ) -> None: ...
 
     class SendMessageRequest(Protocol):
         """Structural type describing message send requests."""
@@ -91,20 +91,18 @@ else:
         id: str
         params: MessageSendParams
 
-        def __init__(self, *, id: str, params: MessageSendParams) -> None:
-            ...
+        def __init__(self, *, id: str, params: MessageSendParams) -> None: ...
 
     class SendMessageResponse(Protocol):
         """Structural type for message responses from the A2A SDK."""
 
-        def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
-            ...
+        def model_dump(self, *, mode: str = ...) -> dict[str, Any]: ...
 
     class SDKA2AClient(Protocol):
         """Structural type for the optional A2A client."""
 
-        async def send_message(self, request: SendMessageRequest) -> SendMessageResponse:
-            ...
+        async def send_message(self, request: SendMessageRequest) -> SendMessageResponse: ...
+
 
 A2A_AVAILABLE = False
 
@@ -125,8 +123,7 @@ class ASGIApplication(Protocol):
         scope: Mapping[str, Any],
         receive: Callable[..., Awaitable[Any]],
         send: Callable[..., Awaitable[Any]],
-    ) -> Awaitable[None]:
-        ...
+    ) -> Awaitable[None]: ...
 
 
 class AgentInfo(TypedDict):
@@ -166,12 +163,8 @@ else:
     _RuntimeMessageSendParams = cast("type[Any]", _ImportedMessageSendParams)
     _RuntimeSendMessageRequest = cast("type[Any]", _ImportedSendMessageRequest)
     _RuntimeSendMessageResponse = cast("type[Any]", _ImportedSendMessageResponse)
-    _runtime_get_message_text = cast(
-        Callable[[Message], str], _imported_get_message_text
-    )
-    _runtime_new_agent_text_message = cast(
-        Callable[..., Message], _imported_new_agent_text_message
-    )
+    _runtime_get_message_text = cast(Callable[[Message], str], _imported_get_message_text)
+    _runtime_new_agent_text_message = cast(Callable[..., Message], _imported_new_agent_text_message)
     A2A_AVAILABLE = True
 
 
@@ -220,7 +213,9 @@ def get_sdk_client_cls() -> type[SDKA2AClient]:
 def get_message_text(message: Message) -> str:
     """Proxy to the runtime ``get_message_text`` helper."""
 
-    func = cast(Callable[[Message], str], _require_runtime_fn("get_message_text", _runtime_get_message_text))
+    func = cast(
+        Callable[[Message], str], _require_runtime_fn("get_message_text", _runtime_get_message_text)
+    )
     return func(message)
 
 
@@ -260,6 +255,7 @@ def create_send_message_request(
 
 
 if A2A_AVAILABLE:
+
     class A2AMessageType(str, Enum):
         """Supported message types."""
 
@@ -634,9 +630,7 @@ class A2AClientWrapper:
             The response from the agent
         """
         try:
-            params = create_message_send_params(
-                message=new_agent_text_message(query)
-            )
+            params = create_message_send_params(message=new_agent_text_message(query))
             response = self._send_request(agent_url, params)
 
             if "error" in response:
@@ -644,7 +638,11 @@ class A2AClientWrapper:
                 return {"error": response.get("error")}
 
             raw_result = response.get("result")
-            if isinstance(raw_result, dict) and raw_result.get("kind") == "message" and raw_result.get("parts"):
+            if (
+                isinstance(raw_result, dict)
+                and raw_result.get("kind") == "message"
+                and raw_result.get("parts")
+            ):
                 part = raw_result["parts"][0]
                 if isinstance(part, dict) and "text" in part:
                     return {"answer": part["text"]}
@@ -667,9 +665,7 @@ class A2AClientWrapper:
             The capabilities of the agent
         """
         try:
-            params = create_message_send_params(
-                message=new_agent_text_message("get_capabilities")
-            )
+            params = create_message_send_params(message=new_agent_text_message("get_capabilities"))
             response = self._send_request(agent_url, params)
 
             if "error" in response:
@@ -696,9 +692,7 @@ class A2AClientWrapper:
             The configuration of the agent
         """
         try:
-            params = create_message_send_params(
-                message=new_agent_text_message("get_config")
-            )
+            params = create_message_send_params(message=new_agent_text_message("get_config"))
             response = self._send_request(agent_url, params)
 
             if "error" in response:

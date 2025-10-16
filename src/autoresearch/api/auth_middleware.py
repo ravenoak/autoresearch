@@ -45,9 +45,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             headers={"WWW-Authenticate": scheme},
         )
 
-    def _resolve_role(
-        self, key: str | None, cfg: APIConfig
-    ) -> tuple[str, JSONResponse | None]:
+    def _resolve_role(self, key: str | None, cfg: APIConfig) -> tuple[str, JSONResponse | None]:
         """Return the role for ``key`` or an error response.
 
         Args:

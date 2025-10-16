@@ -612,9 +612,7 @@ class _SearchConfig(SearchConfigProtocol):
                 default=max(1, len(backends)) if backends else 4,
                 minimum=1,
             ),
-            parallel_enabled=_coerce_bool(
-                getattr(obj, "parallel_enabled", None), default=True
-            ),
+            parallel_enabled=_coerce_bool(getattr(obj, "parallel_enabled", None), default=True),
             parallel_prefetch=_coerce_int(
                 getattr(obj, "parallel_prefetch", None), default=0, minimum=0
             ),
@@ -827,9 +825,7 @@ class Search:
     _instances: ClassVar[WeakSet["Search"]] = WeakSet()
     _shared_sentence_transformer: ClassVar[Optional[EmbeddingModelProtocol]] = None
 
-    def __init__(
-        self, cache: SearchCache | _SearchCacheView | None = None
-    ) -> None:
+    def __init__(self, cache: SearchCache | _SearchCacheView | None = None) -> None:
         self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
             self._default_backends
         )
@@ -868,9 +864,7 @@ class Search:
         namespace_label = final_namespace or "__default__"
         self._active_namespace: str = namespace_label
         self._cache_events: list[CacheTraceEvent] = []
-        self._last_cache_trace: CacheTrace = CacheTrace(
-            namespace=namespace_label, events=()
-        )
+        self._last_cache_trace: CacheTrace = CacheTrace(namespace=namespace_label, events=())
         log.debug(
             "Initialised search cache",
             extra={
@@ -1305,6 +1299,15 @@ class Search:
             if embedding is not None:
                 return embedding
 
+        if hasattr(model, "__call__"):
+            try:
+                raw = model([query])
+                embedding = self._coerce_embedding(raw)
+                if embedding is not None:
+                    return embedding
+            except Exception as e:
+                log.debug(f"Failed to call model directly: {e}")
+
         return None
 
     @staticmethod
@@ -1367,7 +1370,10 @@ class Search:
             # Use patched scores when BM25Okapi is mocked in tests
             mock_instance = getattr(BM25Okapi, "return_value", None)
             bm25: Any
-            if getattr(BM25Okapi, "__module__", "") == "unittest.mock" and mock_instance is not None:
+            if (
+                getattr(BM25Okapi, "__module__", "") == "unittest.mock"
+                and mock_instance is not None
+            ):
                 bm25 = mock_instance
             else:
                 bm25 = BM25Okapi(corpus)
@@ -1422,13 +1428,25 @@ class Search:
                 assert model is not None
                 if hasattr(model, "embed"):
                     embed_model = cast(SupportsEmbedProtocol, model)
-                    query_embedding = np.array(
-                        list(embed_model.embed([query]))[0], dtype=float
-                    )
-                else:
+                    query_embedding = np.array(list(embed_model.embed([query]))[0], dtype=float)
+                elif hasattr(model, "encode"):
                     encoded_query = model.encode([query])
                     first_query = list(encoded_query)[0]
                     query_embedding = np.array(first_query, dtype=float)
+                elif hasattr(model, "__call__"):
+                    # Try calling the model directly (fastembed API)
+                    try:
+                        encoded_query = model([query])
+                        first_query = list(encoded_query)[0]
+                        query_embedding = np.array(first_query, dtype=float)
+                    except Exception as e:
+                        log.warning(f"Failed to call model directly: {e}")
+                        query_embedding = None
+                else:
+                    log.warning(
+                        "Model has no recognized embedding methods (embed, encode, or __call__)"
+                    )
+                    query_embedding = None
 
             # Encode the documents
             similarities: List[Optional[float]] = []
@@ -1442,6 +1460,9 @@ class Search:
                     continue
                 if "embedding" in doc:
                     doc_embedding = np.array(doc["embedding"], dtype=float)
+                    assert (
+                        query_embedding is not None
+                    ), "query_embedding should be set before this point"
                     sim = np.dot(query_embedding, doc_embedding) / (
                         np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
                     )
@@ -1461,10 +1482,22 @@ class Search:
                 if hasattr(model, "embed"):
                     embed_model = cast(SupportsEmbedProtocol, model)
                     doc_embeddings = list(embed_model.embed(to_encode))
-                else:
+                elif hasattr(model, "encode"):
                     doc_embeddings = list(model.encode(to_encode))
+                elif hasattr(model, "__call__"):
+                    try:
+                        doc_embeddings = list(model(to_encode))
+                    except Exception as e:
+                        log.warning(f"Failed to call model for document encoding: {e}")
+                        doc_embeddings = []
+                else:
+                    log.warning("Model has no recognized embedding methods for documents")
+                    doc_embeddings = []
                 for emb, index in zip(doc_embeddings, encode_map):
                     emb_arr = np.array(emb, dtype=float)
+                    assert (
+                        query_embedding is not None
+                    ), "query_embedding should be set before this point"
                     sim = np.dot(query_embedding, emb_arr) / (
                         np.linalg.norm(query_embedding) * np.linalg.norm(emb_arr)
                     )
@@ -1521,9 +1554,7 @@ class Search:
                 should_embed = False
 
         if not should_embed:
-            log.debug(
-                "Embedding enrichment disabled by configuration; skipping add_embeddings"
-            )
+            log.debug("Embedding enrichment disabled by configuration; skipping add_embeddings")
             return
 
         model = self.get_sentence_transformer()
@@ -1550,8 +1581,17 @@ class Search:
             if hasattr(model, "embed"):
                 embed_model = cast(SupportsEmbedProtocol, model)
                 doc_embeddings = list(embed_model.embed(texts))
-            else:
+            elif hasattr(model, "encode"):
                 doc_embeddings = list(model.encode(texts))
+            elif hasattr(model, "__call__"):
+                try:
+                    doc_embeddings = list(model(texts))
+                except Exception as e:
+                    log.warning(f"Failed to call model for text encoding: {e}")
+                    return
+            else:
+                log.warning("Model has no recognized embedding methods for texts")
+                return
             for emb, index in zip(doc_embeddings, indices):
                 if hasattr(emb, "tolist"):
                     documents[index]["embedding"] = emb.tolist()
@@ -1601,11 +1641,14 @@ class Search:
             stage,
             "provided" if query_embedding is not None else "missing",
         )
-        with _hybrid_stage(stage), _hybrid_query_context(
-            raw_query=raw_query,
-            executed_query=executed,
-            canonical_query=canonical_base,
-            raw_canonical_query=raw_canonical_base,
+        with (
+            _hybrid_stage(stage),
+            _hybrid_query_context(
+                raw_query=raw_query,
+                executed_query=executed,
+                canonical_query=canonical_base,
+                raw_canonical_query=raw_canonical_base,
+            ),
         ):
             context = capture_hybrid_call_context()
             log.debug(
@@ -1917,12 +1960,20 @@ class Search:
             if model is not None:
                 if hasattr(model, "embed"):
                     embed_model = cast(SupportsEmbedProtocol, model)
-                    query_embedding = np.array(
-                        list(embed_model.embed([query]))[0], dtype=float
-                    )
-                else:
+                    query_embedding = np.array(list(embed_model.embed([query]))[0], dtype=float)
+                elif hasattr(model, "encode"):
                     encoded_query = model.encode([query])
                     query_embedding = np.array(list(encoded_query)[0], dtype=float)
+                elif hasattr(model, "__call__"):
+                    try:
+                        encoded_query = model([query])
+                        query_embedding = np.array(list(encoded_query)[0], dtype=float)
+                    except Exception as e:
+                        log.warning(f"Failed to call model for query encoding: {e}")
+                        query_embedding = None
+                else:
+                    log.warning("Model has no recognized embedding methods for query")
+                    query_embedding = None
 
         all_ranked: List[Dict[str, Any]] = []
         for name, docs in backend_results.items():
@@ -2402,13 +2453,9 @@ class Search:
             if executed_value:
                 provided_executed_query = str(executed_value)
             if canonical_value:
-                provided_canonical_query = self._normalise_cache_query(
-                    str(canonical_value)
-                )
+                provided_canonical_query = self._normalise_cache_query(str(canonical_value))
             if raw_canonical_value:
-                provided_raw_canonical_query = self._normalise_cache_query(
-                    str(raw_canonical_value)
-                )
+                provided_raw_canonical_query = self._normalise_cache_query(str(raw_canonical_value))
         else:
             text_query = str(query)
             query_embedding = None
@@ -2427,9 +2474,7 @@ class Search:
                 log.info(f"Using context-aware expanded query: '{expanded_query}'")
                 search_query = expanded_query
 
-        raw_canonical_base = (
-            provided_raw_canonical_query or self._normalise_cache_query(raw_query)
-        )
+        raw_canonical_base = provided_raw_canonical_query or self._normalise_cache_query(raw_query)
         canonical_hint = provided_canonical_query
 
         adaptive_cfg = cfg.search.adaptive_k
@@ -2508,9 +2553,7 @@ class Search:
                     },
                 )
 
-            def _record_embedding_backend(
-                name: str, docs: Sequence[Dict[str, Any]] | None
-            ) -> None:
+            def _record_embedding_backend(name: str, docs: Sequence[Dict[str, Any]] | None) -> None:
                 pending_embedding_backends.discard(name)
                 storage_hints = self._embedding_storage_hints(name)
                 cache_key = self._build_cache_key(
@@ -2791,9 +2834,7 @@ class Search:
 
             if remaining and cfg.search.parallel_enabled:
                 with ThreadPoolExecutor(max_workers=cfg.search.max_workers) as executor:
-                    futures = {
-                        executor.submit(run_backend, name): name for name in remaining
-                    }
+                    futures = {executor.submit(run_backend, name): name for name in remaining}
                     for future in as_completed(futures):
                         name, backend_results = future.result()
                         if backend_results:
@@ -2924,15 +2965,15 @@ class Search:
                 next_plan_reason = "followup"
                 next_force_backend_refresh = False
                 adaptive_log_details: dict[str, Any] = {}
-                if (
-                    adaptive_cfg.enabled
-                    and coverage_gap > adaptive_cfg.coverage_gap_threshold
-                ):
+                if adaptive_cfg.enabled and coverage_gap > adaptive_cfg.coverage_gap_threshold:
                     proposed_k = min(
                         adaptive_cfg.max_k,
                         max(attempt_k + adaptive_cfg.step, adaptive_cfg.min_k),
                     )
-                    if proposed_k > attempt_k and (current_query, proposed_k) not in attempted_plans:
+                    if (
+                        proposed_k > attempt_k
+                        and (current_query, proposed_k) not in attempted_plans
+                    ):
                         adaptive_action_taken = True
                         adaptive_action_type = "adaptive_increase"
                         next_max_results = proposed_k
@@ -3133,8 +3174,7 @@ class Search:
                     storage=StorageManager,
                 )
                 self._last_cache_trace = CacheTrace(
-                    namespace=self._active_namespace
-                    or (self._cache_namespace or "__default__"),
+                    namespace=self._active_namespace or (self._cache_namespace or "__default__"),
                     events=tuple(self._cache_events),
                 )
                 return bundle if return_handles else bundle.results
@@ -3236,8 +3276,7 @@ class Search:
             )
 
             self._last_cache_trace = CacheTrace(
-                namespace=self._active_namespace
-                or (self._cache_namespace or "__default__"),
+                namespace=self._active_namespace or (self._cache_namespace or "__default__"),
                 events=tuple(self._cache_events),
             )
             return bundle if return_handles else bundle.results

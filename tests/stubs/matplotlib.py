@@ -60,8 +60,6 @@ class _MatplotlibModule(ModuleType):
         return None
 
 
-matplotlib = cast(
-    MatplotlibModule, install_stub_module("matplotlib", _MatplotlibModule)
-)
+matplotlib = cast(MatplotlibModule, install_stub_module("matplotlib", _MatplotlibModule))
 
 __all__ = ["MatplotlibModule", "MatplotlibPyplotModule", "matplotlib"]

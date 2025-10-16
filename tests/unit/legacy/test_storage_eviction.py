@@ -85,9 +85,7 @@ def _eviction_scenarios(draw: st.DrawFn) -> tuple[int, float, list[int], bool, i
 
     budget = draw(st.integers(min_value=1, max_value=50))
     safety = draw(st.floats(min_value=0.0, max_value=0.5, allow_nan=False))
-    reductions = draw(
-        st.lists(st.integers(min_value=1, max_value=20), min_size=1, max_size=5)
-    )
+    reductions = draw(st.lists(st.integers(min_value=1, max_value=20), min_size=1, max_size=5))
     stale_lru = draw(st.booleans())
     drop_index = draw(
         st.one_of(
@@ -98,7 +96,9 @@ def _eviction_scenarios(draw: st.DrawFn) -> tuple[int, float, list[int], bool, i
     return budget, safety, reductions, stale_lru, drop_index
 
 
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=50)
+@settings(
+    suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow], max_examples=50
+)
 @example((3, 0.1, [1, 1, 1, 1], False, 1))
 @seed(170090525894866085979644260693064061602)
 @given(_eviction_scenarios())
@@ -124,9 +124,7 @@ def test_enforce_ram_budget_reduces_usage_property(params):
         for idx in range(drop_at, len(ram_sequence)):
             ram_sequence[idx] = 0.0
 
-    nodes: dict[str, dict[str, object]] = {
-        f"n{i}": {} for i in range(len(reductions) + 2)
-    }
+    nodes: dict[str, dict[str, object]] = {f"n{i}": {} for i in range(len(reductions) + 2)}
     initial_node_count = len(nodes)
     mock_graph = MagicMock()
     mock_graph.nodes = nodes
@@ -176,9 +174,7 @@ def test_enforce_ram_budget_reduces_usage_property(params):
         else None
     )
     limit_gap = (
-        max(0, initial_node_count - deterministic_limit)
-        if deterministic_limit is not None
-        else 0
+        max(0, initial_node_count - deterministic_limit) if deterministic_limit is not None else 0
     )
     expected_evictions = 0 if drop_index is not None else len(reductions)
     max_evictions = initial_node_count

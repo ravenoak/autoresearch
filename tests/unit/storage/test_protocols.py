@@ -44,7 +44,7 @@ def test_init_rdf_store_memory_backend() -> None:
     store = init_rdf_store("memory", "/tmp/test")
     assert isinstance(store, GraphProtocol)
     # Memory backend should have identifier set
-    assert hasattr(store, 'identifier')
+    assert hasattr(store, "identifier")
 
 
 def test_init_rdf_store_invalid_backend() -> None:
@@ -64,6 +64,7 @@ def test_init_rdf_store_oxigraph_missing_driver(tmp_path: Path) -> None:
     # Mock the import check to return None
     import importlib.util
     from typing import Any
+
     original_find_spec = importlib.util.find_spec
 
     def mock_find_spec(name: str, package: str | None = None) -> Any:

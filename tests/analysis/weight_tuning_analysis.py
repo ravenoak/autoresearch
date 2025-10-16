@@ -49,7 +49,9 @@ def _ndcg(relevances: list[float]) -> float:
     return dcg / idcg if idcg else 0.0
 
 
-def _evaluate(weights: tuple[float, float, float], data: dict[str, list[dict[str, float]]]) -> float:
+def _evaluate(
+    weights: tuple[float, float, float], data: dict[str, list[dict[str, float]]]
+) -> float:
     """Return mean NDCG for the given weights."""
     w_sem, w_bm, w_cred = weights
     total = 0.0

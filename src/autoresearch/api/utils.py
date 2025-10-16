@@ -143,10 +143,6 @@ def validate_version(version: str) -> None:
     """
 
     if version in DEPRECATED_VERSIONS:
-        raise HTTPException(
-            status_code=410, detail=f"API version {version} is deprecated"
-        )
+        raise HTTPException(status_code=410, detail=f"API version {version} is deprecated")
     if version not in SUPPORTED_VERSIONS:
-        raise HTTPException(
-            status_code=422, detail=f"Unsupported API version {version}"
-        )
+        raise HTTPException(status_code=422, detail=f"Unsupported API version {version}")

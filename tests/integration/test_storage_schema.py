@@ -73,9 +73,7 @@ def test_initialize_schema_version_without_fetchone() -> None:
         def __init__(self, conn: DuckDBConnectionProtocol):
             self._conn = conn
 
-        def execute(
-            self, sql: str, *args: Any, **kwargs: Any
-        ) -> DuckDBCursorProtocol:
+        def execute(self, sql: str, *args: Any, **kwargs: Any) -> DuckDBCursorProtocol:
             if "schema_version" in sql and "SELECT" in sql:
                 return NoFetchOneResult([])
             return self._conn.execute(sql, *args, **kwargs)

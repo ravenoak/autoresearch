@@ -75,10 +75,12 @@ def _collect_system_metrics() -> Dict[str, Any]:
             metrics.update(_system_monitor.metrics)
         else:
             cpu_percent, memory_percent = SystemMonitor.collect()
-            metrics.update({
-                "cpu_percent": cpu_percent,
-                "memory_percent": memory_percent,
-            })
+            metrics.update(
+                {
+                    "cpu_percent": cpu_percent,
+                    "memory_percent": memory_percent,
+                }
+            )
 
         import psutil
 

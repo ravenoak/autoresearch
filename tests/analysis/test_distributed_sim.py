@@ -16,16 +16,13 @@ def test_message_throughput_scales() -> None:
 def test_scheduling_latency_scales() -> None:
     metrics = {
         w: [
-            distributed_orchestrator_sim.run_simulation(
-                workers=w, tasks=20, network_latency=0.001
-            )
+            distributed_orchestrator_sim.run_simulation(workers=w, tasks=20, network_latency=0.001)
             for _ in range(3)
         ]
         for w in (1, 2, 4)
     }
     latencies = [
-        sum(sample["avg_latency_s"] for sample in metrics[w]) / len(metrics[w])
-        for w in (1, 2, 4)
+        sum(sample["avg_latency_s"] for sample in metrics[w]) / len(metrics[w]) for w in (1, 2, 4)
     ]
     assert latencies[1] <= latencies[0] * 1.05
     assert latencies[2] <= latencies[1] * 1.05

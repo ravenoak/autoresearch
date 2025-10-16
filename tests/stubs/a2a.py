@@ -37,9 +37,7 @@ class A2AClient:
         raise ImportError("A2A SDK not installed")
 
 
-def new_agent_text_message(
-    content: str = "", metadata: dict[str, Any] | None = None
-) -> Message:
+def new_agent_text_message(content: str = "", metadata: dict[str, Any] | None = None) -> Message:
     return Message(content=content, metadata=metadata or {})
 
 

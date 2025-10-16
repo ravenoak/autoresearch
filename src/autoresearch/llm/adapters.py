@@ -163,9 +163,7 @@ class LMStudioAdapter(LLMAdapter):
         The adapter will attempt to discover available models and estimate their context sizes.
         """
         # Allow custom endpoint via env for tests/config
-        self.endpoint = os.getenv(
-            "LMSTUDIO_ENDPOINT", "http://localhost:1234/v1/chat/completions"
-        )
+        self.endpoint = os.getenv("LMSTUDIO_ENDPOINT", "http://localhost:1234/v1/chat/completions")
         timeout_env = os.getenv("LMSTUDIO_TIMEOUT")
         try:
             self.timeout = float(timeout_env) if timeout_env else 300.0
@@ -246,7 +244,7 @@ class LMStudioAdapter(LLMAdapter):
         """
         try:
             # Query LM Studio-specific endpoint for detailed model info
-            base_url = self.endpoint.rsplit('/v1/', 1)[0]  # Remove /v1/chat/completions
+            base_url = self.endpoint.rsplit("/v1/", 1)[0]  # Remove /v1/chat/completions
             api_endpoint = f"{base_url}/api/v0/models/{model_id}"
             session: RequestsSessionProtocol = get_session()
             resp: RequestsResponseProtocol = session.get(api_endpoint, timeout=10.0)
@@ -323,6 +321,7 @@ class LMStudioAdapter(LLMAdapter):
             Estimated token count using best available method
         """
         from .token_counting import count_tokens_accurate
+
         return count_tokens_accurate(prompt, self.validate_model(None), "lmstudio")
 
     def truncate_prompt(self, prompt: str, model: str, max_tokens: int | None = None) -> str:
@@ -368,7 +367,7 @@ class LMStudioAdapter(LLMAdapter):
             return prompt
 
         # Try to truncate at sentence boundaries first
-        sentences = re.split(r'[.!?]+', prompt)
+        sentences = re.split(r"[.!?]+", prompt)
         current_prompt = ""
 
         for sentence in sentences:
@@ -393,7 +392,9 @@ class LMStudioAdapter(LLMAdapter):
 
         return truncated
 
-    def _generate_context_size_suggestion(self, model: str, context_size: int, prompt_tokens: int) -> str:
+    def _generate_context_size_suggestion(
+        self, model: str, context_size: int, prompt_tokens: int
+    ) -> str:
         """Generate intelligent suggestions for context size errors.
 
         Args:
@@ -530,13 +531,18 @@ class LMStudioAdapter(LLMAdapter):
             metrics = self._performance_metrics[model]
 
             # If model performs well with higher token counts, increase factor
-            if metrics.get("success_rate", 0) > 0.9 and metrics.get("avg_tokens", 0) > context_size * 0.7:
+            if (
+                metrics.get("success_rate", 0) > 0.9
+                and metrics.get("avg_tokens", 0) > context_size * 0.7
+            ):
                 base_factor *= 1.05
 
         # Keep factor within reasonable bounds
         return max(0.6, min(base_factor, 1.3))
 
-    def record_token_usage(self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True) -> None:
+    def record_token_usage(
+        self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True
+    ) -> None:
         """Record token usage for adaptive budgeting.
 
         Args:
@@ -544,6 +550,9 @@ class LMStudioAdapter(LLMAdapter):
             prompt_tokens: Number of tokens used in prompt
             response_tokens: Number of tokens generated in response
             success: Whether the request was successful
+
+        Returns:
+            None
         """
         if model not in self._token_usage_history:
             self._token_usage_history[model] = []
@@ -555,7 +564,11 @@ class LMStudioAdapter(LLMAdapter):
 
         # Update performance metrics
         if model not in self._performance_metrics:
-            self._performance_metrics[model] = {"success_count": 0, "total_count": 0, "total_tokens": 0}
+            self._performance_metrics[model] = {
+                "success_count": 0,
+                "total_count": 0,
+                "total_tokens": 0,
+            }
 
         self._performance_metrics[model]["total_count"] += 1
         self._performance_metrics[model]["total_tokens"] += prompt_tokens + response_tokens
@@ -564,8 +577,14 @@ class LMStudioAdapter(LLMAdapter):
             self._performance_metrics[model]["success_count"] += 1
 
         # Calculate derived metrics
-        success_rate = self._performance_metrics[model]["success_count"] / self._performance_metrics[model]["total_count"]
-        avg_tokens = self._performance_metrics[model]["total_tokens"] / self._performance_metrics[model]["total_count"]
+        success_rate = (
+            self._performance_metrics[model]["success_count"]
+            / self._performance_metrics[model]["total_count"]
+        )
+        avg_tokens = (
+            self._performance_metrics[model]["total_tokens"]
+            / self._performance_metrics[model]["total_count"]
+        )
 
         self._performance_metrics[model]["success_rate"] = success_rate
         self._performance_metrics[model]["avg_tokens"] = avg_tokens
@@ -592,7 +611,9 @@ class LMStudioAdapter(LLMAdapter):
         else:
             return {
                 "models": list(self._performance_metrics.keys()),
-                "context_sizes": {m: self.get_context_size(m) for m in self._performance_metrics.keys()},
+                "context_sizes": {
+                    m: self.get_context_size(m) for m in self._performance_metrics.keys()
+                },
                 "performance_metrics": self._performance_metrics,
                 "usage_history": self._token_usage_history,
             }
@@ -602,6 +623,12 @@ class LMStudioAdapter(LLMAdapter):
 
         For LM Studio, we allow any model identifier since LM Studio supports
         various model formats and the API will validate the actual model.
+
+        Args:
+            model: The model identifier to validate, or None to use the default
+
+        Returns:
+            The validated model identifier
         """
         if model:
             return model
@@ -615,9 +642,9 @@ class LMStudioAdapter(LLMAdapter):
         """
         # Determine if we're using actually discovered models vs fallbacks
         using_actual_discovery = (
-            bool(self._discovered_models) and
-            not self._model_discovery_error and
-            self._discovered_models != self._fallback_models
+            bool(self._discovered_models)
+            and not self._model_discovery_error
+            and self._discovered_models != self._fallback_models
         )
 
         return {
@@ -656,6 +683,7 @@ class LMStudioAdapter(LLMAdapter):
             if truncated_prompt != prompt:
                 # Use truncated prompt but log the warning
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Prompt truncated for model {model}: {warning}")
 
@@ -682,7 +710,11 @@ class LMStudioAdapter(LLMAdapter):
             detail: Dict[str, Any] = {
                 "status_code": exc.response.status_code if exc.response is not None else None,
                 "response_text": (
-                    exc.response.text[:500] if exc.response is not None and hasattr(exc.response, 'text') and exc.response.text else ""
+                    exc.response.text[:500]
+                    if exc.response is not None
+                    and hasattr(exc.response, "text")
+                    and exc.response.text
+                    else ""
                 ),
                 "payload_keys": list(payload.keys()),
                 "context_size": self.get_context_size(model),
@@ -694,15 +726,25 @@ class LMStudioAdapter(LLMAdapter):
             context_size = detail.get("context_size", self.get_context_size(model))
             prompt_tokens = detail.get("estimated_prompt_tokens", 0)
 
-            if any(keyword in response_text.lower() for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]):
+            if any(
+                keyword in response_text.lower()
+                for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]
+            ):
                 # This is likely a context size error - provide intelligent recovery suggestions
-                suggestion = self._generate_context_size_suggestion(model, context_size, prompt_tokens)
-            elif "rate limit" in response_text.lower() or "too many requests" in response_text.lower():
+                suggestion = self._generate_context_size_suggestion(
+                    model, context_size, prompt_tokens
+                )
+            elif (
+                "rate limit" in response_text.lower()
+                or "too many requests" in response_text.lower()
+            ):
                 suggestion = (
                     "Rate limit exceeded. Please wait a moment before retrying, "
                     "or consider using a different model with higher rate limits."
                 )
-            elif "model" in response_text.lower() and ("not found" in response_text.lower() or "unavailable" in response_text.lower()):
+            elif "model" in response_text.lower() and (
+                "not found" in response_text.lower() or "unavailable" in response_text.lower()
+            ):
                 suggestion = (
                     f"Model '{model}' is not available or not loaded in LM Studio. "
                     "Please ensure the model is properly loaded in LM Studio, or select a different model."
@@ -749,14 +791,20 @@ class LMStudioAdapter(LLMAdapter):
 
         return generated_text
 
-    def _get_intelligent_fallback(self, config, agent_name: str) -> str:
+    def _get_intelligent_fallback(self, config: Any, agent_name: str) -> str:
         """Get intelligent fallback model based on available models and context."""
         # If using LM Studio, try to get a model from discovery
-        if config is not None and hasattr(config, 'llm_backend') and config.llm_backend == "lmstudio":
+        if (
+            config is not None
+            and hasattr(config, "llm_backend")
+            and config.llm_backend == "lmstudio"
+        ):
             try:
                 model_info = self.get_model_info()
 
-                if model_info.get("using_discovered", False) and model_info.get("discovered_models"):
+                if model_info.get("using_discovered", False) and model_info.get(
+                    "discovered_models"
+                ):
                     discovered_models = model_info["discovered_models"]
 
                     # Prefer models with larger context sizes
@@ -773,13 +821,13 @@ class LMStudioAdapter(LLMAdapter):
                             continue
 
                     if best_model:
-                        return best_model
+                        return str(best_model)
 
             except Exception as e:
                 logger.debug(f"Intelligent fallback discovery failed: {e}")
 
         # Fallback to conservative defaults based on backend
-        if config is not None and hasattr(config, 'llm_backend'):
+        if config is not None and hasattr(config, "llm_backend"):
             if config.llm_backend == "lmstudio":
                 return "mistral"  # Conservative LM Studio default
             elif config.llm_backend == "openai":
@@ -817,9 +865,7 @@ class OpenAIAdapter(LLMAdapter):
         The endpoint can be customized using the OPENAI_ENDPOINT environment variable.
         """
         self.api_key = os.getenv("OPENAI_API_KEY", "")
-        self.endpoint = os.getenv(
-            "OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions"
-        )
+        self.endpoint = os.getenv("OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions")
 
         # Cache for model context sizes
         self._context_cache: dict[str, int] = {}
@@ -836,6 +882,7 @@ class OpenAIAdapter(LLMAdapter):
         """
         # Check cache first (5 minute TTL)
         import time
+
         current_time = time.time()
         if model in self._context_cache:
             cache_time = self._context_cache_ttl.get(model, 0)
@@ -858,6 +905,7 @@ class OpenAIAdapter(LLMAdapter):
                 context_size = 4096
 
         # Cache the result
+        assert context_size is not None  # Should be set above
         self._context_cache[model] = context_size
         self._context_cache_ttl[model] = current_time
 
@@ -873,6 +921,7 @@ class OpenAIAdapter(LLMAdapter):
             Estimated token count using tiktoken when available
         """
         from .token_counting import count_tokens_accurate
+
         return count_tokens_accurate(prompt, self.validate_model(None), "openai")
 
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
@@ -895,9 +944,9 @@ class OpenAIAdapter(LLMAdapter):
             from ..errors import LLMError
 
             raise LLMError(
-                "OpenAI API key not found",
+                "OpenRouter API key not found",
                 model=model,
-                suggestion="Set the OPENAI_API_KEY environment variable with your API key",
+                suggestion="Set the OPENROUTER_API_KEY environment variable with your API key",
             )
 
         try:
@@ -964,7 +1013,10 @@ class OpenRouterAdapter(LLMAdapter):
         self._context_cache_ttl: dict[str, float] = {}
 
         # Configurable cache TTL (default: 1 hour)
-        self._cache_ttl = int(os.getenv("OPENROUTER_CACHE_TTL", "3600"))  # seconds
+        try:
+            self._cache_ttl = int(os.getenv("OPENROUTER_CACHE_TTL", "3600"))  # seconds
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            self._cache_ttl = 3600
 
         # Configurable timeout (default: 60 seconds)
         timeout_env = os.getenv("OPENROUTER_TIMEOUT")
@@ -1031,6 +1083,7 @@ class OpenRouterAdapter(LLMAdapter):
         """
         # Check cache first (configurable TTL)
         import time
+
         current_time = time.time()
         if model in self._model_context_sizes:
             cache_time = self._context_cache_ttl.get(model, 0)
@@ -1145,11 +1198,11 @@ class OpenRouterAdapter(LLMAdapter):
         truncated = prompt[:max_chars]
 
         # Try to end at a sentence boundary if possible
-        last_period = truncated.rfind('.')
-        last_newline = truncated.rfind('\n')
+        last_period = truncated.rfind(".")
+        last_newline = truncated.rfind("\n")
 
         if last_period > max_chars * 0.8:  # If period is in last 20% of allowed chars
-            return truncated[:last_period + 1]
+            return truncated[: last_period + 1]
         elif last_newline > max_chars * 0.8:  # If newline is in last 20% of allowed chars
             return truncated[:last_newline]
 
@@ -1199,9 +1252,9 @@ class OpenRouterAdapter(LLMAdapter):
         elif context_size > 50000:
             base_factor *= 0.85  # Large models
         elif context_size > 10000:
-            base_factor *= 0.8   # Medium models
+            base_factor *= 0.8  # Medium models
         else:
-            base_factor *= 0.7   # Small models
+            base_factor *= 0.7  # Small models
 
         # Adjust based on usage history (if we have data)
         if model in self._token_usage_history:
@@ -1216,7 +1269,9 @@ class OpenRouterAdapter(LLMAdapter):
         # Ensure factor stays within reasonable bounds
         return max(0.5, min(1.0, base_factor))
 
-    def record_token_usage(self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True) -> None:
+    def record_token_usage(
+        self, model: str, prompt_tokens: int, response_tokens: int, success: bool = True
+    ) -> None:
         """Record token usage for adaptive budgeting.
 
         Args:
@@ -1224,6 +1279,9 @@ class OpenRouterAdapter(LLMAdapter):
             prompt_tokens: Number of tokens in the prompt
             response_tokens: Number of tokens in the response
             success: Whether the generation was successful
+
+        Returns:
+            None
         """
         if model not in self._token_usage_history:
             self._token_usage_history[model] = []
@@ -1336,14 +1394,16 @@ class OpenRouterAdapter(LLMAdapter):
                     break
 
                 # Calculate delay with exponential backoff
-                delay = min(base_delay * (2 ** attempt), max_delay)
+                delay = min(base_delay * (2**attempt), max_delay)
 
                 # Check for Retry-After header
                 retry_after = self._get_retry_after_header(e)
                 if retry_after:
                     delay = max(delay, retry_after)
 
-                logger.warning(f"OpenRouter API error on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay}s...")
+                logger.warning(
+                    f"OpenRouter API error on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay}s..."
+                )
                 time.sleep(delay)
 
         # All retries failed, raise the last exception
@@ -1370,7 +1430,7 @@ class OpenRouterAdapter(LLMAdapter):
         Raises:
             requests.RequestException: If the API call fails
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
         }
@@ -1437,7 +1497,10 @@ class OpenRouterAdapter(LLMAdapter):
         response_text = detail["response_text"]
         context_size = detail.get("context_size", self.get_context_size(model))
 
-        if any(keyword in response_text.lower() for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]):
+        if any(
+            keyword in response_text.lower()
+            for keyword in ["context", "token", "length", "size", "exceed", "maximum", "limit"]
+        ):
             # This is likely a context size error - provide intelligent recovery suggestions
             suggestion = self._generate_context_size_suggestion(model, context_size, 0)
         elif "rate limit" in response_text.lower() or "too many requests" in response_text.lower():
@@ -1445,7 +1508,9 @@ class OpenRouterAdapter(LLMAdapter):
                 "Rate limit exceeded. Please wait a moment before retrying, "
                 "or consider using a different model with higher rate limits."
             )
-        elif "model" in response_text.lower() and ("not found" in response_text.lower() or "unavailable" in response_text.lower()):
+        elif "model" in response_text.lower() and (
+            "not found" in response_text.lower() or "unavailable" in response_text.lower()
+        ):
             suggestion = (
                 f"Model '{model}' is not available or not loaded in OpenRouter. "
                 "Please ensure the model is properly configured, or select a different model."
@@ -1455,11 +1520,15 @@ class OpenRouterAdapter(LLMAdapter):
             suggestion = self._get_standard_error_suggestion(status_code, model, error_message)
 
         # Create a new HTTPError with enhanced message
-        from requests import HTTPError
-        http_error = HTTPError(f"{error_message}. {suggestion}", response=response)
+        from requests.exceptions import HTTPError
+        from typing import cast, Any
+
+        http_error = HTTPError(f"{error_message}. {suggestion}", response=cast(Any, response))
         raise http_error
 
-    def _generate_context_size_suggestion(self, model: str, context_size: int, prompt_tokens: int) -> str:
+    def _generate_context_size_suggestion(
+        self, model: str, context_size: int, prompt_tokens: int
+    ) -> str:
         """Generate intelligent suggestions for context size errors.
 
         Args:
@@ -1483,7 +1552,9 @@ class OpenRouterAdapter(LLMAdapter):
                 "Try using a model with larger context window or reducing prompt size."
             )
 
-    def _get_standard_error_suggestion(self, status_code: int, model: str, error_message: str) -> str:
+    def _get_standard_error_suggestion(
+        self, status_code: int, model: str, error_message: str
+    ) -> str:
         """Get standard error suggestions for common error codes.
 
         Args:
@@ -1528,20 +1599,27 @@ class OpenRouterAdapter(LLMAdapter):
         Returns:
             True if the error should be retried
         """
-        if isinstance(exception, requests.HTTPError):
+        from requests.exceptions import HTTPError, ConnectionError, Timeout
+
+        if isinstance(exception, HTTPError):
             response = exception.response
             if response:
                 status_code = response.status_code
                 # Retry on rate limits (429), server errors (5xx), and some client errors (4xx)
-                return status_code == 429 or (500 <= status_code < 600) or status_code in (408, 502, 503, 504)
+                return (
+                    status_code == 429
+                    or (500 <= status_code < 600)
+                    or status_code in (408, 502, 503, 504)
+                )
 
         # Retry on connection errors, timeouts, etc.
-        return isinstance(exception, (
-            requests.ConnectionError,
-            requests.Timeout,
-            requests.ConnectTimeout,
-            requests.ReadTimeout,
-        ))
+        return isinstance(
+            exception,
+            (
+                ConnectionError,
+                Timeout,
+            ),
+        )
 
     def _get_retry_after_header(self, exception: requests.RequestException) -> float | None:
         """Get retry delay from Retry-After header if present.
@@ -1552,7 +1630,9 @@ class OpenRouterAdapter(LLMAdapter):
         Returns:
             Delay in seconds, or None if not available
         """
-        if isinstance(exception, requests.HTTPError) and exception.response:
+        from requests.exceptions import HTTPError
+
+        if isinstance(exception, HTTPError) and exception.response:
             retry_after = exception.response.headers.get("Retry-After")
             if retry_after:
                 try:
@@ -1588,5 +1668,7 @@ class OpenRouterAdapter(LLMAdapter):
 
         # For now, fall back to non-streaming generation
         # TODO: Implement full streaming support with Server-Sent Events
-        logger.warning("Streaming not fully implemented for OpenRouter, falling back to regular generation")
+        logger.warning(
+            "Streaming not fully implemented for OpenRouter, falling back to regular generation"
+        )
         return self._generate_with_retries(prompt, model, **kwargs)

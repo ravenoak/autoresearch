@@ -144,12 +144,8 @@ def test_calculate_semantic_similarity(sample_results):
     mock_transformer.encode = mock_embed
 
     # Patch the get_sentence_transformer method
-    with patch.object(
-        Search, "get_sentence_transformer", return_value=mock_transformer
-    ):
-        scores = Search.calculate_semantic_similarity(
-            "python programming", sample_results
-        )
+    with patch.object(Search, "get_sentence_transformer", return_value=mock_transformer):
+        scores = Search.calculate_semantic_similarity("python programming", sample_results)
 
     # Check that scores are in the expected range
     assert all(0 <= score <= 1 for score in scores)
@@ -182,21 +178,15 @@ def test_assess_source_credibility(sample_results):
     assert all(0 <= score <= 1 for score in scores)
 
     # Check that Wikipedia has a high credibility score
-    wikipedia_index = next(
-        i for i, r in enumerate(sample_results) if "wikipedia.org" in r["url"]
-    )
+    wikipedia_index = next(i for i, r in enumerate(sample_results) if "wikipedia.org" in r["url"])
     assert scores[wikipedia_index] > 0.8
 
     # Check that python.org has a good credibility score
-    python_index = next(
-        i for i, r in enumerate(sample_results) if "python.org" in r["url"]
-    )
+    python_index = next(i for i, r in enumerate(sample_results) if "python.org" in r["url"])
     assert scores[python_index] >= 0.5
 
     # Check that unknown domains have a default score
-    unknown_index = next(
-        i for i, r in enumerate(sample_results) if "example.com" in r["url"]
-    )
+    unknown_index = next(i for i, r in enumerate(sample_results) if "example.com" in r["url"])
     assert scores[unknown_index] == 0.5
 
 
@@ -212,19 +202,14 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
             "calculate_bm25_scores",
             staticmethod(lambda q, d: [0.8, 0.6, 0.9, 0.1]),
         ),
-        patch.object(
-            Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]
-        ),
-        patch.object(
-            Search, "assess_source_credibility", return_value=[0.7, 0.5, 0.9, 0.5]
-        ),
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]),
+        patch.object(Search, "assess_source_credibility", return_value=[0.7, 0.5, 0.9, 0.5]),
     ):
         ranked_results = Search.rank_results("python programming", sample_results)
 
     # Check that results are ranked in the expected order
     assert (
-        ranked_results[0]["url"]
-        == "https://en.wikipedia.org/wiki/Python_(programming_language)"
+        ranked_results[0]["url"] == "https://en.wikipedia.org/wiki/Python_(programming_language)"
     )  # Highest overall score
     assert ranked_results[1]["url"] == "https://python.org"  # Second highest
     assert ranked_results[2]["url"] == "https://example.com/python"  # Third
@@ -238,9 +223,7 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_with_disabled_features(
-    mock_get_config, mock_config, sample_results
-):
+def test_rank_results_with_disabled_features(mock_get_config, mock_config, sample_results):
     """Test ranking with some features disabled."""
     # Disable BM25 and source credibility
     mock_config.search.use_bm25 = False
@@ -248,15 +231,12 @@ def test_rank_results_with_disabled_features(
     mock_get_config.return_value = mock_config
 
     # Mock the semantic similarity method to return predictable scores
-    with patch.object(
-        Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]
-    ):
+    with patch.object(Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]):
         ranked_results = Search.rank_results("python programming", sample_results)
 
     # Check that results are ranked based only on semantic similarity
     assert (
-        ranked_results[0]["url"]
-        == "https://en.wikipedia.org/wiki/Python_(programming_language)"
+        ranked_results[0]["url"] == "https://en.wikipedia.org/wiki/Python_(programming_language)"
     )  # Highest semantic score
     assert ranked_results[1]["url"] == "https://python.org"  # Second highest
     assert ranked_results[2]["url"] == "https://example.com/python"  # Third
@@ -270,9 +250,7 @@ def test_rank_results_with_disabled_features(
 @patch("autoresearch.search.core.get_config")
 @patch("autoresearch.search.core.BM25_AVAILABLE", False)
 @patch("autoresearch.search.core.SENTENCE_TRANSFORMERS_AVAILABLE", False)
-@patch(
-    "autoresearch.search.core._try_import_sentence_transformers", return_value=False
-)
+@patch("autoresearch.search.core._try_import_sentence_transformers", return_value=False)
 def test_rank_results_with_unavailable_libraries(
     _mock_try_import, mock_get_config, mock_config, sample_results
 ):
@@ -305,7 +283,7 @@ def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_
             staticmethod(lambda q, d: [0.1, 0.9, 0.1, 0.1]),
         ),
         patch.object(Search, "calculate_semantic_similarity", return_value=[0.9, 0.1, 0.2, 0.3]),
-        patch.object(Search, "assess_source_credibility", return_value=[1.0]*4),
+        patch.object(Search, "assess_source_credibility", return_value=[1.0] * 4),
     ):
         ranked_results = Search.rank_results("test query", sample_results)
 
@@ -336,9 +314,7 @@ def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
 
 
 @patch("autoresearch.search.core.get_config")
-def test_rank_results_patched_bm25_function(
-    mock_get_config, mock_config, sample_results
-):
+def test_rank_results_patched_bm25_function(mock_get_config, mock_config, sample_results):
     """`rank_results` should pass both query and documents to BM25 scorer."""
     mock_config.search.bm25_weight = 1.0
     mock_config.search.semantic_similarity_weight = 0.0
@@ -387,15 +363,9 @@ def test_rank_results_sorted(mock_config, data):
         }
         for i in range(n)
     ]
-    bm25 = data.draw(
-        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
-    )
-    semantic = data.draw(
-        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
-    )
-    credibility = data.draw(
-        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
-    )
+    bm25 = data.draw(st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n))
+    semantic = data.draw(st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n))
+    credibility = data.draw(st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n))
     with (
         patch("autoresearch.search.core.get_config", return_value=mock_config),
         patch.object(
@@ -430,8 +400,7 @@ def test_external_lookup_uses_cache(texts, namespace):
     Coverage traces to ``docs/algorithms/cache.md`` and ``SPEC_COVERAGE.md``.
     """
     results = [
-        {"title": t, "url": f"https://example.com/{i}", "snippet": "s"}
-        for i, t in enumerate(texts)
+        {"title": t, "url": f"https://example.com/{i}", "snippet": "s"} for i, t in enumerate(texts)
     ]
     backend = MagicMock(return_value=results)
     raw_query = "  Mixed Case Query  "
@@ -467,9 +436,7 @@ def test_external_lookup_uses_cache(texts, namespace):
 
             search._cache_documents = _record_cache_documents
             try:
-                bundle = search.external_lookup(
-                    raw_query, max_results=3, return_handles=True
-                )
+                bundle = search.external_lookup(raw_query, max_results=3, return_handles=True)
                 canonical_payload = {
                     "text": raw_query,
                     "raw_query": bundle.raw_query,

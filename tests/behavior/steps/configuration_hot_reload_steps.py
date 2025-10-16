@@ -119,9 +119,7 @@ def check_agents_match(start_application: ConfigModel):
     assert start_application.agents == file_cfg.agents
 
 
-@scenario(
-    "../features/configuration_hot_reload.feature", "Load configuration on startup"
-)
+@scenario("../features/configuration_hot_reload.feature", "Load configuration on startup")
 def test_load_config_startup():
     pass
 
@@ -145,4 +143,3 @@ def test_ignore_invalid_config():
 )
 def test_hot_reload_loops():
     """Scenario: changing loop count triggers a reload."""
-    pass

@@ -84,7 +84,9 @@ def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
             import structlog as _structlog
 
             # Temporarily relax structlog filtering to DEBUG
-            _structlog.configure(wrapper_class=_structlog.make_filtering_bound_logger(_logging.DEBUG))
+            _structlog.configure(
+                wrapper_class=_structlog.make_filtering_bound_logger(_logging.DEBUG)
+            )
             try:
                 log.debug(
                     "gpu_metrics_dependency_missing",
@@ -95,7 +97,9 @@ def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
                 )
             finally:
                 # Restore filtering to INFO (project default)
-                _structlog.configure(wrapper_class=_structlog.make_filtering_bound_logger(_logging.INFO))
+                _structlog.configure(
+                    wrapper_class=_structlog.make_filtering_bound_logger(_logging.INFO)
+                )
         else:
             log.debug(
                 "gpu_metrics_dependency_missing",
@@ -147,9 +151,7 @@ def _get_gpu_stats() -> tuple[float, float]:
                     util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                     mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
                     util_samples.extend(_flatten_numeric(getattr(util, "gpu", 0.0)))
-                    mem_samples.extend(
-                        _flatten_numeric(_coerce_float(mem.used) / (1024 * 1024))
-                    )
+                    mem_samples.extend(_flatten_numeric(_coerce_float(mem.used) / (1024 * 1024)))
                 avg_util = sum(util_samples) / len(util_samples) if util_samples else 0.0
                 total_mem = sum(mem_samples)
                 return avg_util, total_mem

@@ -35,9 +35,7 @@ else:
     set_cli_invocation = _context.set_cli_invocation
     set_value = _context.set_value
 
-    _common_steps = importlib.import_module(
-        "tests.behavior.steps.common_steps"
-    )
+    _common_steps = importlib.import_module("tests.behavior.steps.common_steps")
     app_running = _common_steps.app_running
     app_running_with_default = _common_steps.app_running_with_default
     application_running = _common_steps.application_running

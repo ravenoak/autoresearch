@@ -25,6 +25,4 @@ def test_no_unused_imports_or_whitespace_regressions() -> None:
 
     report = style.check_files(targets)
 
-    assert (
-        report.total_errors == 0
-    ), f"flake8 reported {report.total_errors} issues for {targets}"
+    assert report.total_errors == 0, f"flake8 reported {report.total_errors} issues for {targets}"

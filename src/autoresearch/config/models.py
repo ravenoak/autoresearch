@@ -520,6 +520,7 @@ class AnalysisConfig(BaseModel):
 
 class ContextOverflowStrategy(str, Enum):
     """Strategy for handling context overflow."""
+
     TRUNCATE = "truncate"
     CHUNK = "chunk"
     ERROR = "error"
@@ -529,45 +530,27 @@ class ContextConfig(BaseModel):
     """Configuration for context size management."""
 
     overflow_strategy: ContextOverflowStrategy = Field(
-        default=ContextOverflowStrategy.TRUNCATE,
-        description="Strategy when prompt exceeds context"
+        default=ContextOverflowStrategy.TRUNCATE, description="Strategy when prompt exceeds context"
     )
 
     response_reserve_tokens: int = Field(
-        default=512,
-        ge=128,
-        description="Tokens reserved for model response"
+        default=512, ge=128, description="Tokens reserved for model response"
     )
 
     accurate_counting: bool = Field(
-        default=True,
-        description="Use tiktoken for accurate token counting (when available)"
+        default=True, description="Use tiktoken for accurate token counting (when available)"
     )
 
-    max_chunks: int = Field(
-        default=5,
-        ge=1,
-        le=20,
-        description="Maximum chunks for large prompts"
-    )
+    max_chunks: int = Field(default=5, ge=1, le=20, description="Maximum chunks for large prompts")
 
-    chunk_overlap: int = Field(
-        default=100,
-        ge=0,
-        description="Token overlap between chunks"
-    )
+    chunk_overlap: int = Field(default=100, ge=0, description="Token overlap between chunks")
 
     cache_ttl_seconds: int = Field(
-        default=300,
-        ge=60,
-        description="TTL for cached context size info"
+        default=300, ge=60, description="TTL for cached context size info"
     )
 
     chars_per_token: int = Field(
-        default=4,
-        ge=1,
-        le=10,
-        description="Character-to-token ratio for approximation"
+        default=4, ge=1, le=10, description="Character-to-token ratio for approximation"
     )
 
 
@@ -678,9 +661,7 @@ class ConfigModel(SupportsModelCopyMixin):
         default=0.25,
         ge=0.0,
         le=1.0,
-        description=(
-            "Weighted contradiction score from the knowledge graph that triggers debate."
-        ),
+        description=("Weighted contradiction score from the knowledge graph that triggers debate."),
     )
     gate_graph_similarity_threshold: float = Field(
         default=0.0,
@@ -694,9 +675,7 @@ class ConfigModel(SupportsModelCopyMixin):
         default=0.7,
         ge=0.0,
         le=1.0,
-        description=(
-            "Minimum agreement score among scout samples required to skip debate."
-        ),
+        description=("Minimum agreement score among scout samples required to skip debate."),
     )
     gate_user_overrides: Dict[str, Any] = Field(
         default_factory=dict,

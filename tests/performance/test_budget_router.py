@@ -183,9 +183,7 @@ def test_state_override_consumed_by_metrics(tmp_path) -> None:
     metrics.apply_model_routing("Synthesizer", config, state)
 
     overrides = [
-        override
-        for override in metrics.routing_override_requests
-        if override.source == "planner"
+        override for override in metrics.routing_override_requests if override.source == "planner"
     ]
     assert overrides
     assert overrides[0].requested_model == "premium"

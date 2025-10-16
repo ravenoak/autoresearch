@@ -24,9 +24,7 @@ def _setup(monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel) -> ConfigModel:
 
 
 @pytest.mark.slow
-def test_query_stream_param(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_query_stream_param(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/query should stream when stream=true is passed."""
 
     def dummy_run_query(
@@ -53,9 +51,7 @@ def test_query_stream_param(
 
 
 @pytest.mark.slow
-def test_long_running_stream(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_long_running_stream(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """Streaming should handle long running operations without timing out."""
 
     def long_run_query(
@@ -167,9 +163,7 @@ def test_webhook_retry(
 
 
 @pytest.mark.slow
-def test_batch_query_pagination(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_batch_query_pagination(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/query/batch should honor page and page_size parameters."""
 
     cfg = ConfigModel(api=APIConfig())
@@ -194,9 +188,7 @@ def test_batch_query_pagination(
 
 
 @pytest.mark.slow
-def test_batch_query_defaults(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_batch_query_defaults(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/query/batch should use default pagination when params are omitted."""
 
     cfg = ConfigModel(api=APIConfig())
@@ -219,9 +211,7 @@ def test_batch_query_defaults(
     assert [r["answer"] for r in data["results"]] == ["a", "b", "c"]
 
 
-def test_api_key_roles_integration(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_api_key_roles_integration(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """Requests should succeed only with valid API keys."""
 
     cfg = ConfigModel(api=APIConfig(api_keys={"secret": "admin"}))
@@ -245,9 +235,7 @@ def test_api_key_roles_integration(
     assert bad.json()["detail"] == "Invalid API key"
 
 
-def test_stream_requires_api_key(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_stream_requires_api_key(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/query/stream rejects requests lacking a valid API key."""
 
     def dummy_run_query(
@@ -281,9 +269,7 @@ def test_stream_requires_api_key(
     assert bad.headers["WWW-Authenticate"] == "API-Key"
 
 
-def test_batch_query_async_order(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_batch_query_async_order(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/query/batch should process queries concurrently while preserving order."""
 
     cfg = ConfigModel(api=APIConfig())

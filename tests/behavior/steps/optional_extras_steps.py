@@ -15,9 +15,7 @@ scenarios("../features/optional_extras.feature")
 
 
 @when(parsers.parse("I check {extra} extra"))
-def check_extra(
-    extra: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def check_extra(extra: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Validate that a given optional extra functions correctly."""
     if extra == "nlp":
         spacy = import_or_skip("spacy")
@@ -45,9 +43,7 @@ def check_extra(
     elif extra == "distributed":
         redis = import_or_skip("redis")
         fakeredis = import_or_skip("fakeredis")
-        monkeypatch.setattr(
-            redis.Redis, "from_url", lambda *a, **k: fakeredis.FakeRedis()
-        )
+        monkeypatch.setattr(redis.Redis, "from_url", lambda *a, **k: fakeredis.FakeRedis())
         broker = RedisBroker()
         broker.publish(STOP_MESSAGE)
         message: BrokerMessage = broker.queue.get()
@@ -88,4 +84,3 @@ def check_extra(
 @then("the extra is functional")
 def extra_functional() -> None:
     """Placeholder assertion for the extra check."""
-    pass

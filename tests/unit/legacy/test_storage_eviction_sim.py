@@ -16,9 +16,7 @@ def test_eviction_removes_nodes_when_over_budget():
     with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
         remaining, _ = cast(
             Tuple[int, Dict[str, float]],
-            _run(
-                threads=2, items=2, policy="lru", scenario="normal", return_metrics=True
-            ),
+            _run(threads=2, items=2, policy="lru", scenario="normal", return_metrics=True),
         )
     assert remaining == 0
 

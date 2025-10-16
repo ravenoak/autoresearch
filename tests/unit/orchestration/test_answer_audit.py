@@ -23,11 +23,13 @@ def _make_state(
 
     state = QueryState(query="structured warnings smoke test")
     state.results["final_answer"] = answer
-    state.claims.append({
-        "id": claim_id,
-        "content": claim_text,
-        "audit": {"claim_id": claim_id, "status": claim_status.value},
-    })
+    state.claims.append(
+        {
+            "id": claim_id,
+            "content": claim_text,
+            "audit": {"claim_id": claim_id, "status": claim_status.value},
+        }
+    )
     state.claim_audits.append(
         {
             "claim_id": claim_id,

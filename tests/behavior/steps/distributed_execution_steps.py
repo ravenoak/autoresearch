@@ -51,7 +51,6 @@ def _get_distributed_artifacts(bdd_context: BehaviorContext) -> DistributedArtif
 @scenario("../features/distributed_execution.feature", "Run distributed query with Ray executor")
 def test_ray_executor(bdd_context: BehaviorContext):
     """Run distributed query with Ray executor."""
-    pass
 
 
 @pytest.mark.slow
@@ -59,7 +58,6 @@ def test_ray_executor(bdd_context: BehaviorContext):
 @scenario("../features/distributed_execution.feature", "Run distributed query with multiprocessing")
 def test_process_executor(bdd_context: BehaviorContext):
     """Run distributed query with multiprocessing."""
-    pass
 
 
 # Fixtures and steps
@@ -75,7 +73,9 @@ def mock_agents(monkeypatch: pytest.MonkeyPatch, pids: list[int]) -> None:
             self.name = name
             self._pids = pid_list
 
-        def can_execute(self, state: QueryState, config: ConfigModel) -> bool:  # pragma: no cover - dummy
+        def can_execute(
+            self, state: QueryState, config: ConfigModel
+        ) -> bool:  # pragma: no cover - dummy
             return True
 
         def execute(
@@ -108,6 +108,7 @@ def config_ray(tmp_path: Path, bdd_context: BehaviorContext, pids: list[int]) ->
     )
     # Ensure required ray APIs exist in the test stub
     import ray as ray_module
+
     if not hasattr(ray_module, "put"):
         pytest.skip("Ray not available in test environment")
     bdd_context["distributed"] = DistributedArtifacts(

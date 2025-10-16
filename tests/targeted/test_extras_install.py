@@ -25,7 +25,9 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
             raise TypeError("import_or_skip attribute is not callable")
         import_or_skip = cast(Callable[[str], ModuleType], attr)
     else:
-        raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
+        raise ModuleNotFoundError(
+            "Could not import tests.optional_imports via direct path fallback"
+        )
 else:
     import_or_skip = cast(Callable[[str], ModuleType], _import_or_skip)
 
@@ -97,9 +99,7 @@ def test_llm_extra_imports() -> None:
     except Exception as exc:  # pragma: no cover - environment-specific
         pytest.skip(str(exc))
 
-    assert any(
-        hasattr(fastembed, attr) for attr in ("OnnxTextEmbedding", "TextEmbedding")
-    )
+    assert any(hasattr(fastembed, attr) for attr in ("OnnxTextEmbedding", "TextEmbedding"))
     assert hasattr(dspy, "__version__")
 
 

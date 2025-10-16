@@ -52,7 +52,11 @@ def simulate(workers: int = 4, increments: int = 1000) -> CoordinationMetrics:
     expected = workers * increments
     success = counter.value == expected
     out_path = Path(__file__).with_name("agent_coordination_metrics.json")
-    metrics: CoordinationMetrics = {"final": counter.value, "expected": expected, "success": success}
+    metrics: CoordinationMetrics = {
+        "final": counter.value,
+        "expected": expected,
+        "success": success,
+    }
     _write_metrics(out_path, metrics)
     return metrics
 

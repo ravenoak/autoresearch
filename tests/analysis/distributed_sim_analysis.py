@@ -23,30 +23,23 @@ if TYPE_CHECKING:
     class Axes(Protocol):
         """Subset of matplotlib ``Axes`` used for plotting."""
 
-        def plot(self, x: Sequence[float], y: Sequence[float], **kwargs: object) -> object:
-            ...
+        def plot(self, x: Sequence[float], y: Sequence[float], **kwargs: object) -> object: ...
 
-        def set_xlabel(self, label: str) -> None:
-            ...
+        def set_xlabel(self, label: str) -> None: ...
 
-        def set_ylabel(self, label: str) -> None:
-            ...
+        def set_ylabel(self, label: str) -> None: ...
 
-        def set_title(self, label: str) -> None:
-            ...
+        def set_title(self, label: str) -> None: ...
 
     class Figure(Protocol):
         """Subset of matplotlib ``Figure`` used for persistence."""
 
-        def savefig(self, fname: str | Path, **kwargs: object) -> None:
-            ...
+        def savefig(self, fname: str | Path, **kwargs: object) -> None: ...
 
     class _PyplotModule(Protocol):
-        def subplots(self) -> tuple[Figure, Axes]:
-            ...
+        def subplots(self) -> tuple[Figure, Axes]: ...
 
-        def close(self, figure: Figure) -> None:
-            ...
+        def close(self, figure: Figure) -> None: ...
 
 
 def _load_pyplot() -> "_PyplotModule | None":
@@ -78,8 +71,7 @@ def run() -> dict[int, SimulationMetrics]:
     results: dict[int, SimulationMetrics] = {}
     for workers in (1, 2, 4):
         samples = [
-            distributed_sim.run_simulation(workers=workers, messages=100, loops=5)
-            for _ in range(3)
+            distributed_sim.run_simulation(workers=workers, messages=100, loops=5) for _ in range(3)
         ]
         results[workers] = {
             "throughput": sum(sample["throughput"] for sample in samples) / len(samples),

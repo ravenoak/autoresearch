@@ -21,9 +21,7 @@ class _MixinHarness(ClaimGeneratorMixin):
 
 def test_expand_retrieval_queries_generates_contextual_variations() -> None:
     claim = "The Eiffel Tower is located in Paris."
-    expansions = expand_retrieval_queries(
-        claim, base_query="France landmarks", max_variations=4
-    )
+    expansions = expand_retrieval_queries(claim, base_query="France landmarks", max_variations=4)
     assert expansions
     assert expansions[0] == claim
     assert any("supporting" in variant for variant in expansions)

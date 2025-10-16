@@ -114,9 +114,7 @@ def enter_markdown_query(
 def check_markdown_rendering(bdd_context: BehaviorContext) -> None:
     """Check that the answer is displayed with the expected Markdown text."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     query_response = get_required(bdd_context, "query_response", QueryResponse)
 
     markdown_calls: list[str] = []
@@ -128,15 +126,11 @@ def check_markdown_rendering(bdd_context: BehaviorContext) -> None:
     assert query_response.answer in markdown_calls
 
 
-@then(
-    "formatting elements like headers, lists, and code blocks should be properly styled"
-)
+@then("formatting elements like headers, lists, and code blocks should be properly styled")
 def check_formatting_elements(bdd_context: BehaviorContext) -> None:
     """Check that formatting elements are properly styled."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     markdown_calls: list[str] = []
     for call_args in streamlit_mocks.markdown.call_args_list:
         if not call_args.args:
@@ -152,9 +146,7 @@ def check_formatting_elements(bdd_context: BehaviorContext) -> None:
 def check_math_rendering(bdd_context: BehaviorContext) -> None:
     """Check that math expressions in LaTeX format are properly rendered."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     markdown_calls: list[str] = []
     for call_args in streamlit_mocks.markdown.call_args_list:
         if not call_args.args:
@@ -186,21 +178,15 @@ def run_query_in_streamlit(bdd_context: BehaviorContext) -> None:
 def check_tabbed_interface(bdd_context: BehaviorContext) -> None:
     """Check that the results are displayed in a tabbed interface."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     streamlit_mocks.tabs.assert_called_once()
 
 
-@then(
-    'there should be tabs for "Citations", "Reasoning", "Metrics", and "Knowledge Graph"'
-)
+@then('there should be tabs for "Citations", "Reasoning", "Metrics", and "Knowledge Graph"')
 def check_tab_names(bdd_context: BehaviorContext) -> None:
     """Check that there are tabs for Citations, Reasoning, Metrics, and Knowledge Graph."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     streamlit_mocks.tabs.assert_called_with(
         ["Citations", "Reasoning", "Metrics", "Knowledge Graph"]
     )
@@ -280,7 +266,7 @@ def run_query_with_graph_exports_enabled(bdd_context: BehaviorContext) -> None:
         base_payload,
         graph_export_payloads={
             "graphml": "<graphml/>",
-            "graph_json": "{\"nodes\": []}",
+            "graph_json": '{"nodes": []}',
         },
     )
 
@@ -377,9 +363,7 @@ def test_graph_export_toggle_prepares_downloads() -> None:
 def navigate_to_config_section(bdd_context: BehaviorContext) -> None:
     """Simulate navigating to the configuration section."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     streamlit_mocks.sidebar = MagicMock()
     streamlit_mocks.expander = MagicMock()
 
@@ -395,9 +379,7 @@ def navigate_to_config_section(bdd_context: BehaviorContext) -> None:
 def check_config_form(bdd_context: BehaviorContext) -> None:
     """Check that a form with configuration options is displayed."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     sidebar = streamlit_mocks.sidebar
     assert isinstance(sidebar, MagicMock)
     assert sidebar.form.called
@@ -407,9 +389,7 @@ def check_config_form(bdd_context: BehaviorContext) -> None:
 def check_form_validation(bdd_context: BehaviorContext) -> None:
     """Check that the form has validation for input fields."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     sidebar = streamlit_mocks.sidebar
     assert isinstance(sidebar, MagicMock)
 
@@ -430,9 +410,7 @@ def check_form_validation(bdd_context: BehaviorContext) -> None:
 def check_save_config(bdd_context: BehaviorContext) -> None:
     """Check that changes to the configuration can be saved."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     sidebar = streamlit_mocks.sidebar
     assert isinstance(sidebar, MagicMock)
 
@@ -444,9 +422,7 @@ def check_save_config(bdd_context: BehaviorContext) -> None:
 def check_save_feedback(bdd_context: BehaviorContext) -> None:
     """Check that feedback is displayed when the configuration is saved."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     sidebar = streamlit_mocks.sidebar
     sidebar_success_called = False
     if isinstance(sidebar, MagicMock):
@@ -537,9 +513,7 @@ def check_config_used(bdd_context: BehaviorContext) -> None:
 def check_trace_display(bdd_context: BehaviorContext) -> None:
     """Ensure a graphviz chart was rendered for the trace."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     assert streamlit_mocks.graphviz.called
 
 
@@ -547,9 +521,7 @@ def check_trace_display(bdd_context: BehaviorContext) -> None:
 def check_progress_metrics(bdd_context: BehaviorContext) -> None:
     """Ensure progress metrics graph was shown."""
 
-    streamlit_mocks = get_required(
-        bdd_context, "streamlit_mocks", StreamlitComponentMocks
-    )
+    streamlit_mocks = get_required(bdd_context, "streamlit_mocks", StreamlitComponentMocks)
     assert streamlit_mocks.graphviz.call_count >= 2
 
 

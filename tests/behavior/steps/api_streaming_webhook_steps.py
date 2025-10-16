@@ -143,7 +143,6 @@ def check_webhook_called(bdd_context: BehaviorContext) -> None:
 @scenario("../features/api_streaming_webhook.feature", "Streaming query responses")
 def test_streaming_query_responses():
     """Scenario: streaming responses are delivered."""
-    pass
 
 
 @scenario(
@@ -152,4 +151,3 @@ def test_streaming_query_responses():
 )
 def test_webhook_notifications():
     """Scenario: webhook fires upon query completion."""
-    pass

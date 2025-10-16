@@ -5,7 +5,6 @@ from pytest_bdd import scenario, when, then, parsers
 import requests
 import responses
 
-from .common_steps import app_running, app_running_with_default, application_running
 
 A2A_URL = "http://a2a.example/message"
 

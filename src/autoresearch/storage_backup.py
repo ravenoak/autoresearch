@@ -431,9 +431,7 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
                 backup.path for backup in backups if backup.timestamp < cutoff_date
             )
 
-        retained_backups = [
-            backup for backup in backups if backup.path not in expired_paths
-        ]
+        retained_backups = [backup for backup in backups if backup.path not in expired_paths]
 
         if config.max_backups > 0 and len(retained_backups) > config.max_backups:
             for backup in retained_backups[config.max_backups :]:

@@ -82,16 +82,13 @@ def a2a_started_and_stopped(bdd_context: BehaviorContext):
 @scenario("../features/serve_commands.feature", "Display help for serve")
 def test_serve_help():
     """Scenario: display serve help message."""
-    pass
 
 
 @scenario("../features/serve_commands.feature", "Display help for serve-a2a")
 def test_serve_a2a_help():
     """Scenario: display serve-a2a help message."""
-    pass
 
 
 @scenario("../features/serve_commands.feature", "Start serve-a2a")
 def test_serve_a2a_start():
     """Scenario: start and stop the A2A server."""
-    pass

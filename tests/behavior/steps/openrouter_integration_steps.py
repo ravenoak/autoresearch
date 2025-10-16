@@ -8,8 +8,7 @@ using the Behave framework with natural language test scenarios.
 import os
 import time
 
-from behave import given, when, then
-from hamcrest import assert_that, equal_to, is_not, has_length, greater_than_or_equal_to, less_than_or_equal_to
+from pytest_bdd import given, when, then
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.llm.adapters import OpenRouterAdapter
@@ -36,7 +35,7 @@ def step_valid_config_file(context):
     config_loader = ConfigLoader()
     config = config_loader.config
     # Configuration should load without errors
-    assert_that(config.llm_backend, is_not(None))
+    assert config.llm_backend is not None
 
 
 @given("I have set up OpenRouter API credentials")
@@ -56,9 +55,15 @@ def step_discovered_free_models(context):
     context.adapter = adapter
 
     # Check that we have free models available
-    free_models = [model for model in adapter.available_models
-                   if any(free_provider in model for free_provider in ["google", "meta-llama", "qwen", "nousresearch"])]
-    assert_that(free_models, is_not(has_length(0)), "Should have at least one free-tier model")
+    free_models = [
+        model
+        for model in adapter.available_models
+        if any(
+            free_provider in model
+            for free_provider in ["google", "meta-llama", "qwen", "nousresearch"]
+        )
+    ]
+    assert len(free_models) > 0, "Should have at least one free-tier model"
 
     context.free_models = free_models
 
@@ -79,7 +84,7 @@ def step_models_different_context_sizes(context):
             # Some models might not be available, skip them
             continue
 
-    assert_that(len(context_sizes), greater_than_or_equal_to(1), "Should have at least one model with context size")
+    assert len(context_sizes) >= 1, "Should have at least one model with context size"
     context.context_sizes = context_sizes
 
 
@@ -90,7 +95,7 @@ def step_multiple_models_different_capabilities(context):
     context.adapter = adapter
 
     models = adapter.available_models
-    assert_that(len(models), greater_than_or_equal_to(2), "Should have at least 2 models for selection testing")
+    assert len(models) >= 2, "Should have at least 2 models for selection testing"
 
     context.available_models = models
 
@@ -167,8 +172,8 @@ def step_configured_openrouter_settings(context):
     context.adapter = adapter
 
     # Check that adapter has expected configuration
-    assert_that(adapter.api_key, is_not(None))
-    assert_that(adapter.endpoint, is_not(None))
+    assert adapter.api_key is not None
+    assert adapter.endpoint is not None
 
 
 @when("I initialize the OpenRouter adapter")
@@ -178,15 +183,21 @@ def step_initialize_openrouter_adapter(context):
     context.adapter = adapter
 
     # Verify adapter initializes successfully
-    assert_that(adapter, is_not(None))
-    assert_that(len(adapter.available_models), greater_than_or_equal_to(1))
+    assert adapter is not None
+    assert len(adapter.available_models) >= 1
 
 
 @when("I select a free-tier model for generation")
 def step_select_free_tier_model(context):
     """Select a free-tier model for testing."""
-    free_models = [model for model in context.adapter.available_models
-                   if any(free_provider in model for free_provider in ["google", "meta-llama", "qwen", "nousresearch"])]
+    free_models = [
+        model
+        for model in context.adapter.available_models
+        if any(
+            free_provider in model
+            for free_provider in ["google", "meta-llama", "qwen", "nousresearch"]
+        )
+    ]
 
     if not free_models:
         context.scenario.skip("No free-tier models available")
@@ -300,18 +311,24 @@ def step_discover_available_models(context):
     adapter = context.adapter
     models = adapter.available_models
 
-    assert_that(models, is_not(has_length(0)), "Should discover at least one model")
-    assert_that(all(isinstance(model, str) for model in models), "All models should be strings")
+    assert len(models) > 0, "Should discover at least one model"
+    assert all(isinstance(model, str) for model in models), "All models should be strings"
 
 
 @then("I should see free-tier models available for testing")
 def step_see_free_tier_models(context):
     """Verify free-tier models are visible."""
     adapter = context.adapter
-    free_models = [model for model in adapter.available_models
-                   if any(free_provider in model for free_provider in ["google", "meta-llama", "qwen", "nousresearch"])]
+    free_models = [
+        model
+        for model in adapter.available_models
+        if any(
+            free_provider in model
+            for free_provider in ["google", "meta-llama", "qwen", "nousresearch"]
+        )
+    ]
 
-    assert_that(free_models, is_not(has_length(0)), "Should have at least one free-tier model")
+    assert len(free_models) > 0, "Should have at least one free-tier model"
     context.free_models = free_models
 
 
@@ -322,23 +339,27 @@ def step_identify_models_by_cost(context):
     capabilities = prober._get_default_openrouter_capabilities()
 
     # Check that we have models with different cost structures
-    free_models = [model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens == 0.0]
-    paid_models = [model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens > 0.0]
+    free_models = [
+        model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens == 0.0
+    ]
+    paid_models = [
+        model for model, cap in capabilities.items() if cap.cost_per_1k_input_tokens > 0.0
+    ]
 
-    assert_that(len(free_models) + len(paid_models), greater_than_or_equal_to(1), "Should have models with cost info")
+    assert len(free_models) + len(paid_models) >= 1, "Should have models with cost info"
 
 
 @then("I should be able to generate text without incurring costs")
 def step_generate_text_no_cost(context):
     """Verify text generation works with free models."""
-    if not hasattr(context, 'selected_free_model'):
+    if not hasattr(context, "selected_free_model"):
         context.scenario.skip("No free model selected")
 
     model = context.selected_free_model
     result = context.adapter.generate("Hello, world!", model=model)
 
-    assert_that(result, is_not(None), "Should generate text")
-    assert_that(len(result), greater_than_or_equal_to(1), "Should generate non-empty text")
+    assert result is not None, "Should generate text"
+    assert len(result) >= 1, "Should generate non-empty text"
 
 
 @then("I should receive responses with zero cost per token")
@@ -350,8 +371,8 @@ def step_receive_zero_cost_responses(context):
     model = context.selected_free_model
     if model in capabilities:
         cap = capabilities[model]
-        assert_that(cap.cost_per_1k_input_tokens, equal_to(0.0), f"Model {model} should be free")
-        assert_that(cap.cost_per_1k_output_tokens, equal_to(0.0), f"Model {model} should be free")
+        assert cap.cost_per_1k_input_tokens == 0.0, f"Model {model} should be free"
+        assert cap.cost_per_1k_output_tokens == 0.0, f"Model {model} should be free"
 
 
 @then("I should be able to switch between different free models")
@@ -365,7 +386,7 @@ def step_switch_free_models(context):
     for model in free_models[:2]:  # Test first 2
         try:
             result = context.adapter.generate("Test prompt", model=model)
-            assert_that(result, is_not(None), f"Should generate with model {model}")
+            assert result is not None, f"Should generate with model {model}"
         except LLMError as e:
             # Some models might not be available or have issues
             if "not found" in str(e).lower() or "invalid" in str(e).lower():
@@ -379,10 +400,10 @@ def step_get_accurate_context_sizes(context):
     """Verify context sizes are accurate."""
     for model, size in context.checked_context_sizes.items():
         if isinstance(size, int):
-            assert_that(size, greater_than_or_equal_to(1000), f"Context size for {model} should be reasonable")
+            assert size >= 1000, f"Context size for {model} should be reasonable"
         else:
             # If we got an error, that's acceptable for some models
-            assert_that("Error" in size, f"Expected error message for {model}")
+            assert "Error" in size, f"Expected error message for {model}"
 
 
 @then("I should be able to estimate token counts for prompts")
@@ -393,7 +414,7 @@ def step_estimate_token_counts(context):
     for model in list(context.context_sizes.keys())[:2]:  # Test first 2 models
         try:
             token_count = context.adapter.estimate_prompt_tokens(prompt)
-            assert_that(token_count, greater_than_or_equal_to(1), f"Token count should be positive for {model}")
+            assert token_count >= 1, f"Token count should be positive for {model}"
         except Exception:
             # Token estimation might fail for some models, that's acceptable
             pass
@@ -405,15 +426,15 @@ def step_receive_context_warnings(context):
     # This would require testing with prompts that exceed limits
     # For now, we verify that the warning mechanism exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, 'estimate_prompt_tokens'), "Adapter should have token estimation")
+    assert hasattr(adapter, "estimate_prompt_tokens"), "Adapter should have token estimation"
 
 
 @then("I should get a model that matches the task requirements")
 def step_get_matching_model(context):
     """Verify model selection matches requirements."""
     selected_model = context.selected_model
-    assert_that(selected_model, is_not(None), "Should select a model")
-    assert_that(selected_model in context.available_models, "Selected model should be available")
+    assert selected_model is not None, "Should select a model"
+    assert selected_model in context.available_models, "Selected model should be available"
 
 
 @then("I should prefer models based on cost and performance")
@@ -421,7 +442,7 @@ def step_prefer_cost_performance(context):
     """Verify cost and performance preferences are considered."""
     # This is a simplified check - in practice this would be more complex
     selected_model = context.selected_model
-    assert_that(selected_model, is_not(None), "Should select a model based on criteria")
+    assert selected_model is not None, "Should select a model based on criteria"
 
 
 @then("I should fall back to free models when budget is constrained")
@@ -430,9 +451,15 @@ def step_fallback_free_models(context):
     # This would require testing with budget constraints
     # For now, verify that free models are available as fallback options
     adapter = context.adapter
-    free_models = [model for model in adapter.available_models
-                   if any(free_provider in model for free_provider in ["google", "meta-llama", "qwen", "nousresearch"])]
-    assert_that(free_models, is_not(has_length(0)), "Should have free models as fallback")
+    free_models = [
+        model
+        for model in adapter.available_models
+        if any(
+            free_provider in model
+            for free_provider in ["google", "meta-llama", "qwen", "nousresearch"]
+        )
+    ]
+    assert len(free_models) > 0, "Should have free models as fallback"
 
 
 @then("I should automatically retry with exponential backoff")
@@ -441,7 +468,7 @@ def step_automatic_retry_backoff(context):
     # This would require triggering actual rate limits
     # For now, verify that retry logic exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, '_generate_with_retries'), "Should have retry logic")
+    assert hasattr(adapter, "_generate_with_retries"), "Should have retry logic"
 
 
 @then("I should respect Retry-After headers when provided")
@@ -450,7 +477,7 @@ def step_respect_retry_after(context):
     # This would require testing with actual Retry-After headers
     # For now, verify that the method exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, '_get_retry_after_header'), "Should handle Retry-After headers")
+    assert hasattr(adapter, "_get_retry_after_header"), "Should handle Retry-After headers"
 
 
 @then("I should eventually succeed or provide clear error messages")
@@ -459,7 +486,7 @@ def step_eventual_success_or_clear_errors(context):
     # This would require testing actual retry scenarios
     # For now, verify that error handling methods exist
     adapter = context.adapter
-    assert_that(hasattr(adapter, '_handle_openrouter_error'), "Should handle errors appropriately")
+    assert hasattr(adapter, "_handle_openrouter_error"), "Should handle errors appropriately"
 
 
 @then("I should receive specific error messages for each error type")
@@ -474,8 +501,9 @@ def step_receive_specific_error_messages(context):
         assert False, "Should have raised error for invalid model"
     except LLMError as e:
         error_msg = str(e)
-        assert_that("not found" in error_msg.lower() or "invalid" in error_msg.lower(),
-                    f"Should have specific error message: {error_msg}")
+        assert (
+            "not found" in error_msg.lower() or "invalid" in error_msg.lower()
+        ), f"Should have specific error message: {error_msg}"
 
 
 @then("I should get actionable suggestions for resolving errors")
@@ -489,8 +517,9 @@ def step_get_actionable_suggestions(context):
         assert False, "Should have raised error for missing API key"
     except LLMError as e:
         error_msg = str(e)
-        assert_that("API key" in error_msg.lower() or "OPENROUTER_API_KEY" in error_msg,
-                    f"Should suggest API key fix: {error_msg}")
+        assert (
+            "API key" in error_msg.lower() or "OPENROUTER_API_KEY" in error_msg
+        ), f"Should suggest API key fix: {error_msg}"
 
 
 @then("I should be able to distinguish between temporary and permanent errors")
@@ -499,7 +528,7 @@ def step_distinguish_temporary_permanent(context):
     # This would require testing different error scenarios
     # For now, verify that error handling exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, '_is_retryable_error'), "Should distinguish error types")
+    assert hasattr(adapter, "_is_retryable_error"), "Should distinguish error types"
 
 
 @then("I should get cached results for improved performance")
@@ -517,8 +546,7 @@ def step_get_cached_results(context):
         time2 = time.time() - start_time
 
         # Second call should be fast (cached)
-        assert_that(time2, less_than_or_equal_to(time1 * 2),
-                    "Second call should be fast (cached)")
+        assert time2 <= time1 * 2, "Second call should be fast (cached)"
 
 
 @then("I should be able to refresh the cache when needed")
@@ -530,7 +558,7 @@ def step_refresh_cache_when_needed(context):
     adapter.refresh_model_cache()
     # Cache should still work after refresh
     models = adapter.available_models
-    assert_that(models, is_not(has_length(0)), "Cache should work after refresh")
+    assert len(models) > 0, "Cache should work after refresh"
 
 
 @then("I should be able to clear the cache for fresh discovery")
@@ -542,14 +570,14 @@ def step_clear_cache_fresh_discovery(context):
     adapter.clear_model_cache()
     # Should still have models (from defaults if API fails)
     models = adapter.available_models
-    assert_that(len(models), greater_than_or_equal_to(1), "Should have models after cache clear")
+    assert len(models) >= 1, "Should have models after cache clear"
 
 
 @then("I should use the API key from the environment")
 def step_use_api_key_from_environment(context):
     """Verify API key is used from environment."""
     adapter = context.adapter
-    assert_that(adapter.api_key, equal_to(context.api_key), "Should use API key from environment")
+    assert adapter.api_key == context.api_key, "Should use API key from environment"
 
 
 @then("I should be able to override endpoint and cache settings")
@@ -558,11 +586,13 @@ def step_override_endpoint_cache(context):
     adapter = context.adapter
 
     # Check that environment overrides are respected
-    expected_endpoint = os.getenv("OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions")
+    expected_endpoint = os.getenv(
+        "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
+    )
     expected_ttl = int(os.getenv("OPENROUTER_CACHE_TTL", "3600"))
 
-    assert_that(adapter.endpoint, equal_to(expected_endpoint), "Should respect endpoint override")
-    assert_that(adapter._cache_ttl, equal_to(expected_ttl), "Should respect cache TTL override")
+    assert adapter.endpoint == expected_endpoint, "Should respect endpoint override"
+    assert adapter._cache_ttl == expected_ttl, "Should respect cache TTL override"
 
 
 @then("I should validate API key authenticity")
@@ -571,8 +601,8 @@ def step_validate_api_key_authenticity(context):
     adapter = context.adapter
 
     # API key should be set and not empty
-    assert_that(adapter.api_key, is_not(None), "API key should be set")
-    assert_that(len(adapter.api_key), greater_than_or_equal_to(1), "API key should not be empty")
+    assert adapter.api_key is not None, "API key should be set"
+    assert len(adapter.api_key) >= 1, "API key should not be empty"
 
 
 @then("I should get a streaming-compatible response")
@@ -580,11 +610,11 @@ def step_get_streaming_compatible_response(context):
     """Verify streaming response compatibility."""
     if context.streaming_success:
         result = context.streaming_result
-        assert_that(result, is_not(None), "Should get response")
-        assert_that(isinstance(result, str), "Response should be string")
+        assert result is not None, "Should get response"
+        assert isinstance(result, str), "Response should be string"
     else:
         # If streaming fails, should have clear error message
-        assert_that(context.streaming_error, is_not(None), "Should have error message")
+        assert context.streaming_error is not None, "Should have error message"
 
 
 @then("I should handle streaming interruptions gracefully")
@@ -593,7 +623,7 @@ def step_handle_streaming_interruptions(context):
     # This would require testing actual streaming interruptions
     # For now, verify that the streaming method exists and handles errors
     adapter = context.adapter
-    assert_that(hasattr(adapter, 'generate_stream'), "Should have streaming method")
+    assert hasattr(adapter, "generate_stream"), "Should have streaming method"
 
 
 @then("I should fall back to non-streaming when streaming fails")
@@ -602,7 +632,7 @@ def step_fallback_non_streaming(context):
     # The current implementation falls back to regular generation
     # This verifies that fallback behavior exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, 'generate_stream'), "Should have fallback capability")
+    assert hasattr(adapter, "generate_stream"), "Should have fallback capability"
 
 
 @then("I should track costs per request")
@@ -611,11 +641,11 @@ def step_track_costs_per_request(context):
     results = context.generation_results
 
     # Should have results for each model tested
-    assert_that(len(results), greater_than_or_equal_to(1), "Should have generation results")
+    assert len(results) >= 1, "Should have generation results"
 
     # Each result should indicate success or failure
     for result in results:
-        assert_that("success" in result, "Result should indicate success/failure")
+        assert "success" in result, "Result should indicate success/failure"
 
 
 @then("I should log cost information for monitoring")
@@ -624,7 +654,7 @@ def step_log_cost_information(context):
     # This would require checking actual log output
     # For now, verify that the logging infrastructure exists
     adapter = context.adapter
-    assert_that(hasattr(adapter, 'logger'), "Should have logging capability")
+    assert hasattr(adapter, "logger"), "Should have logging capability"
 
 
 @then("I should be able to estimate total costs for research sessions")
@@ -635,9 +665,11 @@ def step_estimate_total_costs(context):
     prober = CapabilityProber.get_instance()
     capabilities = prober._get_default_openrouter_capabilities()
 
-    cost_info_available = any(cap.cost_per_1k_input_tokens > 0 or cap.cost_per_1k_output_tokens > 0
-                              for cap in capabilities.values())
-    assert_that(cost_info_available, "Should have cost information available")
+    cost_info_available = any(
+        cap.cost_per_1k_input_tokens > 0 or cap.cost_per_1k_output_tokens > 0
+        for cap in capabilities.values()
+    )
+    assert cost_info_available, "Should have cost information available"
 
 
 @then("I should get consistent behavior across all providers")
@@ -652,7 +684,7 @@ def step_consistent_behavior_providers(context):
         try:
             # Basic generation should work for all providers
             result = adapter.generate("Test consistency", model=model)
-            assert_that(result, is_not(None), f"Should work consistently with {model}")
+            assert result is not None, f"Should work consistently with {model}"
         except LLMError:
             # Some models might not be available, that's acceptable
             pass
@@ -667,9 +699,13 @@ def step_handle_provider_features(context):
 
     # Should handle models from different providers (Anthropic, Google, Meta, etc.)
     provider_prefixes = ["anthropic/", "google/", "meta-llama/", "mistralai/", "qwen/"]
-    supported_prefixes = [prefix for prefix in provider_prefixes if any(prefix in model for model in adapter.available_models)]
+    supported_prefixes = [
+        prefix
+        for prefix in provider_prefixes
+        if any(prefix in model for model in adapter.available_models)
+    ]
 
-    assert_that(len(supported_prefixes), greater_than_or_equal_to(1), "Should support multiple providers")
+    assert len(supported_prefixes) >= 1, "Should support multiple providers"
 
 
 @then("I should maintain consistent error handling across providers")
@@ -684,7 +720,7 @@ def step_consistent_error_handling(context):
     except LLMError as e:
         error_msg = str(e)
         # Error message should be consistent regardless of provider
-        assert_that(len(error_msg), greater_than_or_equal_to(10), "Should have meaningful error message")
+        assert len(error_msg) >= 10, "Should have meaningful error message"
 
 
 @then("I should retain my OpenRouter configuration")
@@ -693,8 +729,8 @@ def step_retain_openrouter_configuration(context):
     config = context.restarted_config
 
     # Configuration should be preserved
-    assert_that(config, is_not(None), "Should have configuration after restart")
-    assert_that(hasattr(config, 'llm_backend'), "Should have LLM backend setting")
+    assert config is not None, "Should have configuration after restart"
+    assert hasattr(config, "llm_backend"), "Should have LLM backend setting"
 
 
 @then("I should reconnect to OpenRouter with the same settings")
@@ -704,8 +740,8 @@ def step_reconnect_same_settings(context):
 
     # Should be able to reconnect (reinitialize)
     new_adapter = OpenRouterAdapter()
-    assert_that(new_adapter.api_key, equal_to(adapter.api_key), "Should reconnect with same API key")
-    assert_that(new_adapter.endpoint, equal_to(adapter.endpoint), "Should reconnect with same endpoint")
+    assert new_adapter.api_key == adapter.api_key, "Should reconnect with same API key"
+    assert new_adapter.endpoint == adapter.endpoint, "Should reconnect with same endpoint"
 
 
 @then("I should resume using the same preferred models")
@@ -720,5 +756,4 @@ def step_resume_same_preferred_models(context):
 
     # Should have significant overlap in available models
     overlap = original_models & new_models
-    assert_that(len(overlap), greater_than_or_equal_to(1),
-                "Should have overlapping model availability")
+    assert len(overlap) >= 1, "Should have overlapping model availability"

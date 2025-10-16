@@ -26,7 +26,7 @@ class UserAgent(Agent):
     # User preferences that can be configured
     preferences: Dict[str, Any] = {
         "detail_level": "balanced",  # "concise", "balanced", or "detailed"
-        "perspective": "neutral",    # "neutral", "critical", or "optimistic"
+        "perspective": "neutral",  # "neutral", "critical", or "optimistic"
         "format_preference": "structured",  # "structured", "narrative", or "bullet_points"
         "expertise_level": "intermediate",  # "beginner", "intermediate", or "expert"
         "focus_areas": [],  # List of specific areas to focus on
@@ -58,7 +58,7 @@ class UserAgent(Agent):
             claims=claims_text,
             results=results_text,
             preferences=self._format_preferences(),
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         feedback = adapter.generate(prompt, model=model)
@@ -69,7 +69,7 @@ class UserAgent(Agent):
             query=state.query,
             feedback=feedback,
             preferences=self._format_preferences(),
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         requirements = adapter.generate(requirements_prompt, model=model)
@@ -88,7 +88,7 @@ class UserAgent(Agent):
             results={
                 "user_feedback": feedback,
                 "user_requirements": requirements,
-                "user_preferences": self.preferences
+                "user_preferences": self.preferences,
             },
         )
 
@@ -173,8 +173,13 @@ class UserAgent(Agent):
 
         # Filter out metadata and focus on actual results
         result_keys_to_include = [
-            "answer", "synthesis", "critique", "analysis",
-            "recommendations", "domain_analysis", "research_findings"
+            "answer",
+            "synthesis",
+            "critique",
+            "analysis",
+            "recommendations",
+            "domain_analysis",
+            "research_findings",
         ]
 
         for key in result_keys_to_include:

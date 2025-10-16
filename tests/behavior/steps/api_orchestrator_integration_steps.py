@@ -67,7 +67,6 @@ def mock_orchestrator() -> MagicMock:
 )
 def test_api_forwards_queries() -> None:
     """Test that the API forwards queries to the orchestrator."""
-    pass
 
 
 @scenario(
@@ -76,13 +75,11 @@ def test_api_forwards_queries() -> None:
 )
 def test_api_handles_errors() -> None:
     """Test that the API handles orchestrator errors gracefully."""
-    pass
 
 
 @scenario("../features/api_orchestrator_integration.feature", "API respects query parameters")
 def test_api_respects_parameters() -> None:
     """Test that the API respects query parameters."""
-    pass
 
 
 @scenario(
@@ -91,7 +88,6 @@ def test_api_respects_parameters() -> None:
 )
 def test_api_handles_concurrent_requests() -> None:
     """Test that the API handles concurrent requests."""
-    pass
 
 
 @scenario(
@@ -100,7 +96,6 @@ def test_api_handles_concurrent_requests() -> None:
 )
 def test_api_batch_pagination() -> None:
     """Test that the API paginates batch query results."""
-    pass
 
 
 @scenario(
@@ -109,7 +104,6 @@ def test_api_batch_pagination() -> None:
 )
 def test_async_query_not_found() -> None:
     """Unknown async query IDs should return 404."""
-    pass
 
 
 @scenario(
@@ -118,7 +112,6 @@ def test_async_query_not_found() -> None:
 )
 def test_api_config_crud() -> None:
     """Test configuration CRUD operations."""
-    pass
 
 
 # Background steps
@@ -371,9 +364,7 @@ def responses_match_queries(test_context: BehaviorContext) -> None:
 # Scenario: API paginates batch queries
 
 
-@when(
-    parsers.parse("I send a batch query with page {page:d} and page size {size:d} to the API")
-)
+@when(parsers.parse("I send a batch query with page {page:d} and page size {size:d} to the API"))
 def send_batch_query(test_context: BehaviorContext, page: int, size: int) -> None:
     """Send a batch query to the API with pagination."""
     payload = as_payload({"queries": [{"query": f"q{i}"} for i in range(1, 5)]})

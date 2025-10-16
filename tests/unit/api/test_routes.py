@@ -29,6 +29,7 @@ def test_router_builds_with_monitoring_enabled(monkeypatch):
     # Import the module to trigger router rebuild
     import importlib
     import autoresearch.api.routes as routes_module
+
     importlib.reload(routes_module)
 
     # Check that the router now includes /metrics

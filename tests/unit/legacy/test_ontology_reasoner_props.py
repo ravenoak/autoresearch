@@ -10,9 +10,7 @@ from autoresearch.config.models import ConfigModel, StorageConfig
 
 
 def _mock_config(reasoner: str) -> ConfigModel:
-    return ConfigModel.model_construct(
-        storage=StorageConfig(ontology_reasoner=reasoner)
-    )
+    return ConfigModel.model_construct(storage=StorageConfig(ontology_reasoner=reasoner))
 
 
 def _patch_config(monkeypatch: pytest.MonkeyPatch, reasoner: str) -> None:

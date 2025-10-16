@@ -78,9 +78,7 @@ class QueryResponse(BaseModel):
         state_id: Optional identifier for retrieving the QueryState snapshot.
     """
 
-    query: Optional[str] = Field(
-        None, description="The original query that produced this response"
-    )
+    query: Optional[str] = Field(None, description="The original query that produced this response")
     answer: str
     citations: List[Any]
     reasoning: List[Any]

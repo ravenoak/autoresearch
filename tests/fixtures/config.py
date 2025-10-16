@@ -78,9 +78,7 @@ llm_backend = "openai"
 
 
 @pytest.fixture()
-def config_context(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> TypedFixture[ConfigContext]:
+def config_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TypedFixture[ConfigContext]:
     """Return a ConfigContext with representative config and data samples.
 
     The context writes a realistic configuration file and creates placeholder

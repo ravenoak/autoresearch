@@ -39,9 +39,7 @@ def request_metrics_authorized(
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
     client = bdd_context["client"]
-    bdd_context["response"] = client.get(
-        "/metrics", headers={"X-API-Key": "secret"}
-    )
+    bdd_context["response"] = client.get("/metrics", headers={"X-API-Key": "secret"})
 
 
 @when("I request the metrics endpoint")

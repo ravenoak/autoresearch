@@ -75,7 +75,6 @@ def cleanup_storage(monkeypatch):
 )
 def test_store_and_retrieve_claims():
     """Test storing and retrieving claims using vector search."""
-    pass
 
 
 @scenario(
@@ -86,7 +85,6 @@ def test_search_respects_lru_eviction(test_context):
     """Test that search results respect the LRU eviction policy."""
     # Set a flag to identify this test
     test_context["test_type"] = "lru_eviction"
-    pass
 
 
 @scenario(
@@ -95,7 +93,6 @@ def test_search_respects_lru_eviction(test_context):
 )
 def test_search_respects_score_eviction():
     """Test that search results respect the score-based eviction policy."""
-    pass
 
 
 @scenario(
@@ -106,7 +103,6 @@ def test_lru_eviction_respects_access_patterns(test_context):
     """Test that the LRU eviction policy respects claim access patterns."""
     # Set a flag to identify this test
     test_context["test_type"] = "lru_access_patterns"
-    pass
 
 
 @scenario(
@@ -117,7 +113,6 @@ def test_search_handles_errors(test_context):
     """Test that search handles storage errors gracefully."""
     # Set a flag to identify this test
     test_context["test_type"] = "search_handles_errors"
-    pass
 
 
 @scenario(
@@ -126,7 +121,6 @@ def test_search_handles_errors(test_context):
 )
 def test_update_existing_claims():
     """Test updating existing claims and searching for updated content."""
-    pass
 
 
 # Background steps
@@ -182,10 +176,7 @@ def storage_system_initialized(monkeypatch, tmp_path):
                 if (
                     query_embedding == [0.1, 0.2, 0.3]
                     and "artificial intelligence" in content.lower()
-                ) or (
-                    query_embedding == [0.4, 0.5, 0.6]
-                    and "testing" in content.lower()
-                ):
+                ) or (query_embedding == [0.4, 0.5, 0.6] and "testing" in content.lower()):
                     collected.append(claim)
 
             def _confidence_key(claim: dict[str, object]) -> float:
@@ -301,9 +292,7 @@ def store_claim_with_text(text, test_context):
                     ]
 
 
-@when(
-    parsers.parse('I store a claim with text "{text}" with relevance score {score:f}')
-)
+@when(parsers.parse('I store a claim with text "{text}" with relevance score {score:f}'))
 def store_claim_with_relevance_score(text, score, test_context):
     """Store a claim with the specified text and relevance score."""
     claim_id = f"claim-{len(test_context['claims']) + 1}"
@@ -395,9 +384,9 @@ def update_claim(old_text, new_text, test_context):
             claim_index = i
             break
 
-    assert claim_id is not None and claim_to_update is not None, (
-        f"No claim found with text '{old_text}'"
-    )
+    assert (
+        claim_id is not None and claim_to_update is not None
+    ), f"No claim found with text '{old_text}'"
 
     # Create an updated claim with the new text
     updated_claim = claim_to_update.copy()
@@ -493,9 +482,7 @@ def perform_vector_search(query, test_context, storage_error_handler):
 
         # Add the accessed claim (first claim) directly from the _accessed_claim property
         accessed_claim = StorageManager._accessed_claim
-        if accessed_claim and "First claim for testing" in accessed_claim.get(
-            "content", ""
-        ):
+        if accessed_claim and "First claim for testing" in accessed_claim.get("content", ""):
             results.append(accessed_claim)
 
         # Add the third claim from the claims list
@@ -597,9 +584,7 @@ def perform_vector_search(query, test_context, storage_error_handler):
         else:
             # If an error occurred, raise it unless it's the search_handles_errors test
             if test_context.get("test_type") != "search_handles_errors":
-                print(
-                    f"Unexpected error in vector search: {test_context.get('storage_error')}"
-                )
+                print(f"Unexpected error in vector search: {test_context.get('storage_error')}")
                 raise test_context.get("storage_error")
 
 
@@ -618,13 +603,9 @@ def search_results_ordered_by_relevance(test_context):
     results = test_context["search_results"]
     if len(results) >= 2:
         # Check that results have a score field and are ordered by it
-        assert all("score" in result for result in results), (
-            "Search results missing score field"
-        )
+        assert all("score" in result for result in results), "Search results missing score field"
         scores = [result.get("score", 0) for result in results]
-        assert scores == sorted(scores, reverse=True), (
-            "Search results not ordered by score"
-        )
+        assert scores == sorted(scores, reverse=True), "Search results not ordered by score"
 
 
 @then(parsers.parse("the search results should not include claims about {topic}"))
@@ -637,9 +618,7 @@ def search_results_exclude_topic(topic, test_context):
 
 
 # Scenario: Search results respect storage eviction policies
-@given(
-    parsers.parse("the storage system has a maximum capacity of {capacity:d} claims")
-)
+@given(parsers.parse("the storage system has a maximum capacity of {capacity:d} claims"))
 def storage_system_with_capacity(capacity, monkeypatch, tmp_path):
     """Configure the storage system with a maximum capacity."""
     # Create a mock config with a small RAM budget to force eviction
@@ -753,9 +732,7 @@ def storage_system_raises_error(monkeypatch, test_context):
 @then("the search should return an empty result")
 def search_returns_empty_result(test_context):
     """Verify that the search returns an empty result when an error occurs."""
-    assert len(test_context["search_results"]) == 0, (
-        "Search results not empty after error"
-    )
+    assert len(test_context["search_results"]) == 0, "Search results not empty after error"
 
 
 @then("the error should be logged")
@@ -772,9 +749,7 @@ def error_is_logged(monkeypatch, mock_logger, test_context, storage_error_handle
         storage_error_handler: Fixture for handling storage errors
     """
     # First verify that the search returns empty results
-    assert len(test_context["search_results"]) == 0, (
-        "Search results not empty after error"
-    )
+    assert len(test_context["search_results"]) == 0, "Search results not empty after error"
 
     # Verify that the error was captured and contains the expected message
     storage_error_handler.verify_error(
@@ -785,9 +760,9 @@ def error_is_logged(monkeypatch, mock_logger, test_context, storage_error_handle
 
     # Verify that the error was added to the errors list in the test context
     assert len(test_context["errors"]) > 0, "Error not added to errors list"
-    assert "Test error in vector search" in test_context["errors"][0], (
-        "Error message not in errors list"
-    )
+    assert (
+        "Test error in vector search" in test_context["errors"][0]
+    ), "Error message not in errors list"
 
     # Note: In a real implementation, we would also verify that the error was logged
     # by checking the mock_logger, but that would require modifying the search code

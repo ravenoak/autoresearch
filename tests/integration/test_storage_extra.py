@@ -48,7 +48,9 @@ def test_storage_persistence_and_audit_flow(tmp_path: Path) -> None:
                     "sources": [{"id": "src-1"}],
                 },
             }
-            with patch("autoresearch.storage.run_ontology_reasoner", autospec=True) as mock_reasoner:
+            with patch(
+                "autoresearch.storage.run_ontology_reasoner", autospec=True
+            ) as mock_reasoner:
                 StorageManager.persist_claim(claim)
                 mock_reasoner.assert_called()
 

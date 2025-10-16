@@ -493,9 +493,7 @@ def run_auto_reasoning_cli(
     ]
     payload.setdefault("warnings", warning_payload)
     if warning_payload:
-        metrics.setdefault("answer_audit", {}).setdefault(
-            "warnings", list(warning_payload)
-        )
+        metrics.setdefault("answer_audit", {}).setdefault("warnings", list(warning_payload))
     metrics.setdefault("audit_badges", normalized_badges)
     captured_response.metrics.setdefault("audit_badges", dict(normalized_badges))
 
@@ -527,10 +525,7 @@ def run_auto_reasoning_cli(
         value = planner_graph.get(key)
         if value is not None and key not in planner_task_graph_cli:
             planner_task_graph_cli[key] = value
-    if (
-        "updated_at" in planner_graph
-        and "updated_at" not in planner_task_graph_cli
-    ):
+    if "updated_at" in planner_graph and "updated_at" not in planner_task_graph_cli:
         planner_task_graph_cli["updated_at"] = planner_graph["updated_at"]
     if "telemetry" in planner_meta and "telemetry" not in planner_section:
         planner_section["telemetry"] = dict(planner_meta["telemetry"])
@@ -573,9 +568,7 @@ def run_auto_reasoning_cli(
 
 
 @when(
-    parsers.parse(
-        'I rerun the AUTO reasoning CLI for query "{query}" using cached results'
-    ),
+    parsers.parse('I rerun the AUTO reasoning CLI for query "{query}" using cached results'),
     target_fixture="auto_cli_cycle",
 )
 def rerun_auto_reasoning_cli_cached(
@@ -609,9 +602,7 @@ def rerun_auto_reasoning_cli_cached(
         bdd_context.pop("auto_cached_gate_decision", None)
 
 
-@when(
-    parsers.parse('I register AUTO cache alias "{alias}" for the last AUTO query')
-)
+@when(parsers.parse('I register AUTO cache alias "{alias}" for the last AUTO query'))
 def register_auto_cache_alias(alias: str, bdd_context: BehaviorContext) -> None:
     """Associate ``alias`` with the most recent AUTO-mode query."""
 
@@ -636,14 +627,8 @@ def assert_cli_gate_decision(auto_cli_cycle: dict[str, Any]) -> None:
     assert scout_gate.get("should_debate") is True
 
 
-@then(
-    parsers.parse(
-        'the CLI audit badges should include "{first}" and "{second}"'
-    )
-)
-def assert_cli_audit_badges(
-    auto_cli_cycle: dict[str, Any], first: str, second: str
-) -> None:
+@then(parsers.parse('the CLI audit badges should include "{first}" and "{second}"'))
+def assert_cli_audit_badges(auto_cli_cycle: dict[str, Any], first: str, second: str) -> None:
     payload: dict[str, Any] = auto_cli_cycle["payload"]
     metrics: dict[str, Any] = payload.get("metrics", {})
     badge_rollup = metrics.get("audit_badges", {})
@@ -672,9 +657,7 @@ def assert_cli_verification_loop(auto_cli_cycle: dict[str, Any]) -> None:
 
 
 @then("the CLI verification loops should match the configured count")
-def assert_cli_loop_count(
-    auto_cli_cycle: dict[str, Any], config: ConfigModel
-) -> None:
+def assert_cli_loop_count(auto_cli_cycle: dict[str, Any], config: ConfigModel) -> None:
     payload: dict[str, Any] = auto_cli_cycle["payload"]
     metrics: dict[str, Any] = payload.get("metrics", {})
     auto_mode = metrics.get("auto_mode", {})
@@ -682,9 +665,7 @@ def assert_cli_loop_count(
     expected_loops = max(1, config.loops or 0)
     assert loops_value == expected_loops
     response: QueryResponse = auto_cli_cycle["response"]
-    response_loops = int(
-        response.metrics.get("auto_mode", {}).get("verification_loops", 0)
-    )
+    response_loops = int(response.metrics.get("auto_mode", {}).get("verification_loops", 0))
     assert response_loops == expected_loops
 
 
@@ -741,10 +722,9 @@ def assert_auto_planner_routing(auto_cli_cycle: dict[str, Any]) -> None:
 
     cli_metrics = payload.get("metrics", {})
     planner_cli = cli_metrics.get("planner", {})
-    cli_depth = (
-        planner_cli.get("task_graph", {}).get("max_depth")
-        or planner_cli.get("task_graph", {}).get("depth")
-    )
+    cli_depth = planner_cli.get("task_graph", {}).get("max_depth") or planner_cli.get(
+        "task_graph", {}
+    ).get("depth")
     assert cli_depth == depth
 
     routing_cli = cli_metrics.get("model_routing", {})
@@ -838,12 +818,8 @@ def assert_cli_answer_unmodified(auto_cli_cycle: dict[str, Any]) -> None:
             if isinstance(message, str) and message.strip():
                 warning_messages.append(message.strip().lower())
     for message in warning_messages:
-        assert message not in answer_lower, (
-            "Warning message leaked into CLI answer"
-        )
-        assert message not in payload_answer_lower, (
-            "Warning message leaked into CLI payload answer"
-        )
+        assert message not in answer_lower, "Warning message leaked into CLI answer"
+        assert message not in payload_answer_lower, "Warning message leaked into CLI payload answer"
     auto_mode_metrics = response.metrics.get("auto_mode", {})
     samples = auto_mode_metrics.get("scout_samples")
     assert isinstance(samples, tuple) and samples, "AUTO metrics must retain scout samples"
@@ -945,43 +921,37 @@ def assert_auto_warning_isolation(bdd_context: BehaviorContext) -> None:
     assert previous_response.warnings, "Expected warnings in the prior AUTO-mode run"
 
     latest_codes = {
-        entry.get("code")
-        for entry in latest_response.warnings
-        if isinstance(entry, Mapping)
+        entry.get("code") for entry in latest_response.warnings if isinstance(entry, Mapping)
     }
-    assert "answer_audit.unsupported_claims" not in latest_codes, (
-        "Unsupported warnings should not persist into the latest AUTO run"
-    )
+    assert (
+        "answer_audit.unsupported_claims" not in latest_codes
+    ), "Unsupported warnings should not persist into the latest AUTO run"
     permitted_codes = {"answer_audit.needs_review_claims"}
-    assert latest_codes.issubset(permitted_codes), (
-        "Latest AUTO warnings contain unexpected codes"
-    )
+    assert latest_codes.issubset(permitted_codes), "Latest AUTO warnings contain unexpected codes"
 
     payload_warnings = latest_payload.get("warnings") or []
     if payload_warnings:
         payload_codes = {
-            entry.get("code")
-            for entry in payload_warnings
-            if isinstance(entry, Mapping)
+            entry.get("code") for entry in payload_warnings if isinstance(entry, Mapping)
         }
-        assert payload_codes.issubset(permitted_codes), (
-            "Latest AUTO payload warnings contain unsupported codes"
-        )
+        assert payload_codes.issubset(
+            permitted_codes
+        ), "Latest AUTO payload warnings contain unsupported codes"
 
     audit_metrics = latest_response.metrics.get("answer_audit", {})
     if isinstance(audit_metrics, Mapping):
         warnings_snapshot = audit_metrics.get("warnings") or []
         snapshot_codes = {
-            entry.get("code")
-            for entry in warnings_snapshot
-            if isinstance(entry, Mapping)
+            entry.get("code") for entry in warnings_snapshot if isinstance(entry, Mapping)
         }
-        assert snapshot_codes.issubset(permitted_codes), (
-            "Answer audit warnings leaked unsupported codes into latest metrics"
-        )
+        assert snapshot_codes.issubset(
+            permitted_codes
+        ), "Answer audit warnings leaked unsupported codes into latest metrics"
 
     latest_answer = latest_response.answer or ""
-    assert not latest_answer.lstrip().startswith("⚠️"), "Latest AUTO answer still exposes warning prefix"
+    assert not latest_answer.lstrip().startswith(
+        "⚠️"
+    ), "Latest AUTO answer still exposes warning prefix"
 
     warning_messages: list[str] = []
     for entry in previous_response.warnings:
@@ -991,12 +961,12 @@ def assert_auto_warning_isolation(bdd_context: BehaviorContext) -> None:
                 warning_messages.append(message.strip().lower())
     latest_answer_lower = latest_answer.lower()
     for message in warning_messages:
-        assert message not in latest_answer_lower, (
-            "Previous warning message leaked into latest AUTO answer"
-        )
+        assert (
+            message not in latest_answer_lower
+        ), "Previous warning message leaked into latest AUTO answer"
 
     latest_payload_answer = str(latest_payload.get("answer", "")).lower()
     for message in warning_messages:
-        assert message not in latest_payload_answer, (
-            "Previous warning message leaked into AUTO payload answer"
-        )
+        assert (
+            message not in latest_payload_answer
+        ), "Previous warning message leaked into AUTO payload answer"

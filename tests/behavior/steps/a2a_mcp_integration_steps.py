@@ -39,18 +39,14 @@ def given_server(mock_server: FastMCP) -> FastMCP:
 
 
 @when("I perform an A2A MCP handshake")
-def perform_a2a_mcp_handshake(
-    server: FastMCP, bdd_context: BehaviorContext
-) -> None:
+def perform_a2a_mcp_handshake(server: FastMCP, bdd_context: BehaviorContext) -> None:
     """Execute a handshake through the MCP interface."""
     response = mcp_interface.query("hello", transport=server)
     bdd_context["response"] = response
 
 
 @when("the A2A MCP handshake times out")
-def handshake_times_out(
-    server: FastMCP, bdd_context: BehaviorContext
-) -> None:
+def handshake_times_out(server: FastMCP, bdd_context: BehaviorContext) -> None:
     """Simulate a timeout during handshake."""
     with patch(
         "autoresearch.mcp_interface.Client.call_tool",
@@ -62,9 +58,7 @@ def handshake_times_out(
 
 
 @when("the A2A MCP handshake fails once and then succeeds")
-def handshake_recovers(
-    server: FastMCP, bdd_context: BehaviorContext
-) -> None:
+def handshake_recovers(server: FastMCP, bdd_context: BehaviorContext) -> None:
     """Force a transient failure followed by success."""
 
     class FlakyClient(Client):
@@ -95,9 +89,7 @@ def handshake_recovers(
 
 
 @then(parsers.parse('the handshake result should be "{answer}"'))
-def check_handshake_result(
-    bdd_context: BehaviorContext, answer: str
-) -> None:
+def check_handshake_result(bdd_context: BehaviorContext, answer: str) -> None:
     """Validate the handshake response content."""
     assert bdd_context["response"]["answer"] == answer
 
@@ -111,17 +103,14 @@ def check_timeout(bdd_context: BehaviorContext) -> None:
 @scenario("../features/a2a_mcp_integration.feature", "Successful A2A MCP handshake")
 def test_a2a_mcp_success() -> None:
     """Scenario: happy-path handshake."""
-    pass
 
 
 @scenario("../features/a2a_mcp_integration.feature", "MCP handshake timeout handling")
 def test_a2a_mcp_timeout() -> None:
     """Scenario: handshake timeout is handled gracefully."""
-    pass
 
 
 @pytest.mark.error_recovery
 @scenario("../features/a2a_mcp_integration.feature", "Error recovery after handshake failure")
 def test_a2a_mcp_recovery() -> None:
     """Scenario: handshake recovers after transient failure."""
-    pass

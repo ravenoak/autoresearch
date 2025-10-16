@@ -3,7 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Iterable, Mapping, Sequence
-from typing import Any, Iterable as TypingIterable, Iterator, Protocol, SupportsIndex, Tuple, TypeAlias, overload
+from typing import (
+    Any,
+    Iterable as TypingIterable,
+    Iterator,
+    Protocol,
+    SupportsIndex,
+    Tuple,
+    TypeAlias,
+    overload,
+)
 
 from pydantic_core import core_schema
 
@@ -12,6 +21,12 @@ class GetCoreSchemaHandler(Protocol):
     """Minimal protocol for ``pydantic`` schema handler callbacks."""
 
     def generate_schema(self, source: type[Any]) -> core_schema.CoreSchema: ...
+
+
+class SerializerFunctionWrapHandler(Protocol):
+    """Minimal protocol for ``pydantic`` serializer handler callbacks."""
+
+    def __call__(self, value: Any) -> Any: ...
 
 
 class FrozenReasoningStep(Mapping[str, Any]):
@@ -129,6 +144,11 @@ class FrozenReasoningStep(Mapping[str, Any]):
     ) -> core_schema.CoreSchema:
         base_schema = handler.generate_schema(dict[str, Any])
         return core_schema.no_info_wrap_validator_function(cls._validate, base_schema)
+
+    @staticmethod
+    def __pydantic_serialize__(value: "FrozenReasoningStep") -> dict[str, Any]:
+        """Custom Pydantic serializer for FrozenReasoningStep."""
+        return value.to_dict()
 
     @classmethod
     def _validate(

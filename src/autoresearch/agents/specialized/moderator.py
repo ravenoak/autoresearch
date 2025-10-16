@@ -45,7 +45,7 @@ class ModeratorAgent(Agent):
             query=state.query,
             dialogue_history=dialogue_history,
             conflicts=conflicts,
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         if getattr(config, "enable_feedback", False):
@@ -61,7 +61,7 @@ class ModeratorAgent(Agent):
             query=state.query,
             dialogue_history=dialogue_history,
             moderation=moderation,
-            cycle=state.cycle
+            cycle=state.cycle,
         )
 
         if getattr(config, "enable_feedback", False):
@@ -82,11 +82,7 @@ class ModeratorAgent(Agent):
                 "analyzed_claims": [c.get("id") for c in recent_claims],
                 "conflicts_identified": len(conflicts) > 0,
             },
-            results={
-                "moderation": moderation,
-                "guidance": guidance,
-                "conflicts": conflicts
-            },
+            results={"moderation": moderation, "guidance": guidance, "conflicts": conflicts},
         )
 
         if getattr(config, "enable_agent_messages", False):
@@ -116,11 +112,7 @@ class ModeratorAgent(Agent):
 
         has_multiple_agents = len(agent_set) >= 2
 
-        return (
-            super().can_execute(state, config)
-            and has_sufficient_claims
-            and has_multiple_agents
-        )
+        return super().can_execute(state, config) and has_sufficient_claims and has_multiple_agents
 
     def _get_recent_claims(self, state: QueryState) -> List[Dict[str, Any]]:
         """Get the most recent claims from the state, up to a limit."""
@@ -135,8 +127,15 @@ class ModeratorAgent(Agent):
 
         # Simple heuristic: look for claims with contradictory language
         contradiction_markers = [
-            "however", "but", "contrary", "disagree", "incorrect",
-            "false", "misleading", "inaccurate", "dispute"
+            "however",
+            "but",
+            "contrary",
+            "disagree",
+            "incorrect",
+            "false",
+            "misleading",
+            "inaccurate",
+            "dispute",
         ]
 
         for claim in claims:

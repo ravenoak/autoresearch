@@ -285,7 +285,11 @@ def _stubbed_search_environment(monkeypatch, request):
 
             return TrackingHybrid(descriptor)
 
-        monkeypatch.setattr(Search, "embedding_lookup", _wrap_hybrid(hybridmethod(_stub_embedding), stack=embedding_binding_stack))
+        monkeypatch.setattr(
+            Search,
+            "embedding_lookup",
+            _wrap_hybrid(hybridmethod(_stub_embedding), stack=embedding_binding_stack),
+        )
         monkeypatch.setattr(
             Search,
             "external_lookup",
@@ -446,12 +450,12 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         assert bundle.by_backend["duckdb"] == []
 
     retrieval_calls = [call for call in env.add_calls if call["stage"] == "retrieval"]
-    assert any(call["phase"] == "search-instance" for call in retrieval_calls), (
-        "Instance lookups should tag retrieval-stage add_embeddings invocations for diagnostics."
-    )
-    assert any(call["phase"] == "search-class" for call in retrieval_calls), (
-        "Class lookups should also tag retrieval-stage add_embeddings invocations for diagnostics."
-    )
+    assert any(
+        call["phase"] == "search-instance" for call in retrieval_calls
+    ), "Instance lookups should tag retrieval-stage add_embeddings invocations for diagnostics."
+    assert any(
+        call["phase"] == "search-class" for call in retrieval_calls
+    ), "Class lookups should also tag retrieval-stage add_embeddings invocations for diagnostics."
     for call in retrieval_calls:
         assert call["raw_query"] == raw_query
         assert call["executed_query"] == executed_query
@@ -481,9 +485,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     expected_compute = expected_embedding_calls["compute"]
 
     search_lookup_bindings = [
-        binding
-        for phase, binding in env.embedding_events
-        if phase.startswith("search-")
+        binding for phase, binding in env.embedding_events if phase.startswith("search-")
     ]
     total_expected_search_lookup = sum(
         sum(counts.values())
@@ -493,9 +495,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert len(search_lookup_bindings) == total_expected_search_lookup
 
     per_phase_lookup_bindings = {
-        phase: [
-            binding for event_phase, binding in env.embedding_events if event_phase == phase
-        ]
+        phase: [binding for event_phase, binding in env.embedding_events if event_phase == phase]
         for phase in expected_lookup
     }
 
@@ -545,9 +545,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         ("search-class", "instance", "class"),
     ]
     assert len(env.add_calls) == len(expected_add_calls)
-    for call, (phase, hybrid_binding, caller_binding) in zip(
-        env.add_calls, expected_add_calls
-    ):
+    for call, (phase, hybrid_binding, caller_binding) in zip(env.add_calls, expected_add_calls):
         assert call["phase"] == phase
         assert call["binding"] == "instance"
         assert call["hybrid_binding"] == hybrid_binding
@@ -638,9 +636,7 @@ def test_search_stub_duckduckgo_canonical_query(monkeypatch):
     response = MagicMock()
     response.raise_for_status.return_value = None
     response.json.return_value = {
-        "RelatedTopics": [
-            {"Text": "Canonical Result", "FirstURL": "https://example.com"}
-        ]
+        "RelatedTopics": [{"Text": "Canonical Result", "FirstURL": "https://example.com"}]
     }
     session = MagicMock()
     session.get.return_value = response
@@ -652,9 +648,7 @@ def test_search_stub_duckduckgo_canonical_query(monkeypatch):
 
     with Search.temporary_state() as search_instance:
         search_instance.cache.clear()
-        bundle = search_instance.external_lookup(
-            raw_query, max_results=1, return_handles=True
-        )
+        bundle = search_instance.external_lookup(raw_query, max_results=1, return_handles=True)
 
     assert bundle.raw_query == raw_query
     assert bundle.executed_query == executed_query
@@ -691,9 +685,7 @@ def test_search_stub_local_file_canonical_query(monkeypatch, tmp_path):
 
     with Search.temporary_state() as search_instance:
         search_instance.cache.clear()
-        bundle = search_instance.external_lookup(
-            raw_query, max_results=1, return_handles=True
-        )
+        bundle = search_instance.external_lookup(raw_query, max_results=1, return_handles=True)
 
     assert bundle.raw_query == raw_query
     assert bundle.executed_query == executed_query

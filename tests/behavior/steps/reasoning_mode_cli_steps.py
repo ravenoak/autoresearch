@@ -56,9 +56,7 @@ def test_invalid_mode_sparql_cli() -> None:
     pass
 
 
-@given(
-    parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
-)
+@given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
 def loops_config(count: int, monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -69,9 +67,7 @@ def loops_config(count: int, monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     parsers.parse('I run `autoresearch search "{query}" --mode {mode}`'),
     target_fixture="run_result",
 )
-def run_search(
-    query: str, mode: str, config: ConfigModel, cli_runner: CliRunner
-) -> PayloadDict:
+def run_search(query: str, mode: str, config: ConfigModel, cli_runner: CliRunner) -> PayloadDict:
     record: list[str] = []
     params: PayloadDict = {}
     logs: list[str] = []
@@ -88,16 +84,18 @@ def run_search(
             step = len(record) + 1
             record.append(self.name)
             content = f"{self.name}-{step}"
-            return as_payload({
-                "claims": [
-                    {
-                        "id": str(step),
-                        "type": "thought",
-                        "content": content,
-                    }
-                ],
-                "results": {"final_answer": content},
-            })
+            return as_payload(
+                {
+                    "claims": [
+                        {
+                            "id": str(step),
+                            "type": "thought",
+                            "content": content,
+                        }
+                    ],
+                    "results": {"final_answer": content},
+                }
+            )
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -120,9 +118,7 @@ def run_search(
         ),
     ):
         command = cast(Command, cli_app)
-        result = cli_runner.invoke(
-            command, ["search", query, "--mode", mode, "--output", "json"]
-        )
+        result = cli_runner.invoke(command, ["search", query, "--mode", mode, "--output", "json"])
         if result.exit_code != 0:
             logs.append("unsupported reasoning mode")
     state["active"] = False
@@ -142,25 +138,25 @@ def run_search(
                 data = as_payload(json.loads("\n".join(lines[start_idx:])))
             except Exception:
                 data = {}
-    return as_payload({
-        "record": record,
-        "config_params": params,
-        "exit_code": result.exit_code,
-        "data": data,
-        "output": result.stdout,
-        "stderr": result.stderr,
-        "logs": logs,
-        "state": state,
-    })
+    return as_payload(
+        {
+            "record": record,
+            "config_params": params,
+            "exit_code": result.exit_code,
+            "data": data,
+            "output": result.stdout,
+            "stderr": result.stderr,
+            "logs": logs,
+            "state": state,
+        }
+    )
 
 
 @when(
     parsers.parse('I run `autoresearch sparql "{query}" --mode {mode}`'),
     target_fixture="run_result",
 )
-def run_sparql(
-    query: str, mode: str, config: ConfigModel, cli_runner: CliRunner
-) -> PayloadDict:
+def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner: CliRunner) -> PayloadDict:
     record: list[str] = []
     params: PayloadDict = {}
     logs: list[str] = []
@@ -198,9 +194,7 @@ def run_sparql(
         ),
     ):
         command = cast(Command, cli_app)
-        result = cli_runner.invoke(
-            command, ["sparql", query, "--mode", mode, "--output", "json"]
-        )
+        result = cli_runner.invoke(command, ["sparql", query, "--mode", mode, "--output", "json"])
         if result.exit_code != 0:
             logs.append("unsupported reasoning mode")
     state["active"] = False
@@ -209,16 +203,18 @@ def run_sparql(
         data = as_payload(json.loads(result.stdout))
     except Exception:
         pass
-    return as_payload({
-        "record": record,
-        "config_params": params,
-        "exit_code": result.exit_code,
-        "data": data,
-        "output": result.stdout,
-        "stderr": result.stderr,
-        "logs": logs,
-        "state": state,
-    })
+    return as_payload(
+        {
+            "record": record,
+            "config_params": params,
+            "exit_code": result.exit_code,
+            "data": data,
+            "output": result.stdout,
+            "stderr": result.stderr,
+            "logs": logs,
+            "state": state,
+        }
+    )
 
 
 @then("the CLI should exit successfully")
@@ -239,9 +235,7 @@ def assert_mode(run_result: PayloadDict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: PayloadDict, groups: str) -> None:
-    expected = [
-        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
-    ]
+    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
     assert run_result["config_params"].get("agent_groups") == expected
 
 

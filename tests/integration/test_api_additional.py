@@ -25,9 +25,7 @@ def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     return cfg
 
 
-def test_config_endpoints(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_config_endpoints(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
 
     resp = api_client.get("/config")
@@ -47,9 +45,7 @@ def test_config_endpoints(
 
 
 @pytest.mark.slow
-def test_async_query_status(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_async_query_status(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     _setup(monkeypatch)
 
     async def dummy_async(
@@ -84,9 +80,7 @@ def test_async_query_status(
     assert missing.status_code == 404
 
 
-def test_async_query_cancel(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_async_query_cancel(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     _setup(monkeypatch)
 
     async def long_async(
@@ -115,9 +109,7 @@ def test_async_query_cancel(
     assert missing.status_code == 404
 
 
-def test_metrics_and_capabilities(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_metrics_and_capabilities(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     _setup(monkeypatch)
 
     assert api_client.get("/metrics").status_code == 200
@@ -126,9 +118,7 @@ def test_metrics_and_capabilities(
     assert "llm_backends" in cap.json()
 
 
-def test_openapi_lists_new_routes(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_openapi_lists_new_routes(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     _setup(monkeypatch)
     schema = api_client.get("/openapi.json").json()
     assert "/config" in schema["paths"]
@@ -136,9 +126,7 @@ def test_openapi_lists_new_routes(
     assert "/query/{query_id}" in schema["paths"]
 
 
-def test_health_endpoint(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_health_endpoint(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     """/health should return service status."""
 
     _setup(monkeypatch)

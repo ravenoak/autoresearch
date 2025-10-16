@@ -18,6 +18,7 @@ class Search:
 
 def _make_success_agent(name, calls, stored):
     if name == "Searcher":
+
         class Searcher:
             def __init__(self, name, llm_adapter=None):
                 self.name = name

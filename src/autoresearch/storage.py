@@ -2262,7 +2262,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         graph = StorageManager.get_knowledge_graph(create=False)
         if graph is None or not graph.nodes:
             return "{}"
-        payload = json_graph.node_link_data(graph)
+        payload = json_graph.node_link_data(graph, edges="edges")  # type: ignore[call-arg]
         return json.dumps(payload, ensure_ascii=False)
 
     @staticmethod

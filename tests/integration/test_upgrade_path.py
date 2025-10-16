@@ -29,8 +29,9 @@ def run_upgrade(tmp_path: Path, poetry_env: bool) -> list[Sequence[Any] | Any]:
     cwd = os.getcwd()
     os.chdir(tmp_path)
     try:
-        with patch("subprocess.check_call", side_effect=fake_call), patch(
-            "shutil.which", side_effect=fake_which
+        with (
+            patch("subprocess.check_call", side_effect=fake_call),
+            patch("shutil.which", side_effect=fake_which),
         ):
             runpy.run_path(str(SCRIPT), run_name="__main__")
     finally:

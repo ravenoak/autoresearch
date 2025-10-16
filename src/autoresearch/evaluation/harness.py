@@ -49,9 +49,7 @@ class ExampleResult:
     routing_decision_count: Optional[int] = None
     gate_events: Sequence[Mapping[str, Any]] = field(default_factory=list)
     routing_strategy: Optional[str] = None
-    recorded_at: datetime = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    recorded_at: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
@@ -215,9 +213,7 @@ class EvaluationHarness:
                 gate_should_debate = decision
 
         planner_depth = self._planner_depth(response)
-        routing_delta, routing_decision_count = self._routing_metrics(
-            execution_metrics
-        )
+        routing_delta, routing_decision_count = self._routing_metrics(execution_metrics)
         routing_strategy = execution_metrics.get("model_routing_strategy")
 
         result = ExampleResult(
@@ -293,11 +289,7 @@ class EvaluationHarness:
             [self._coerce_optional_float(r.routing_decision_count) for r in results]
         )
         routing_strategy = next(
-            (
-                result.routing_strategy
-                for result in results
-                if result.routing_strategy
-            ),
+            (result.routing_strategy for result in results if result.routing_strategy),
             None,
         )
 
@@ -424,9 +416,7 @@ class EvaluationHarness:
             conn.execute(
                 "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_should_debate BOOLEAN"
             )
-            conn.execute(
-                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_events JSON"
-            )
+            conn.execute("ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_events JSON")
             conn.execute(
                 "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS planner_depth DOUBLE"
             )
@@ -540,12 +530,8 @@ class EvaluationHarness:
 
     def _purge_run(self, run_id: str) -> None:
         with self._open_duckdb() as conn:
-            conn.execute(
-                "DELETE FROM evaluation_results WHERE run_id = ?", [run_id]
-            )
-            conn.execute(
-                "DELETE FROM evaluation_run_summary WHERE run_id = ?", [run_id]
-            )
+            conn.execute("DELETE FROM evaluation_results WHERE run_id = ?", [run_id])
+            conn.execute("DELETE FROM evaluation_run_summary WHERE run_id = ?", [run_id])
 
     def _persist_summary(
         self,
@@ -690,20 +676,14 @@ class EvaluationHarness:
             comparisons.append(
                 RoutingStrategyComparison(
                     dataset=variant.dataset,
-                    baseline_strategy=base.routing.strategy
-                    or base.config_signature,
-                    variant_strategy=variant.routing.strategy
-                    or variant.config_signature,
+                    baseline_strategy=base.routing.strategy or base.config_signature,
+                    variant_strategy=variant.routing.strategy or variant.config_signature,
                     accuracy_delta=_delta(base.accuracy, variant.accuracy),
                     routing_delta_diff=_delta(
                         base.routing.total_delta, variant.routing.total_delta
                     ),
-                    latency_delta=_delta(
-                        base.avg_latency_seconds, variant.avg_latency_seconds
-                    ),
-                    tokens_delta=_delta(
-                        base.avg_tokens_total, variant.avg_tokens_total
-                    ),
+                    latency_delta=_delta(base.avg_latency_seconds, variant.avg_latency_seconds),
+                    tokens_delta=_delta(base.avg_tokens_total, variant.avg_tokens_total),
                 )
             )
         return comparisons
@@ -755,9 +735,7 @@ class EvaluationHarness:
         if answer is None:
             return None
         normalized_answer = EvaluationHarness._normalise_text(answer)
-        expected_set = {
-            EvaluationHarness._normalise_text(candidate) for candidate in expected
-        }
+        expected_set = {EvaluationHarness._normalise_text(candidate) for candidate in expected}
         if not expected_set:
             return None
         return normalized_answer in expected_set
@@ -812,9 +790,7 @@ class EvaluationHarness:
             if not dependencies:
                 memo[node_id] = 1.0
             else:
-                memo[node_id] = 1.0 + max(
-                    depth(dep, trail) for dep in dependencies if dep in nodes
-                )
+                memo[node_id] = 1.0 + max(depth(dep, trail) for dep in dependencies if dep in nodes)
             trail.remove(node_id)
             return memo[node_id]
 
@@ -832,7 +808,7 @@ class EvaluationHarness:
 
     @staticmethod
     def _routing_metrics(
-        execution_metrics: Mapping[str, Any]
+        execution_metrics: Mapping[str, Any],
     ) -> tuple[Optional[float], Optional[int]]:
         savings_meta = execution_metrics.get("model_routing_cost_savings")
         routing_delta: Optional[float] = None

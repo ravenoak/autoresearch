@@ -111,18 +111,14 @@ def test_external_lookup_triggers_query_rewrite(
         if query == "alpha":
             return [{"title": "alpha", "url": "1"}]
         if query == "alpha rewrite":
-            return [
-                {"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)
-            ]
+            return [{"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)]
         return []
 
     isolated_search.backends = {"stub": backend}
     monkeypatch.setattr(
         SearchContext,
         "suggest_rewrites",
-        lambda self, query, limit=3: [
-            {"query": "alpha rewrite", "reason": "test"}
-        ],
+        lambda self, query, limit=3: [{"query": "alpha rewrite", "reason": "test"}],
     )
 
     with SearchContext.temporary_instance():
@@ -174,9 +170,7 @@ def test_external_lookup_adaptive_k_increases_fetch(
         calls.append((query, max_results))
         if max_results <= 2:
             return [{"title": "alpha", "url": "1"}]
-        return [
-            {"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)
-        ]
+        return [{"title": f"alpha-{i}", "url": str(i)} for i in range(max_results)]
 
     isolated_search.backends = {"stub": backend}
 

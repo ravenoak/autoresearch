@@ -67,3 +67,214 @@ trace toggle governs both reasoning steps and ReAct event visualisations, making
 it simple to switch between quick summaries and full audit trails. Trace
 downloads retain the depth selection so exported Markdown or JSON matches the
 on-screen view.
+
+## Enhanced CLI Interface
+
+### Log Format Control
+
+Autoresearch now provides intelligent log formatting that adapts to your usage context:
+
+**Auto-Detection**: The system automatically detects whether you're using an interactive terminal or automation context:
+- **Interactive terminals**: Human-readable console format
+- **Automation/redirected output**: Structured JSON format for machine parsing
+
+**Manual Control**: Override auto-detection with explicit format options:
+```bash
+# Force console format for human readability
+autoresearch search "query" --log-format console
+
+# Force JSON format for automation
+autoresearch search "query" --log-format json
+
+# Use auto-detection (default)
+autoresearch search "query" --log-format auto
+```
+
+### Quiet Mode
+
+Suppress diagnostic log messages while preserving errors and warnings:
+```bash
+# Only show errors and warnings
+autoresearch search "query" --quiet-logs
+```
+
+### Bare Mode for Accessibility
+
+Enable simplified output for screen readers and text-only interfaces:
+```bash
+# Disable colors, symbols, and decorative formatting
+autoresearch search "query" --bare-mode
+```
+
+This mode provides:
+- Plain text labels (SUCCESS, ERROR, WARNING, INFO)
+- No Unicode symbols
+- No ANSI color codes
+- Essential functionality preserved
+
+### Section-Level Control
+
+Fine-tune which sections appear in your output:
+
+**Show Available Sections**:
+```bash
+# See what sections are available for a depth level
+autoresearch search "query" --depth standard --show-sections
+```
+
+**Include Specific Sections**:
+```bash
+# Include reasoning section even at concise depth
+autoresearch search "query" --depth concise --include=reasoning
+
+# Include multiple sections
+autoresearch search "query" --include=metrics,reasoning
+```
+
+**Exclude Specific Sections**:
+```bash
+# Exclude raw response at trace depth
+autoresearch search "query" --depth trace --exclude=raw_response
+
+# Exclude multiple sections
+autoresearch search "query" --exclude=raw_response,citations
+```
+
+**Combine Include and Exclude**:
+```bash
+# Include metrics but exclude citations
+autoresearch search "query" --include=metrics --exclude=citations
+```
+
+### Improved Error Messages
+
+All error messages now include:
+- **Clear descriptions** of what went wrong
+- **Actionable suggestions** for resolution
+- **Code examples** showing correct usage
+- **Consistent formatting** across all interfaces
+
+**Example**:
+```bash
+autoresearch search "query" --log-format invalid
+# Error: Invalid log format: invalid. Valid options: json, console, auto
+# Suggestion: Use --log-format console for human-readable output
+# Example: autoresearch search "query" --log-format console
+```
+
+## Output Stream Management
+
+### Clean Separation
+
+- **stdout**: Application results and user-facing content
+- **stderr**: Diagnostic logs, progress indicators, and status messages
+- **No mixing**: Human-readable content never mixed with JSON logs in normal usage
+
+### Automation-Friendly
+
+When stdout is redirected or in automation contexts:
+```bash
+# JSON logs go to stderr, results to stdout
+autoresearch search "query" > results.json
+
+# Both streams can be captured separately
+autoresearch search "query" > results.json 2> logs.json
+```
+
+## Cross-Interface Consistency
+
+### Unified Experience
+
+All interfaces (CLI, Streamlit GUI, API, MCP) now provide:
+- **Same depth levels** with identical section availability
+- **Consistent error messaging** with actionable suggestions
+- **Unified response schemas** for programmatic consumption
+- **Same metadata fields** (state_id, correlation_id)
+
+### Interface-Specific Features
+
+**CLI Interface**:
+- Command-line options for all features
+- Intelligent format detection
+- Section-level control
+- Bare mode for accessibility
+
+**Streamlit GUI**:
+- Interactive depth controls
+- Real-time log viewer
+- Section toggles
+- Export functionality
+
+**API Interface**:
+- JSON responses with consistent schema
+- Correlation ID tracking
+- Standardized error formats
+- Programmatic access to all features
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+**JSON logs appearing in CLI output**:
+- This should not happen in normal usage
+- If it occurs, check that you're using an interactive terminal
+- Try: `autoresearch search "query" --log-format console`
+
+**Output appears duplicated**:
+- Check for multiple print statements in error handling
+- Use `--quiet-logs` to suppress diagnostic messages
+- Report as a bug if it persists
+
+**Colors not displaying correctly**:
+- Use `--bare-mode` for text-only output
+- Check terminal color support
+- Try a different terminal emulator
+
+**Screen reader compatibility issues**:
+- Always use `--bare-mode` for screen readers
+- Report any remaining accessibility issues
+- Check that all images have alt text
+
+### Getting Help
+
+**Command Help**:
+```bash
+# Get help for any command
+autoresearch search --help
+autoresearch --help
+```
+
+**Feature Documentation**:
+- This user guide for general usage
+- CLI help for command-specific options
+- API documentation for programmatic usage
+
+**Community Support**:
+- GitHub issues for bug reports and feature requests
+- Documentation for detailed technical information
+- Community forums for user discussions
+
+## Migration Guide
+
+### From Previous Versions
+
+**New CLI Options**:
+- `--log-format`: Control log output format
+- `--quiet-logs`: Suppress diagnostic messages
+- `--bare-mode`: Enable accessibility mode
+- `--show-sections`: Display available sections
+- `--include`/`--exclude`: Control section visibility
+
+**Behavioral Changes**:
+- Log format auto-detection (may change output format)
+- Enhanced error messages (more detailed and actionable)
+- Improved output stream separation
+
+**Configuration Updates**:
+- No configuration changes required
+- All new features work with existing configurations
+- Environment variables available for advanced customization
+
+### Breaking Changes
+
+**None**: All changes are backward compatible and additive.

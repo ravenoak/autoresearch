@@ -25,9 +25,7 @@ from autoresearch.storage_typing import JSONDict
 from tests.typing_helpers import TypedFixture
 
 
-def _stub_config_loader(
-    monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel
-) -> None:
+def _stub_config_loader(monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel) -> None:
     def load_config_stub(_: ConfigLoader) -> ConfigModel:
         return cfg
 

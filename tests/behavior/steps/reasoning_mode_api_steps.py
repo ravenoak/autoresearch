@@ -75,9 +75,7 @@ def api_server_running(api_client: Any) -> dict[str, Any]:
     return as_payload(client=api_client)
 
 
-@given(
-    parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
-)
+@given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
 def loops_config(count: int, monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -139,9 +137,7 @@ def send_query(
         ),
     ):
         client = get_required(test_context, "client")
-        response = client.post(
-            "/query", json={"query": query, "reasoning_mode": mode}
-        )
+        response = client.post("/query", json={"query": query, "reasoning_mode": mode})
         if response.status_code != 200:
             logs.append("unsupported reasoning mode")
     state["active"] = False
@@ -150,19 +146,19 @@ def send_query(
     except Exception:
         data = as_payload()
     set_value(test_context, "response", response)
-    return as_payload({
-        "record": record,
-        "config_params": params,
-        "data": data,
-        "logs": logs,
-        "state": state,
-    })
+    return as_payload(
+        {
+            "record": record,
+            "config_params": params,
+            "data": data,
+            "logs": logs,
+            "state": state,
+        }
+    )
 
 
 @when(
-    parsers.parse(
-        'I send an async query "{query}" with reasoning mode "{mode}" to the API'
-    ),
+    parsers.parse('I send an async query "{query}" with reasoning mode "{mode}" to the API'),
     target_fixture="run_result",
 )
 def send_async_query(
@@ -230,20 +226,20 @@ def send_async_query(
         ),
     ):
         client = get_required(test_context, "client")
-        submit = client.post(
-            "/query/async", json={"query": query, "reasoning_mode": mode}
-        )
+        submit = client.post("/query/async", json={"query": query, "reasoning_mode": mode})
         if submit.status_code != 200:
             logs.append("unsupported reasoning mode")
             set_value(test_context, "response", submit)
             state["active"] = False
-            return as_payload({
-                "record": record,
-                "config_params": params,
-                "data": {},
-                "logs": logs,
-                "state": state,
-            })
+            return as_payload(
+                {
+                    "record": record,
+                    "config_params": params,
+                    "data": {},
+                    "logs": logs,
+                    "state": state,
+                }
+            )
         query_id = submit.json()["query_id"]
         task = client.app.state.async_tasks.get(query_id)
         assert isinstance(task, asyncio.Task)
@@ -256,13 +252,15 @@ def send_async_query(
     except Exception:
         data = as_payload()
     set_value(test_context, "response", response)
-    return as_payload({
-        "record": record,
-        "config_params": params,
-        "data": data,
-        "logs": logs,
-        "state": state,
-    })
+    return as_payload(
+        {
+            "record": record,
+            "config_params": params,
+            "data": data,
+            "logs": logs,
+            "state": state,
+        }
+    )
 
 
 @then(parsers.parse("the response status should be {status:d}"))
@@ -291,9 +289,7 @@ def assert_mode(run_result: PayloadDict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: PayloadDict, groups: str) -> None:
-    expected = [
-        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
-    ]
+    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
     assert run_result["config_params"].get("agent_groups") == expected
 
 

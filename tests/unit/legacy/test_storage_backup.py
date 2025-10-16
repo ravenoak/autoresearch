@@ -145,9 +145,7 @@ def test_restore_backup_basic(mock_storage, temp_dir):
     os.makedirs(restore_dir, exist_ok=True)
 
     # Restore the backup
-    restored_paths = restore_backup(
-        backup_path=backup_info.path, target_dir=restore_dir
-    )
+    restored_paths = restore_backup(backup_path=backup_info.path, target_dir=restore_dir)
 
     # Verify restored files exist
     assert os.path.exists(restored_paths["db_path"])
@@ -178,9 +176,7 @@ def test_restore_backup_with_compression(mock_storage, temp_dir):
     os.makedirs(restore_dir, exist_ok=True)
 
     # Restore the backup
-    restored_paths = restore_backup(
-        backup_path=backup_info.path, target_dir=restore_dir
-    )
+    restored_paths = restore_backup(backup_path=backup_info.path, target_dir=restore_dir)
 
     # Verify restored files exist
     assert os.path.exists(restored_paths["db_path"])
@@ -225,9 +221,7 @@ def test_backup_rotation_policy(mock_storage, temp_dir):
     os.makedirs(backup_dir, exist_ok=True)
 
     # Create a backup config with rotation policy
-    config = BackupConfig(
-        backup_dir=backup_dir, compress=True, max_backups=2, retention_days=30
-    )
+    config = BackupConfig(backup_dir=backup_dir, compress=True, max_backups=2, retention_days=30)
 
     with freeze_time() as frozen_time:
         for i in range(3):
@@ -289,9 +283,7 @@ def test_point_in_time_recovery(mock_storage, temp_dir):
                 compress=False,
             )
             backup_times.append(backup_info.timestamp)
-            mock_storage["conn"].execute(
-                f"INSERT INTO test_table VALUES ({i + 3}, 'Test {i + 3}')"
-            )
+            mock_storage["conn"].execute(f"INSERT INTO test_table VALUES ({i + 3}, 'Test {i + 3}')")
             frozen_time.tick(delta=timedelta(seconds=1))
 
     # Restore to a point in time (the second backup)

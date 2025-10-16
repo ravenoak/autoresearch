@@ -4,27 +4,33 @@ Autoresearch is a local-first research assistant that coordinates multiple
 agents to produce evidence-backed answers and stores data on the user's
 machine.
 
-## 0.1.0a1 (unreleased)
+## 0.1.0a1 (Planned)
 
-Planned for **2026-09-15**. Dependency pins: `fastapi>=0.116.1` and
-`slowapi==0.1.9`.
+Planned for release after comprehensive testing and documentation verification.
+Dependency pins: `fastapi>=0.116.1` and `slowapi==0.1.9`.
 
-### Capabilities
+### Core Features
 
-- Coordinates dialectical, contrarian, and fact-checking agents to synthesize
-  answers.
-- Provides a command-line interface and HTTP API.
-- Uses local databases for searches and knowledge graphs.
-- Manages dependencies with uv and supports optional extras for features like
-  rate limiting.
-- Supports direct, dialectical, and chain-of-thought modes for queries (see
-  [agent system](agent_system.md)).
-- Pluggable search and storage backends enable local-first workflows (see
-  [search backends](search_backends.md) and [storage](storage.md)).
-- Quickstart and advanced guides help explore features (see [quickstart
-  guides](quickstart_guides.md) and [advanced usage](advanced_usage.md)).
-- HTTP API authenticates using configured API keys or bearer tokens. Any
-  provided credential must be valid or the request receives a 401 response.
+- **Multi-Agent Research Orchestration**: Coordinates dialectical, contrarian, and fact-checking agents to synthesize evidence-backed answers.
+- **Local-First Architecture**: Uses local databases (DuckDB, Kuzu) for searches and knowledge graphs, ensuring user data privacy.
+- **Flexible Query Modes**: Supports direct, dialectical, and chain-of-thought reasoning modes for different research scenarios.
+- **Pluggable Backends**: Modular search and storage backends enable local-first workflows with optional cloud integrations.
+- **Comprehensive APIs**: Provides both command-line interface and HTTP REST API for programmatic access.
+
+### Advanced Capabilities
+
+- **Agent Communication Framework**: Sophisticated message passing and state management between specialized agents.
+- **Knowledge Graph Integration**: Automatic entity extraction, relationship inference, and graph-based reasoning.
+- **Adaptive Search Strategies**: Multi-backend search with ranking, caching, and fallback mechanisms.
+- **Circuit Breaker Protection**: Robust error handling and recovery mechanisms for distributed agent coordination.
+- **Real-time Monitoring**: Comprehensive metrics, logging, and observability for research workflows.
+
+### Optional Enhancements
+
+- **UI Components**: Streamlit-based web interface for interactive research sessions.
+- **Distributed Processing**: Ray and Redis support for scalable agent coordination.
+- **Vector Search**: DuckDB VSS extension integration for semantic search capabilities.
+- **Document Processing**: PDF, DOCX, and web content parsing for comprehensive research inputs.
 
 ### Known Limitations
 

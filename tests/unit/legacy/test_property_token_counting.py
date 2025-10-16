@@ -7,7 +7,9 @@ from autoresearch.llm.token_counting import compress_prompt, prune_context
 
 @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
 @given(
-    words=st.lists(st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=3, max_size=20),
+    words=st.lists(
+        st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=3, max_size=20
+    ),
     budget=st.integers(min_value=1, max_value=20),
 )
 def test_compress_prompt_preserves_edges(words, budget):
@@ -21,7 +23,9 @@ def test_compress_prompt_preserves_edges(words, budget):
 
 @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
 @given(
-    messages=st.lists(st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=0, max_size=10),
+    messages=st.lists(
+        st.text(alphabet=string.ascii_letters, min_size=1, max_size=5), min_size=0, max_size=10
+    ),
     budget=st.integers(min_value=0, max_value=20),
 )
 def test_prune_context_respects_budget(messages, budget):

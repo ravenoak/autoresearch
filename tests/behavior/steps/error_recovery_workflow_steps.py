@@ -84,14 +84,10 @@ def run_query(
         orchestrator = Orchestrator()
         orchestrator.run_query(query, config)
     except AgentError:
-        run_result: RunResult = {
-            "recovery_info": {"recovery_applied": query == "fail once"}
-        }
+        run_result: RunResult = {"recovery_info": {"recovery_applied": query == "fail once"}}
         bdd_context["run_result"] = run_result
     else:  # pragma: no cover - success path not used
-        run_result_success: RunResult = {
-            "recovery_info": {"recovery_applied": False}
-        }
+        run_result_success: RunResult = {"recovery_info": {"recovery_applied": False}}
         bdd_context["run_result"] = run_result_success
 
 

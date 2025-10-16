@@ -28,7 +28,9 @@ class DummyTracer:
         ) -> None:  # pragma: no cover - no cleanup
             return None
 
-        def set_attribute(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
+        def set_attribute(
+            self, *args: Any, **kwargs: Any
+        ) -> None:  # pragma: no cover - logging only
             return None
 
         def add_event(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - logging only
@@ -39,21 +41,17 @@ class DummyTracer:
 
 
 class DummySynthesizer:
-    def execute(self, state: Any, config: ConfigModel) -> dict[str, str]:  # pragma: no cover - simple passthrough
+    def execute(
+        self, state: Any, config: ConfigModel
+    ) -> dict[str, str]:  # pragma: no cover - simple passthrough
         return {"answer": "combined"}
 
 
 @pytest.fixture(autouse=True)
 def patch_parallel(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "autoresearch.orchestration.parallel.setup_tracing", lambda *_: None
-    )
-    monkeypatch.setattr(
-        "autoresearch.orchestration.parallel.get_tracer", lambda *_: DummyTracer()
-    )
-    monkeypatch.setattr(
-        "autoresearch.orchestration.parallel._get_memory_usage", lambda: 0.0
-    )
+    monkeypatch.setattr("autoresearch.orchestration.parallel.setup_tracing", lambda *_: None)
+    monkeypatch.setattr("autoresearch.orchestration.parallel.get_tracer", lambda *_: DummyTracer())
+    monkeypatch.setattr("autoresearch.orchestration.parallel._get_memory_usage", lambda: 0.0)
     monkeypatch.setattr(
         "autoresearch.orchestration.parallel._calculate_result_confidence",
         lambda _r: 0.5,
@@ -137,6 +135,4 @@ def test_execute_parallel_query_reasoning_normalization(
         assert payload == payload["text"]
         assert hash(payload) == hash(payload["text"])
 
-    assert [step["text"] for step in first.reasoning] == [
-        step["text"] for step in second.reasoning
-    ]
+    assert [step["text"] for step in first.reasoning] == [step["text"] for step in second.reasoning]

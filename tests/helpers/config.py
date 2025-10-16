@@ -101,9 +101,7 @@ class SearchConfigStub:
     query_rewrite: "QueryRewriteConfigStub" = field(
         default_factory=lambda: QueryRewriteConfigStub()
     )
-    adaptive_k: "AdaptiveKConfigStub" = field(
-        default_factory=lambda: AdaptiveKConfigStub()
-    )
+    adaptive_k: "AdaptiveKConfigStub" = field(default_factory=lambda: AdaptiveKConfigStub())
 
 
 @dataclass(slots=True)
@@ -156,19 +154,11 @@ class ConfigModelStub:
             "search": {
                 "context_aware": {
                     "enabled": self.search.context_aware.enabled,
-                    "use_query_expansion": (
-                        self.search.context_aware.use_query_expansion
-                    ),
+                    "use_query_expansion": (self.search.context_aware.use_query_expansion),
                     "expansion_factor": self.search.context_aware.expansion_factor,
-                    "use_search_history": (
-                        self.search.context_aware.use_search_history
-                    ),
-                    "max_history_items": (
-                        self.search.context_aware.max_history_items
-                    ),
-                    "graph_signal_weight": (
-                        self.search.context_aware.graph_signal_weight
-                    ),
+                    "use_search_history": (self.search.context_aware.use_search_history),
+                    "max_history_items": (self.search.context_aware.max_history_items),
+                    "graph_signal_weight": (self.search.context_aware.graph_signal_weight),
                     "planner_graph_conditioning": (
                         self.search.context_aware.planner_graph_conditioning
                     ),
@@ -177,26 +167,18 @@ class ConfigModelStub:
                     "enabled": self.search.query_rewrite.enabled,
                     "max_attempts": self.search.query_rewrite.max_attempts,
                     "min_results": self.search.query_rewrite.min_results,
-                    "min_unique_sources": (
-                        self.search.query_rewrite.min_unique_sources
-                    ),
-                    "coverage_gap_threshold": (
-                        self.search.query_rewrite.coverage_gap_threshold
-                    ),
+                    "min_unique_sources": (self.search.query_rewrite.min_unique_sources),
+                    "coverage_gap_threshold": (self.search.query_rewrite.coverage_gap_threshold),
                 },
                 "adaptive_k": {
                     "enabled": self.search.adaptive_k.enabled,
                     "min_k": self.search.adaptive_k.min_k,
                     "max_k": self.search.adaptive_k.max_k,
                     "step": self.search.adaptive_k.step,
-                    "coverage_gap_threshold": (
-                        self.search.adaptive_k.coverage_gap_threshold
-                    ),
+                    "coverage_gap_threshold": (self.search.adaptive_k.coverage_gap_threshold),
                 },
             },
-            "gate_graph_contradiction_threshold": (
-                self.gate_graph_contradiction_threshold
-            ),
+            "gate_graph_contradiction_threshold": (self.gate_graph_contradiction_threshold),
             "gate_graph_similarity_threshold": self.gate_graph_similarity_threshold,
             "gate_capture_query_strategy": self.gate_capture_query_strategy,
             "gate_capture_self_critique": self.gate_capture_self_critique,
@@ -221,9 +203,7 @@ def make_context_aware_config(
         return config
     for key, value in overrides.items():
         if not hasattr(config, key):
-            raise AttributeError(
-                f"ContextAwareSearchConfigStub has no attribute '{key}'"
-            )
+            raise AttributeError(f"ContextAwareSearchConfigStub has no attribute '{key}'")
         setattr(config, key, value)
     return config
 
@@ -245,17 +225,13 @@ def make_search_config(
     if query_rewrite_overrides:
         for key, value in query_rewrite_overrides.items():
             if not hasattr(query_rewrite_cfg, key):
-                raise AttributeError(
-                    f"QueryRewriteConfigStub has no attribute '{key}' to override"
-                )
+                raise AttributeError(f"QueryRewriteConfigStub has no attribute '{key}' to override")
             setattr(query_rewrite_cfg, key, value)
     adaptive_cfg = AdaptiveKConfigStub()
     if adaptive_overrides:
         for key, value in adaptive_overrides.items():
             if not hasattr(adaptive_cfg, key):
-                raise AttributeError(
-                    f"AdaptiveKConfigStub has no attribute '{key}' to override"
-                )
+                raise AttributeError(f"AdaptiveKConfigStub has no attribute '{key}' to override")
             setattr(adaptive_cfg, key, value)
     search_cfg = SearchConfigStub(
         context_aware=context_cfg,
@@ -265,13 +241,9 @@ def make_search_config(
     if overrides:
         for key, value in overrides.items():
             if key == "context_aware":
-                raise ValueError(
-                    "Use 'context_overrides' to customise context-aware settings"
-                )
+                raise ValueError("Use 'context_overrides' to customise context-aware settings")
             if not hasattr(search_cfg, key):
-                raise AttributeError(
-                    f"SearchConfigStub has no attribute '{key}' to override"
-                )
+                raise AttributeError(f"SearchConfigStub has no attribute '{key}' to override")
             setattr(search_cfg, key, value)
     return search_cfg
 

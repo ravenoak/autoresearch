@@ -43,6 +43,7 @@ class _OwlrlNamespace(Protocol):
 try:  # pragma: no cover - optional dependency
     import owlrl as _owlrl_module
 except Exception:  # pragma: no cover - fallback for offline tests
+
     class _DeductiveClosureFallback:
         """No-op closure used when ``owlrl`` cannot be imported."""
 
@@ -120,9 +121,7 @@ def _rdfs_reasoner(store: rdflib.Graph) -> None:
         )
 
 
-def run_ontology_reasoner(
-    store: rdflib.Graph, engine: Optional[str] = None
-) -> None:
+def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> None:
     """Apply ontology reasoning using the configured engine.
 
     Args:
@@ -141,9 +140,7 @@ def run_ontology_reasoner(
 
     logger = logging.getLogger(__name__)
     triple_count = len(cast(Sized, store))
-    logger.info(
-        "Starting ontology reasoning with %d triples using %s", triple_count, reasoner
-    )
+    logger.info("Starting ontology reasoning with %d triples using %s", triple_count, reasoner)
 
     max_triples = getattr(storage_cfg, "ontology_reasoner_max_triples", None)
     if max_triples is not None and triple_count > max_triples:
@@ -173,9 +170,7 @@ def run_ontology_reasoner(
         else:
             raise StorageError(
                 f"Unknown ontology reasoner: {reasoner}",
-                suggestion=(
-                    "Register the reasoner via register_reasoner or use 'module:function'"
-                ),
+                suggestion=("Register the reasoner via register_reasoner or use 'module:function'"),
             )
 
     error: list[BaseException] = []
@@ -255,13 +250,13 @@ KnowledgeGraphPipeline = SessionGraphPipeline
 
 
 __all__ = [
-    'run_ontology_reasoner',
-    'query_with_reasoning',
-    'register_reasoner',
-    'KnowledgeGraphPipeline',
-    'SessionGraphPipeline',
-    'GraphEntity',
-    'GraphRelation',
-    'GraphExtractionSummary',
-    'GraphContradiction',
+    "run_ontology_reasoner",
+    "query_with_reasoning",
+    "register_reasoner",
+    "KnowledgeGraphPipeline",
+    "SessionGraphPipeline",
+    "GraphEntity",
+    "GraphRelation",
+    "GraphExtractionSummary",
+    "GraphContradiction",
 ]

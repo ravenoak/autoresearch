@@ -315,9 +315,7 @@ def _fetch_graph_exports(formats: Iterable[str]) -> dict[str, str]:
     """Return serialized graph exports for the requested ``formats``."""
 
     requested = {
-        canonical
-        for canonical in (_canonical_graph_format(fmt) for fmt in formats)
-        if canonical
+        canonical for canonical in (_canonical_graph_format(fmt) for fmt in formats) if canonical
     }
     if not requested:
         return {}
@@ -469,6 +467,7 @@ def _limit_items(sequence: Iterable[Any], limit: Optional[int]) -> tuple[list[An
 def build_depth_payload(
     response: QueryResponse,
     depth: Any = None,
+    section_overrides: Optional[dict[str, Any]] = None,
     *,
     graph_preview_enabled: bool | None = None,
     graph_exports_enabled: bool | None = None,
@@ -479,14 +478,47 @@ def build_depth_payload(
 
     depth_level = normalize_depth(depth)
     plan = _DEPTH_PLANS[depth_level]
+
+    # Apply section overrides if provided
+    if section_overrides:
+        # Create a copy of the plan with overrides applied
+        plan = DepthPlan(
+            level=plan.level,
+            include_tldr=section_overrides.get("include_tldr", plan.include_tldr),
+            include_key_findings=section_overrides.get(
+                "include_key_findings", plan.include_key_findings
+            ),
+            key_findings_limit=plan.key_findings_limit,  # Keep original limits
+            include_citations=section_overrides.get("include_citations", plan.include_citations),
+            citation_limit=plan.citation_limit,  # Keep original limits
+            include_claims=section_overrides.get("include_claims", plan.include_claims),
+            claim_limit=plan.claim_limit,  # Keep original limits
+            include_reasoning=section_overrides.get("include_reasoning", plan.include_reasoning),
+            reasoning_limit=plan.reasoning_limit,  # Keep original limits
+            include_metrics=section_overrides.get("include_metrics", plan.include_metrics),
+            include_raw=section_overrides.get("include_raw", plan.include_raw),
+            include_task_graph=section_overrides.get("include_task_graph", plan.include_task_graph),
+            task_graph_limit=plan.task_graph_limit,  # Keep original limits
+            include_react_traces=section_overrides.get(
+                "include_react_traces", plan.include_react_traces
+            ),
+            react_trace_limit=plan.react_trace_limit,  # Keep original limits
+            include_knowledge_graph=section_overrides.get(
+                "include_knowledge_graph", plan.include_knowledge_graph
+            ),
+            knowledge_graph_contradiction_limit=plan.knowledge_graph_contradiction_limit,  # Keep original limits
+            knowledge_graph_path_limit=plan.knowledge_graph_path_limit,  # Keep original limits
+            include_graph_exports=section_overrides.get(
+                "include_graph_exports", plan.include_graph_exports
+            ),
+        )
+
     notes: dict[str, str] = {}
 
     try:
         cfg = ConfigLoader().config
         preferences = (
-            dict(getattr(cfg, "user_preferences", {}))
-            if hasattr(cfg, "user_preferences")
-            else {}
+            dict(getattr(cfg, "user_preferences", {})) if hasattr(cfg, "user_preferences") else {}
         )
     except Exception:  # pragma: no cover - configuration loading failures are logged elsewhere
         preferences = {}
@@ -702,9 +734,7 @@ def build_depth_payload(
             labels = _warning_labels(warning_entry or {}, needs_review_ids)
             review_note = "Some claims still require review: " + ", ".join(labels)
             key_note = notes.get("key_findings")
-            notes["key_findings"] = (
-                f"{key_note} {review_note}".strip() if key_note else review_note
-            )
+            notes["key_findings"] = f"{key_note} {review_note}".strip() if key_note else review_note
             claim_note = notes.get("claim_audits")
             notes["claim_audits"] = (
                 f"{claim_note} {review_note}".strip() if claim_note else review_note
@@ -735,9 +765,7 @@ def build_depth_payload(
                         summary_payload["relation_count"] = int(relation_count)
                     contradiction_score = summary.get("contradiction_score")
                     if isinstance(contradiction_score, (int, float)):
-                        summary_payload["contradiction_score"] = float(
-                            contradiction_score
-                        )
+                        summary_payload["contradiction_score"] = float(contradiction_score)
 
                     contradictions_all = summary.get("contradictions") or []
                     if not isinstance(contradictions_all, Sequence) or isinstance(
@@ -770,18 +798,14 @@ def build_depth_payload(
                         )
 
                     paths_all = summary.get("multi_hop_paths") or []
-                    if not isinstance(paths_all, Sequence) or isinstance(
-                        paths_all, (str, bytes)
-                    ):
+                    if not isinstance(paths_all, Sequence) or isinstance(paths_all, (str, bytes)):
                         paths_all = []
                     limited_paths, truncated_paths = _limit_items(
                         paths_all, plan.knowledge_graph_path_limit
                     )
                     formatted_paths: list[list[str]] = []
                     for path in limited_paths:
-                        if isinstance(path, Sequence) and not isinstance(
-                            path, (str, bytes)
-                        ):
+                        if isinstance(path, Sequence) and not isinstance(path, (str, bytes)):
                             formatted_paths.append([str(node) for node in path])
                         else:
                             formatted_paths.append([str(path)])
@@ -820,11 +844,7 @@ def build_depth_payload(
                                 for fmt, available in exports_payload.items()
                                 if available
                             }
-            if (
-                knowledge_graph_payload is None
-                and plan.include_graph_exports
-                and exports_allowed
-            ):
+            if knowledge_graph_payload is None and plan.include_graph_exports and exports_allowed:
                 graph_exports_payload = {}
     else:
         notes["knowledge_graph"] = _hidden_message("knowledge_graph", plan)
@@ -885,9 +905,7 @@ def build_depth_payload(
 
     if plan.include_react_traces:
         traces_all = list(response.react_traces)
-        react_traces_limited, truncated = _limit_items(
-            traces_all, plan.react_trace_limit
-        )
+        react_traces_limited, truncated = _limit_items(traces_all, plan.react_trace_limit)
         react_traces_payload: list[dict[str, Any]] = []
         for trace in react_traces_limited:
             if isinstance(trace, Mapping):
@@ -1074,9 +1092,7 @@ def _format_metrics_markdown(metrics: Mapping[str, Any]) -> str:
         return ""
     lines: list[str] = []
     for key, value in metrics.items():
-        sanitized, needs_block, is_placeholder = _prepare_markdown_text(
-            value, block_multiline=True
-        )
+        sanitized, needs_block, is_placeholder = _prepare_markdown_text(value, block_multiline=True)
         label = str(key)
         if needs_block:
             lines.append(f"- **{label}**:")
@@ -1813,9 +1829,7 @@ class FormatTemplate(BaseModel):
     description: Optional[str] = None
     template: str
 
-    def render(
-        self, response: QueryResponse, extra: Optional[Dict[str, Any]] = None
-    ) -> str:
+    def render(self, response: QueryResponse, extra: Optional[Dict[str, Any]] = None) -> str:
         """Render the template with the given QueryResponse."""
 
         variables = {
@@ -2045,9 +2059,7 @@ ${raw_response_note}
                 description = lines[0][1:].strip()
                 template_text = "\n".join(lines[1:])
 
-            template = FormatTemplate(
-                name=name, description=description, template=template_text
-            )
+            template = FormatTemplate(name=name, description=description, template=template_text)
             cls.register(template)
         except Exception as e:
             log.warning(f"Failed to load template from {template_path}: {e}")
@@ -2098,6 +2110,7 @@ class OutputFormatter:
         cls,
         result: Any,
         depth: Any = None,
+        section_overrides: Optional[dict[str, Any]] = None,
         *,
         graph_preview_enabled: bool | None = None,
         graph_exports_enabled: bool | None = None,
@@ -2115,13 +2128,12 @@ class OutputFormatter:
                 else QueryResponse.model_validate(result)
             )
         except ValidationError as exc:  # pragma: no cover - handled by caller
-            raise AutoresearchValidationError(
-                "Invalid response format", cause=exc
-            ) from exc
+            raise AutoresearchValidationError("Invalid response format", cause=exc) from exc
 
         return build_depth_payload(
             response,
             depth,
+            section_overrides=section_overrides,
             graph_preview_enabled=graph_preview_enabled,
             graph_exports_enabled=graph_exports_enabled,
             graph_export_formats=graph_export_formats,
@@ -2130,7 +2142,11 @@ class OutputFormatter:
 
     @classmethod
     def render(
-        cls, result: Any, format_type: str = "markdown", depth: Any = None
+        cls,
+        result: Any,
+        format_type: str = "markdown",
+        depth: Any = None,
+        section_overrides: Optional[dict[str, Any]] = None,
     ) -> str:
         """Render a query result to a string for the specified format."""
 
@@ -2141,12 +2157,10 @@ class OutputFormatter:
                 else QueryResponse.model_validate(result)
             )
         except ValidationError as exc:  # pragma: no cover - handled by caller
-            raise AutoresearchValidationError(
-                "Invalid response format", cause=exc
-            ) from exc
+            raise AutoresearchValidationError("Invalid response format", cause=exc) from exc
 
         fmt = format_type.lower()
-        payload = cls.plan_response_depth(response, depth)
+        payload = cls.plan_response_depth(response, depth, section_overrides)
 
         if fmt == "json":
             return _render_json(payload)
@@ -2159,16 +2173,12 @@ class OutputFormatter:
             overrides = {
                 "key_findings": extra.get("key_findings_plain")
                 or extra.get("key_findings_note", ""),
-                "citations": extra.get("citations_plain")
-                or extra.get("citations_note", ""),
+                "citations": extra.get("citations_plain") or extra.get("citations_note", ""),
                 "claim_audits": extra.get("claim_audits_plain")
                 or extra.get("claim_audits_note", ""),
-                "reasoning": extra.get("reasoning_plain")
-                or extra.get("reasoning_note", ""),
-                "metrics": extra.get("metrics_plain")
-                or extra.get("metrics_note", ""),
-                "task_graph": extra.get("task_graph_plain")
-                or extra.get("task_graph_note", ""),
+                "reasoning": extra.get("reasoning_plain") or extra.get("reasoning_note", ""),
+                "metrics": extra.get("metrics_plain") or extra.get("metrics_note", ""),
+                "task_graph": extra.get("task_graph_plain") or extra.get("task_graph_note", ""),
                 "react_traces": extra.get("react_traces_plain")
                 or extra.get("react_traces_note", ""),
                 "knowledge_graph": extra.get("knowledge_graph_plain")
@@ -2189,16 +2199,12 @@ class OutputFormatter:
             overrides = {
                 "key_findings": extra.get("key_findings_markdown")
                 or extra.get("key_findings_note", ""),
-                "citations": extra.get("citations_markdown")
-                or extra.get("citations_note", ""),
+                "citations": extra.get("citations_markdown") or extra.get("citations_note", ""),
                 "claim_audits": extra.get("claim_audits_markdown")
                 or extra.get("claim_audits_note", ""),
-                "reasoning": extra.get("reasoning_markdown")
-                or extra.get("reasoning_note", ""),
-                "metrics": extra.get("metrics_markdown")
-                or extra.get("metrics_note", ""),
-                "task_graph": extra.get("task_graph_markdown")
-                or extra.get("task_graph_note", ""),
+                "reasoning": extra.get("reasoning_markdown") or extra.get("reasoning_note", ""),
+                "metrics": extra.get("metrics_markdown") or extra.get("metrics_note", ""),
+                "task_graph": extra.get("task_graph_markdown") or extra.get("task_graph_note", ""),
                 "react_traces": extra.get("react_traces_markdown")
                 or extra.get("react_traces_note", ""),
                 "knowledge_graph": extra.get("knowledge_graph_markdown")
@@ -2220,14 +2226,16 @@ class OutputFormatter:
         if fmt in {"graph-json", "graphjson"}:
             return StorageManager.export_knowledge_graph_json()
         if fmt == "graph":
-            raise ValueError(
-                "Graph format cannot be rendered to a string; use format() instead."
-            )
+            raise ValueError("Graph format cannot be rendered to a string; use format() instead.")
         return _render_markdown(payload)
 
     @classmethod
     def format(
-        cls, result: Any, format_type: str = "markdown", depth: Any = None
+        cls,
+        result: Any,
+        format_type: str = "markdown",
+        depth: Any = None,
+        section_overrides: Optional[dict[str, Any]] = None,
     ) -> None:
         """Validate and format a query result to the specified output format."""
 
@@ -2257,7 +2265,9 @@ class OutputFormatter:
             for k, v in response.metrics.items():
                 metrics_node.add(f"{k}: {v}")
 
-            Console(file=sys.stdout, force_terminal=False, color_system=None).print(tree)
+            # Use console that respects bare mode
+            console = Console(file=sys.stdout, force_terminal=False, color_system=None)
+            console.print(tree)
             return
         if fmt == "graphml":
             graphml = StorageManager.export_knowledge_graph_graphml()
@@ -2271,19 +2281,19 @@ class OutputFormatter:
             return
 
         try:
-            output = cls.render(result, format_type, depth)
+            output = cls.render(result, format_type, depth, section_overrides)
         except KeyError as err:
             if fmt.startswith("template:"):
                 log.error(f"Template error: {err}")
                 log.warning(
                     f"Template '{format_type.split(':', 1)[1]}' not found, falling back to markdown"
                 )
-                output = cls.render(result, "markdown", depth)
+                output = cls.render(result, "markdown", depth, section_overrides)
             else:
                 raise
         except ValueError as err:
             log.warning(f"{err} Falling back to markdown output.")
-            output = cls.render(result, "markdown", depth)
+            output = cls.render(result, "markdown", depth, section_overrides)
 
         if output and not output.endswith("\n"):
             output += "\n"

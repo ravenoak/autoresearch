@@ -71,18 +71,20 @@ def test_reasoner_preserves_triples(monkeypatch, triples):
     assert len(g) >= before
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 @pytest.mark.unit
-@given(timeout=st.floats(min_value=0.0, max_value=0.05))
+@given(timeout=st.floats(min_value=0.1, max_value=0.2))
 def test_reasoner_timeout(monkeypatch, timeout):
+    """Test that ontology reasoner times out when configured timeout is exceeded."""
     g = rdflib.Graph()
 
     def slow(store: rdflib.Graph) -> None:
-        time.sleep(timeout + 0.05)
+        # Sleep longer than the timeout to ensure timeout occurs
+        time.sleep(timeout + 0.1)
 
     monkeypatch.setitem(kr._REASONER_PLUGINS, "slow_prop", slow)
     _patch_config(monkeypatch, "slow_prop", timeout=timeout)
-    with pytest.raises(StorageError):
+    with pytest.raises(StorageError, match="timed out"):
         kr.run_ontology_reasoner(g)
 
 

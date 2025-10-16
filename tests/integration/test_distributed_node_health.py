@@ -63,7 +63,9 @@ def test_node_health_monitor(monkeypatch: pytest.MonkeyPatch, free_tcp_port: int
     assert registry.get_sample_value("autoresearch_node_health") == 1.0
 
 
-def test_node_health_monitor_redis_down(monkeypatch: pytest.MonkeyPatch, free_tcp_port: int) -> None:
+def test_node_health_monitor_redis_down(
+    monkeypatch: pytest.MonkeyPatch, free_tcp_port: int
+) -> None:
     import redis
 
     class FailingRedis(DummyRedis):

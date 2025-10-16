@@ -1,0 +1,59 @@
+tests/behavior/steps/context_steps.py:5:1: F401 'time' imported but unused
+tests/behavior/steps/context_steps.py:6:1: F401 'typing.Any' imported but unused
+tests/behavior/steps/context_steps.py:6:1: F401 'typing.Dict' imported but unused
+tests/behavior/steps/context_steps.py:9:1: F401 'hamcrest.assert_that' imported but unused
+tests/behavior/steps/context_steps.py:9:1: F401 'hamcrest.equal_to' imported but unused
+tests/behavior/steps/context_steps.py:9:1: F401 'hamcrest.greater_than' imported but unused
+tests/behavior/steps/context_steps.py:9:1: F401 'hamcrest.less_than' imported but unused
+tests/behavior/steps/context_steps.py:9:1: F401 'hamcrest.is_in' imported but unused
+tests/behavior/steps/context_steps.py:11:1: F401 'autoresearch.llm.adapters.OpenAIAdapter' imported but unused
+tests/behavior/steps/context_steps.py:11:1: F401 'autoresearch.llm.adapters.OpenRouterAdapter' imported but unused
+tests/behavior/steps/context_steps.py:13:1: F401 'autoresearch.llm.token_counting.get_tokenizer' imported but unused
+tests/behavior/steps/lmstudio_integration_steps.py:9:1: F401 'tempfile' imported but unused
+tests/behavior/steps/lmstudio_integration_steps.py:10:1: F401 'pathlib.Path' imported but unused
+tests/behavior/steps/lmstudio_integration_steps.py:17:1: F401 'autoresearch.errors.LLMError' imported but unused
+tests/behavior/steps/lmstudio_integration_steps.py:178:9: F841 local variable 'models' is assigned to but never used
+tests/behavior/steps/logging_steps.py:5:1: F401 'json' imported but unused
+tests/behavior/steps/logging_steps.py:7:1: F401 're' imported but unused
+tests/behavior/steps/logging_steps.py:13:1: F401 'typing.Any' imported but unused
+tests/behavior/steps/logging_steps.py:13:1: F401 'typing.Dict' imported but unused
+tests/behavior/steps/logging_steps.py:13:1: F401 'typing.List' imported but unused
+tests/behavior/steps/logging_steps.py:13:1: F401 'typing.Optional' imported but unused
+tests/behavior/steps/logging_steps.py:16:1: F401 'hamcrest.greater_than' imported but unused
+tests/behavior/steps/logging_steps.py:16:1: F401 'hamcrest.greater_than_or_equal_to' imported but unused
+tests/behavior/steps/logging_steps.py:16:1: F401 'hamcrest.has_entry' imported but unused
+tests/behavior/steps/logging_steps.py:16:1: F401 'hamcrest.is_not' imported but unused
+tests/behavior/steps/logging_steps.py:16:1: F401 'hamcrest.less_than' imported but unused
+tests/behavior/steps/logging_steps.py:29:1: F401 'pytest_bdd.parsers' imported but unused
+tests/behavior/steps/logging_steps.py:31:1: F401 'autoresearch.logging_utils.SensitiveDataFilter' imported but unused
+tests/behavior/steps/logging_steps.py:634:5: F841 local variable 'expected' is assigned to but never used
+tests/behavior/steps/logging_steps.py:806:5: F841 local variable 'results' is assigned to but never used
+tests/behavior/steps/logging_steps.py:814:5: F841 local variable 'results' is assigned to but never used
+tests/behavior/steps/ui_accessibility_steps.py:168:1: F811 redefinition of unused 'test_modular_keyboard_navigation' from line 99
+tests/behavior/steps/ui_accessibility_steps.py:177:1: F811 redefinition of unused 'test_modular_screen_reader_compatibility' from line 110
+tests/behavior/steps/ui_accessibility_steps.py:187:1: F811 redefinition of unused 'test_enhanced_accessibility_features' from line 128
+tests/integration/test_behavior.py:11:1: F401 'tempfile' imported but unused
+tests/integration/test_behavior.py:82:9: F401 'autoresearch.main.app' imported but unused
+tests/integration/test_behavior.py:87:9: F841 local variable 'config' is assigned to but never used
+tests/integration/test_behavior.py:112:13: F841 local variable 'result' is assigned to but never used
+tests/integration/test_import_regression.py:10:1: F401 'tempfile' imported but unused
+tests/integration/test_import_regression.py:11:1: F401 'subprocess' imported but unused
+tests/integration/test_import_regression.py:12:1: F401 'pathlib.Path' imported but unused
+tests/integration/test_import_regression.py:20:9: F401 'autoresearch.agents.orchestration.get_orchestration_metrics' imported but unused
+tests/integration/test_import_regression.py:20:9: F401 'autoresearch.agents.orchestration.QueryState' imported but unused
+tests/integration/test_import_regression.py:31:9: F401 'autoresearch.agents.dialectical.synthesizer.SynthesizerAgent' imported but unused
+tests/integration/test_import_regression.py:42:9: F401 'autoresearch.agents.base.Agent' imported but unused
+tests/integration/test_import_regression.py:42:9: F401 'autoresearch.agents.base.AgentRole' imported but unused
+tests/integration/test_import_regression.py:66:9: F401 'autoresearch' imported but unused
+tests/integration/test_import_regression.py:79:9: F401 'autoresearch.main.app.search' imported but unused
+tests/unit/agents/test_llm_error_resilience.py:26:5: E306 expected 1 blank line before a nested definition, found 0
+tests/unit/agents/test_llm_error_resilience.py:28:5: E306 expected 1 blank line before a nested definition, found 0
+tests/unit/llm/test_lmstudio_integration.py:9:1: F401 'pytest' imported but unused
+tests/unit/llm/test_lmstudio_integration.py:13:1: F401 'autoresearch.errors.LLMError' imported but unused
+tests/unit/logging/test_sensitive_data.py:116:36: F541 f-string is missing placeholders
+tests/unit/test_main_app.py:95:9: F841 local variable 'original_load_config' is assigned to but never used
+tests/unit/test_main_app.py:96:9: E301 expected 1 blank line, found 0
+tests/unit/test_openrouter_adapter.py:9:1: F401 'typing.Any' imported but unused
+tests/unit/ui/test_accessibility.py:5:1: F401 'pytest' imported but unused
+tests/unit/ui/test_accessibility.py:239:9: F841 local variable 'chart_data' is assigned to but never used
+tests/unit/ui/test_accessibility.py:294:9: F841 local variable 'result1' is assigned to but never used

@@ -98,10 +98,8 @@ def test_multiple_backends_called_and_merged(monkeypatch, config_factory):
 def _init_git_repo(repo_path: Path) -> None:
     """Initialize a git repo with a single file."""
     subprocess.run(["git", "init"], cwd=repo_path, check=True)
-    subprocess.run(["git", "config", "user.email", "you@example.com"],
-                   cwd=repo_path, check=True)
-    subprocess.run(["git", "config", "user.name", "Your Name"],
-                   cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.email", "you@example.com"], cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Your Name"], cwd=repo_path, check=True)
     (repo_path / "README.md").write_text("hello from git")
     subprocess.run(["git", "add", "README.md"], cwd=repo_path, check=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=repo_path, check=True)
@@ -318,9 +316,7 @@ def test_weight_optimization_improves_ranking(monkeypatch, config_factory):
     cfg = config_factory({"loops": 1, "search": {"backends": ["b1", "b2"]}})
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, docs: [0.2, 0.9])
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, docs: [0.2, 0.9]))
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",

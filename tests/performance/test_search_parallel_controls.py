@@ -11,9 +11,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import Search
 
 
-def _configure_search(
-    parallel_enabled: bool, parallel_prefetch: int = 0
-) -> ConfigModel:
+def _configure_search(parallel_enabled: bool, parallel_prefetch: int = 0) -> ConfigModel:
     config = ConfigModel()
     config.search.backends = ["slow", "fast"]
     config.search.parallel_enabled = parallel_enabled

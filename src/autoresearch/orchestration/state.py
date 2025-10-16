@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence as SeqType, cast
 
 from pydantic import BaseModel, Field, PrivateAttr
 
-from ..agents.feedback import FeedbackEvent
-from ..agents.messages import MessageProtocol
+from pydantic import field_serializer  # type: ignore[attr-defined]
+
 from ..evidence import aggregate_entailment_scores, score_entailment
 from ..logging_utils import get_logger
 from ..models import QueryResponse
@@ -25,6 +25,19 @@ from .reasoning_payloads import (
     normalize_reasoning_step,
 )
 from .task_graph import TaskGraph
+
+
+# Circular import avoidance - these are imported lazily at runtime when needed
+def _import_agent_classes() -> None:
+    """Import agent classes to resolve forward references."""
+    # This will be called after all modules are loaded
+    try:
+        from ..agents.feedback import FeedbackEvent  # noqa: F401
+        from ..agents.messages import MessageProtocol  # noqa: F401
+    except ImportError:
+        # If agents module is not yet loaded, that's ok - will be resolved later
+        pass
+
 
 LOCK_TYPE = type(RLock())
 
@@ -61,6 +74,9 @@ def _default_task_graph() -> dict[str, Any]:
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..interfaces import QueryStateLike  # noqa: F401
+    from ..agents.feedback import FeedbackEvent  # noqa: F401
+    from ..agents.messages import MessageProtocol  # noqa: F401
+
     PrivateLockAttr = PrivateAttr[RLock]
 else:  # pragma: no cover - runtime alias
     PrivateLockAttr = PrivateAttr
@@ -168,9 +184,7 @@ class AnswerAuditor:
             needs_review_after,
             claims,
         )
-        sanitized_answer = self._strip_answer_warnings(
-            str(answer_text_raw or ""), warning_entries
-        )
+        sanitized_answer = self._strip_answer_warnings(str(answer_text_raw or ""), warning_entries)
         normalized_answer = self._normalize_answer(sanitized_answer)
 
         metrics = {
@@ -239,9 +253,7 @@ class AnswerAuditor:
 
         return grouped, collected
 
-    def _resolve_status(
-        self, audits: Optional[Sequence[Mapping[str, Any]]]
-    ) -> ClaimAuditStatus:
+    def _resolve_status(self, audits: Optional[Sequence[Mapping[str, Any]]]) -> ClaimAuditStatus:
         if not audits:
             return ClaimAuditStatus.NEEDS_REVIEW
         severity_order = {
@@ -296,9 +308,7 @@ class AnswerAuditor:
         audit_payload["status"] = status.value
         claim["audit"] = audit_payload
 
-    def _hedged_claim_text(
-        self, content: str, status: ClaimAuditStatus
-    ) -> str:
+    def _hedged_claim_text(self, content: str, status: ClaimAuditStatus) -> str:
         cleaned = content.strip()
         if not cleaned:
             return cleaned
@@ -384,9 +394,7 @@ class AnswerAuditor:
         cleaned = "\n".join(trimmed).rstrip()
         return cleaned
 
-    def _line_matches_warning(
-        self, line: str, warning_messages: Sequence[str]
-    ) -> bool:
+    def _line_matches_warning(self, line: str, warning_messages: Sequence[str]) -> bool:
         """Return ``True`` when ``line`` reproduces a known warning message."""
 
         normalized = line.strip()
@@ -431,10 +439,12 @@ class AnswerAuditor:
         structured_claims: list[dict[str, Any]] = []
         for index, claim_id in enumerate(claim_ids):
             label = labels[index] if index < len(labels) else str(claim_id)
-            structured_claims.append({
-                "id": str(claim_id),
-                "label": label,
-            })
+            structured_claims.append(
+                {
+                    "id": str(claim_id),
+                    "label": label,
+                }
+            )
         return {
             "code": code,
             "message": message,
@@ -519,9 +529,7 @@ class AnswerAuditor:
             if not isinstance(candidate, Mapping):
                 continue
             source = ensure_source_id(candidate)
-            snippet = (
-                str(source.get("snippet") or source.get("content") or "").strip()
-            )
+            snippet = str(source.get("snippet") or source.get("content") or "").strip()
             if not snippet:
                 continue
             breakdown = score_entailment(hypothesis, snippet)
@@ -600,11 +608,19 @@ class QueryState(BaseModel):
 
     query: str
     claims: ReasoningCollection = Field(default_factory=ReasoningCollection)
+
+    @field_serializer("claims")  # type: ignore[misc]
+    def serialize_claims(self, value: ReasoningCollection) -> list[dict[str, Any]]:
+        """Serialize claims field to a list of dictionaries."""
+        return [claim.to_dict() for claim in value]
+
     claim_audits: list[dict[str, Any]] = Field(default_factory=list)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     results: dict[str, Any] = Field(default_factory=dict)
     messages: list[dict[str, Any]] = Field(default_factory=list)
-    feedback_events: list[FeedbackEvent] = Field(default_factory=list)
+    feedback_events: list[Any] = Field(
+        default_factory=list
+    )  # Will be resolved to FeedbackEvent after import
     coalitions: dict[str, list[str]] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
     task_graph: dict[str, Any] = Field(default_factory=_default_task_graph)
@@ -628,9 +644,7 @@ class QueryState(BaseModel):
 
         sanitized_update: dict[str, Any] | None = None
         if update:
-            sanitized_update = {
-                key: value for key, value in update.items() if key != "_lock"
-            }
+            sanitized_update = {key: value for key, value in update.items() if key != "_lock"}
 
         data = self.model_dump(mode="python")
         if sanitized_update:
@@ -666,9 +680,7 @@ class QueryState(BaseModel):
         with self._lock:
             claims_obj = result.get("claims")
             if claims_obj is not None:
-                if not isinstance(claims_obj, Sequence) or isinstance(
-                    claims_obj, (str, bytes)
-                ):
+                if not isinstance(claims_obj, Sequence) or isinstance(claims_obj, (str, bytes)):
                     raise TypeError("claims must be provided as a non-string sequence")
                 for claim in claims_obj:
                     normalized_claim = normalize_reasoning_step(claim)
@@ -680,9 +692,7 @@ class QueryState(BaseModel):
 
             sources_obj = result.get("sources")
             if sources_obj is not None:
-                if not isinstance(sources_obj, Sequence) or isinstance(
-                    sources_obj, (str, bytes)
-                ):
+                if not isinstance(sources_obj, Sequence) or isinstance(sources_obj, (str, bytes)):
                     raise TypeError("sources must be a sequence of mappings")
                 for source in sources_obj:
                     if not isinstance(source, Mapping):
@@ -707,9 +717,7 @@ class QueryState(BaseModel):
 
             audits_obj = result.get("claim_audits")
             if audits_obj is not None:
-                if not isinstance(audits_obj, Sequence) or isinstance(
-                    audits_obj, (str, bytes)
-                ):
+                if not isinstance(audits_obj, Sequence) or isinstance(audits_obj, (str, bytes)):
                     raise TypeError("claim_audits must be a sequence of mappings")
                 for audit in audits_obj:
                     if not isinstance(audit, Mapping):
@@ -734,12 +742,12 @@ class QueryState(BaseModel):
         with self._lock:
             self.messages.append(message)
 
-    def add_feedback_event(self, event: FeedbackEvent) -> None:
+    def add_feedback_event(self, event: "FeedbackEvent") -> None:
         """Store a feedback event exchanged between agents."""
         with self._lock:
             self.feedback_events.append(event)
 
-    def get_feedback_events(self, *, recipient: Optional[str] = None) -> list[FeedbackEvent]:
+    def get_feedback_events(self, *, recipient: Optional[str] = None) -> list["FeedbackEvent"]:
         """Retrieve feedback events for a specific recipient."""
         with self._lock:
             events = list(self.feedback_events)
@@ -860,9 +868,7 @@ class QueryState(BaseModel):
             traces = [trace for trace in traces if trace.get("task_id") == task_id]
         return traces
 
-    def _normalise_task_graph(
-        self, task_graph: Any
-    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    def _normalise_task_graph(self, task_graph: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Validate and normalise a task graph payload."""
 
         warnings: list[dict[str, Any]] = []
@@ -1068,9 +1074,7 @@ class QueryState(BaseModel):
             if signature in edge_signatures:
                 continue
             edge_signatures.add(signature)
-            normalized_edges.append(
-                {"source": source, "target": target, "type": edge_type}
-            )
+            normalized_edges.append({"source": source, "target": target, "type": edge_type})
 
         for task in normalized_tasks:
             for dep in task.get("depends_on", []):
@@ -1111,7 +1115,9 @@ class QueryState(BaseModel):
             return [str(item).strip() for item in value if str(item).strip()]
         if isinstance(value, str):
             if split_pattern:
-                parts = [segment.strip() for segment in re.split(split_pattern, value) if segment.strip()]
+                parts = [
+                    segment.strip() for segment in re.split(split_pattern, value) if segment.strip()
+                ]
                 return parts
             trimmed = value.strip()
             return [trimmed] if trimmed else []
@@ -1383,9 +1389,7 @@ class QueryState(BaseModel):
             if isinstance(socratic_checks, Sequence) and not isinstance(
                 socratic_checks, (str, bytes)
             ):
-                socratic_list = [
-                    str(item).strip() for item in socratic_checks if str(item).strip()
-                ]
+                socratic_list = [str(item).strip() for item in socratic_checks if str(item).strip()]
             else:
                 socratic_list = []
             tasks_snapshot.append(
@@ -1454,7 +1458,7 @@ class QueryState(BaseModel):
         *,
         recipient: Optional[str] = None,
         coalition: Optional[str] = None,
-        protocol: MessageProtocol | None = None,
+        protocol: Optional["MessageProtocol"] = None,
     ) -> list[dict[str, Any]]:
         """Retrieve messages for a specific recipient or coalition."""
         with self._lock:
@@ -1512,7 +1516,9 @@ class QueryState(BaseModel):
             self.results.setdefault("final_answer", outcome.answer)
             self.results["final_answer"] = outcome.answer
 
-        existing_sources = {str(src.get("source_id")) for src in self.sources if isinstance(src, Mapping)}
+        existing_sources = {
+            str(src.get("source_id")) for src in self.sources if isinstance(src, Mapping)
+        }
         for source in outcome.additional_sources:
             source_id = str(source.get("source_id") or "")
             if source_id and source_id in existing_sources:
@@ -1541,7 +1547,9 @@ class QueryState(BaseModel):
             entity_count = int(graph_summary.get("entity_count", 0) or 0)
             relation_count = int(graph_summary.get("relation_count", 0) or 0)
             has_graph = bool(entity_count or relation_count)
-            exports_meta = graph_summary.get("exports") if isinstance(graph_summary, Mapping) else None
+            exports_meta = (
+                graph_summary.get("exports") if isinstance(graph_summary, Mapping) else None
+            )
             if isinstance(exports_meta, Mapping):
                 knowledge_graph_meta["exports"] = {
                     "graphml": bool(exports_meta.get("graphml")),
@@ -1635,3 +1643,13 @@ class QueryState(BaseModel):
         lock = getattr(self, "_lock", None)
         if not isinstance(lock, LOCK_TYPE):
             object.__setattr__(self, "_lock", RLock())
+
+
+# Rebuild the model to resolve forward references after all classes are defined
+try:
+    _import_agent_classes()
+    if hasattr(QueryState, "model_rebuild"):
+        QueryState.model_rebuild()
+except ImportError:
+    # If agents are not loaded yet, skip rebuild - it will happen later
+    pass

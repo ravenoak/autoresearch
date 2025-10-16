@@ -42,8 +42,7 @@ def test_knowledge_graph_multi_hop_paths() -> None:
         summary = context.get_graph_summary()
         assert summary["relation_count"] >= 2
         assert any(
-            len(path) >= 3 and path[0] == "Marie Curie" and path[-1] == "Paris"
-            for path in paths
+            len(path) >= 3 and path[0] == "Marie Curie" and path[-1] == "Paris" for path in paths
         )
         stage_meta = context.get_graph_stage_metadata()
         assert stage_meta.get("paths"), "Graph stage metadata should expose paths"
@@ -56,8 +55,7 @@ def test_knowledge_graph_multi_hop_paths() -> None:
         assert graph_meta.get("paths"), "Planner metadata should include multi-hop paths"
         neighbors = graph_meta.get("neighbors", {})
         assert any(
-            edge.get("target") == "Pierre Curie"
-            for edge in neighbors.get("Marie Curie", [])
+            edge.get("target") == "Pierre Curie" for edge in neighbors.get("Marie Curie", [])
         ), "Expected Marie Curie neighbor to reference Pierre Curie"
         ingestion = graph_meta.get("ingestion", {})
         assert ingestion.get("seconds", 0.0) >= 0.0

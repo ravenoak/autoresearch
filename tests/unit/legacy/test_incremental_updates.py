@@ -76,9 +76,7 @@ def test_persist_claim_triggers_index_refresh(monkeypatch: MonkeyPatch) -> None:
 
     monkeypatch.setattr(StorageManager, "refresh_vector_index", refresh)
 
-    StorageManager.persist_claim(
-        {"id": "n1", "type": "fact", "content": "c", "embedding": [0.1]}
-    )
+    StorageManager.persist_claim({"id": "n1", "type": "fact", "content": "c", "embedding": [0.1]})
 
     assert called.get("r") is True
 

@@ -20,7 +20,9 @@ class ClaimAgent:
         self.name = name
         self._pids = pids
 
-    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:  # pragma: no cover - dummy
+    def can_execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> bool:  # pragma: no cover - dummy
         return True
 
     def execute(self, state: QueryState, config: ConfigModel, **_: object) -> JSONDict:
@@ -32,9 +34,7 @@ class ClaimAgent:
         return result
 
 
-def test_distributed_storage_with_executor(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_distributed_storage_with_executor(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))
     cfg: ConfigModel = ConfigModel(

@@ -385,9 +385,7 @@ def test_tldr_knowledge_graph_section_requires_summary() -> None:
     summary = {
         "entity_count": 2,
         "relation_count": 1,
-        "contradictions": [
-            {"subject": "A", "predicate": "contradicts", "objects": ["B"]}
-        ],
+        "contradictions": [{"subject": "A", "predicate": "contradicts", "objects": ["B"]}],
         "multi_hop_paths": [["A", "B", "C"]],
         "contradiction_score": 0.5,
     }

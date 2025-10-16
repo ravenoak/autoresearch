@@ -85,9 +85,5 @@ def test_display_query_input_has_accessibility(monkeypatch: pytest.MonkeyPatch) 
     )
     monkeypatch.setattr(streamlit_app, "st", fake_st)
     streamlit_app.display_query_input()
-    assert any(
-        "aria-label='Query input area'" in args[0] for args, _ in calls["markdown"]
-    )
-    assert any(
-        "run your query" in kw.get("help", "") for kw in calls["form_submit_button"]
-    )
+    assert any("aria-label='Query input area'" in args[0] for args, _ in calls["markdown"])
+    assert any("run your query" in kw.get("help", "") for kw in calls["form_submit_button"])

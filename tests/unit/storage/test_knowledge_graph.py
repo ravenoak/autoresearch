@@ -43,7 +43,7 @@ class _StubStorageManager:
 
     @staticmethod
     def export_knowledge_graph_json() -> str:
-        return "{\"nodes\": []}"
+        return '{"nodes": []}'
 
     def persist_claim(self, claim: dict[str, Any], partial_update: bool = False) -> None:
         self.persisted_claims.append((dict(claim), partial_update))
@@ -79,7 +79,7 @@ def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyP
     assert not partial_update
     assert claim_payload["type"] == "knowledge_graph_export"
     assert claim_payload["attributes"]["graphml"] == "<graphml/>"
-    assert claim_payload["attributes"]["graph_json"].startswith("{\"nodes\"")
+    assert claim_payload["attributes"]["graph_json"].startswith('{"nodes"')
 
     assert summary.exports == {"graphml": True, "graph_json": True}
     provenance_entry = summary.provenance[-1]

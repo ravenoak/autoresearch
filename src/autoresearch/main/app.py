@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import logging
 import os
 import sys
 import time
@@ -48,6 +49,11 @@ from ..mcp_interface import create_server
 from ..monitor import monitor_app
 from ..orchestration.reverify import ReverifyOptions, run_reverification
 from ..output_format import OutputDepth
+
+# Import StorageManager early so it's available for tests
+from ..storage import StorageManager
+
+# Make _config_loader available for tests (will be set after _config_loader is defined)
 
 
 app = cast(
@@ -96,8 +102,8 @@ except Exception:  # pragma: no cover - fallback for environments without extras
     Orchestrator: Any | None = None
 else:
     Orchestrator = getattr(_orchestrator_module, "Orchestrator", None)
-configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
+
 
 from ..cli_backup import backup_app as _backup_app  # noqa: E402
 from ..cli_evaluation import evaluation_app as _evaluation_app  # noqa: E402
@@ -138,6 +144,41 @@ def start_watcher(
         "--quiet",
         "-q",
         help="Suppress all non-essential output.",
+    ),
+    log_format: Optional[str] = typer.Option(
+        None,
+        "--log-format",
+        help="Log output format: json, console, or auto (default: auto).",
+    ),
+    quiet_logs: bool = typer.Option(
+        False,
+        "--quiet-logs",
+        help="Suppress diagnostic log messages, showing only errors and warnings.",
+    ),
+    bare_mode: bool = typer.Option(
+        False,
+        "--bare-mode",
+        help="Disable colors, symbols, and decorative formatting for plain text output.",
+    ),
+    show_sections: bool = typer.Option(
+        False,
+        "--show-sections",
+        help="Display available sections for the selected depth level.",
+    ),
+    include_sections: Optional[str] = typer.Option(
+        None,
+        "--include",
+        help="Comma-separated list of sections to include (e.g., 'metrics,reasoning').",
+    ),
+    exclude_sections: Optional[str] = typer.Option(
+        None,
+        "--exclude",
+        help="Comma-separated list of sections to exclude (e.g., 'raw_response,citations').",
+    ),
+    reset_sections: bool = typer.Option(
+        False,
+        "--reset-sections",
+        help="Reset all section customizations to depth defaults.",
     ),
 ) -> None:
     """Start configuration watcher before executing commands."""
@@ -215,6 +256,36 @@ def start_watcher(
             ctx.invoke(config_init)
             return
 
+    # Configure logging with CLI options
+    from ..logging_utils import LoggingConfig
+
+    # Start with environment-based config
+    config = LoggingConfig.from_env()
+
+    # Override with CLI options if provided
+    if log_format is not None:
+        if log_format not in ("json", "console", "auto"):
+            print_error(f"Invalid log format: {log_format}. Valid options: json, console, auto")
+            raise typer.Exit(code=1)
+        config.format = log_format  # type: ignore
+
+    # Configure quiet logs by setting log level
+    if quiet_logs:
+        config.level = logging.WARNING  # Show only warnings and errors
+
+    # Set bare mode environment variable for CLI utilities
+    if bare_mode:
+        os.environ["AUTORESEARCH_BARE_MODE"] = "true"
+
+    configure_logging(config)
+
+    # After CLI options are parsed, reconfigure logging if needed
+    # This ensures environment variables set by CLI options take effect
+    if log_format is not None or quiet_logs or bare_mode:
+        # Reconfigure with the final settings
+        final_config = LoggingConfig.from_env()
+        configure_logging(final_config)
+
     # Skip heavy initialization when help is requested to ensure `--help` always works
     if any(arg in {"--help", "-h"} for arg in sys.argv):
         return
@@ -256,8 +327,7 @@ def search(
         "--reasoning-mode",
         "--mode",
         help=(
-            "Override reasoning mode for this run "
-            "(auto, direct, dialectical, chain-of-thought)"
+            "Override reasoning mode for this run " "(auto, direct, dialectical, chain-of-thought)"
         ),
     ),
     loops: Optional[int] = typer.Option(
@@ -314,7 +384,7 @@ def search(
     gate_user_overrides: Optional[str] = typer.Option(
         None,
         "--gate-overrides",
-        help="JSON overrides for the scout gate policy (e.g. '{\"decision\": \"force_exit\"}').",
+        help='JSON overrides for the scout gate policy (e.g. \'{"decision": "force_exit"}\').',
         show_default=False,
     ),
     adaptive_max_factor: Optional[int] = typer.Option(
@@ -375,6 +445,26 @@ def search(
         "--graph-json",
         help="Write the knowledge graph as Graph JSON to this path (use '-' for stdout).",
     ),
+    show_sections: bool = typer.Option(
+        False,
+        "--show-sections",
+        help="Display available sections for the selected depth level.",
+    ),
+    include_sections: Optional[str] = typer.Option(
+        None,
+        "--include",
+        help="Comma-separated list of sections to include (e.g., 'metrics,reasoning').",
+    ),
+    exclude_sections: Optional[str] = typer.Option(
+        None,
+        "--exclude",
+        help="Comma-separated list of sections to exclude (e.g., 'raw_response,citations').",
+    ),
+    reset_sections: bool = typer.Option(
+        False,
+        "--reset-sections",
+        help="Reset all section customizations to depth defaults.",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -419,7 +509,6 @@ def search(
     config = _config_loader.load_config()
 
     # Lazy imports to avoid side effects during help rendering
-    from ..storage import StorageManager
     from ..output_format import OutputFormatter
 
     try:
@@ -515,27 +604,38 @@ def search(
                 elif refinement:
                     state.query = refinement
 
-        with Progress() as progress:
-            if parallel and agent_groups:
-                groups = parse_agent_groups([agent_groups])
-                task = progress.add_task(
-                    "[green]Processing query...",
-                    total=len(groups),
-                )
-                # Respect test monkeypatching by using the module-level orchestrator handle
-                result = OrchestratorLocal.run_parallel_query(query, config, groups)
-            else:
-                task = progress.add_task(
-                    "[green]Processing query...",
-                    total=loops,
-                )
-                # Use the resolved orchestrator (monkeypatched in tests when provided)
-                result = OrchestratorLocal().run_query(
-                    query,
-                    config,
-                    callbacks={"on_cycle_end": on_cycle_end},
-                    visualize=visualize,
-                )
+        try:
+            with Progress() as progress:
+                if parallel and agent_groups:
+                    groups = parse_agent_groups([agent_groups])
+                    task = progress.add_task(
+                        "[green]Processing query...",
+                        total=len(groups),
+                    )
+                    # Respect test monkeypatching by using the module-level orchestrator handle
+                    result = OrchestratorLocal.run_parallel_query(query, config, groups)
+                else:
+                    task = progress.add_task(
+                        "[green]Processing query...",
+                        total=loops,
+                    )
+                    # Use the resolved orchestrator (monkeypatched in tests when provided)
+                    result = OrchestratorLocal().run_query(
+                        query,
+                        config,
+                        callbacks={"on_cycle_end": on_cycle_end},
+                        visualize=visualize,
+                    )
+        except Exception as e:
+            # Handle orchestration errors and other exceptions
+            error_info = get_error_info(e)
+            error_msg, suggestion, code_example = format_error_for_cli(error_info)
+            print_error(
+                f"Query processing failed: {error_msg}",
+                suggestion=suggestion,
+                code_example=code_example,
+            )
+            raise typer.Exit(code=1) from e
 
         fmt = output or (
             "markdown"
@@ -543,11 +643,133 @@ def search(
             else ("json" if not sys.stdout.isatty() else "markdown")
         )
 
+        # Handle section control options
+        section_overrides = None
+        if show_sections or include_sections or exclude_sections or reset_sections:
+            from ..output_format import _SECTION_LABELS, describe_depth_features
+
+            # Get the normalized depth
+            normalized_depth = cast(Optional[OutputDepth], depth)
+
+            if show_sections:
+                # Show available sections for the selected depth
+                if normalized_depth is None:
+                    normalized_depth = OutputDepth.STANDARD
+
+                features = describe_depth_features()
+                depth_features = features.get(normalized_depth, {})
+
+                print_info(f"Available sections for {normalized_depth.label} depth:")
+                for section_key, included in depth_features.items():
+                    status = "✓" if included else "✗"
+                    section_name = _SECTION_LABELS.get(section_key, section_key)
+                    print_info(f"  {status} {section_name} ({section_key})", symbol=False)
+
+                # Don't process the query if only showing sections
+                return
+
+            # Parse include/exclude sections
+            include_set = set()
+            exclude_set = set()
+
+            if include_sections:
+                include_set = {s.strip() for s in include_sections.split(",") if s.strip()}
+
+            if exclude_sections:
+                exclude_set = {s.strip() for s in exclude_sections.split(",") if s.strip()}
+
+            # Validate section names
+            valid_sections = set(_SECTION_LABELS.keys())
+            invalid_sections = (include_set | exclude_set) - valid_sections
+
+            if invalid_sections:
+                print_error(
+                    f"Invalid section name(s): {', '.join(sorted(invalid_sections))}",
+                    suggestion=f"Valid sections: {', '.join(sorted(valid_sections))}",
+                )
+                raise typer.Exit(code=1)
+
+            # Create section overrides
+            if include_set or exclude_set or reset_sections:
+                from ..output_format import _DEPTH_PLANS
+
+                base_plan = _DEPTH_PLANS.get(normalized_depth or OutputDepth.STANDARD)
+                if base_plan is None:
+                    raise typer.Exit(code=1)
+
+                # Start with base plan settings
+                section_overrides = {
+                    "include_tldr": base_plan.include_tldr,
+                    "include_key_findings": base_plan.include_key_findings,
+                    "include_citations": base_plan.include_citations,
+                    "include_claims": base_plan.include_claims,
+                    "include_reasoning": base_plan.include_reasoning,
+                    "include_metrics": base_plan.include_metrics,
+                    "include_raw": base_plan.include_raw,
+                    "include_task_graph": base_plan.include_task_graph,
+                    "include_react_traces": base_plan.include_react_traces,
+                    "include_knowledge_graph": base_plan.include_knowledge_graph,
+                    "include_graph_exports": base_plan.include_graph_exports,
+                }
+
+                # Apply include overrides (force include)
+                for section in include_set:
+                    if section == "tldr":
+                        section_overrides["include_tldr"] = True
+                    elif section == "key_findings":
+                        section_overrides["include_key_findings"] = True
+                    elif section == "citations":
+                        section_overrides["include_citations"] = True
+                    elif section == "claim_audits":
+                        section_overrides["include_claims"] = True
+                    elif section == "reasoning":
+                        section_overrides["include_reasoning"] = True
+                    elif section == "metrics":
+                        section_overrides["include_metrics"] = True
+                    elif section == "raw_response":
+                        section_overrides["include_raw"] = True
+                    elif section == "task_graph":
+                        section_overrides["include_task_graph"] = True
+                    elif section == "react_traces":
+                        section_overrides["include_react_traces"] = True
+                    elif section == "knowledge_graph":
+                        section_overrides["include_knowledge_graph"] = True
+                    elif section == "graph_exports":
+                        section_overrides["include_graph_exports"] = True
+
+                # Apply exclude overrides (force exclude)
+                for section in exclude_set:
+                    if section == "tldr":
+                        section_overrides["include_tldr"] = False
+                    elif section == "key_findings":
+                        section_overrides["include_key_findings"] = False
+                    elif section == "citations":
+                        section_overrides["include_citations"] = False
+                    elif section == "claim_audits":
+                        section_overrides["include_claims"] = False
+                    elif section == "reasoning":
+                        section_overrides["include_reasoning"] = False
+                    elif section == "metrics":
+                        section_overrides["include_metrics"] = False
+                    elif section == "raw_response":
+                        section_overrides["include_raw"] = False
+                    elif section == "task_graph":
+                        section_overrides["include_task_graph"] = False
+                    elif section == "react_traces":
+                        section_overrides["include_react_traces"] = False
+                    elif section == "knowledge_graph":
+                        section_overrides["include_knowledge_graph"] = False
+                    elif section == "graph_exports":
+                        section_overrides["include_graph_exports"] = False
+
         # Show a success message before the results
         print_success("Query processed successfully")
 
         OutputFormatter.format(
-            result, fmt, depth=cast(Optional[OutputDepth], depth)
+            result,
+            fmt,
+            depth=cast(Optional[OutputDepth], depth),
+            section_overrides=section_overrides,
         )
         if result.state_id:
             print_info(
@@ -584,8 +806,10 @@ def search(
                     _add_suggestions("graphml")
                 if exports_meta.get("graph_json"):
                     _add_suggestions("graph_json")
-            if not suggestions and summary and (
-                summary.get("entity_count") or summary.get("relation_count")
+            if (
+                not suggestions
+                and summary
+                and (summary.get("entity_count") or summary.get("relation_count"))
             ):
                 _add_suggestions("graphml")
                 _add_suggestions("graph_json")
@@ -645,24 +869,7 @@ def search(
         error_info = get_error_info(e)
         error_msg, suggestion, code_example = format_error_for_cli(error_info)
 
-        # Log the error with a user-friendly message and suggestion
-        print_error(
-            f"Error processing query: {error_msg}",
-            suggestion=suggestion,
-            code_example=code_example,
-        )
-
-        if get_verbosity() == Verbosity.VERBOSE:
-            if error_info.traceback:
-                print_verbose(f"Traceback:\n{''.join(error_info.traceback)}")
-            else:
-                import traceback
-
-                print_verbose(f"Traceback:\n{traceback.format_exc()}")
-        else:
-            print_info("Run with --verbose for more details")
-
-        # Create reasoning with suggestions
+        # Create reasoning with suggestions for the error result
         reasoning = ["An error occurred during processing."]
         if error_info.suggestions:
             for suggestion in error_info.suggestions:
@@ -680,14 +887,25 @@ def search(
                 "code_examples": error_info.code_examples,
             },
         )
+
+        # Format and output the error result (this replaces the separate error printing)
         fmt = output or (
             "markdown"
             if os.getenv("PYTEST_CURRENT_TEST")
             else ("json" if not sys.stdout.isatty() else "markdown")
         )
-        OutputFormatter.format(
-            error_result, fmt, depth=cast(Optional[OutputDepth], depth)
-        )
+        OutputFormatter.format(error_result, fmt, depth=cast(Optional[OutputDepth], depth))
+
+        # Print additional error details to stderr if verbose
+        if get_verbosity() == Verbosity.VERBOSE:
+            if error_info.traceback:
+                print_verbose(f"Traceback:\n{''.join(error_info.traceback)}")
+            else:
+                import traceback
+
+                print_verbose(f"Traceback:\n{traceback.format_exc()}")
+        else:
+            print_info("Run with --verbose for more details")
 
 
 # Add monitoring subcommands
@@ -774,9 +992,7 @@ def reverify(
         if os.getenv("PYTEST_CURRENT_TEST")
         else ("json" if not sys.stdout.isatty() else "markdown")
     )
-    OutputFormatter.format(
-        response, fmt, depth=cast(Optional[OutputDepth], depth)
-    )
+    OutputFormatter.format(response, fmt, depth=cast(Optional[OutputDepth], depth))
     if response.state_id:
         print_info(f"State ID: {response.state_id}", symbol=False)
 

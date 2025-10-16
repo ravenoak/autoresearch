@@ -70,7 +70,9 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
 
     calls: list[str] = []
 
-    def _runner(query: str, config: ConfigModel) -> QueryResponse:  # pragma: no cover - should not run
+    def _runner(
+        query: str, config: ConfigModel
+    ) -> QueryResponse:  # pragma: no cover - should not run
         calls.append(query)
         raise AssertionError("Runner should not be invoked during dry runs")
 
@@ -137,9 +139,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             "total_tokens": {"input": 10 + idx, "output": 5 + idx, "total": 15 + 2 * idx},
             "cycles_completed": cycles_completed,
             "model_routing_cost_savings": {"total": routing_total},
-            "model_routing_decisions": [
-                {"agent": "synthesizer", "recommendation": "alt"}
-            ]
+            "model_routing_decisions": [{"agent": "synthesizer", "recommendation": "alt"}]
             * routing_decisions,
             "model_routing_strategy": "balanced",
         }
@@ -223,29 +223,30 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],
         ).fetchone()[0]
-        example_rows: list[tuple[int, bool, float, float, int, str]] = (
-            duckdb_connection.execute(
-                """
+        example_rows: list[tuple[int, bool, float, float, int, str]] = duckdb_connection.execute(
+            """
                 SELECT cycles_completed, gate_should_debate, planner_depth,
                        routing_delta, routing_decision_count, routing_strategy
                 FROM evaluation_results
                 WHERE run_id = ?
                 ORDER BY example_id
                 """,
-                [summary.run_id],
-            ).fetchall()
-        )
-        summary_row: tuple[
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            str,
-        ] | None = duckdb_connection.execute(
+            [summary.run_id],
+        ).fetchall()
+        summary_row: (
+            tuple[
+                float,
+                float,
+                float,
+                float,
+                float,
+                float,
+                float,
+                float,
+                str,
+            ]
+            | None
+        ) = duckdb_connection.execute(
             """
             SELECT gate_exit_rate, gate_debate_rate, avg_cycles_completed,
                    gated_example_ratio, avg_planner_depth, avg_routing_delta,
@@ -312,11 +313,9 @@ def test_compare_routing_strategies(base: EvaluationSummary) -> None:
         routing=variant_routing,
     )
 
-    comparisons: list[RoutingStrategyComparison] = (
-        EvaluationHarness.compare_routing_strategies(
-            [base],
-            [variant],
-        )
+    comparisons: list[RoutingStrategyComparison] = EvaluationHarness.compare_routing_strategies(
+        [base],
+        [variant],
     )
 
     assert len(comparisons) == 1

@@ -120,13 +120,13 @@ def test_scheduler_restarts_existing_timer(
 
     scheduler.schedule("dir", "db.duckdb", "store.rdf", interval_hours=2)
 
-    assert previous_timer.cancelled is True, (
-        "Existing timer must cancel so we do not run two overlapping schedules"
-    )
+    assert (
+        previous_timer.cancelled is True
+    ), "Existing timer must cancel so we do not run two overlapping schedules"
     assert len(backups) == 2, "Rescheduling should trigger an immediate fresh backup"
-    assert timers[-1].interval == 7200.0, (
-        "Replacement timer should respect the newly requested interval"
-    )
+    assert (
+        timers[-1].interval == 7200.0
+    ), "Replacement timer should respect the newly requested interval"
 
 
 def test_scheduler_prevents_cancelled_timer_from_rescheduling(
@@ -146,15 +146,13 @@ def test_scheduler_prevents_cancelled_timer_from_rescheduling(
 
     cancelled_timer.callback()
 
-    assert cancelled_timer.cancelled is True, (
-        "Calling a cancelled timer simulates a race; the timer should remain marked"
-    )
-    assert len(timers) == queued_after_reschedule, (
-        "Cancelled timer must not enqueue additional runs once superseded"
-    )
-    assert len(backups) == 2, (
-        "Cancelled generations should not create new backups once superseded"
-    )
+    assert (
+        cancelled_timer.cancelled is True
+    ), "Calling a cancelled timer simulates a race; the timer should remain marked"
+    assert (
+        len(timers) == queued_after_reschedule
+    ), "Cancelled timer must not enqueue additional runs once superseded"
+    assert len(backups) == 2, "Cancelled generations should not create new backups once superseded"
 
 
 def test_backup_manager_schedule_uses_resolved_scheduler(
@@ -216,10 +214,12 @@ def test_rotation_policy_removes_excess_and_stale_backups(tmp_path: Path) -> Non
     remaining = sorted(item.name for item in tmp_path.iterdir() if item.name.startswith("backup_"))
     recent_key = (now - timedelta(minutes=10)).strftime("%Y%m%d_%H%M%S")
     hourly_key = (now - timedelta(hours=1)).strftime("%Y%m%d_%H%M%S")
-    expected = sorted([
-        f"backup_{recent_key}.tar.gz",
-        f"backup_{hourly_key}.tar.gz",
-    ])
-    assert remaining == expected, (
-        "Policy should deterministically retain the two newest backups within retention"
+    expected = sorted(
+        [
+            f"backup_{recent_key}.tar.gz",
+            f"backup_{hourly_key}.tar.gz",
+        ]
     )
+    assert (
+        remaining == expected
+    ), "Policy should deterministically retain the two newest backups within retention"

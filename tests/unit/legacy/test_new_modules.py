@@ -21,7 +21,9 @@ class DummySt(types.SimpleNamespace):
 
 def test_output_formatter_initializes_once(monkeypatch):
     called = []
-    monkeypatch.setattr(output_format.TemplateRegistry, "load_from_config", lambda: called.append(True))
+    monkeypatch.setattr(
+        output_format.TemplateRegistry, "load_from_config", lambda: called.append(True)
+    )
     resp = output_format.QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
     output_format.OutputFormatter.format(resp, "json")
     assert called

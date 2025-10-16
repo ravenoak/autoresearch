@@ -31,9 +31,7 @@ class PILModule(Protocol):
 class _PILModule(ModuleType):
     def __init__(self) -> None:
         super().__init__("PIL")
-        self.Image = cast(
-            PILImageModule, install_stub_module("PIL.Image", _PILImageModule)
-        )
+        self.Image = cast(PILImageModule, install_stub_module("PIL.Image", _PILImageModule))
 
 
 if importlib.util.find_spec("PIL") is None:

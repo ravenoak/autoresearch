@@ -170,6 +170,117 @@ The task iterates over `ALL_EXTRAS` and runs `pytest tests/targeted -m
 "requires_<extra> and not slow" --noconftest` so CI logs show which marker
 passes. Extras omitted from the `EXTRAS` variable are logged as skipped.
 
+## Test Timeout Strategy
+
+### Global Timeout
+
+- Default: **60s** (configured in `pytest.ini`)
+- Applies to all tests unless overridden with explicit decorators
+- Covers 95% of test scenarios (unit tests, integration tests without LLM calls)
+- Reduced from 300s based on empirical measurements (October 2025)
+
+### LLM Test Categories
+
+For tests that use live LLM instances (particularly LM Studio), use explicit
+timeout markers based on query complexity. These categories are based on
+empirical measurements with LM Studio running `deepseek-r1-0528-qwen3-8b` on
+MacBook Pro M3 Pro:
+
+| Marker | Expected Duration | Timeout | Use Case |
+|--------|------------------|---------|----------|
+| `llm_simple` | <10s | 20s | Simple queries, ~100 tokens |
+| `llm_medium` | 10-30s | 60s | Research synthesis, ~300 tokens |
+| `llm_complex` | 30-60s | 120s | Large context, ~500 tokens |
+| `llm_workflow` | >60s | 180s | Multi-agent orchestration |
+
+### Baseline Measurements
+
+**Hardware**: MacBook Pro M3 Pro, 36GB RAM, macOS 15.7
+**Model**: deepseek/deepseek-r1-0528-qwen3-8b (8B parameters)
+
+- **Simple query** (15 chars, 100 tokens): 4.66s ± 0.58s
+- **Medium research** (291 chars, 300 tokens): 13.02s ± 0.36s
+- **Large context** (1172 chars, 500 tokens): 22.01s ± 0.15s
+- **3-agent workflow** (sequential): 26.99s total
+- **Parallel agents** (3 concurrent): 17.35s with queueing
+
+### Timeout Calculation Methodology
+
+- **Single LLM requests**: 3x measured max (accounts for variance + system
+  overhead)
+- **Multi-step workflows**: 2x measured total (accounts for queueing +
+  orchestration overhead)
+- **Parallel execution**: 2.5x measured max (accounts for queueing variance due
+  to limited GPU resources)
+
+### Usage Examples
+
+```python
+import pytest
+
+@pytest.mark.llm_simple
+@pytest.mark.timeout(20)
+def test_simple_llm_query():
+    """Test with simple LLM query (<10s expected)."""
+    adapter = LMStudioAdapter()
+    result = adapter.generate("What is Python?", max_tokens=100)
+    assert result is not None
+
+@pytest.mark.llm_workflow
+@pytest.mark.timeout(180)
+@pytest.mark.slow
+def test_multi_agent_orchestration():
+    """Test multi-step agent workflow (>60s expected)."""
+    # Multi-agent workflow with multiple LLM calls
+    pass
+```
+
+### Updating Baselines
+
+Re-measure baselines when:
+
+- Hardware changes (different CPU/GPU architecture)
+- Model changes (different size or quantization)
+- LM Studio version updates significantly
+- Performance degrades >20% from documented baseline
+
+To re-measure:
+
+```bash
+uv run python scripts/measure_llm_baselines.py
+```
+
+This script:
+
+1. Tests LM Studio availability
+2. Runs standardized queries across complexity tiers
+3. Measures response times with statistical analysis
+4. Saves results to `baseline/logs/llm_baseline_TIMESTAMP.json`
+5. Prints recommended timeout values
+
+### Integration Tests with Live LLMs
+
+Tests in `tests/integration/test_lmstudio_live.py` validate live LM Studio
+behavior:
+
+- Skip automatically if LM Studio isn't running
+- Use appropriate `llm_*` markers for timeout tiering
+- Document baseline environment in module docstring
+- Assert response times stay within expected ranges
+
+### Why the 60s Global Timeout?
+
+The previous 300s (5 minute) timeout was 3.7x - 18.7x higher than measured
+needs:
+
+- Most unit tests complete in <1s (mocked, no I/O)
+- Most integration tests complete in <30s
+- Only LLM integration tests need >30s (with explicit markers)
+- Faster feedback: fails in 1 minute instead of 5 minutes
+
+Tests requiring >60s should use explicit `@pytest.mark.timeout()` decorators
+with one of the `llm_*` markers to document why the extended timeout is needed.
+
 ## Running tests
 
 Two installation strategies support different workflows:

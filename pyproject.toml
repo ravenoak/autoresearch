@@ -55,7 +55,7 @@ classifiers = [
 ]
 
 [tool.autoresearch]
-release_date = "2025-10-08" # keep in sync with autoresearch.__release_date__
+release_date = "2025-10-16" # keep in sync with autoresearch.__release_date__
 
 [tool.setuptools]
 include-package-data = true
@@ -231,6 +231,7 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
+    "autoflake>=2.3.1",
     "pytest-httpx>=0.35.0",
 ]
 

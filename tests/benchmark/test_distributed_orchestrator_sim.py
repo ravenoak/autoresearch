@@ -11,17 +11,13 @@ pytestmark = [pytest.mark.slow]
 
 def test_latency_matches_low_utilization() -> None:
     """Latency approaches network + service time when utilization is low."""
-    metrics = run_simulation(
-        workers=2, tasks=50, network_latency=0.05, task_time=0.005
-    )
+    metrics = run_simulation(workers=2, tasks=50, network_latency=0.05, task_time=0.005)
     assert metrics["avg_latency_s"] == pytest.approx(0.055, rel=1e-2)
 
 
 def test_throughput_equals_arrival_rate() -> None:
     """Throughput equals the arrival rate for a stable system."""
-    metrics = run_simulation(
-        workers=2, tasks=20, network_latency=0.02, task_time=0.01
-    )
+    metrics = run_simulation(workers=2, tasks=20, network_latency=0.02, task_time=0.01)
     assert metrics["throughput"] == pytest.approx(50.0, rel=1e-6)
 
 

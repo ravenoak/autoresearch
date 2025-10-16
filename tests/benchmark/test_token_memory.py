@@ -17,9 +17,7 @@ class TokenMetrics(TypedDict):
 
 
 ensure_stub_module("docx", {"Document": object})
-ensure_stub_module(
-    "pdfminer.high_level", {"extract_text": lambda *a, **k: ""}
-)
+ensure_stub_module("pdfminer.high_level", {"extract_text": lambda *a, **k: ""})
 
 from scripts.benchmark_token_memory import run_benchmark  # noqa: E402
 

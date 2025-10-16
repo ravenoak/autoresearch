@@ -29,7 +29,7 @@ def record_badge(bdd_context: BehaviorContext, badge: str) -> None:
     badges.append(badge)
 
 
-@when('the response payload is assembled')
+@when("the response payload is assembled")
 def assemble_payload(bdd_context: BehaviorContext) -> None:
     badges = list(bdd_context.get("audit_badges", []))
     bdd_context["response_payload"] = {"metrics": {"audit": {"badges": badges}}}

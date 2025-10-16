@@ -15,9 +15,7 @@ from ..config.models import ConfigModel
 from .state import QueryState
 
 
-def _clone_model(
-    model: BaseModel, *, memo: dict[int, Any] | None = None
-) -> BaseModel:
+def _clone_model(model: BaseModel, *, memo: dict[int, Any] | None = None) -> BaseModel:
     """Return a deep copy of ``model`` using its ``model_copy`` method."""
 
     model_any: Any = model
@@ -123,9 +121,7 @@ class QueryStateRegistry:
                 cls._store[state_id] = new_snapshot
             else:
                 memo_existing: dict[int, Any] = {}
-                existing.state = cast(
-                    QueryState, _clone_model(state, memo=memo_existing)
-                )
+                existing.state = cast(QueryState, _clone_model(state, memo=memo_existing))
                 existing.state._ensure_lock()
                 if config is not None:
                     existing.config = cast(ConfigModel, _clone_model(config))

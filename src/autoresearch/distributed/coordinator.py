@@ -91,7 +91,9 @@ class ResultAggregator(multiprocessing.Process):
         queue: Message queue carrying result dictionaries.
     """
 
-    def __init__(self, queue: MessageQueueProtocol, child_conn: multiprocessing.connection.Connection) -> None:
+    def __init__(
+        self, queue: MessageQueueProtocol, child_conn: multiprocessing.connection.Connection
+    ) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._child_conn = child_conn
@@ -168,9 +170,7 @@ def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, 
     return coordinator, broker
 
 
-def publish_claim(
-    broker: BrokerType, claim: dict[str, Any], partial_update: bool = False
-) -> None:
+def publish_claim(broker: BrokerType, claim: dict[str, Any], partial_update: bool = False) -> None:
     """Publish a claim persistence request to the broker.
 
     Args:
@@ -179,9 +179,7 @@ def publish_claim(
         partial_update: Whether to perform a partial update.
     """
     broker.publish(
-        PersistClaimMessage(
-            action="persist_claim", claim=claim, partial_update=partial_update
-        )
+        PersistClaimMessage(action="persist_claim", claim=claim, partial_update=partial_update)
     )
 
 
@@ -196,7 +194,9 @@ def start_result_aggregator(config: ConfigModel) -> tuple[ResultAggregator, Brok
     """
 
     dist_cfg = config.distributed_config
-    broker = get_message_broker(getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None))
+    broker = get_message_broker(
+        getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None)
+    )
     # Create pipe for result communication
     parent_conn, child_conn = multiprocessing.Pipe()
     aggregator = ResultAggregator(broker.queue, child_conn)

@@ -27,9 +27,7 @@ class ClaimAgent:
     ) -> bool:  # pragma: no cover - dummy
         return True
 
-    def execute(
-        self, state: QueryState, config: ConfigModel, **_: object
-    ) -> JSONDict:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> JSONDict:
         self._pids.append(os.getpid())
         claim: JSONDict = {"id": self.name, "type": "fact", "content": "x"}
         StorageManager.persist_claim(claim)
@@ -38,9 +36,7 @@ class ClaimAgent:
         return result
 
 
-def test_process_storage_with_executor(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_process_storage_with_executor(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     pids: list[int] = []
 
     def agent_factory(name: str) -> ClaimAgent:
@@ -64,9 +60,7 @@ def test_process_storage_with_executor(
     StorageManager.setup(str(tmp_path / "kg.duckdb"), context=context, state=state)
     try:
         conn = StorageManager.get_duckdb_conn()
-        rows: list[tuple[str]] = conn.execute(
-            "SELECT id FROM nodes ORDER BY id"
-        ).fetchall()
+        rows: list[tuple[str]] = conn.execute("SELECT id FROM nodes ORDER BY id").fetchall()
     finally:
         StorageManager.teardown(remove_db=True, context=context, state=state)
         StorageManager.state = StorageState()

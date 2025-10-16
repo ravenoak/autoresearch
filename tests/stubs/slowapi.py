@@ -103,25 +103,19 @@ class Limiter(Generic[TRequest]):
         if limit and count > limit:
             raise RateLimitExceeded()
 
-    def limit(
-        self, *limit_specs: str | Callable[[], str | int]
-    ) -> Callable[
+    def limit(self, *limit_specs: str | Callable[[], str | int]) -> Callable[
         [Callable[Concatenate[TRequest, P], Awaitable[ResultT]]],
         Callable[Concatenate[TRequest, P], Awaitable[ResultT]],
     ]:
         def decorator(
-            func: Callable[Concatenate[TRequest, P], Awaitable[ResultT]]
+            func: Callable[Concatenate[TRequest, P], Awaitable[ResultT]],
         ) -> Callable[Concatenate[TRequest, P], Awaitable[ResultT]]:
-            async def wrapper(
-                request: TRequest, /, *args: P.args, **kwargs: P.kwargs
-            ) -> ResultT:
+            async def wrapper(request: TRequest, /, *args: P.args, **kwargs: P.kwargs) -> ResultT:
                 limit_override = limit_specs[0] if limit_specs else None
                 self.check(request, limit_override=limit_override)
                 return await func(request, *args, **kwargs)
 
-            return cast(
-                Callable[Concatenate[TRequest, P], Awaitable[ResultT]], wrapper
-            )
+            return cast(Callable[Concatenate[TRequest, P], Awaitable[ResultT]], wrapper)
 
         return decorator
 
@@ -188,9 +182,7 @@ class SlowapiModule(Protocol):
 
     def reset_request_log(self) -> None: ...
 
-    def _rate_limit_exceeded_handler(
-        self, request: RequestProtocol, exc: Exception
-    ) -> str: ...
+    def _rate_limit_exceeded_handler(self, request: RequestProtocol, exc: Exception) -> str: ...
 
 
 class _SlowapiModule(ModuleType):
@@ -204,9 +196,7 @@ class _SlowapiModule(ModuleType):
     def reset_request_log(self) -> None:
         reset_request_log()
 
-    def _rate_limit_exceeded_handler(
-        self, request: RequestProtocol, exc: Exception
-    ) -> str:
+    def _rate_limit_exceeded_handler(self, request: RequestProtocol, exc: Exception) -> str:
         return _rate_limit_exceeded_handler(request, exc)
 
 
@@ -245,9 +235,7 @@ class _SlowapiUtilModule(ModuleType):
 
 
 slowapi = cast(SlowapiModule, install_stub_module("slowapi", _SlowapiModule))
-errors = cast(
-    SlowapiErrorsModule, install_stub_module("slowapi.errors", _SlowapiErrorsModule)
-)
+errors = cast(SlowapiErrorsModule, install_stub_module("slowapi.errors", _SlowapiErrorsModule))
 middleware = cast(
     SlowapiMiddlewareModule,
     install_stub_module("slowapi.middleware", _SlowapiMiddlewareModule),

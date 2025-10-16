@@ -81,9 +81,7 @@ def _prepare_state_for_reverify(state: "QueryState") -> None:
 
     state.claim_audits = []
     preserved_claims = [
-        claim
-        for claim in state.claims
-        if str(claim.get("type", "")).lower() != "verification"
+        claim for claim in state.claims if str(claim.get("type", "")).lower() != "verification"
     ]
     state.claims.clear()
     state.claims.extend(preserved_claims)

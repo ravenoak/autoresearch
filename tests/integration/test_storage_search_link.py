@@ -19,9 +19,7 @@ from tests.typing_helpers import TypedFixture
 
 
 @pytest.fixture(autouse=True)
-def setup_storage(
-    tmp_path: Path, monkeypatch: MonkeyPatch
-) -> TypedFixture[None]:
+def setup_storage(tmp_path: Path, monkeypatch: MonkeyPatch) -> TypedFixture[None]:
     """Configure isolated in-memory storage and search for each test."""
     monkeypatch.chdir(tmp_path)
     ConfigLoader.reset_instance()
@@ -43,9 +41,7 @@ def setup_storage(
     def noop_reasoner(*_: object, **__: object) -> None:
         return None
 
-    monkeypatch.setattr(
-        "autoresearch.storage.run_ontology_reasoner", noop_reasoner
-    )
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", noop_reasoner)
 
     storage.teardown(remove_db=True)
     StorageManager.setup(db_path=cfg.storage.duckdb_path)
@@ -63,9 +59,7 @@ def _duckdb_backend_with_citations(
     if db_backend is None:
         raise RuntimeError("DuckDB backend is not initialised")
     conn: DuckDBConnectionProtocol = db_backend.get_connection()
-    rows = conn.execute(
-        "SELECT id, content FROM nodes WHERE content ILIKE '%python%'"
-    ).fetchall()
+    rows = conn.execute("SELECT id, content FROM nodes WHERE content ILIKE '%python%'").fetchall()
     results: list[JSONDict] = []
     for node_id, content in rows:
         citation_rows = conn.execute("SELECT dst FROM edges WHERE src = ?", [node_id]).fetchall()

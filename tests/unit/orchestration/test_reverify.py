@@ -45,9 +45,7 @@ def test_reverify_extracts_claims_and_retries(monkeypatch: pytest.MonkeyPatch) -
         self: object, query_state: QueryState, config: ConfigModel
     ) -> dict[str, object]:
         base_claims = [
-            claim
-            for claim in query_state.claims
-            if str(claim.get("type", "")) != "verification"
+            claim for claim in query_state.claims if str(claim.get("type", "")) != "verification"
         ]
         assert base_claims, "Reverify should seed claims before executing the fact checker"
         claim_id = str(base_claims[0]["id"])

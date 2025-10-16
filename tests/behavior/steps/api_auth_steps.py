@@ -30,9 +30,7 @@ from autoresearch.orchestration.orchestrator import (
 from tests.typing_helpers import given, scenario, then, when
 
 if not TYPE_CHECKING:
-    importlib.import_module(
-        "tests.behavior.steps.api_orchestrator_integration_steps"
-    )
+    importlib.import_module("tests.behavior.steps.api_orchestrator_integration_steps")
 
 
 class HttpResponse(Protocol):
@@ -54,9 +52,7 @@ class ApiClient(Protocol):
 ApiClientFactory = Callable[[dict[str, str] | None], ApiClient]
 
 
-def _stub_config_loader(
-    monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel
-) -> None:
+def _stub_config_loader(monkeypatch: pytest.MonkeyPatch, cfg: ConfigModel) -> None:
     """Replace ``ConfigLoader.load_config`` with a deterministic stub."""
 
     def _load_config_stub(_self: ConfigLoader) -> ConfigModel:
@@ -117,28 +113,16 @@ def set_rate_limit(monkeypatch: pytest.MonkeyPatch, limit: int) -> None:
 
 
 @given(
-    parsers.parse(
-        'the API requires an API key "{key}" with role "{role}" '
-        'and no permissions'
-    )
+    parsers.parse('the API requires an API key "{key}" with role "{role}" ' "and no permissions")
 )
-def require_api_key_no_permissions(
-    monkeypatch: pytest.MonkeyPatch, key: str, role: str
-) -> None:
-    cfg = ConfigModel(
-        api=APIConfig(api_keys={key: role}, role_permissions={role: []})
-    )
+def require_api_key_no_permissions(monkeypatch: pytest.MonkeyPatch, key: str, role: str) -> None:
+    cfg = ConfigModel(api=APIConfig(api_keys={key: role}, role_permissions={role: []}))
     _stub_config_loader(monkeypatch, cfg)
     monkeypatch.setenv("AUTORESEARCH_API_KEY", key)
     _install_orchestrator_stub(monkeypatch)
 
 
-@when(
-    parsers.parse(
-        'I send a query "{query}" with header "{header}" set to '
-        '"{value}"'
-    )
-)
+@when(parsers.parse('I send a query "{query}" with header "{header}" set to ' '"{value}"'))
 def send_query_with_header(
     api_client_factory: ApiClientFactory,
     test_context: BehaviorContext,
@@ -163,9 +147,7 @@ def send_query_without_credentials(
 
 
 @when("I send two queries to the API")
-def send_two_queries(
-    api_client_factory: ApiClientFactory, test_context: BehaviorContext
-) -> None:
+def send_two_queries(api_client_factory: ApiClientFactory, test_context: BehaviorContext) -> None:
     client = api_client_factory(None)
     test_context["resp1"] = client.post("/query", json={"query": "q"})
     test_context["resp2"] = client.post("/query", json={"query": "q"})
@@ -182,12 +164,8 @@ def check_status(test_context: BehaviorContext, status: int) -> None:
         assert "detail" in data
 
 
-@then(
-    parsers.parse('the response should include header "{header}" with value "{value}"')
-)
-def check_response_header(
-    test_context: BehaviorContext, header: str, value: str
-) -> None:
+@then(parsers.parse('the response should include header "{header}" with value "{value}"'))
+def check_response_header(test_context: BehaviorContext, header: str, value: str) -> None:
     response = _get_response(test_context, "response")
     assert header in response.headers
     assert response.headers[header] == value

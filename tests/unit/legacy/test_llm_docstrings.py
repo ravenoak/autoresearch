@@ -35,19 +35,17 @@ def test_module_docstrings():
 
         # Check that the docstring is comprehensive
         docstring = module.__doc__
-        assert len(docstring.strip().split("\n")) >= 1, (
-            f"{name} module docstring should have at least 1 line"
-        )
+        assert (
+            len(docstring.strip().split("\n")) >= 1
+        ), f"{name} module docstring should have at least 1 line"
 
         # For all modules except __init__, check for more comprehensive docstrings
         if name != "llm":
-            assert len(docstring.strip().split("\n")) >= 2, (
-                f"{name} module docstring should have at least 2 lines"
-            )
             assert (
-                "This module" in docstring
-                or "Module for" in docstring
-                or "Provides" in docstring
+                len(docstring.strip().split("\n")) >= 2
+            ), f"{name} module docstring should have at least 2 lines"
+            assert (
+                "This module" in docstring or "Module for" in docstring or "Provides" in docstring
             ), f"{name} module docstring should explain what the module provides"
 
 
@@ -68,9 +66,9 @@ def test_class_docstrings():
 
         # Check that the docstring is comprehensive
         docstring = cls.__doc__
-        assert len(docstring.strip().split("\n")) >= 1, (
-            f"{cls.__name__} docstring should have at least 1 line"
-        )
+        assert (
+            len(docstring.strip().split("\n")) >= 1
+        ), f"{cls.__name__} docstring should have at least 1 line"
 
         # Get methods defined in the class itself
         class_methods = {
@@ -85,27 +83,21 @@ def test_class_docstrings():
             if name.startswith("_") and not name == "__init__":
                 continue
 
-            assert method.__doc__ is not None, (
-                f"{cls.__name__}.{name} should have a docstring"
-            )
+            assert method.__doc__ is not None, f"{cls.__name__}.{name} should have a docstring"
 
             # Check that the method docstring is comprehensive
             method_doc = method.__doc__
-            assert len(method_doc.strip().split("\n")) >= 1, (
-                f"{cls.__name__}.{name} docstring should have at least 1 line"
-            )
+            assert (
+                len(method_doc.strip().split("\n")) >= 1
+            ), f"{cls.__name__}.{name} docstring should have at least 1 line"
 
             # Check for Args section if the method has parameters
             sig = inspect.signature(method)
-            params = [
-                p
-                for p in sig.parameters.values()
-                if p.name != "self" and p.name != "cls"
-            ]
+            params = [p for p in sig.parameters.values() if p.name != "self" and p.name != "cls"]
             if params:
-                assert "Args:" in method_doc, (
-                    f"{cls.__name__}.{name} docstring should have an Args section"
-                )
+                assert (
+                    "Args:" in method_doc
+                ), f"{cls.__name__}.{name} docstring should have an Args section"
 
             # Check for Returns section if the method returns something
             # Skip __init__ methods as they implicitly return None
@@ -114,15 +106,15 @@ def test_class_docstrings():
                 and sig.return_annotation is not None
                 and name != "__init__"
             ):
-                assert "Returns:" in method_doc, (
-                    f"{cls.__name__}.{name} docstring should have a Returns section"
-                )
+                assert (
+                    "Returns:" in method_doc
+                ), f"{cls.__name__}.{name} docstring should have a Returns section"
 
             # Check for Raises section if the method can raise exceptions
             if "raise" in inspect.getsource(method):
-                assert "Raises:" in method_doc, (
-                    f"{cls.__name__}.{name} docstring should have a Raises section"
-                )
+                assert (
+                    "Raises:" in method_doc
+                ), f"{cls.__name__}.{name} docstring should have a Raises section"
 
 
 def test_function_docstrings():
@@ -135,19 +127,15 @@ def test_function_docstrings():
 
         # Check that the docstring is comprehensive
         docstring = func.__doc__
-        assert len(docstring.strip().split("\n")) >= 1, (
-            f"{func.__name__} docstring should have at least 1 line"
-        )
+        assert (
+            len(docstring.strip().split("\n")) >= 1
+        ), f"{func.__name__} docstring should have at least 1 line"
 
         # Check for Args section if the function has parameters
         sig = inspect.signature(func)
-        params = [
-            p for p in sig.parameters.values() if p.name != "self" and p.name != "cls"
-        ]
+        params = [p for p in sig.parameters.values() if p.name != "self" and p.name != "cls"]
         if params:
-            assert "Args:" in docstring, (
-                f"{func.__name__} docstring should have an Args section"
-            )
+            assert "Args:" in docstring, f"{func.__name__} docstring should have an Args section"
 
         # Check for Returns section if the function returns something
         # For context managers, check for Yields section instead
@@ -155,19 +143,15 @@ def test_function_docstrings():
             sig.return_annotation is not inspect.Signature.empty
             and sig.return_annotation is not None
         ):
-            if "@contextmanager" in inspect.getsource(
-                func
-            ) or "yield" in inspect.getsource(func):
-                assert "Yields:" in docstring, (
-                    f"{func.__name__} docstring should have a Yields section"
-                )
+            if "@contextmanager" in inspect.getsource(func) or "yield" in inspect.getsource(func):
+                assert (
+                    "Yields:" in docstring
+                ), f"{func.__name__} docstring should have a Yields section"
             else:
-                assert "Returns:" in docstring, (
-                    f"{func.__name__} docstring should have a Returns section"
-                )
+                assert (
+                    "Returns:" in docstring
+                ), f"{func.__name__} docstring should have a Returns section"
 
         # Check for Raises section if the function can raise exceptions
         if "raise" in inspect.getsource(func):
-            assert "Raises:" in docstring, (
-                f"{func.__name__} docstring should have a Raises section"
-            )
+            assert "Raises:" in docstring, f"{func.__name__} docstring should have a Raises section"

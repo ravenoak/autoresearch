@@ -37,14 +37,10 @@ def _validate_dir(path: Optional[str], console: Console) -> str:
     try:
         p = Path(path or "backups")
     except OSError as e:
-        console.print(
-            f"[bold red]Invalid backup directory:[/bold red] {path} ({e})"
-        )
+        console.print(f"[bold red]Invalid backup directory:[/bold red] {path} ({e})")
         raise typer.Exit(code=1)
     if p.exists() and not p.is_dir():
-        console.print(
-            f"[bold red]Invalid backup directory:[/bold red] {p} is not a directory"
-        )
+        console.print(f"[bold red]Invalid backup directory:[/bold red] {p} is not a directory")
         raise typer.Exit(code=1)
     return str(p)
 
@@ -57,9 +53,7 @@ def _validate_file(path: str, console: Console) -> str:
         console.print(f"[bold red]Invalid backup path:[/bold red] {path} ({e})")
         raise typer.Exit(code=1)
     if not p.exists() or not p.is_file():
-        console.print(
-            f"[bold red]Invalid backup path:[/bold red] {p} does not exist"
-        )
+        console.print(f"[bold red]Invalid backup path:[/bold red] {p} does not exist")
         raise typer.Exit(code=1)
     return str(p)
 
@@ -183,9 +177,7 @@ def backup_restore(
     except BackupError as e:
         message = str(e).lower()
         if "not found" in message:
-            console.print(
-                f"[bold red]Invalid backup path:[/bold red] {backup_path} does not exist"
-            )
+            console.print(f"[bold red]Invalid backup path:[/bold red] {backup_path} does not exist")
         else:
             _render_backup_error(console, "Error restoring backup", e)
         raise typer.Exit(code=1)
@@ -389,9 +381,7 @@ def backup_recover(
         )
 
     except BackupError as e:
-        _render_backup_error(
-            console, "Error performing point-in-time recovery", e
-        )
+        _render_backup_error(console, "Error performing point-in-time recovery", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:

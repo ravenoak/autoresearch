@@ -155,6 +155,7 @@ def test_audit_status_rollup_handles_empty_audits() -> None:
 def test_audit_status_rollup_handles_unknown_statuses() -> None:
     """Test audit_status_rollup with unknown statuses."""
     from typing import Mapping, Any
+
     audits: list[Mapping[str, Any]] = [
         {"status": "supported"},
         {"status": "unknown_status"},

@@ -128,9 +128,7 @@ def system_configured_with_multiple_agents(
 def system_using_dummy_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     """Configure the system to use a dummy LLM adapter."""
 
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
-    )
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
 
 
 # Scenario: Orchestrator executes agents in the correct order
@@ -186,9 +184,7 @@ def run_query_with_dialectical_reasoning(
     orchestrator = get_orchestrator(bdd_context)
     config = get_config(bdd_context)
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         try:
             test_context.result = orchestrator.run_query("test query", config)
         except Exception as exc:  # noqa: BLE001
@@ -302,18 +298,14 @@ def run_query_with_error_agent(
         test_context.errors.append((agent_name, error))
         if test_context.original_handle_error is None:
             raise AssertionError("Original handle_agent_error reference missing")
-        return test_context.original_handle_error(
-            self, error, agent_name, state, config
-        )
+        return test_context.original_handle_error(self, error, agent_name, state, config)
 
     monkeypatch.setattr(OrchestrationUtils, "handle_agent_error", handle_and_track_error)
 
     orchestrator = get_orchestrator(bdd_context)
     config = get_config(bdd_context)
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         try:
             test_context.result = orchestrator.run_query("test query", config)
         except Exception as exc:  # noqa: BLE001
@@ -419,9 +411,7 @@ def run_query_not_meeting_conditions(
     orchestrator = get_orchestrator(bdd_context)
     config = get_config(bdd_context)
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
-    ):
+    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
         try:
             test_context.result = orchestrator.run_query("test query", config)
         except Exception as exc:  # noqa: BLE001

@@ -117,13 +117,9 @@ def temporary_files_properly_cleaned_up(
         try:
             os.unlink(record.path)
         except OSError as exc:
-            payload["cleanup_errors"].append(
-                f"Failed to delete {record.path}: {exc}"
-            )
+            payload["cleanup_errors"].append(f"Failed to delete {record.path}: {exc}")
     for record in payload["temp_files"]:
-        assert not os.path.exists(record.path), (
-            f"Temporary file {record.path} was not deleted"
-        )
+        assert not os.path.exists(record.path), f"Temporary file {record.path} was not deleted"
 
 
 # Step definitions for "Tests clean up environment variables properly"

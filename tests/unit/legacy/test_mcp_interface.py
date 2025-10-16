@@ -43,15 +43,15 @@ def test_client_server_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = mcp_interface.query("hello", transport=server)
 
-    assert result["answer"] == "ok", (
-        "Socratic check: Did the MCP transport return successful results?"
-    )
-    assert any("Socratic check" in step for step in result["reasoning"]), (
-        "Socratic check: Are reflective prompts surfaced on success?"
-    )
-    assert result["metrics"]["m"] == 1, (
-        "Socratic check: Were metrics preserved across the handshake?"
-    )
+    assert (
+        result["answer"] == "ok"
+    ), "Socratic check: Did the MCP transport return successful results?"
+    assert any(
+        "Socratic check" in step for step in result["reasoning"]
+    ), "Socratic check: Are reflective prompts surfaced on success?"
+    assert (
+        result["metrics"]["m"] == 1
+    ), "Socratic check: Were metrics preserved across the handshake?"
 
 
 @pytest.mark.unit
@@ -78,12 +78,10 @@ def test_client_server_failure(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = mcp_interface.query("hello", transport=server)
 
-    assert result["answer"].startswith("Error:"), (
-        "Socratic check: Did failure cases propagate structured responses?"
-    )
-    assert any(step.startswith("Socratic check") for step in result["reasoning"]), (
-        "Socratic check: Are diagnostic prompts included on failure?"
-    )
-    assert result["metrics"].get("error"), (
-        "Socratic check: Do metrics expose the failure details?"
-    )
+    assert result["answer"].startswith(
+        "Error:"
+    ), "Socratic check: Did failure cases propagate structured responses?"
+    assert any(
+        step.startswith("Socratic check") for step in result["reasoning"]
+    ), "Socratic check: Are diagnostic prompts included on failure?"
+    assert result["metrics"].get("error"), "Socratic check: Do metrics expose the failure details?"

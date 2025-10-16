@@ -42,8 +42,7 @@ class PdfminerHighLevelModule(Protocol):
         caching: bool = True,
         codec: str = "utf-8",
         laparams: LAParams | None = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 class _PdfminerHighLevelModule(ModuleType):

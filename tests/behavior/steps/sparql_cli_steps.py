@@ -54,7 +54,7 @@ def run_sparql_invalid(
     set_cli_result(bdd_context, result)
 
 
-@then('the CLI should exit successfully')
+@then("the CLI should exit successfully")
 def cli_success(bdd_context: BehaviorContext) -> None:
     """Assert the SPARQL command succeeded."""
 
@@ -63,7 +63,7 @@ def cli_success(bdd_context: BehaviorContext) -> None:
     assert result.stderr == ""
 
 
-@then('the CLI should exit with an error')
+@then("the CLI should exit with an error")
 def cli_error(bdd_context: BehaviorContext) -> None:
     """Assert the SPARQL command failed as expected."""
 
@@ -72,11 +72,11 @@ def cli_error(bdd_context: BehaviorContext) -> None:
     assert result.stderr != "" or result.exception is not None
 
 
-@scenario('../features/sparql_cli.feature', 'Execute a SPARQL query with reasoning')
+@scenario("../features/sparql_cli.feature", "Execute a SPARQL query with reasoning")
 def test_sparql_success() -> None:
     """Scenario: execute a SPARQL query with reasoning."""
 
 
-@scenario('../features/sparql_cli.feature', 'Invalid SPARQL query')
+@scenario("../features/sparql_cli.feature", "Invalid SPARQL query")
 def test_sparql_invalid() -> None:
     """Scenario: SPARQL command fails when the query is invalid."""

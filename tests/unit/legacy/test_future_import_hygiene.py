@@ -12,7 +12,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def _iter_python_modules(root: Path) -> list[Path]:
     return [
-        path for path in root.rglob("*.py")
+        path
+        for path in root.rglob("*.py")
         if ".git" not in path.parts and ".venv" not in path.parts
     ]
 
@@ -42,9 +43,7 @@ def test_future_annotations_import_is_first() -> None:
         try:
             module = ast.parse(source)
         except SyntaxError as exc:  # pragma: no cover - surfaces invalid layout
-            pytest.fail(
-                f"{module_path.relative_to(REPO_ROOT)} failed to parse: {exc}"
-            )
+            pytest.fail(f"{module_path.relative_to(REPO_ROOT)} failed to parse: {exc}")
 
         idx = _first_non_docstring_node(module.body)
         if idx >= len(module.body):

@@ -46,9 +46,7 @@ def _configure(
     register_reasoner("simple_rdfs")(_simple_rdfs)
 
 
-def test_reasoning_infers_subclass(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_reasoning_infers_subclass(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 
@@ -73,15 +71,11 @@ ex:A rdfs:subClassOf ex:B .
 
     StorageManager.apply_ontology_reasoning()
 
-    res = StorageManager.query_rdf(
-        "ASK { <http://example.com/x> a <http://example.com/B> }"
-    )
+    res = StorageManager.query_rdf("ASK { <http://example.com/x> a <http://example.com/B> }")
     assert res.askAnswer, "Subclass inference failed"
 
 
-def test_visualization_creates_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_visualization_creates_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 

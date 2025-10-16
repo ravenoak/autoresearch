@@ -97,18 +97,19 @@ def test_moderator_execute(
     assert mock_llm_adapter.generate.call_count == 2
 
 
-def test_moderator_can_execute(
-    dialogue_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_moderator_can_execute(dialogue_state: QueryState, mock_config: ConfigModel) -> None:
     agent = ModeratorAgent(name="Mod")
     assert agent.can_execute(dialogue_state, mock_config)
     small = QueryState(query="q", claims=dialogue_state.claims[:2])
     assert not agent.can_execute(small, mock_config)
-    single_agent = QueryState(query="q", claims=[
-        {"id": "1", "agent": "A", "type": "thesis"},
-        {"id": "2", "agent": "A", "type": "antithesis"},
-        {"id": "3", "agent": "A", "type": "statement"},
-    ])
+    single_agent = QueryState(
+        query="q",
+        claims=[
+            {"id": "1", "agent": "A", "type": "thesis"},
+            {"id": "2", "agent": "A", "type": "antithesis"},
+            {"id": "3", "agent": "A", "type": "statement"},
+        ],
+    )
     assert not agent.can_execute(single_agent, mock_config)
 
 
@@ -129,9 +130,7 @@ def test_user_agent_execute(
     assert mock_llm_adapter.generate.call_count == 2
 
 
-def test_user_agent_can_execute(
-    medical_state: QueryState, mock_config: ConfigModel
-) -> None:
+def test_user_agent_can_execute(medical_state: QueryState, mock_config: ConfigModel) -> None:
     agent = UserAgent(name="User")
     medical_state.cycle = 1
     assert agent.can_execute(medical_state, mock_config)
@@ -142,9 +141,7 @@ def test_user_agent_can_execute(
     assert not agent.can_execute(medical_state, mock_config)
 
 
-def test_planner_metadata(
-    mock_llm_adapter: MagicMock, mock_config: ConfigModel
-) -> None:
+def test_planner_metadata(mock_llm_adapter: MagicMock, mock_config: ConfigModel) -> None:
     state = QueryState(query="q")
     agent = PlannerAgent(name="Planner", llm_adapter=mock_llm_adapter)
     result = agent.execute(state, mock_config)

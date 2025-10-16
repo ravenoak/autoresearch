@@ -60,9 +60,9 @@ def _edge_text(min_size: int = 1, max_size: int = 20) -> SearchStrategy[str]:
         max_size=max_size,
     ).map("".join)
 
-    whitespace_pool = [
-        " " * n for n in range(1, 5)
-    ] + ["\t", "\n", "\r\n"] + ["\u200b" * n for n in range(1, 3)]
+    whitespace_pool = (
+        [" " * n for n in range(1, 5)] + ["\t", "\n", "\r\n"] + ["\u200b" * n for n in range(1, 3)]
+    )
     whitespace_only = st.sampled_from(whitespace_pool)
 
     def _with_required_control() -> st.SearchStrategy[str]:
@@ -217,11 +217,7 @@ def _decode_numbered(section: str) -> List[Optional[str]]:
             idx += 1
             continue
         parsed = _parse_fence(line)
-        if (
-            parsed is not None
-            and parsed[0].endswith(". ")
-            and parsed[0][:-2].isdigit()
-        ):
+        if parsed is not None and parsed[0].endswith(". ") and parsed[0][:-2].isdigit():
             prefix, fence_length = parsed
             indent = " " * len(prefix)
             closing = f"{indent}{'`' * fence_length}"
@@ -313,12 +309,8 @@ def _section(markdown: str, header: str) -> str:
 )
 @given(
     answer=_edge_text(),
-    citations=st.lists(
-        st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3
-    ),
-    reasoning=st.lists(
-        st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3
-    ),
+    citations=st.lists(st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3),
+    reasoning=st.lists(st.one_of(st.none(), _edge_text(max_size=15)), min_size=1, max_size=3),
 )
 def test_output_formatter_json_markdown(answer, citations, reasoning, capsys):
     resp = QueryResponse(answer=answer, citations=citations, reasoning=reasoning, metrics={})

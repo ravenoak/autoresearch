@@ -31,9 +31,7 @@ def test_auth_validated_before_body(
     assert resp.json()["detail"] == "Missing API key"
 
 
-def test_invalid_key_before_body(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_invalid_key_before_body(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     client = cast(Any, api_client)
@@ -50,9 +48,7 @@ def test_invalid_key_before_body(
     assert resp.json()["detail"] == "Invalid API key"
 
 
-def test_webhook_auth(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_webhook_auth(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     called: list[str] = []

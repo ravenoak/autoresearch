@@ -208,9 +208,7 @@ def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
     assert set(graph.nodes) == set()
 
 
-def test_lru_eviction_with_vss_fallback_preserves_survivors(
-    ensure_duckdb_schema, monkeypatch
-):
+def test_lru_eviction_with_vss_fallback_preserves_survivors(ensure_duckdb_schema, monkeypatch):
     """Fallback eviction with VSS keeps at least the survivor floor per pass."""
 
     StorageManager.clear_all()

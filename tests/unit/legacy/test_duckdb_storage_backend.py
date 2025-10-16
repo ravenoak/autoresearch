@@ -170,12 +170,13 @@ class TestDuckDBStorageBackend:
             cfg.config.storage.vector_extension = True
             mock_cfg.return_value = cfg
 
-            with patch(
-                "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                side_effect=duckdb.Error("missing"),
-            ) as mock_load, patch.object(
-                DuckDBStorageBackend, "_create_tables"
-            ) as mock_create:
+            with (
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                    side_effect=duckdb.Error("missing"),
+                ) as mock_load,
+                patch.object(DuckDBStorageBackend, "_create_tables") as mock_create,
+            ):
                 backend = DuckDBStorageBackend()
                 backend.setup()
 

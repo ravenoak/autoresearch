@@ -10,9 +10,7 @@ import pytest
 from autoresearch.orchestrator_perf import benchmark_scheduler, queue_metrics, simulate
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-BASELINE_SCHEDULER_PATH = (
-    REPO_ROOT / "baseline" / "evaluation" / "scheduler_benchmark.json"
-)
+BASELINE_SCHEDULER_PATH = REPO_ROOT / "baseline" / "evaluation" / "scheduler_benchmark.json"
 with BASELINE_SCHEDULER_PATH.open(encoding="utf-8") as scheduler_file:
     _SCHEDULER_BASELINE = json.load(scheduler_file)
 
@@ -39,9 +37,7 @@ def test_benchmark_scheduler_scales():
     one = benchmark_scheduler(1, 50, profile=True)
     two = benchmark_scheduler(2, 50, profile=True)
     baseline = float(os.getenv("SCHEDULER_BASELINE_OPS", f"{BASELINE_ONE}"))
-    threshold = float(
-        os.getenv("SCHEDULER_SCALE_THRESHOLD", f"{BASELINE_RATIO * 0.9}")
-    )
+    threshold = float(os.getenv("SCHEDULER_SCALE_THRESHOLD", f"{BASELINE_RATIO * 0.9}"))
     assert one.throughput == pytest.approx(baseline, rel=0.25)
     assert two.throughput == pytest.approx(BASELINE_TWO, rel=0.25)
     assert two.throughput > one.throughput * threshold

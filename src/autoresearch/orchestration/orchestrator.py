@@ -109,7 +109,11 @@ def _snapshot_scout_sample(sample_state: "QueryState", sample_index: int) -> Map
     warnings_snapshot = _freeze_warning_entries(
         cast(
             Sequence[Any] | None,
-            sample_state.metadata.get("warnings") if isinstance(sample_state.metadata, Mapping) else None,
+            (
+                sample_state.metadata.get("warnings")
+                if isinstance(sample_state.metadata, Mapping)
+                else None
+            ),
         )
     )
 
@@ -455,18 +459,18 @@ class Orchestrator:
                 coalitions=config_params.get("coalitions", {}),
             )
             preserved_claims = [
-                normalize_reasoning_step(claim)
-                for claim in scout_state.claims
-                if len(claim)
+                normalize_reasoning_step(claim) for claim in scout_state.claims if len(claim)
             ]
             if preserved_claims:
                 state.claims.extend(preserved_claims)
             preserved_warnings = _freeze_warning_entries(
                 cast(
                     Sequence[Any] | None,
-                    scout_state.metadata.get("warnings")
-                    if isinstance(scout_state.metadata, Mapping)
-                    else None,
+                    (
+                        scout_state.metadata.get("warnings")
+                        if isinstance(scout_state.metadata, Mapping)
+                        else None
+                    ),
                 )
             )
             if not preserved_warnings and scout_samples_view:

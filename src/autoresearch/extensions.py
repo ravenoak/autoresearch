@@ -127,9 +127,7 @@ class VSSExtensionLoader:
                         raise
 
         if not extension_loaded:
-            online_ok = (
-                os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
-            )
+            online_ok = os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
             if online_ok:
                 try:
                     _log(logging.INFO, "Installing vss extension...")
@@ -281,8 +279,7 @@ class VSSExtensionLoader:
                 log.warning("VSS extension verification failed: %s", err)
             try:
                 conn.execute(
-                    "SELECT 1 FROM information_schema.tables "
-                    "WHERE table_name='vss_stub'"
+                    "SELECT 1 FROM information_schema.tables " "WHERE table_name='vss_stub'"
                 )
                 if verbose:
                     log.info("VSS stub marker present")

@@ -108,9 +108,7 @@ def fake_storage_coordinators(
         def start(self) -> None:  # pragma: no cover - behaviour verified via state
             self.start_calls += 1
 
-    monkeypatch.setattr(
-        dist_coordinator, "StorageCoordinator", RecordingStorageCoordinator
-    )
+    monkeypatch.setattr(dist_coordinator, "StorageCoordinator", RecordingStorageCoordinator)
     return created
 
 
@@ -170,9 +168,7 @@ def test_distributed_coordinator_orchestration(
 
     claim = {"id": "claim-123", "payload": "data"}
     dist_coordinator.publish_claim(broker, claim, partial_update=True)
-    assert broker.published == [
-        {"action": "persist_claim", "claim": claim, "partial_update": True}
-    ]
+    assert broker.published == [{"action": "persist_claim", "claim": claim, "partial_update": True}]
 
     aggregator_proc, aggregator_broker = dist_coordinator.start_result_aggregator(config)
     assert fake_result_aggregators, "ResultAggregator should be instantiated"

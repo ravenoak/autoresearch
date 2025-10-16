@@ -51,17 +51,13 @@ class StepFactory(Protocol[R_co]):
     def __call__(self, func: Callable[..., R_co]) -> Callable[..., R_co]: ...
 
     @overload
-    def __call__(
-        self, pattern: Any, /, *args: Any, **kwargs: Any
-    ) -> StepDecorator[R_co]: ...
+    def __call__(self, pattern: Any, /, *args: Any, **kwargs: Any) -> StepDecorator[R_co]: ...
 
 
 class ScenarioFactory(Protocol):
     """Protocol for the ``pytest_bdd.scenario`` decorator factory."""
 
-    def __call__(
-        self, *args: Any, **kwargs: Any
-    ) -> StepDecorator[None]: ...
+    def __call__(self, *args: Any, **kwargs: Any) -> StepDecorator[None]: ...
 
 
 class AgentTestProtocol(Protocol):

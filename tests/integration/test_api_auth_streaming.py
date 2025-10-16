@@ -45,9 +45,7 @@ def _setup_stream(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
 
 
 @pytest.mark.slow
-def test_streaming_with_api_key(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_streaming_with_api_key(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup_stream(monkeypatch)
     cfg.api.api_key = "secret"
     client = cast(Any, api_client)
@@ -75,9 +73,7 @@ def test_streaming_with_api_key(
 
 
 @pytest.mark.slow
-def test_streaming_forbidden(
-    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
-) -> None:
+def test_streaming_forbidden(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup_stream(monkeypatch)
     cfg.api.api_keys = {"usr": "user"}
     cfg.api.role_permissions = {"user": []}

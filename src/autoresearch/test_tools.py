@@ -55,7 +55,9 @@ class MCPTestClient:
         try:
             return time.time()
         except BaseException as e:  # pragma: no cover - defensive under test monkeypatching
-            if isinstance(e, StopIteration) or (isinstance(e, RuntimeError) and "StopIteration" in str(e)):
+            if isinstance(e, StopIteration) or (
+                isinstance(e, RuntimeError) and "StopIteration" in str(e)
+            ):
                 return (prev or 0.0) + 1.0
             raise
 
@@ -278,9 +280,7 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
             if "error" in results["connection_test"]:
                 output.append(f"  Error: {results['connection_test']['error']}")
             elif "status_code" in results["connection_test"]:
-                output.append(
-                    f"  Status Code: {results['connection_test']['status_code']}"
-                )
+                output.append(f"  Status Code: {results['connection_test']['status_code']}")
 
         # Format capabilities test
         if "capabilities_test" in results:
@@ -302,9 +302,7 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
                 if "error" in test["result"]:
                     output.append(f"    Error: {test['result']['error']}")
                 elif "response" in test["result"]:
-                    output.append(
-                        f"    Time Taken: {test['result']['time_taken']:.2f} seconds"
-                    )
+                    output.append(f"    Time Taken: {test['result']['time_taken']:.2f} seconds")
 
         # Format research tests
         if "research_tests" in results:
@@ -315,9 +313,7 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
                 if "error" in test["result"]:
                     output.append(f"    Error: {test['result']['error']}")
                 elif "response" in test["result"]:
-                    output.append(
-                        f"    Time Taken: {test['result']['time_taken']:.2f} seconds"
-                    )
+                    output.append(f"    Time Taken: {test['result']['time_taken']:.2f} seconds")
 
         return "\n".join(output)
     else:  # markdown
@@ -330,9 +326,7 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
             if "error" in results["connection_test"]:
                 output.append(f"**Error:** {results['connection_test']['error']}")
             elif "status_code" in results["connection_test"]:
-                output.append(
-                    f"**Status Code:** {results['connection_test']['status_code']}"
-                )
+                output.append(f"**Status Code:** {results['connection_test']['status_code']}")
 
         # Format capabilities test
         if "capabilities_test" in results:
@@ -354,9 +348,7 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
                 if "error" in test["result"]:
                     output.append(f"**Error:** {test['result']['error']}")
                 elif "response" in test["result"]:
-                    output.append(
-                        f"**Time Taken:** {test['result']['time_taken']:.2f} seconds"
-                    )
+                    output.append(f"**Time Taken:** {test['result']['time_taken']:.2f} seconds")
 
         # Format research tests
         if "research_tests" in results:
@@ -367,8 +359,6 @@ def format_test_results(results: Dict[str, Any], format: str = "markdown") -> st
                 if "error" in test["result"]:
                     output.append(f"**Error:** {test['result']['error']}")
                 elif "response" in test["result"]:
-                    output.append(
-                        f"**Time Taken:** {test['result']['time_taken']:.2f} seconds"
-                    )
+                    output.append(f"**Time Taken:** {test['result']['time_taken']:.2f} seconds")
 
         return "\n".join(output)

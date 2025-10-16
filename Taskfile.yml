@@ -289,7 +289,7 @@ tasks:
             printf '%s\n' "$default_extras"
             exit 0
           fi
-          printf '%s\n' "{{.ALL_EXTRAS}}"
+          printf '%s\n' "{{.ALL_EXTRAS_NO_GPU}}"
       SYNC_EXTRAS:
         sh: |
           set -eu
@@ -422,10 +422,18 @@ tasks:
           set -eu
           extras="{{.EXTRAS}}"
           export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
-          uv sync \
-            --python-platform x86_64-manylinux_2_28 \
-            $(printf ' --extra %s' $extras) \
-            {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
+          # Filter out baseline from extras
+          filtered_extras=$(echo "$extras" | sed 's/baseline//g' | xargs)
+          if [ -z "$filtered_extras" ]; then
+            uv sync \
+              --python-platform x86_64-manylinux_2_28 \
+              --extra dev-minimal --extra test
+          else
+            uv sync \
+              --python-platform x86_64-manylinux_2_28 \
+              $(printf ' --extra %s' $filtered_extras) \
+              {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
+          fi
       - task check-env EXTRAS="{{.EXTRAS}}"
       - |
           set -eu

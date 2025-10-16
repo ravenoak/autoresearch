@@ -39,15 +39,15 @@ def server() -> FastMCP:
 
 def test_handshake_success(server: FastMCP) -> None:
     result = mcp_interface.query("hello", transport=server)
-    assert result["answer"] == "42", (
-        "Socratic check: Did the MCP handshake deliver orchestrator output?"
-    )
-    assert any("Socratic check" in step for step in result["reasoning"]), (
-        "Socratic check: Did the response capture reflective guidance?"
-    )
-    assert result["metrics"]["cycles_completed"] == 1, (
-        "Socratic check: Are success metrics surfaced for auditing?"
-    )
+    assert (
+        result["answer"] == "42"
+    ), "Socratic check: Did the MCP handshake deliver orchestrator output?"
+    assert any(
+        "Socratic check" in step for step in result["reasoning"]
+    ), "Socratic check: Did the response capture reflective guidance?"
+    assert (
+        result["metrics"]["cycles_completed"] == 1
+    ), "Socratic check: Are success metrics surfaced for auditing?"
 
 
 def test_handshake_timeout(server: FastMCP, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -59,9 +59,9 @@ def test_handshake_timeout(server: FastMCP, monkeypatch: pytest.MonkeyPatch) -> 
     with pytest.raises(TimeoutError) as exc_info:
         mcp_interface.query("hello", transport=server)
 
-    assert "timeout" in str(exc_info.value).lower(), (
-        "Socratic check: Did the client propagate timeout diagnostics?"
-    )
+    assert (
+        "timeout" in str(exc_info.value).lower()
+    ), "Socratic check: Did the client propagate timeout diagnostics?"
 
 
 def test_handshake_recovery(server: FastMCP, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -87,14 +87,14 @@ def test_handshake_recovery(server: FastMCP, monkeypatch: pytest.MonkeyPatch) ->
     with pytest.raises(ConnectionError) as exc_info:
         mcp_interface.query("hello", transport=server)
 
-    assert "temporary failure" in str(exc_info.value).lower(), (
-        "Socratic check: Did the retry logic surface the transient failure?"
-    )
+    assert (
+        "temporary failure" in str(exc_info.value).lower()
+    ), "Socratic check: Did the retry logic surface the transient failure?"
 
     result = mcp_interface.query("hello", transport=server)
-    assert result["answer"] == "42", (
-        "Socratic check: Did the client recover after the transient failure?"
-    )
+    assert (
+        result["answer"] == "42"
+    ), "Socratic check: Did the client recover after the transient failure?"
 
 
 def test_handshake_server_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -111,12 +111,12 @@ def test_handshake_server_failure(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = mcp_interface.query("hello", transport=server)
 
-    assert result["answer"].startswith("Error:"), (
-        "Socratic check: Did server failures bubble up as structured errors?"
-    )
-    assert any(step.startswith("Socratic check") for step in result["reasoning"]), (
-        "Socratic check: Are follow-up prompts included for diagnosis?"
-    )
-    assert result["metrics"].get("error"), (
-        "Socratic check: Are error metrics captured for telemetry?"
-    )
+    assert result["answer"].startswith(
+        "Error:"
+    ), "Socratic check: Did server failures bubble up as structured errors?"
+    assert any(
+        step.startswith("Socratic check") for step in result["reasoning"]
+    ), "Socratic check: Are follow-up prompts included for diagnosis?"
+    assert result["metrics"].get(
+        "error"
+    ), "Socratic check: Are error metrics captured for telemetry?"

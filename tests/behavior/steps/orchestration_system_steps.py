@@ -17,9 +17,7 @@ ScenarioContext = MutableMapping[str, Any]
 
 
 # Scenarios
-@scenario(
-    "../features/orchestration_system.feature", "Token counting without monkey patching"
-)
+@scenario("../features/orchestration_system.feature", "Token counting without monkey patching")
 def test_token_counting() -> None:
     pass
 
@@ -65,9 +63,7 @@ def system_with_default_settings(config: ConfigModel, context: ScenarioContext) 
 
 # Token counting scenario steps
 @when("I run a query with token counting enabled")
-def run_query_with_token_counting(
-    config: ConfigModel, context: ScenarioContext
-) -> None:
+def run_query_with_token_counting(config: ConfigModel, context: ScenarioContext) -> None:
     # Store original function to check it's not modified after test
     context["original_get_llm_adapter"] = get_llm_adapter
 
@@ -166,9 +162,7 @@ def check_no_global_state_modified(context: ScenarioContext) -> None:
 
 # Extracting complex methods scenario steps
 @when("I run a query with multiple agents")
-def run_query_with_multiple_agents(
-    config: ConfigModel, context: ScenarioContext
-) -> None:
+def run_query_with_multiple_agents(config: ConfigModel, context: ScenarioContext) -> None:
     # Create mock agents
     mock_factory: MagicMock = MagicMock()
     mock_agents: dict[str, MagicMock] = {}
@@ -214,9 +208,7 @@ def check_maintainability() -> None:
 
 # Improved error handling scenario steps
 @when("an agent fails during execution")
-def agent_fails_during_execution(
-    config: ConfigModel, context: ScenarioContext
-) -> None:
+def agent_fails_during_execution(config: ConfigModel, context: ScenarioContext) -> None:
     # Create mock agents where one fails
     mock_factory: MagicMock = MagicMock()
     mock_agents: dict[str, MagicMock] = {}
@@ -296,9 +288,7 @@ def check_detailed_error_logging(context: ScenarioContext) -> None:
 
 # Better logging scenario steps
 @when("I run a query with debug logging enabled")
-def run_query_with_debug_logging(
-    config: ConfigModel, context: ScenarioContext
-) -> None:
+def run_query_with_debug_logging(config: ConfigModel, context: ScenarioContext) -> None:
     # Create mock agents
     mock_factory: MagicMock = MagicMock()
     mock_agent: MagicMock = MagicMock()

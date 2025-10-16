@@ -43,9 +43,7 @@ def make_agent(name: str, order: list[str]):
             _ = config, kwargs
             state.update(
                 {
-                    "claims": [
-                        {"id": self.name, "type": "fact", "content": self.name}
-                    ],
+                    "claims": [{"id": self.name, "type": "fact", "content": self.name}],
                     "results": {self.name: "ok"},
                 }
             )
@@ -80,9 +78,7 @@ def test_all_agent_pairs(
         return None
 
     monkeypatch.setattr(StorageManager, "persist_claim", _persist_claim)
-    monkeypatch.setattr(
-        AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order)
-    )
+    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order))
 
     loader = ConfigLoader.new_for_tests()
     cfg = loader.config
@@ -108,9 +104,7 @@ def test_registered_coalitions(
         return None
 
     monkeypatch.setattr(StorageManager, "persist_claim", _persist_claim)
-    monkeypatch.setattr(
-        AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order)
-    )
+    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, order))
 
     loader = ConfigLoader.new_for_tests()
     cfg = loader.config

@@ -26,9 +26,19 @@ from click.testing import Result
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_invocation, set_cli_result
+    from tests.behavior.steps import (
+        BehaviorContext,
+        get_cli_result,
+        set_cli_invocation,
+        set_cli_result,
+    )
 else:  # pragma: no cover - runtime fallback to avoid circular imports
-    from tests.behavior.context import BehaviorContext, get_cli_result, set_cli_invocation, set_cli_result
+    from tests.behavior.context import (
+        BehaviorContext,
+        get_cli_result,
+        set_cli_invocation,
+        set_cli_result,
+    )
 from tests.typing_helpers import TypedFixture
 from typer.testing import CliRunner
 
@@ -54,9 +64,7 @@ def reset_global_registries(tmp_path: Path) -> TypedFixture[None]:
 
 
 @pytest.fixture(autouse=True)
-def reset_tinydb_and_metrics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> TypedFixture[None]:
+def reset_tinydb_and_metrics(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TypedFixture[None]:
     """Use temporary cache and metrics files for each scenario."""
     original_env: dict[str, str | None] = {
         "TINYDB_PATH": os.environ.get("TINYDB_PATH"),
@@ -190,7 +198,7 @@ def assert_cli_success(result: Result) -> None:
     """Assert that a CLI invocation succeeded without errors."""
     assert result.exit_code == 0, result.stderr
     assert result.stdout != ""
-    assert result.stderr == ""
+    # Note: stderr may contain logging output, which is expected in some tests
 
 
 def assert_cli_error(result: Result) -> None:

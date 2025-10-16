@@ -28,8 +28,6 @@ def _select_model_enhanced(config: ConfigModel, agent_name: str) -> str:
     4. Global default model from config
     5. Intelligent fallback based on discovered models (if adapter available)
     """
-    import os
-
     # 1. Check for environment variable overrides
     env_model = _get_env_model_override(agent_name)
     if env_model:

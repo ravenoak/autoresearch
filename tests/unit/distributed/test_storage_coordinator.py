@@ -39,6 +39,7 @@ class MockMessageQueue:
     def get(self, timeout: float | None = None) -> BrokerMessage:
         """Get a message from the queue."""
         import time
+
         start_time = time.time()
         while not self.closed:
             if self.messages:
@@ -77,7 +78,9 @@ class TestStorageCoordinator:
         """Create a mock message queue."""
         return MockMessageQueue()
 
-    def test_storage_coordinator_initialization(self, mock_config: ConfigModel, mock_queue: MockMessageQueue) -> None:
+    def test_storage_coordinator_initialization(
+        self, mock_config: ConfigModel, mock_queue: MockMessageQueue
+    ) -> None:
         """Test StorageCoordinator initializes correctly."""
         ready_event = multiprocessing.Event()
 
@@ -95,11 +98,12 @@ class TestStorageCoordinator:
     def test_result_aggregator_initialization(self, mock_queue: MockMessageQueue) -> None:
         """Test ResultAggregator initializes correctly."""
         import multiprocessing
+
         _, child_conn = multiprocessing.Pipe()
         aggregator = ResultAggregator(queue=mock_queue, child_conn=child_conn)
 
         assert aggregator._queue == mock_queue
-        assert hasattr(aggregator, 'results')
+        assert hasattr(aggregator, "results")
         assert not aggregator.is_alive()
 
     def test_publish_claim_functionality(self, mock_queue: MockMessageQueue) -> None:
@@ -125,7 +129,9 @@ class TestStorageCoordinator:
             assert message["action"] == "persist_claim"
             assert message["claim"] == test_claim
 
-    def test_start_storage_coordinator_returns_correct_types(self, mock_config: ConfigModel) -> None:
+    def test_start_storage_coordinator_returns_correct_types(
+        self, mock_config: ConfigModel
+    ) -> None:
         """Test start_storage_coordinator returns correct types."""
         # Use in-memory database for testing
         mock_config.storage.duckdb_path = ":memory:"
@@ -181,22 +187,32 @@ class TestStorageCoordinator:
         result_broker.queue = result_queue
 
         # Mock results for result aggregator
-        expected_results = [{
-            "action": "agent_result",
-            "agent": "test_agent",
-            "result": {
-                "query": "integration test",
-                "results": [{"title": "Test Result", "url": "https://test.com"}],
-            },
-            "pid": 12345,
-        }]
+        expected_results = [
+            {
+                "action": "agent_result",
+                "agent": "test_agent",
+                "result": {
+                    "query": "integration test",
+                    "results": [{"title": "Test Result", "url": "https://test.com"}],
+                },
+                "pid": 12345,
+            }
+        ]
 
-        with patch("autoresearch.distributed.coordinator.get_message_broker") as mock_broker, \
-             patch("autoresearch.distributed.coordinator.ResultAggregator.start"), \
-             patch("autoresearch.distributed.coordinator.ResultAggregator.is_alive", return_value=True), \
-             patch("autoresearch.distributed.coordinator.ResultAggregator.terminate"), \
-             patch("autoresearch.distributed.coordinator.ResultAggregator.join"), \
-             patch.object(ResultAggregator, "results", new_callable=lambda: property(lambda self: expected_results)):
+        with (
+            patch("autoresearch.distributed.coordinator.get_message_broker") as mock_broker,
+            patch("autoresearch.distributed.coordinator.ResultAggregator.start"),
+            patch(
+                "autoresearch.distributed.coordinator.ResultAggregator.is_alive", return_value=True
+            ),
+            patch("autoresearch.distributed.coordinator.ResultAggregator.terminate"),
+            patch("autoresearch.distributed.coordinator.ResultAggregator.join"),
+            patch.object(
+                ResultAggregator,
+                "results",
+                new_callable=lambda: property(lambda self: expected_results),
+            ),
+        ):
 
             # Return different brokers for different calls
             mock_broker.side_effect = [storage_broker, result_broker]

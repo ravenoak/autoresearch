@@ -121,15 +121,9 @@ def _build_success_payload(result: QueryResponse | Mapping[str, Any]) -> dict[st
     payload = result.model_dump(mode="json")
     payload.update(
         {
-            "citations": [
-                _serialise_structure(item) for item in result.citations
-            ],
-            "claim_audits": [
-                _serialise_structure(audit) for audit in result.claim_audits
-            ],
-            "react_traces": [
-                _serialise_structure(trace) for trace in result.react_traces
-            ],
+            "citations": [_serialise_structure(item) for item in result.citations],
+            "claim_audits": [_serialise_structure(audit) for audit in result.claim_audits],
+            "react_traces": [_serialise_structure(trace) for trace in result.react_traces],
             "metrics": _serialise_structure(result.metrics),
         }
     )
@@ -146,9 +140,7 @@ def _build_error_payload(exc: Exception) -> dict[str, Any]:
         "An error occurred during MCP query execution.",
     ]
     if error_info.suggestions:
-        reasoning.extend(
-            f"Socratic check: {suggestion}" for suggestion in error_info.suggestions
-        )
+        reasoning.extend(f"Socratic check: {suggestion}" for suggestion in error_info.suggestions)
     else:
         reasoning.append("Socratic check: Which configuration caused this failure?")
 
@@ -180,18 +172,14 @@ def _serialise_structure(value: Any, *, _seen: set[int] | None = None) -> Any:
         return repr(value)
     if isinstance(value, Mapping):
         _seen.add(obj_id)
-        return {
-            str(key): _serialise_structure(val, _seen=_seen) for key, val in value.items()
-        }
+        return {str(key): _serialise_structure(val, _seen=_seen) for key, val in value.items()}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         _seen.add(obj_id)
         return [_serialise_structure(item, _seen=_seen) for item in value]
     attrs = getattr(value, "__dict__", None)
     if isinstance(attrs, Mapping):
         _seen.add(obj_id)
-        return {
-            str(key): _serialise_structure(val, _seen=_seen) for key, val in attrs.items()
-        }
+        return {str(key): _serialise_structure(val, _seen=_seen) for key, val in attrs.items()}
     if callable(value):
         return repr(value)
     return value

@@ -10,7 +10,7 @@ from autoresearch.main import app as cli_app
 from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 
 
-@when('I run `autoresearch visualize-metrics metrics.json metrics.png`')
+@when("I run `autoresearch visualize-metrics metrics.json metrics.png`")
 def run_visualize_metrics(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -28,7 +28,7 @@ def run_visualize_metrics(
     set_cli_result(bdd_context, result)
 
 
-@then('the CLI should report the command is missing')
+@then("the CLI should report the command is missing")
 def cli_reports_missing(bdd_context: BehaviorContext) -> None:
     """Ensure the CLI returns an error for the missing command."""
 
@@ -37,6 +37,9 @@ def cli_reports_missing(bdd_context: BehaviorContext) -> None:
     assert "No such command" in result.output
 
 
-@scenario('../features/visualize_metrics_cli.feature', 'Attempt to visualize metrics before implementation')
+@scenario(
+    "../features/visualize_metrics_cli.feature",
+    "Attempt to visualize metrics before implementation",
+)
 def test_visualize_metrics_cli() -> None:
     """Scenario: attempt to visualize metrics before implementation."""

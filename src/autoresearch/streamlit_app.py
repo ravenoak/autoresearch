@@ -233,13 +233,9 @@ def display_config_editor() -> None:
 
         # Determine the index for the reasoning mode
         if preset_config and "reasoning_mode" in preset_config:
-            reasoning_mode_index = reasoning_mode_options.index(
-                preset_config["reasoning_mode"]
-            )
+            reasoning_mode_index = reasoning_mode_options.index(preset_config["reasoning_mode"])
         else:
-            reasoning_mode_index = reasoning_mode_options.index(
-                config.reasoning_mode.value
-            )
+            reasoning_mode_index = reasoning_mode_options.index(config.reasoning_mode.value)
 
         reasoning_mode = st.selectbox(
             "Reasoning Mode",
@@ -347,17 +343,21 @@ def display_config_editor() -> None:
         st.markdown("#### Storage Settings")
         duckdb_path = st.text_input(
             "DuckDB Path",
-            value=preset_config["storage"]["duckdb_path"]
-            if preset_config and "storage" in preset_config
-            else config.storage.duckdb_path,
+            value=(
+                preset_config["storage"]["duckdb_path"]
+                if preset_config and "storage" in preset_config
+                else config.storage.duckdb_path
+            ),
             help="Path to the DuckDB database file",
         )
 
         vector_extension = st.checkbox(
             "Enable Vector Extension",
-            value=preset_config["storage"]["vector_extension"]
-            if preset_config and "storage" in preset_config
-            else config.storage.vector_extension,
+            value=(
+                preset_config["storage"]["vector_extension"]
+                if preset_config and "storage" in preset_config
+                else config.storage.vector_extension
+            ),
             help="Enable the DuckDB vector extension for similarity search",
         )
 
@@ -367,17 +367,21 @@ def display_config_editor() -> None:
             "Max Results Per Query",
             min_value=1,
             max_value=20,
-            value=preset_config["search"]["max_results_per_query"]
-            if preset_config and "search" in preset_config
-            else config.search.max_results_per_query,
+            value=(
+                preset_config["search"]["max_results_per_query"]
+                if preset_config and "search" in preset_config
+                else config.search.max_results_per_query
+            ),
             help="Maximum number of search results to return per query",
         )
 
         use_semantic_similarity = st.checkbox(
             "Use Semantic Similarity",
-            value=preset_config["search"]["use_semantic_similarity"]
-            if preset_config and "search" in preset_config
-            else config.search.use_semantic_similarity,
+            value=(
+                preset_config["search"]["use_semantic_similarity"]
+                if preset_config and "search" in preset_config
+                else config.search.use_semantic_similarity
+            ),
             help="Use semantic similarity for search result ranking",
         )
 
@@ -478,20 +482,16 @@ def display_config_editor() -> None:
                         "perspective": perspective,
                         "format_preference": format_pref,
                         "expertise_level": expertise_level,
-                        "focus_areas": [
-                            a.strip() for a in focus_areas.split(";") if a.strip()
-                        ]
-                        if ";" in focus_areas
-                        else [
-                            a.strip() for a in focus_areas.split(",") if a.strip()
-                        ],
-                        "excluded_areas": [
-                            a.strip() for a in excluded_areas.split(";") if a.strip()
-                        ]
-                        if ";" in excluded_areas
-                        else [
-                            a.strip() for a in excluded_areas.split(",") if a.strip()
-                        ],
+                        "focus_areas": (
+                            [a.strip() for a in focus_areas.split(";") if a.strip()]
+                            if ";" in focus_areas
+                            else [a.strip() for a in focus_areas.split(",") if a.strip()]
+                        ),
+                        "excluded_areas": (
+                            [a.strip() for a in excluded_areas.split(";") if a.strip()]
+                            if ";" in excluded_areas
+                            else [a.strip() for a in excluded_areas.split(",") if a.strip()]
+                        ),
                     },
                     "active_profile": selected_profile if selected_profile != "None" else None,
                 }
@@ -504,7 +504,11 @@ def display_config_editor() -> None:
                     if selected_profile != "None":
                         config_loader.set_active_profile(selected_profile)
                     else:
-                        config_loader.set_active_profile(config_loader.available_profiles()[0]) if config_loader.available_profiles() else None
+                        (
+                            config_loader.set_active_profile(config_loader.available_profiles()[0])
+                            if config_loader.available_profiles()
+                            else None
+                        )
                     config = config_loader.load_config()
 
                     # Start watching for configuration changes if hot-reload is enabled
@@ -741,9 +745,7 @@ def display_agent_performance() -> None:
                 else 0
             )
             avg_tokens = (
-                metrics["total_tokens"] / metrics["executions"]
-                if metrics["executions"] > 0
-                else 0
+                metrics["total_tokens"] / metrics["executions"] if metrics["executions"] > 0 else 0
             )
             success_rate = (
                 metrics["successes"] / metrics["executions"] * 100
@@ -782,9 +784,7 @@ def display_agent_performance() -> None:
                 else 0
             )
             avg_tokens = (
-                metrics["total_tokens"] / metrics["executions"]
-                if metrics["executions"] > 0
-                else 0
+                metrics["total_tokens"] / metrics["executions"] if metrics["executions"] > 0 else 0
             )
             success_rate = (
                 metrics["successes"] / metrics["executions"] * 100
@@ -793,9 +793,7 @@ def display_agent_performance() -> None:
             )
 
             comparison_data["Agent"].extend([agent_name, agent_name, agent_name])
-            comparison_data["Metric"].extend(
-                ["Avg Duration (s)", "Avg Tokens", "Success Rate (%)"]
-            )
+            comparison_data["Metric"].extend(["Avg Duration (s)", "Avg Tokens", "Success Rate (%)"])
             comparison_data["Value"].extend([avg_duration, avg_tokens, success_rate])
 
         comparison_df = pd.DataFrame(comparison_data)
@@ -910,7 +908,7 @@ def display_agent_performance() -> None:
 
                 for i in range(len(history)):
                     start_idx = max(0, i - window_size + 1)
-                    window = history[start_idx:i + 1]
+                    window = history[start_idx : i + 1]
                     success_count = sum(1 for h in window if h["success"])
                     success_rate = success_count / len(window) * 100
                     rolling_success.append(success_rate)
@@ -986,9 +984,7 @@ def display_metrics_dashboard() -> None:
         with col2:
             st.markdown("### Memory Usage")
             st.progress(memory_percent / 100)
-            st.markdown(
-                f"{memory_used:.1f} GB / {memory_total:.1f} GB ({memory_percent:.1f}%)"
-            )
+            st.markdown(f"{memory_used:.1f} GB / {memory_total:.1f} GB ({memory_percent:.1f}%)")
 
         # Display process memory
         with col3:
@@ -998,7 +994,9 @@ def display_metrics_dashboard() -> None:
         # Display system health
         status = cast(str, metrics_dict.get("health", "OK"))
         color = "green" if status == "OK" else "orange" if status == "WARNING" else "red"
-        st.markdown(f"### Health: <span style='color:{color}'>{status}</span>", unsafe_allow_html=True)
+        st.markdown(
+            f"### Health: <span style='color:{color}'>{status}</span>", unsafe_allow_html=True
+        )
 
         # Display token usage
         st.markdown("### Token Usage")
@@ -1026,10 +1024,7 @@ def display_metrics_dashboard() -> None:
             st.metric("Total Output Tokens", int(metrics_dict.get("tokens_out_total", 0)))
 
         # Display metrics history chart
-        if (
-            "system_metrics" in st.session_state
-            and len(st.session_state.system_metrics) > 1
-        ):
+        if "system_metrics" in st.session_state and len(st.session_state.system_metrics) > 1:
             st.markdown("### Metrics History")
 
             # Create a chart for CPU and memory usage
@@ -1051,40 +1046,84 @@ def display_metrics_dashboard() -> None:
 
 
 class StreamlitLogHandler(logging.Handler):
-    """Custom log handler that stores logs in Streamlit's session state."""
+    """Custom log handler that stores structured logs in Streamlit's session state.
+
+    This handler integrates with the unified logging system, applying the same
+    sensitive data sanitization and structured formatting as other interfaces.
+    """
 
     def __init__(self, level: int = logging.INFO) -> None:
         """Initialize the handler with the specified log level."""
         super().__init__(level)
-        self.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
+        # Use structured formatter instead of simple text formatter
+        self.setFormatter(logging.Formatter("%(message)s"))
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Store the log record in Streamlit's session state."""
+        """Store the structured log record in Streamlit's session state."""
         try:
-            # Format the log message
-            log_entry = self.format(record)
+            # Convert standard logging record to structured format
+            # This ensures consistency with the unified logging pipeline
+            structured_log = self._convert_to_structured_log(record)
 
             # Initialize logs list in session state if it doesn't exist
             logs = cast(list[dict[str, Any]], st.session_state.setdefault("logs", []))
 
-            # Add the log entry to the session state
-            log_dict = {
-                "timestamp": datetime.fromtimestamp(record.created),
-                "level": record.levelname,
-                "logger": record.name,
-                "message": record.getMessage(),
-                "formatted": log_entry,
-            }
-            logs.append(log_dict)
+            # Add the structured log entry to the session state
+            logs.append(structured_log)
 
             # Keep only the last 1000 log entries to avoid memory issues
             if len(logs) > 1000:
-                del logs[:-1000]
+                logs[:] = logs[-1000:]
 
         except Exception:
             self.handleError(record)
+
+    def _convert_to_structured_log(self, record: logging.LogRecord) -> dict[str, Any]:
+        """Convert a standard logging record to structured format.
+
+        This ensures Streamlit logs have the same structure as other interfaces,
+        including correlation IDs and proper formatting.
+        """
+        # Extract correlation ID from logging context if available
+        correlation_id = getattr(record, "correlation_id", None)
+
+        # Create structured log entry
+        return {
+            "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "correlation_id": correlation_id,
+            # Include additional structured data if available in record.__dict__
+            **{
+                k: v
+                for k, v in record.__dict__.items()
+                if k
+                not in {
+                    "name",
+                    "msg",
+                    "args",
+                    "levelname",
+                    "levelno",
+                    "pathname",
+                    "filename",
+                    "module",
+                    "exc_info",
+                    "exc_text",
+                    "stack_info",
+                    "lineno",
+                    "funcName",
+                    "created",
+                    "msecs",
+                    "relativeCreated",
+                    "thread",
+                    "threadName",
+                    "processName",
+                    "process",
+                    "getMessage",
+                }
+            },
+        }
 
 
 def setup_logging() -> None:
@@ -1152,15 +1191,11 @@ def display_log_viewer() -> None:
         filtered_logs = [log for log in filtered_logs if log["level"] == selected_level]
 
     if selected_logger != "ALL":
-        filtered_logs = [
-            log for log in filtered_logs if log["logger"] == selected_logger
-        ]
+        filtered_logs = [log for log in filtered_logs if log["logger"] == selected_logger]
 
     if filter_text:
         pattern = re.compile(filter_text, re.IGNORECASE)
-        filtered_logs = [
-            log for log in filtered_logs if pattern.search(log["formatted"])
-        ]
+        filtered_logs = [log for log in filtered_logs if pattern.search(log["formatted"])]
 
     # Display log count
     st.markdown(f"Showing {len(filtered_logs)} of {len(logs)} logs")
@@ -1198,9 +1233,7 @@ def display_log_viewer() -> None:
 
                 st.dataframe(log_df, use_container_width=True)
             else:
-                st.warning(
-                    "Log table unavailable; pandas DataFrame constructor is missing."
-                )
+                st.warning("Log table unavailable; pandas DataFrame constructor is missing.")
     else:
         st.info("No logs match the current filters")
 
@@ -1355,13 +1388,9 @@ def main() -> None:
         # Display current configuration
         st.markdown("### Current Settings")
         st.markdown(f"**LLM Backend:** {st.session_state.config.llm_backend}")
-        st.markdown(
-            f"**Reasoning Mode:** {st.session_state.config.reasoning_mode.value}"
-        )
+        st.markdown(f"**Reasoning Mode:** {st.session_state.config.reasoning_mode.value}")
         st.markdown(f"**Loops:** {st.session_state.config.loops}")
-        st.markdown(
-            f"**Active Profile:** {st.session_state.config.active_profile or 'None'}"
-        )
+        st.markdown(f"**Active Profile:** {st.session_state.config.active_profile or 'None'}")
         if hasattr(st.session_state.config, "user_preferences"):
             prefs = st.session_state.config.user_preferences
             st.markdown("### Preferences")
@@ -1477,9 +1506,9 @@ def display_query_history() -> None:
             {
                 "ID": len(history) - i,
                 "Time": entry["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-                "Query": entry["query"][:50] + "..."
-                if len(entry["query"]) > 50
-                else entry["query"],
+                "Query": (
+                    entry["query"][:50] + "..." if len(entry["query"]) > 50 else entry["query"]
+                ),
                 "Mode": entry["config"]["reasoning_mode"],
                 "Loops": entry["config"]["loops"],
                 "Backend": entry["config"]["llm_backend"],
@@ -1510,9 +1539,7 @@ def display_query_history() -> None:
         # If modify query is checked, show a text area to edit the query
         if modify_query:
             selected_entry = history[len(history) - query_id]
-            modified_query = st.text_area(
-                "Edit Query", value=selected_entry["query"], height=100
-            )
+            modified_query = st.text_area("Edit Query", value=selected_entry["query"], height=100)
 
         # Submit button
         rerun_button = st.form_submit_button("Rerun Query")
@@ -1536,9 +1563,7 @@ def display_query_history() -> None:
     # Process query when button is clicked
     if st.session_state.run_button and st.session_state.current_query:
         # Update config with selected options
-        st.session_state.config.reasoning_mode = ReasoningMode(
-            st.session_state.reasoning_mode
-        )
+        st.session_state.config.reasoning_mode = ReasoningMode(st.session_state.reasoning_mode)
         st.session_state.config.loops = st.session_state.loops
 
         # Show spinner while processing
@@ -1558,11 +1583,7 @@ def display_query_history() -> None:
                     )
 
                 # Update token usage metrics
-                if (
-                    hasattr(result, "metrics")
-                    and result.metrics
-                    and "tokens" in result.metrics
-                ):
+                if hasattr(result, "metrics") and result.metrics and "tokens" in result.metrics:
                     tokens = result.metrics["tokens"]
                     if "token_usage" not in st.session_state:
                         st.session_state.token_usage = {
@@ -1575,15 +1596,9 @@ def display_query_history() -> None:
                     # Update token usage metrics
                     if isinstance(tokens, dict):
                         # If tokens is a dictionary with detailed metrics
-                        st.session_state.token_usage["prompt"] += tokens.get(
-                            "prompt", 0
-                        )
-                        st.session_state.token_usage["completion"] += tokens.get(
-                            "completion", 0
-                        )
-                        st.session_state.token_usage["last_query"] = tokens.get(
-                            "total", 0
-                        )
+                        st.session_state.token_usage["prompt"] += tokens.get("prompt", 0)
+                        st.session_state.token_usage["completion"] += tokens.get("completion", 0)
+                        st.session_state.token_usage["last_query"] = tokens.get("total", 0)
                         st.session_state.token_usage["total"] += tokens.get("total", 0)
                     else:
                         # If tokens is just a number
@@ -1622,9 +1637,7 @@ def display_query_history() -> None:
         st.session_state.rerun_triggered = False
 
         # Update the configuration
-        st.session_state.config.reasoning_mode = ReasoningMode(
-            rerun_config["reasoning_mode"]
-        )
+        st.session_state.config.reasoning_mode = ReasoningMode(rerun_config["reasoning_mode"])
         st.session_state.config.loops = rerun_config["loops"]
 
         # Show spinner while processing
@@ -1634,11 +1647,7 @@ def display_query_history() -> None:
                 result = Orchestrator().run_query(rerun_query, st.session_state.config)
 
                 # Update token usage metrics
-                if (
-                    hasattr(result, "metrics")
-                    and result.metrics
-                    and "tokens" in result.metrics
-                ):
+                if hasattr(result, "metrics") and result.metrics and "tokens" in result.metrics:
                     tokens = result.metrics["tokens"]
                     if "token_usage" not in st.session_state:
                         st.session_state.token_usage = {
@@ -1651,15 +1660,9 @@ def display_query_history() -> None:
                     # Update token usage metrics
                     if isinstance(tokens, dict):
                         # If tokens is a dictionary with detailed metrics
-                        st.session_state.token_usage["prompt"] += tokens.get(
-                            "prompt", 0
-                        )
-                        st.session_state.token_usage["completion"] += tokens.get(
-                            "completion", 0
-                        )
-                        st.session_state.token_usage["last_query"] = tokens.get(
-                            "total", 0
-                        )
+                        st.session_state.token_usage["prompt"] += tokens.get("prompt", 0)
+                        st.session_state.token_usage["completion"] += tokens.get("completion", 0)
+                        st.session_state.token_usage["last_query"] = tokens.get("total", 0)
                         st.session_state.token_usage["total"] += tokens.get("total", 0)
                     else:
                         # If tokens is just a number
@@ -1748,9 +1751,7 @@ def create_knowledge_graph(result: QueryResponse) -> _PILImage:
 
     # Draw nodes with different colors based on type
     for node_type in node_colors:
-        nodes = [
-            node for node, data in G.nodes(data=True) if data.get("type") == node_type
-        ]
+        nodes = [node for node, data in G.nodes(data=True) if data.get("type") == node_type]
         nx.draw_networkx_nodes(
             G,
             pos,
@@ -1761,9 +1762,7 @@ def create_knowledge_graph(result: QueryResponse) -> _PILImage:
         )
 
     # Draw edges
-    nx.draw_networkx_edges(
-        G, pos, width=1.5, alpha=0.7, arrows=True, arrowstyle="->", arrowsize=15
-    )
+    nx.draw_networkx_edges(G, pos, width=1.5, alpha=0.7, arrows=True, arrowstyle="->", arrowsize=15)
 
     # Draw labels
     nx.draw_networkx_labels(G, pos, font_size=10, font_weight="bold")
@@ -1795,7 +1794,7 @@ def create_interaction_trace(reasoning_steps: list[str]) -> str:
         node = f"step{idx}"
         label = re.sub(r"[\n\"]", "", step)[:20]
         lines.append(f'{node} [label="{label}"];')
-        lines.append(f'{prev} -> {node};')
+        lines.append(f"{prev} -> {node};")
         prev = node
     lines.append("}")
     return "\n".join(lines)
@@ -1915,9 +1914,7 @@ def display_results(result: QueryResponse) -> None:
         config = toggle_defaults[name]
         state_key = f"ui_toggle_{name}"
         if state_key not in st.session_state:
-            st.session_state[state_key] = (
-                config["value"] if config["available"] else False
-            )
+            st.session_state[state_key] = config["value"] if config["available"] else False
         if not config["available"]:
             st.session_state[state_key] = False
         with column:
@@ -1928,17 +1925,11 @@ def display_results(result: QueryResponse) -> None:
                 disabled=not config["available"],
                 key=state_key,
             )
-        toggle_states[name] = (
-            st.session_state[state_key] if config["available"] else False
-        )
+        toggle_states[name] = st.session_state[state_key] if config["available"] else False
 
     graph_export_formats: list[str] = []
     if toggle_states.get("graph_exports"):
-        available_formats = [
-            fmt
-            for fmt, available in payload.graph_exports.items()
-            if available
-        ]
+        available_formats = [fmt for fmt, available in payload.graph_exports.items() if available]
         if available_formats:
             graph_export_formats = available_formats
         elif payload.sections.get("knowledge_graph"):
@@ -2011,15 +2002,11 @@ def display_results(result: QueryResponse) -> None:
         else:
             st.info("Increase depth to capture claim verification data.")
 
-        gate_snapshot = (
-            result.metrics.get("scout_gate") if isinstance(result.metrics, dict) else {}
-        )
+        gate_snapshot = result.metrics.get("scout_gate") if isinstance(result.metrics, dict) else {}
         if isinstance(gate_snapshot, dict) and gate_snapshot:
             st.markdown("**Scout gate decision**")
             summary_lines = [
-                "- Should debate: {}".format(
-                    "Yes" if gate_snapshot.get("should_debate") else "No"
-                ),
+                "- Should debate: {}".format("Yes" if gate_snapshot.get("should_debate") else "No"),
                 f"- Target loops: {gate_snapshot.get('target_loops')}",
                 f"- Reason: {gate_snapshot.get('reason', 'policy')}",
             ]
@@ -2034,9 +2021,7 @@ def display_results(result: QueryResponse) -> None:
                 )
             contradiction_total = telemetry.get("contradiction_total")
             if isinstance(contradiction_total, (int, float)):
-                summary_lines.append(
-                    f"- Contradiction total: {contradiction_total:.2f}"
-                )
+                summary_lines.append(f"- Contradiction total: {contradiction_total:.2f}")
             for line in summary_lines:
                 st.markdown(line)
             rationale_lines = format_gate_rationales(gate_snapshot)
@@ -2045,9 +2030,7 @@ def display_results(result: QueryResponse) -> None:
                 for entry in rationale_lines:
                     st.markdown(f"- {entry}")
 
-        scout_stage = (
-            result.metrics.get("scout_stage") if isinstance(result.metrics, dict) else {}
-        )
+        scout_stage = result.metrics.get("scout_stage") if isinstance(result.metrics, dict) else {}
         if isinstance(scout_stage, dict) and scout_stage.get("snippets"):
             with st.expander("Scout snippets", expanded=False):
                 for item in scout_stage.get("snippets", []) or []:
@@ -2197,9 +2180,7 @@ def display_results(result: QueryResponse) -> None:
                                 st.session_state["reverify_notice"] = (
                                     "Claim verification refreshed with updated provenance."
                                 )
-                                st.success(
-                                    "Claim verification refreshed with updated provenance."
-                                )
+                                st.success("Claim verification refreshed with updated provenance.")
                 badge_styles = {
                     "supported": "#0f5132",
                     "unsupported": "#842029",
@@ -2236,10 +2217,7 @@ def display_results(result: QueryResponse) -> None:
                     sources = audit.get("sources") or []
                     primary = sources[0] if sources else {}
                     label = (
-                        primary.get("title")
-                        or primary.get("url")
-                        or primary.get("snippet")
-                        or ""
+                        primary.get("title") or primary.get("url") or primary.get("snippet") or ""
                     )
                     if label and len(label) > 80:
                         label = label[:77] + "..."
@@ -2352,12 +2330,8 @@ def display_results(result: QueryResponse) -> None:
                             predicate = item.get("predicate")
                             objects = item.get("objects") or []
                             if subject and predicate and isinstance(objects, list):
-                                joined = ", ".join(
-                                    str(obj) for obj in objects if str(obj).strip()
-                                )
-                                st.markdown(
-                                    f"- {subject} — {predicate} → {joined or '—'}"
-                                )
+                                joined = ", ".join(str(obj) for obj in objects if str(obj).strip())
+                                st.markdown(f"- {subject} — {predicate} → {joined or '—'}")
                             else:
                                 st.markdown(f"- {item}")
                         else:
@@ -2371,9 +2345,7 @@ def display_results(result: QueryResponse) -> None:
                     for path in paths:
                         if isinstance(path, list):
                             labels = [str(node) for node in path if str(node).strip()]
-                            st.markdown(
-                                f"- {' → '.join(labels) if labels else '—'}"
-                            )
+                            st.markdown(f"- {' → '.join(labels) if labels else '—'}")
                         else:
                             st.markdown(f"- {path}")
                     if note := payload.notes.get("knowledge_graph_paths"):

@@ -45,6 +45,7 @@ def _try_import_spacy() -> bool:
         return False
     try:  # pragma: no cover - optional dependency
         import spacy as spacy_mod
+
         try:
             spacy_cli: ModuleType | None = importlib.import_module("spacy.cli")
         except Exception:
@@ -181,9 +182,7 @@ class SearchContext:
     _instance = None
     _lock = threading.Lock()
     _graph_pipeline_lock: ClassVar[threading.Lock] = threading.Lock()
-    _graph_pipeline_factory: ClassVar[
-        Callable[[], "SessionGraphPipeline"] | None
-    ] = None
+    _graph_pipeline_factory: ClassVar[Callable[[], "SessionGraphPipeline"] | None] = None
     _graph_pipeline_singleton: ClassVar["SessionGraphPipeline" | None] = None
 
     @classmethod
@@ -372,9 +371,7 @@ class SearchContext:
 
         with self._scout_lock:
             strategy = self._ensure_search_strategy_locked()
-            plan = strategy.setdefault(
-                "fetch_plan", {"base_k": int(base_k), "attempts": []}
-            )
+            plan = strategy.setdefault("fetch_plan", {"base_k": int(base_k), "attempts": []})
             plan.setdefault("attempts", [])
             if plan.get("base_k") is None:
                 plan["base_k"] = int(base_k)
@@ -629,9 +626,7 @@ class SearchContext:
         limit = max(1, int(fetch_limit))
         ranked_list = list(ranked_results)
         unique_ids = {
-            self._extract_identifier(doc)
-            for doc in ranked_list
-            if isinstance(doc, Mapping) and doc
+            self._extract_identifier(doc) for doc in ranked_list if isinstance(doc, Mapping) and doc
         }
         total_results = len(ranked_list)
         unique_count = len(unique_ids)
@@ -1151,9 +1146,7 @@ class SearchContext:
         similarity_raw = 0.0
         if entity_count_float > 0.0:
             similarity_raw = min(1.0, relation_count_float / max(entity_count_float, 1.0))
-        similarity_weighted = float(
-            max(0.0, min(similarity_raw * similarity_weight, 1.0))
-        )
+        similarity_weighted = float(max(0.0, min(similarity_raw * similarity_weight, 1.0)))
 
         metadata: dict[str, Any] = {
             "contradictions": {

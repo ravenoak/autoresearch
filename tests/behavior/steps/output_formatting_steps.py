@@ -9,7 +9,7 @@ from autoresearch.output_format import OutputDepth, OutputFormatter, build_depth
 from tests.behavior.context import BehaviorContext
 from pytest_bdd import parsers, scenario, then, when
 
-from .common_steps import app_running, app_running_with_default, application_running, cli_app
+from .common_steps import cli_app
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in TTY mode'))
@@ -19,14 +19,8 @@ def run_in_terminal(query, monkeypatch, bdd_context: BehaviorContext, cli_runner
     bdd_context["terminal_result"] = result
 
 
-@when(
-    parsers.parse(
-        'I run `autoresearch search "{query}"` in TTY mode with control characters'
-    )
-)
-def run_tty_with_control_characters(
-    query, monkeypatch, bdd_context: BehaviorContext, cli_runner
-):
+@when(parsers.parse('I run `autoresearch search "{query}"` in TTY mode with control characters'))
+def run_tty_with_control_characters(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
     def fake_run_query(*_args, **_kwargs):
@@ -67,9 +61,7 @@ def run_piped(query, monkeypatch, bdd_context: BehaviorContext, cli_runner):
     bdd_context["piped_result"] = result
 
 
-@then(
-    "the output should be valid JSON with keys `answer`, `citations`, `reasoning`, and `metrics`"
-)
+@then("the output should be valid JSON with keys `answer`, `citations`, `reasoning`, and `metrics`")
 def check_json_output(bdd_context: BehaviorContext):
     result = bdd_context["piped_result"]
     output = result.stdout
@@ -181,7 +173,7 @@ def build_depth_payload_with_aliases(monkeypatch, bdd_context: BehaviorContext):
     class DummyPipeline:
         def export_artifacts(self):
             return {
-                "graph_json": "{\"nodes\": [], \"edges\": []}",
+                "graph_json": '{"nodes": [], "edges": []}',
                 "graphml": "<graphml />",
             }
 
@@ -232,9 +224,7 @@ def build_depth_payload_with_aliases(monkeypatch, bdd_context: BehaviorContext):
     bdd_context["graph_depth_payload"] = payload
 
 
-@then(
-    "the graph export payload should include canonical formats `graph_json` and `graphml`"
-)
+@then("the graph export payload should include canonical formats `graph_json` and `graphml`")
 def assert_graph_export_canonical(bdd_context: BehaviorContext):
     payload = bdd_context["graph_depth_payload"]
     exports = payload.graph_exports

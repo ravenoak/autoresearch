@@ -11,7 +11,7 @@ from autoresearch.errors import StorageError
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=1, max_size=5),
-    st.integers(min_value=1, max_value=5)
+    st.integers(min_value=1, max_value=5),
 )
 def test_vector_search_calls_backend(monkeypatch, query_embedding, k):
     backend = MagicMock()
@@ -49,8 +49,7 @@ def test_vector_search_backend_receives_exact(monkeypatch, query_embedding, k):
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
-    st.one_of(st.none(), st.text(), st.integers(), st.lists(st.text())),
-    st.integers(max_value=0)
+    st.one_of(st.none(), st.text(), st.integers(), st.lists(st.text())), st.integers(max_value=0)
 )
 def test_vector_search_invalid(monkeypatch, query_embedding, k):
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
@@ -65,12 +64,16 @@ def malformed_embeddings(draw):
     use_nan = draw(st.booleans())
     if use_nan:
         size = draw(st.integers(min_value=1, max_value=5))
-        values = draw(st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=size, max_size=size))
+        values = draw(
+            st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=size, max_size=size)
+        )
         index = draw(st.integers(min_value=0, max_value=size - 1))
-        values[index] = float('nan')
+        values[index] = float("nan")
         return values
     size = draw(st.integers(min_value=1, max_value=5))
-    return draw(st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=size, max_size=size))
+    return draw(
+        st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=size, max_size=size)
+    )
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

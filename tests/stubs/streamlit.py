@@ -140,7 +140,9 @@ class StreamlitModule(Protocol):
 
     def container(self) -> AbstractContextManager[ContainerContext]: ...
 
-    def modal(self, title: str, *, closable: bool = True) -> AbstractContextManager[ModalContext]: ...
+    def modal(
+        self, title: str, *, closable: bool = True
+    ) -> AbstractContextManager[ModalContext]: ...
 
 
 class _StreamlitModule(ModuleType):

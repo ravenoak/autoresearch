@@ -34,8 +34,7 @@ class DistributedPerfCompareModule(Protocol):
         tasks: int,
         network_delay: float = ...,
         seed: int | None = ...,
-    ) -> list[WorkerComparison]:
-        ...
+    ) -> list[WorkerComparison]: ...
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]

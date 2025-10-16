@@ -33,9 +33,7 @@ def _cfg() -> ConfigModel:
     return cfg
 
 
-pytestmark = pytest.mark.skipif(
-    not GITPYTHON_INSTALLED, reason="GitPython not installed"
-)
+pytestmark = pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed")
 
 
 @pytest.fixture
@@ -72,6 +70,7 @@ def test_external_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def match_any_query(request):
         return True, "matches any query"
+
     responses.add(
         responses.GET,
         url,
@@ -98,6 +97,7 @@ def test_external_lookup_special_chars(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def match_any_query(request):
         return True, "matches any query"
+
     responses.add(
         responses.GET,
         url,
@@ -164,9 +164,7 @@ def test_duckduckgo_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     url = "https://api.duckduckgo.com/"
 
     # Mock a timeout
-    responses.add(
-        responses.GET, url, body=requests.exceptions.Timeout("Connection timed out")
-    )
+    responses.add(responses.GET, url, body=requests.exceptions.Timeout("Connection timed out"))
 
     # The external_lookup method should raise a TimeoutError
     with pytest.raises(TimeoutError) as excinfo:
@@ -190,9 +188,7 @@ def test_duckduckgo_json_decode_error(monkeypatch: pytest.MonkeyPatch) -> None:
     url = "https://api.duckduckgo.com/"
 
     # Mock an invalid JSON response
-    responses.add(
-        responses.GET, url, body="Invalid JSON", content_type="application/json"
-    )
+    responses.add(responses.GET, url, body="Invalid JSON", content_type="application/json")
 
     # The external_lookup method should raise a SearchError
     with pytest.raises(SearchError) as excinfo:
@@ -247,9 +243,7 @@ def test_serper_timeout_error(monkeypatch: pytest.MonkeyPatch) -> None:
     url = "https://google.serper.dev/search"
 
     # Mock a timeout
-    responses.add(
-        responses.POST, url, body=requests.exceptions.Timeout("Connection timed out")
-    )
+    responses.add(responses.POST, url, body=requests.exceptions.Timeout("Connection timed out"))
 
     # The external_lookup method should raise a TimeoutError
     with pytest.raises(TimeoutError) as excinfo:
@@ -331,9 +325,7 @@ def test_external_lookup_vector_search(monkeypatch: pytest.MonkeyPatch) -> None:
 
     vector_backend: EmbeddingCallable = mock_vector_search
 
-    monkeypatch.setattr(
-        "autoresearch.search.StorageManager.vector_search", vector_backend
-    )
+    monkeypatch.setattr("autoresearch.search.StorageManager.vector_search", vector_backend)
 
     results: list[SearchPayload] = Search.external_lookup("query", max_results=1)
 
@@ -356,9 +348,7 @@ def test_external_lookup_returns_handles(
         search_state: Search = search_instance
         search_state.cache.clear()
 
-        def vector_backend_func(
-            embedding: Sequence[float], k: int = 5
-        ) -> list[SearchPayload]:
+        def vector_backend_func(embedding: Sequence[float], k: int = 5) -> list[SearchPayload]:
             return [dict(storage_vector_doc)]
 
         vector_backend: EmbeddingCallable = vector_backend_func
@@ -416,9 +406,7 @@ def test_rank_results_semantic_only(
     cfg.search.use_semantic_similarity = True
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1]))
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
@@ -446,9 +434,7 @@ def test_rank_results_bm25_only(
     cfg.search.source_credibility_weight = 0.0
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1]))
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
@@ -476,9 +462,7 @@ def test_rank_results_credibility_only(
     cfg.search.source_credibility_weight = 1.0
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(
-        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
-    )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1]))
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",

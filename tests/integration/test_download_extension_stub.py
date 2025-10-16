@@ -56,9 +56,7 @@ class _FailingConn(DuckDBConnectionProtocol):
         raise download_mod.duckdb.Error("network unreachable")
 
 
-def test_network_failure_creates_stub(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_network_failure_creates_stub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a stub is created when downloads fail."""
 
     monkeypatch.setattr(download_mod, "load_offline_env", lambda *_: {})

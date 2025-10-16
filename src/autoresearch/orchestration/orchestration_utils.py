@@ -86,15 +86,9 @@ class ScoutGatePolicy:
             "retrieval_confidence": getattr(
                 self.config, "gate_retrieval_confidence_threshold", 0.5
             ),
-            "graph_contradiction": getattr(
-                self.config, "gate_graph_contradiction_threshold", 0.25
-            ),
-            "graph_similarity": getattr(
-                self.config, "gate_graph_similarity_threshold", 0.0
-            ),
-            "scout_agreement": getattr(
-                self.config, "gate_scout_agreement_threshold", 0.7
-            ),
+            "graph_contradiction": getattr(self.config, "gate_graph_contradiction_threshold", 0.25),
+            "graph_similarity": getattr(self.config, "gate_graph_similarity_threshold", 0.0),
+            "scout_agreement": getattr(self.config, "gate_scout_agreement_threshold", 0.7),
         }
 
         graph_contradiction = 0.0
@@ -127,9 +121,7 @@ class ScoutGatePolicy:
         coverage_snapshot: dict[str, int | float] = dict(coverage_details)
         coverage_ratio = float(max(0.0, min(1.0, 1.0 - coverage_gap)))
         coverage_snapshot["coverage_ratio"] = coverage_ratio
-        retrieval_confidence, confidence_details = self._retrieval_confidence(
-            state, details=True
-        )
+        retrieval_confidence, confidence_details = self._retrieval_confidence(state, details=True)
         nli_conflict, conflict_details = self._nli_conflict(state, details=True)
 
         agreement_result = self._scout_agreement(state, details=True)
@@ -228,9 +220,7 @@ class ScoutGatePolicy:
             baseline_heuristics,
             {
                 "retrieval_overlap": {
-                    "retrieval_sets": len(
-                        state.metadata.get("scout_retrieval_sets") or []
-                    ),
+                    "retrieval_sets": len(state.metadata.get("scout_retrieval_sets") or []),
                     "source_count": len(state.sources),
                 },
                 "coverage_gap": coverage_snapshot,
@@ -347,12 +337,9 @@ class ScoutGatePolicy:
         conflict_high = heuristics["nli_conflict"] >= thresholds["nli_conflict"]
         complexity_high = heuristics["complexity"] >= thresholds["complexity"]
         coverage_gap_high = heuristics["coverage_gap"] >= thresholds["coverage_gap"]
-        confidence_low = (
-            heuristics["retrieval_confidence"] < thresholds["retrieval_confidence"]
-        )
-        graph_conflict_high = (
-            heuristics.get("graph_contradiction", 0.0)
-            >= thresholds.get("graph_contradiction", 1.0)
+        confidence_low = heuristics["retrieval_confidence"] < thresholds["retrieval_confidence"]
+        graph_conflict_high = heuristics.get("graph_contradiction", 0.0) >= thresholds.get(
+            "graph_contradiction", 1.0
         )
         similarity_threshold = thresholds.get("graph_similarity")
         graph_similarity_low = False
@@ -361,9 +348,7 @@ class ScoutGatePolicy:
         agreement_threshold = thresholds.get("scout_agreement")
         scout_disagreement = False
         if agreement_threshold is not None:
-            scout_disagreement = (
-                heuristics.get("scout_agreement", 1.0) < agreement_threshold
-            )
+            scout_disagreement = heuristics.get("scout_agreement", 1.0) < agreement_threshold
         return (
             overlap_low
             or conflict_high
@@ -411,14 +396,10 @@ class ScoutGatePolicy:
     @overload
     def _nli_conflict(
         self, state: QueryState, *, details: Literal[True]
-    ) -> tuple[float, dict[str, float | int]]:
-        ...
+    ) -> tuple[float, dict[str, float | int]]: ...
 
     @overload
-    def _nli_conflict(
-        self, state: QueryState, *, details: Literal[False] = False
-    ) -> float:
-        ...
+    def _nli_conflict(self, state: QueryState, *, details: Literal[False] = False) -> float: ...
 
     def _nli_conflict(
         self, state: QueryState, *, details: bool = False
@@ -460,14 +441,10 @@ class ScoutGatePolicy:
     @overload
     def _coverage_gap(
         self, state: QueryState, *, details: Literal[True]
-    ) -> tuple[float, dict[str, int]]:
-        ...
+    ) -> tuple[float, dict[str, int]]: ...
 
     @overload
-    def _coverage_gap(
-        self, state: QueryState, *, details: Literal[False] = False
-    ) -> float:
-        ...
+    def _coverage_gap(self, state: QueryState, *, details: Literal[False] = False) -> float: ...
 
     def _coverage_gap(
         self, state: QueryState, *, details: bool = False
@@ -495,14 +472,12 @@ class ScoutGatePolicy:
     @overload
     def _retrieval_confidence(
         self, state: QueryState, *, details: Literal[True]
-    ) -> tuple[float, dict[str, float | int]]:
-        ...
+    ) -> tuple[float, dict[str, float | int]]: ...
 
     @overload
     def _retrieval_confidence(
         self, state: QueryState, *, details: Literal[False] = False
-    ) -> float:
-        ...
+    ) -> float: ...
 
     def _retrieval_confidence(
         self, state: QueryState, *, details: bool = False
@@ -723,7 +698,7 @@ class ScoutGatePolicy:
                 except (TypeError, ValueError):
                     clause_score = 0.0
             other_score = max(0.0, min(clause_score, 1.0))
-        query_tokens = len(query.split())
+        query_tokens = max(1, len(query) // 4)  # Approximate tokens using character-based counting
         length_score = min(1.0, query_tokens / 200.0)
         combined = 0.4 * hop_score + 0.3 * entity_score + 0.2 * other_score + 0.1 * length_score
         return float(max(0.0, min(combined, 1.0)))

@@ -230,18 +230,16 @@ def _handle_context_size_error(
     agent_name: str, error: Exception, state: QueryState
 ) -> Dict[str, Any]:
     """Handle context size errors with intelligent recovery."""
-    from ..llm.context_management import get_context_manager
-
     recovery_strategy = "context_truncation"
 
     # Extract context size info if available in error
     error_str = str(error)
     context_size = None
-    prompt_size = None
 
     # Try to parse context size from error message
     import re
-    context_match = re.search(r'context.*?(\d+)', error_str, re.IGNORECASE)
+
+    context_match = re.search(r"context.*?(\d+)", error_str, re.IGNORECASE)
     if context_match:
         context_size = int(context_match.group(1))
 
@@ -263,12 +261,12 @@ def _handle_context_size_error(
     # Create diagnostic claim
     claim = _build_diagnostic_claim(
         agent_name=agent_name,
-        content=f"Context size error recovered via automatic truncation",
+        content="Context size error recovered via automatic truncation",
         error=error,
         error_category="recoverable_context",
         recovery_strategy=recovery_strategy,
         suggestion=suggestion,
-        event="context_overflow_recovered"
+        event="context_overflow_recovered",
     )
 
     return {

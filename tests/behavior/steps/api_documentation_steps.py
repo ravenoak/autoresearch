@@ -32,9 +32,7 @@ def api_server_running(
     if not any(r.path == "/docs" for r in api_app.router.routes):
         api_app.router.add_api_route(
             "/docs",
-            lambda: get_swagger_ui_html(
-                openapi_url="/openapi.json", title="Swagger UI"
-            ),
+            lambda: get_swagger_ui_html(openapi_url="/openapi.json", title="Swagger UI"),
             include_in_schema=False,
         )
 

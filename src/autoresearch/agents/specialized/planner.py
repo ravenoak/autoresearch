@@ -84,15 +84,11 @@ class PlannerPromptBuilder:
                             "dependency_depth": {
                                 "type": "integer",
                                 "minimum": 0,
-                                "description": (
-                                    "Planner-estimated depth relative to root tasks."
-                                ),
+                                "description": ("Planner-estimated depth relative to root tasks."),
                             },
                             "dependency_rationale": {
                                 "type": "string",
-                                "description": (
-                                    "Short justification for declared dependencies."
-                                ),
+                                "description": ("Short justification for declared dependencies."),
                             },
                             "criteria": {
                                 "type": "array",
@@ -114,9 +110,7 @@ class PlannerPromptBuilder:
                             },
                             "self_check": {
                                 "type": "object",
-                                "description": (
-                                    "Alias for socratic_checks when structured."
-                                ),
+                                "description": ("Alias for socratic_checks when structured."),
                             },
                             "metadata": {"type": "object"},
                         },
@@ -209,8 +203,7 @@ class PlannerPromptBuilder:
         if self.existing_graph and self.existing_graph.get("tasks"):
             prior_summary = json.dumps(self.existing_graph, indent=2)[:2000]
             sections.append(
-                "Current task graph context (truncate to stay concise):\n"
-                f"{prior_summary}"
+                "Current task graph context (truncate to stay concise):\n" f"{prior_summary}"
             )
 
         if self.graph_context:
@@ -239,17 +232,13 @@ class PlannerPromptBuilder:
         if isinstance(similarity, Mapping):
             weighted = self._format_float(similarity.get("weighted_score"))
             raw = self._format_float(similarity.get("raw_score"))
-            sections.append(
-                f"- Graph similarity support: {weighted} (raw {raw})"
-            )
+            sections.append(f"- Graph similarity support: {weighted} (raw {raw})")
 
         contradictions = context.get("contradictions")
         if isinstance(contradictions, Mapping):
             weighted = self._format_float(contradictions.get("weighted_score"))
             raw = self._format_float(contradictions.get("raw_score"))
-            sections.append(
-                f"- Contradiction score: {weighted} (raw {raw})"
-            )
+            sections.append(f"- Contradiction score: {weighted} (raw {raw})")
             items = contradictions.get("items")
             if isinstance(items, Sequence):
                 entries = [item for item in items if isinstance(item, Mapping)]
@@ -261,16 +250,12 @@ class PlannerPromptBuilder:
                     predicate = str(item_mapping.get("predicate") or "?")
                     objects = item_mapping.get("objects")
                     if isinstance(objects, Sequence) and objects:
-                        object_preview = ", ".join(
-                            str(obj) for obj in list(objects)[:3]
-                        )
+                        object_preview = ", ".join(str(obj) for obj in list(objects)[:3])
                         if len(objects) > 3:
                             object_preview += ", …"
                     else:
                         object_preview = "?"
-                    sections.append(
-                        f"    - {subject} --{predicate}--> {object_preview}"
-                    )
+                    sections.append(f"    - {subject} --{predicate}--> {object_preview}")
                 remaining = len(entries) - len(preview)
                 if remaining > 0:
                     sections.append(f"    - … ({remaining} more)")
@@ -297,9 +282,7 @@ class PlannerPromptBuilder:
                         arrow = "↔"
                     else:
                         arrow = "→"
-                    neighbour_lines.append(
-                        f"  - {entity} {arrow} ({predicate}) {target}"
-                    )
+                    neighbour_lines.append(f"  - {entity} {arrow} ({predicate}) {target}")
             if neighbour_lines:
                 sections.append("- Representative neighbours:")
                 sections.extend(neighbour_lines)
@@ -428,8 +411,7 @@ class PlannerAgent(Agent):
                     entry
                     for entry in overrides
                     if isinstance(entry, Mapping)
-                    and str(entry.get("agent", "")).lower()
-                    == agent_name.lower()
+                    and str(entry.get("agent", "")).lower() == agent_name.lower()
                     and entry.get("reason") == "planner_low_confidence"
                 ]
                 if existing:
@@ -437,8 +419,7 @@ class PlannerAgent(Agent):
                 overrides.append(
                     {
                         "agent": agent_name,
-                        "model": policy.escalation_model
-                        or policy.default_model,
+                        "model": policy.escalation_model or policy.default_model,
                         "reason": "planner_low_confidence",
                         "source": "planner",
                         "confidence": plan_confidence,
@@ -608,9 +589,7 @@ class PlannerAgent(Agent):
                 continue
         return None
 
-    def _normalise_parsed_payload(
-        self, payload: Any, warnings: List[dict[str, Any]]
-    ) -> TaskGraph:
+    def _normalise_parsed_payload(self, payload: Any, warnings: List[dict[str, Any]]) -> TaskGraph:
         """Normalise a parsed JSON payload into planner graph schema."""
 
         if isinstance(payload, Mapping):
@@ -664,8 +643,7 @@ class PlannerAgent(Agent):
         if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
             seq_items = list(payload)
             tasks = [
-                self._normalise_task(task, idx, warnings)
-                for idx, task in enumerate(seq_items, 1)
+                self._normalise_task(task, idx, warnings) for idx, task in enumerate(seq_items, 1)
             ]
             edges = self._normalise_edges([], tasks, warnings)
             return TaskGraph(tasks=tasks, edges=edges, metadata={})
@@ -678,16 +656,11 @@ class PlannerAgent(Agent):
         )
         return self._heuristic_graph(str(payload), warnings)
 
-    def _heuristic_graph(
-        self, plan: str, warnings: List[dict[str, Any]]
-    ) -> TaskGraph:
+    def _heuristic_graph(self, plan: str, warnings: List[dict[str, Any]]) -> TaskGraph:
         """Fallback graph construction using simple heuristics."""
 
         entries = self._split_plan_entries(plan)
-        tasks = [
-            self._normalise_task(entry, idx, warnings)
-            for idx, entry in enumerate(entries, 1)
-        ]
+        tasks = [self._normalise_task(entry, idx, warnings) for idx, entry in enumerate(entries, 1)]
         edges = self._normalise_edges(None, tasks, warnings)
         return TaskGraph(
             tasks=tasks,
@@ -709,9 +682,7 @@ class PlannerAgent(Agent):
 
         return [plan.strip()] if plan.strip() else []
 
-    def _normalise_task(
-        self, task: Any, index: int, warnings: List[dict[str, Any]]
-    ) -> TaskNode:
+    def _normalise_task(self, task: Any, index: int, warnings: List[dict[str, Any]]) -> TaskNode:
         """Standardise a task payload into the task graph schema."""
 
         task_id = f"task-{index}"
@@ -733,9 +704,7 @@ class PlannerAgent(Agent):
             question = self._extract_question(task)
             tools = self._extract_tools(task.get("tools"))
             depends_on = self._extract_sequence(task.get("depends_on"))
-            criteria = self._extract_sequence(
-                task.get("criteria") or task.get("exit_criteria")
-            )
+            criteria = self._extract_sequence(task.get("criteria") or task.get("exit_criteria"))
             sub_questions = self._extract_sequence(
                 task.get("sub_questions") or task.get("objectives")
             )
@@ -829,9 +798,7 @@ class PlannerAgent(Agent):
 
         if isinstance(value, Mapping):
             return {
-                str(k): self._normalise_metadata_value(v)
-                for k, v in value.items()
-                if v is not None
+                str(k): self._normalise_metadata_value(v) for k, v in value.items() if v is not None
             }
         if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
             return [self._normalise_metadata_value(item) for item in value]
@@ -852,7 +819,9 @@ class PlannerAgent(Agent):
         if isinstance(tools, Sequence) and not isinstance(tools, (str, bytes)):
             return [str(tool).strip() for tool in tools if str(tool).strip()]
         if isinstance(tools, str):
-            return [segment.strip() for segment in re.split(r",|/|;| and ", tools) if segment.strip()]
+            return [
+                segment.strip() for segment in re.split(r",|/|;| and ", tools) if segment.strip()
+            ]
         return []
 
     def _extract_sequence(self, value: Any) -> List[str]:

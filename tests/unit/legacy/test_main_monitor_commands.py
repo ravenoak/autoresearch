@@ -32,9 +32,7 @@ def test_serve_a2a_command(mock_a2a_interface_class):
     mock_a2a_interface.start.side_effect = SystemExit
     mock_a2a_interface_class.return_value = mock_a2a_interface
 
-    result = runner.invoke(
-        _main().app, ["serve-a2a", "--host", "localhost", "--port", "8765"]
-    )
+    result = runner.invoke(_main().app, ["serve-a2a", "--host", "localhost", "--port", "8765"])
 
     assert result.exit_code == 0
     mock_a2a_interface_class.assert_called_once_with(host="localhost", port=8765)

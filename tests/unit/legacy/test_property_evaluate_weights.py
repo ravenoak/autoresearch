@@ -26,9 +26,7 @@ def random_doc():
         min_size=1,
         max_size=5,
     ),
-    weights=st.tuples(
-        st.floats(0.1, 1), st.floats(0.1, 1), st.floats(0.1, 1)
-    ),
+    weights=st.tuples(st.floats(0.1, 1), st.floats(0.1, 1), st.floats(0.1, 1)),
     k=st.floats(0.1, 10),
 )
 def test_evaluate_weights_scale_invariant(data, weights, k):

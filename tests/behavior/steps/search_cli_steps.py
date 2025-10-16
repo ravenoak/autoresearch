@@ -15,9 +15,7 @@ from tests.behavior.steps import BehaviorContext, get_cli_result, set_cli_result
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
-@when(
-    'I run `autoresearch search "What is artificial intelligence?" --reasoning-mode direct`'
-)
+@when('I run `autoresearch search "What is artificial intelligence?" --reasoning-mode direct`')
 def run_search_direct(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -38,7 +36,7 @@ def run_search_direct(
     set_cli_result(bdd_context, result)
 
 
-@when('I run `autoresearch search`')
+@when("I run `autoresearch search`")
 def run_search_missing(
     cli_runner: CliRunner,
     bdd_context: BehaviorContext,
@@ -52,7 +50,7 @@ def run_search_missing(
     set_cli_result(bdd_context, result)
 
 
-@then('the CLI should exit successfully')
+@then("the CLI should exit successfully")
 def cli_success(bdd_context: BehaviorContext) -> None:
     """Assert the search command succeeded."""
 
@@ -61,7 +59,7 @@ def cli_success(bdd_context: BehaviorContext) -> None:
     assert result.stderr == ""
 
 
-@then('the CLI should exit with an error')
+@then("the CLI should exit with an error")
 def cli_error(bdd_context: BehaviorContext) -> None:
     """Assert the search command failed with an informative error."""
 
@@ -70,11 +68,11 @@ def cli_error(bdd_context: BehaviorContext) -> None:
     assert result.stderr != "" or result.exception is not None
 
 
-@scenario('../features/search_cli.feature', 'Run a basic search query')
+@scenario("../features/search_cli.feature", "Run a basic search query")
 def test_search_direct() -> None:
     """Scenario: Run a basic search query."""
 
 
-@scenario('../features/search_cli.feature', 'Missing query argument')
+@scenario("../features/search_cli.feature", "Missing query argument")
 def test_search_missing() -> None:
     """Scenario: Missing query argument produces an error."""

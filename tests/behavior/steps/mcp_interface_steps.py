@@ -41,9 +41,7 @@ def given_server(mock_server: FastMCP) -> FastMCP:
 
 
 @when('I send a MCP query "{query}"')
-def send_mcp_query(
-    server: FastMCP, bdd_context: BehaviorContext, query: str
-) -> None:
+def send_mcp_query(server: FastMCP, bdd_context: BehaviorContext, query: str) -> None:
     response = mcp_interface.query(query, transport=server)
     set_value(bdd_context, "response", response)
 
@@ -68,9 +66,7 @@ def check_malformed_error(bdd_context: BehaviorContext) -> None:
 
 
 @when("a connection interruption occurs and the client retries")
-def retry_after_connection_failure(
-    server: FastMCP, bdd_context: BehaviorContext
-) -> None:
+def retry_after_connection_failure(server: FastMCP, bdd_context: BehaviorContext) -> None:
     class FlakyClient(Client):
         def __init__(self, target: Any) -> None:  # pragma: no cover - simple init
             super().__init__(target)
@@ -104,9 +100,7 @@ def retry_after_connection_failure(
 
 
 @then('the client should eventually receive a MCP response with answer "{answer}"')
-def check_recovered_response(
-    bdd_context: BehaviorContext, answer: str
-) -> None:
+def check_recovered_response(bdd_context: BehaviorContext, answer: str) -> None:
     response = get_required(bdd_context, "response")
     assert response["answer"] == answer
 

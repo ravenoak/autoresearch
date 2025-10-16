@@ -54,13 +54,11 @@ def assert_redis_broker(bdd_context: BehaviorContext) -> None:
 @scenario("../features/message_broker_config.feature", "Use default in-memory message broker")
 def test_use_default_inmemory_message_broker() -> None:
     """Scenario: selecting the in-memory broker."""
-    pass
 
 
 @scenario("../features/message_broker_config.feature", "Unsupported message broker raises error")
 def test_unsupported_message_broker_raises_error() -> None:
     """Scenario: unknown broker names raise an error."""
-    pass
 
 
 @pytest.mark.requires_distributed
@@ -68,4 +66,3 @@ def test_unsupported_message_broker_raises_error() -> None:
 @scenario("../features/message_broker_config.feature", "Redis broker detection")
 def test_redis_broker_detection() -> None:
     """Scenario: detect Redis broker configuration."""
-    pass

@@ -96,9 +96,7 @@ def test_cli_progress_and_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
     assert len(prompts) == 1
 
 
-def test_cli_search_uses_model_copy(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_cli_search_uses_model_copy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The search command should execute successfully with parameter handling."""
 
     config_path = tmp_path / "autoresearch.toml"
@@ -109,9 +107,41 @@ def test_cli_search_uses_model_copy(
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
     # Stub out complex dependencies
+    class MockContext:
+        def __init__(self):
+            self.db_backend = None
+            self.graph = None
+            self.rdf_store = None
+            self.kg_graph = None
+
     class StubStorageManager:
-        @staticmethod
-        def setup() -> None:
+        # Mock the state attribute that StorageManager expects
+        state = type(
+            "MockState",
+            (),
+            {
+                "context": MockContext(),
+                "lru": {},
+                "lru_counter": 0,
+                "baseline_mb": 0.0,
+                "lock": type(
+                    "MockLock",
+                    (),
+                    {"__enter__": lambda self: None, "__exit__": lambda self, *args: None},
+                )(),
+            },
+        )()
+
+        # Mock class attributes that StorageManager expects
+        _access_frequency = {}
+        context = MockContext()
+
+        @classmethod
+        def setup(cls) -> None:
+            return None
+
+        @classmethod
+        def teardown(cls, *args, **kwargs) -> None:
             return None
 
     monkeypatch.setattr("autoresearch.storage.StorageManager", StubStorageManager)

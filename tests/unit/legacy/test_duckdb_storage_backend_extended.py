@@ -56,12 +56,15 @@ class TestDuckDBStorageBackendExtended:
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
-            with patch(
-                "autoresearch.extensions.VSSExtensionLoader.verify_extension",
-                return_value=True,
-            ), patch(
-                "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                return_value=True,
+            with (
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.verify_extension",
+                    return_value=True,
+                ),
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                    return_value=True,
+                ),
             ):
                 # Setup the backend
                 backend = DuckDBStorageBackend()
@@ -94,12 +97,15 @@ class TestDuckDBStorageBackendExtended:
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
-            with patch(
-                "autoresearch.extensions.VSSExtensionLoader.verify_extension",
-                return_value=False,
-            ), patch(
-                "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                return_value=False,
+            with (
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.verify_extension",
+                    return_value=False,
+                ),
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                    return_value=False,
+                ),
             ):
                 # Setup the backend
                 backend = DuckDBStorageBackend()
@@ -132,12 +138,15 @@ class TestDuckDBStorageBackendExtended:
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
-            with patch(
-                "autoresearch.extensions.VSSExtensionLoader.verify_extension",
-                return_value=True,
-            ), patch(
-                "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                return_value=True,
+            with (
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.verify_extension",
+                    return_value=True,
+                ),
+                patch(
+                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                    return_value=True,
+                ),
             ):
                 # Setup the backend
                 backend = DuckDBStorageBackend()
@@ -145,9 +154,7 @@ class TestDuckDBStorageBackendExtended:
                 backend._has_vss = True
 
                 # Set the environment variable to strict mode
-                with patch.dict(
-                    os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "true"}
-                ):
+                with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "true"}):
                     # Create the HNSW index and expect a StorageError
                     with pytest.raises(StorageError) as excinfo:
                         backend.create_hnsw_index()
@@ -172,9 +179,7 @@ class TestDuckDBStorageBackendExtended:
             "type": "test_type",
             "content": "test_content",
             "confidence": 0.9,
-            "relations": [
-                {"src": "test_id", "dst": "other_id", "rel": "test_rel", "weight": 0.8}
-            ],
+            "relations": [{"src": "test_id", "dst": "other_id", "rel": "test_rel", "weight": 0.8}],
             "embedding": [0.1, 0.2, 0.3],
         }
         backend.persist_claim(claim)
@@ -296,9 +301,7 @@ class TestDuckDBStorageBackendExtended:
             backend.vector_search([0.1, 0.2, 0.3])
 
         # Verify that the error message is correct
-        assert "Vector search not available: VSS extension not loaded" in str(
-            excinfo.value
-        )
+        assert "Vector search not available: VSS extension not loaded" in str(excinfo.value)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_vector_search_error(self, mock_connect):

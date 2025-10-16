@@ -94,9 +94,7 @@ def escape_markdown_text(value: str) -> tuple[str, bool]:
     return sanitized, needs_block
 
 
-def prepare_markdown_text(
-    value: Any, *, block_multiline: bool = False
-) -> tuple[str, bool, bool]:
+def prepare_markdown_text(value: Any, *, block_multiline: bool = False) -> tuple[str, bool, bool]:
     """Return sanitized text, a block flag, and a placeholder marker."""
 
     if value is None:

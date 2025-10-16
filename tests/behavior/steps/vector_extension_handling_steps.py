@@ -27,7 +27,6 @@ pytestmark = pytest.mark.requires_vss
 def test_load_from_filesystem(bdd_context: BehaviorContext):
     """Test scenario: Load vector extension from filesystem."""
     bdd_context["scenario_name"] = "Load vector extension from filesystem"
-    pass
 
 
 @scenario(
@@ -37,7 +36,6 @@ def test_load_from_filesystem(bdd_context: BehaviorContext):
 def test_download_automatically(bdd_context: BehaviorContext):
     """Test scenario: Download VSS extension automatically."""
     bdd_context["scenario_name"] = "Download VSS extension automatically"
-    pass
 
 
 @scenario(
@@ -47,7 +45,6 @@ def test_download_automatically(bdd_context: BehaviorContext):
 def test_fallback_to_download(bdd_context: BehaviorContext):
     """Test scenario: Fallback to download when local extension is invalid."""
     bdd_context["scenario_name"] = "Fallback to download when local extension is invalid"
-    pass
 
 
 @scenario(
@@ -57,7 +54,6 @@ def test_fallback_to_download(bdd_context: BehaviorContext):
 def test_offline_with_local_extension(bdd_context: BehaviorContext):
     """Test scenario: Handle offline environment with local extension."""
     bdd_context["scenario_name"] = "Handle offline environment with local extension"
-    pass
 
 
 @scenario(
@@ -67,7 +63,6 @@ def test_offline_with_local_extension(bdd_context: BehaviorContext):
 def test_offline_without_local_extension(bdd_context: BehaviorContext):
     """Test scenario: Handle offline environment without local extension."""
     bdd_context["scenario_name"] = "Handle offline environment without local extension"
-    pass
 
 
 @scenario(
@@ -77,7 +72,6 @@ def test_offline_without_local_extension(bdd_context: BehaviorContext):
 def test_embedding_wrapper(bdd_context: BehaviorContext):
     """Test scenario: Embedding search wrapper dispatches to backend."""
     bdd_context["scenario_name"] = "Embedding search wrapper dispatches to backend"
-    pass
 
 
 # Fixtures

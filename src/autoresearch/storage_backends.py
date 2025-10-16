@@ -460,9 +460,7 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         try:
-            self._conn.execute(
-                "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS variance DOUBLE"
-            )
+            self._conn.execute("ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS variance DOUBLE")
             self._conn.execute(
                 "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS instability BOOLEAN"
             )
@@ -471,9 +469,7 @@ class DuckDBStorageBackend:
             )
         except DuckDBError as exc:
             cause = exc if isinstance(exc, Exception) else Exception(str(exc))
-            raise StorageError(
-                "Failed to migrate stability metadata columns", cause=cause
-            )
+            raise StorageError("Failed to migrate stability metadata columns", cause=cause)
 
     def _migrate_to_v4(self) -> None:
         """Add provenance column for structured audit metadata."""
@@ -487,9 +483,7 @@ class DuckDBStorageBackend:
             )
         except DuckDBError as exc:
             cause = exc if isinstance(exc, Exception) else Exception(str(exc))
-            raise StorageError(
-                "Failed to migrate provenance column", cause=cause
-            )
+            raise StorageError("Failed to migrate provenance column", cause=cause)
 
     def create_hnsw_index(self) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index.
@@ -522,7 +516,12 @@ class DuckDBStorageBackend:
         try:
             # Enable experimental persistence for HNSW indexes in persistent databases
             log.info("Enabling experimental persistence for HNSW indexes")
-            self._conn.execute("SET hnsw_enable_experimental_persistence=true")
+            try:
+                self._conn.execute("SET hnsw_enable_experimental_persistence=true")
+            except Exception as e:
+                log.warning(
+                    f"Failed to enable experimental HNSW persistence: {e}. This is expected if using an older VSS extension version."
+                )
 
             log.info("Creating HNSW index on embeddings table...")
             # Ensure metric is one of the valid values: 'ip', 'cosine', 'l2sq'
@@ -697,9 +696,7 @@ class DuckDBStorageBackend:
                         row,
                     )
             except Exception as exc:
-                raise StorageError(
-                    "Failed to persist knowledge graph entities", cause=exc
-                )
+                raise StorageError("Failed to persist knowledge graph entities", cause=exc)
 
     def persist_graph_relations(self, relations: Sequence[Mapping[str, Any]]) -> None:
         """Persist knowledge graph relations into DuckDB.
@@ -738,9 +735,7 @@ class DuckDBStorageBackend:
                         row,
                     )
             except Exception as exc:
-                raise StorageError(
-                    "Failed to persist knowledge graph relations", cause=exc
-                )
+                raise StorageError("Failed to persist knowledge graph relations", cause=exc)
 
     def update_claim(self, claim: JSONDict, partial_update: bool = False) -> None:
         """Update an existing claim in the DuckDB database.
@@ -856,9 +851,7 @@ class DuckDBStorageBackend:
 
         variance_value = audit.get("entailment_variance")
         try:
-            variance_serialised = (
-                None if variance_value is None else float(variance_value)
-            )
+            variance_serialised = None if variance_value is None else float(variance_value)
         except (TypeError, ValueError):
             variance_serialised = None
 
@@ -969,9 +962,7 @@ class DuckDBStorageBackend:
             else:
                 provenance_loaded = {}
             provenance = (
-                to_json_dict(provenance_loaded)
-                if isinstance(provenance_loaded, Mapping)
-                else {}
+                to_json_dict(provenance_loaded) if isinstance(provenance_loaded, Mapping) else {}
             )
 
             created = row[10]
@@ -1350,9 +1341,7 @@ class KuzuStorageBackend:
             self._conn.close()
             self._conn = None
 
-    def execute(
-        self, query: str, params: dict[str, Any] | None = None
-    ) -> "kuzu.QueryResult":
+    def execute(self, query: str, params: dict[str, Any] | None = None) -> "kuzu.QueryResult":
         if self._conn is None:
             raise StorageError("Kuzu connection not initialized")
         start = time.time()

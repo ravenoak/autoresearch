@@ -50,8 +50,7 @@ def inversion_distance(order: Sequence[int], target: Sequence[int]) -> int:
 def test_ranking_monotonic(scores: list[tuple[float, float, float]]) -> None:
     """Inversion count decreases with each ranking iteration."""
     results: list[RankingResult] = [
-        {"id": i, "bm25": b, "semantic": s, "cred": c}
-        for i, (b, s, c) in enumerate(scores)
+        {"id": i, "bm25": b, "semantic": s, "cred": c} for i, (b, s, c) in enumerate(scores)
     ]
     initial: list[int] = [record["id"] for record in results]
     ranked1: list[RankingResult] = rank_once(results)

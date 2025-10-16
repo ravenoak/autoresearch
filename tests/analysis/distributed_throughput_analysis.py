@@ -12,10 +12,7 @@ def run() -> dict[int, dict[str, float]]:
     """Run simulations for multiple worker counts and persist metrics."""
     results: dict[int, dict[str, float]] = {}
     for workers in (1, 2, 4):
-        samples = [
-            sim_dc.run_simulation(workers=workers, tasks=50, loops=5)
-            for _ in range(3)
-        ]
+        samples = [sim_dc.run_simulation(workers=workers, tasks=50, loops=5) for _ in range(3)]
         results[workers] = {
             "throughput": sum(sample["throughput"] for sample in samples) / len(samples),
             "cpu_percent": sum(sample["cpu_percent"] for sample in samples) / len(samples),

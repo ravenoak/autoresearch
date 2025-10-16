@@ -20,16 +20,12 @@ class DummyAgent(AgentTestProtocol):
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         return True
 
-    def execute(
-        self, state: QueryState, config: ConfigModel, **_: object
-    ) -> AgentExecutionResult:
+    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> AgentExecutionResult:
         self.record.append(self.name)
         return {"claims": [], "results": {"final_answer": self.name}}
 
 
-def _run(
-    cfg: ConfigModel, orchestrator_factory: Callable[[], Orchestrator]
-) -> list[str]:
+def _run(cfg: ConfigModel, orchestrator_factory: Callable[[], Orchestrator]) -> list[str]:
     record: list[str] = []
 
     def get_agent(name: str, llm_adapter: object | None = None) -> AgentTestProtocol:
@@ -44,25 +40,19 @@ def _run(
     return record
 
 
-def test_direct_mode_executes_once(
-    orchestrator_factory: Callable[[], Orchestrator]
-) -> None:
+def test_direct_mode_executes_once(orchestrator_factory: Callable[[], Orchestrator]) -> None:
     cfg = ConfigModel(loops=3, reasoning_mode=ReasoningMode.DIRECT)
     record: list[str] = _run(cfg, orchestrator_factory)
     assert record == ["Synthesizer"]
 
 
-def test_chain_of_thought_mode_loops(
-    orchestrator_factory: Callable[[], Orchestrator]
-) -> None:
+def test_chain_of_thought_mode_loops(orchestrator_factory: Callable[[], Orchestrator]) -> None:
     cfg = ConfigModel(loops=2, reasoning_mode=ReasoningMode.CHAIN_OF_THOUGHT)
     record = _run(cfg, orchestrator_factory)
     assert record == ["Synthesizer", "Synthesizer"]
 
 
-def test_chain_of_thought_records_steps(
-    orchestrator_factory: Callable[[], Orchestrator]
-) -> None:
+def test_chain_of_thought_records_steps(orchestrator_factory: Callable[[], Orchestrator]) -> None:
     cfg = ConfigModel(loops=3, reasoning_mode=ReasoningMode.CHAIN_OF_THOUGHT)
 
     class DummySynth(AgentTestProtocol):

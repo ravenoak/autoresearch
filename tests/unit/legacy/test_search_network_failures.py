@@ -9,6 +9,7 @@ from autoresearch.errors import SearchError, TimeoutError
 
 def test_external_lookup_request_exception(monkeypatch):
     """Search.external_lookup raises SearchError on network failure."""
+
     def failing_backend(query, max_results=5):
         raise requests.exceptions.RequestException("boom")
 
@@ -17,6 +18,7 @@ def test_external_lookup_request_exception(monkeypatch):
     cfg.search.backends = ["fail"]
     cfg.search.context_aware.enabled = False
     import autoresearch.search.core as search_core
+
     monkeypatch.setattr(search_core, "get_config", lambda: cfg)
 
     with pytest.raises(SearchError) as excinfo:
@@ -27,6 +29,7 @@ def test_external_lookup_request_exception(monkeypatch):
 
 def test_external_lookup_timeout(monkeypatch):
     """Timeout errors propagate as TimeoutError."""
+
     def timeout_backend(query, max_results=5):
         raise requests.exceptions.Timeout("slow")
 
@@ -35,6 +38,7 @@ def test_external_lookup_timeout(monkeypatch):
     cfg.search.backends = ["timeout"]
     cfg.search.context_aware.enabled = False
     import autoresearch.search.core as search_core
+
     monkeypatch.setattr(search_core, "get_config", lambda: cfg)
 
     with pytest.raises(TimeoutError):

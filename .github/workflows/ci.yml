@@ -72,8 +72,12 @@ jobs:
         run: uv run task lint-specs
       - name: Run strict mypy gate
         run: uv run task mypy-strict
-      - name: Run task check
-        run: uv run task check
+      - name: Run task check with zero-tolerance
+        run: |
+          # Ensure flake8 has zero violations
+          uv run flake8 src tests --count
+          # Ensure mypy strict passes
+          uv run mypy --strict src tests --no-error-summary
       - name: Unit tests with deprecations as errors
         run: PYTHONWARNINGS=error::DeprecationWarning uv run pytest tests/unit
       - name: Run task verify

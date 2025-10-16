@@ -42,9 +42,7 @@ def test_user_preferences_hot_reload(example_autoresearch_toml, monkeypatch, sim
     ConfigLoader.reset_instance()
     cfg_path = example_autoresearch_toml
     cfg_path.write_text(
-        tomli_w.dumps(
-            {"core": {"loops": 1}, "user_preferences": {"detail_level": "concise"}}
-        )
+        tomli_w.dumps({"core": {"loops": 1}, "user_preferences": {"detail_level": "concise"}})
     )
 
     loader = ConfigLoader()
@@ -59,7 +57,9 @@ def test_user_preferences_hot_reload(example_autoresearch_toml, monkeypatch, sim
         first = agent.execute(simple_state, loader.config)
         first_prefs = first["metadata"]["user_preferences"].copy()
 
-        cfg_path.write_text(tomli_w.dumps({"core": {"loops": 1}, "user_preferences": {"detail_level": "detailed"}}))
+        cfg_path.write_text(
+            tomli_w.dumps({"core": {"loops": 1}, "user_preferences": {"detail_level": "detailed"}})
+        )
         loader._config = loader.load_config()
         second = agent.execute(simple_state, loader.config)
 
