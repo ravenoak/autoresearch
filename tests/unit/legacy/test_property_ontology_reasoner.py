@@ -73,14 +73,16 @@ def test_reasoner_preserves_triples(monkeypatch, triples):
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 @pytest.mark.unit
-@given(timeout=st.floats(min_value=0.1, max_value=0.2))
+@given(timeout=st.floats(min_value=0.15, max_value=0.25))
 def test_reasoner_timeout(monkeypatch, timeout):
     """Test that ontology reasoner times out when configured timeout is exceeded."""
     g = rdflib.Graph()
 
     def slow(store: rdflib.Graph) -> None:
         # Sleep longer than the timeout to ensure timeout occurs
-        time.sleep(timeout + 0.1)
+        # Use a more predictable sleep duration
+        sleep_duration = timeout + 0.15  # Ensure it's clearly longer
+        time.sleep(sleep_duration)
 
     monkeypatch.setitem(kr._REASONER_PLUGINS, "slow_prop", slow)
     _patch_config(monkeypatch, "slow_prop", timeout=timeout)

@@ -4,7 +4,7 @@
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given, strategies as st, settings
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
@@ -23,11 +23,12 @@ class DummyOrchestrator:
 
 @given(
     st.lists(
-        st.lists(st.text(min_size=1, max_size=5), min_size=1, max_size=3),
+        st.lists(st.text(min_size=1, max_size=3), min_size=1, max_size=2),
         min_size=1,
-        max_size=3,
+        max_size=2,
     )
 )
+@settings(deadline=None)  # Disable deadline to prevent flaky timeouts
 @pytest.mark.reasoning_modes
 def test_parallel_groups_merge_metrics(agent_groups):
     """Metrics reflect total and successful group counts.

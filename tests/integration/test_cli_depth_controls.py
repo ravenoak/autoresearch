@@ -21,14 +21,21 @@ def test_search_depth_help_lists_features() -> None:
 
 def test_search_depth_flag_forwards_to_formatter() -> None:
     """`--depth` forwards the parsed value to the output formatter."""
+    from unittest.mock import patch
 
     # Use CliRunner to test the CLI properly
     runner = CliRunner()
 
-    # Test that the CLI accepts the depth flag without error
-    # The actual depth forwarding is tested implicitly by ensuring the command runs successfully
-    result = runner.invoke(cli_app, ["search", "test query", "--depth", "trace"])
+    # Mock the orchestrator to avoid external dependencies and timeouts
+    with patch('autoresearch.main.app.Orchestrator') as mock_orchestrator:
+        mock_instance = mock_orchestrator.return_value
+        mock_instance.run_query.return_value = {"answer": "Mocked response", "depth": "trace"}
 
-    # The command should exit successfully (even if it fails due to mocking)
-    # The key test is that the depth flag is accepted and parsed correctly
-    assert result.exit_code == 0 or result.exit_code == 1  # 1 is acceptable if mocking fails
+        # Test that the CLI accepts the depth flag without error
+        result = runner.invoke(cli_app, ["search", "test query", "--depth", "trace"])
+
+        # The command should exit successfully with mocked dependencies
+        assert result.exit_code == 0
+
+        # Verify that run_query was called (indicating depth was forwarded)
+        mock_instance.run_query.assert_called_once()
