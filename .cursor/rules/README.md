@@ -9,6 +9,7 @@ This directory contains rules for Cursor AI to assist with development of the Au
 - `05-git-workflow.mdc` - Git workflow and commit practices
 - `07-ai-assistance.mdc` - Guidelines for AI-assisted development
 - `09-security.mdc` - Security best practices
+- `10-project-vitals.mdc` - Project vitals monitoring and holistic development
 
 ### Contextual Rules (Applied by File Pattern)
 - `01-python-style.mdc` - Python coding style and conventions (`**/*.py`)
@@ -63,9 +64,12 @@ If you need a new rule:
 These rules follow the project's core principles:
 - **Clarity**: Rules should be clear and unambiguous
 - **Actionability**: Provide specific guidance, not vague suggestions
-- **Reasoning**: Explain the "why" behind guidelines
+- **Reasoning**: Explain the "why" behind guidelines using dialectical thinking
+- **Holistic Thinking**: Balance multiple concerns (functionality, performance, maintainability, security, usability, testability)
+- **Systems Thinking**: Consider interactions, feedback loops, and emergent behaviors
 - **Examples**: Show concrete examples of good and bad practices
 - **Focus**: Each rule file covers one coherent topic
+- **Evolution**: Rules adapt based on experience and project vitals
 
 ## Scope and Organization
 
