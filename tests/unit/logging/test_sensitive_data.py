@@ -1,11 +1,8 @@
 """Comprehensive tests for sensitive data sanitization."""
 
-import json
 import pytest
-from io import StringIO
-from typing import Any
 
-from autoresearch.logging_utils import SensitiveDataFilter, configure_logging, get_logger
+from autoresearch.logging_utils import SensitiveDataFilter
 
 
 class TestSensitiveDataFilter:
@@ -30,13 +27,13 @@ class TestSensitiveDataFilter:
         """Test detection and redaction of various API key formats."""
         # Test cases for various API key formats using clearly fake test patterns
         test_cases = [
-            ("FAKE_sk-0000000000000000", "[API_KEY]"),  # Test OpenAI-style key
-            ("FAKE_sk_test_0000000000", "[API_KEY]"),  # Test Stripe-style key
-            ("FAKE_pk_test_0000000000", "[API_KEY]"),  # Test public key pattern
-            ("FAKE_Bearer_0000000000", "[BEARER_TOKEN]"),  # Test JWT
-            ("FAKE_xoxp_0000000000", "[SLACK_TOKEN]"),  # Test Slack token
-            ("FAKE_ghp_0000000000", "[GITHUB_TOKEN]"),  # Test GitHub token
-            ("FAKE_gl_0000000000", "[GITLAB_TOKEN]"),  # Test GitLab token
+            ("FAKE_sk-0000000000000000", "FAKE_[API_KEY]"),  # Test OpenAI-style key
+            ("FAKE_sk_test_0000000000", "FAKE_[API_KEY]"),  # Test Stripe-style key
+            ("FAKE_pk_test_0000000000", "FAKE_[API_KEY]"),  # Test public key pattern
+            ("FAKE_Bearer 0000000000", "FAKE_[BEARER_TOKEN]"),  # Test JWT
+            ("FAKE_xoxp-123-456-789-abcdef", "FAKE_[SLACK_TOKEN]"),  # Test Slack token
+            ("FAKE_ghp_12345678901234567890", "FAKE_[GITHUB_TOKEN]"),  # Test GitHub token
+            ("FAKE_gl-1234567890123456", "FAKE_[GITLAB_TOKEN]"),  # Test GitLab token
         ]
 
         for api_key, expected in test_cases:
