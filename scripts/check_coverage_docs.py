@@ -46,6 +46,11 @@ def check_files(files: list[Path], expected: int) -> list[str]:
     errors: list[str] = []
     for file in files:
         text = file.read_text()
+        # For STATUS.md, only check the current status section (first 100 lines)
+        # to avoid historical log entries with different coverage numbers
+        if file.name == "STATUS.md":
+            lines = text.split('\n')[:100]
+            text = '\n'.join(lines)
         nums = extract_numbers(text)
         if not nums:
             errors.append(f"No coverage percentage found in {file}")
