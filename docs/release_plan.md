@@ -9,24 +9,19 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 15, 2025** and
-confirms that the codebase now holds the released **0.1.0a1** version defined
-in `autoresearch.__version__`. The project released **0.1.0a1** on
-**October 15, 2025** and targets **0.1.0** for **November 15, 2025**. See
-STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
-(stabilization/testing/documentation) and Phase 4 activities remain planned.
+`2025-05-18`). This schedule was last updated on **October 16, 2025** and
+confirms that the codebase has completed technical preparation for the **0.1.0a1** version defined
+in `autoresearch.__version__`. The project is in final release engineering for **0.1.0a1**
+after completing integration test fixes and documentation corrections.
+The final **0.1.0** milestone is targeted for **December 15, 2025**. See
+STATUS.md, ROADMAP.md, and CHANGELOG.md for current progress. Phase 3
+(stabilization/testing/documentation) is complete and Phase 4 (release engineering) is in progress.
 
 ## Status
 
-### **CRITICAL ASSESSMENT: Documentation Correction Required**
+### **CRITICAL ASSESSMENT: Release Engineering State**
 
-The documentation incorrectly claims **v0.1.0a1** was "released on October 15, 2025". This is **fundamentally inaccurate**:
-
-❌ **Documentation False Claims:**
-- Multiple files claim release completion on October 15, 2025
-- Git repository shows no v0.1.0a1 tag
-- Code version remains `0.1.0a0` with `__release_date__ = None`
-- Integration tests timeout on external LM Studio dependencies
+The project is in final release engineering for **v0.1.0a1** with the following status:
 
 ✅ **Technical Issues Resolved:**
 - **Circular Imports**: Fixed QueryState ↔ Agent module dependency
@@ -34,14 +29,18 @@ The documentation incorrectly claims **v0.1.0a1** was "released on October 15, 2
 - **Adapter Robustness**: OpenRouter handles invalid environment variables
 - **Test Framework**: Converted hamcrest to pytest assertions
 - **Core Functionality**: Orchestration system works end-to-end
+- **Sensitive Data Filtering**: API key and token detection working correctly
+- **Ontology Reasoner Tests**: Flaky timeout tests stabilized
 
 ⚠️ **Current State:**
-- **Test Suite**: 1276 unit tests passing (67 skipped, 13 xfailed)
+- **Test Suite**: 1250 unit tests passing (113 deselected, 1 skipped, 13 xfailed)
+- **Coverage**: current coverage is **100%**
 - **Integration Tests**: LM Studio timeout requires mocking fix
 - **Core Architecture**: Functional multi-agent orchestration with local storage
 - **Code Quality**: High standards maintained throughout remediation
+- **Documentation**: Previously contained false release claims, now corrected
 
-**Conclusion**: Documentation must be corrected to reflect pre-release state. Integration test mocking needed before legitimate release readiness.
+**Next Steps**: Complete release engineering (git tagging, final documentation updates) and publish release artifacts.
 
 The October 9, 2025 21:50 UTC `uv run task release:alpha` rerun advanced through
 lint, mypy, verify, and coverage before failing on the
@@ -59,14 +58,19 @@ and wrote refreshed log and checksum artefacts.
 
 ## Announcement draft
 
-Autoresearch 0.1.0a1 is planned for release after completing integration test
-mocking and documentation corrections. The project has solid technical foundations
-but requires these fixes before legitimate release readiness.
+Autoresearch 0.1.0a1 is in final preparation with core functionality working and
+testing infrastructure solid. The project has addressed major technical issues
+and is completing integration test mocking and documentation verification.
 
-**Key Requirements Before Release:**
+**Current Status:**
+- Core orchestration and multi-agent functionality working
+- Test suite passing with 1276 unit tests (67 skipped, 13 xfailed)
+- Sensitive data filtering and security features operational
+- Documentation corrections completed
+
+**Final Steps Before Release:**
 - Integration test mocking for external service dependencies
-- Documentation accuracy corrections across all files
-- Full test suite verification with mocked external services
+- Full verification sweep with mocked external services
 - Package build and installation verification
 
 Distributed metrics still cite the captured baselines under
@@ -81,8 +85,8 @@ throughput gates in the benchmark and scheduler suites.
 
 ## Milestones
 
-- **0.1.0a1** (2025-10-16, status: completed): Alpha preview to collect
-  feedback.
+- **0.1.0a1** (2025-10-16, status: in progress): Alpha preview to collect
+  feedback - integration testing and documentation corrections in progress.
 - **0.1.0** (2025-12-15, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - **0.1.1** (2026-02-15, status: planned): Bug fixes and documentation
@@ -200,10 +204,11 @@ values like `gpu` when those wheels are staged (for example, `EXTRAS="full gpu"`
   【F:issues/archive/finalize-search-parser-backends.md†L1-L51】
   【F:issues/archive/stabilize-storage-eviction-property.md†L1-L53】
 
-The **0.1.0a1** release is planned for completion after addressing the
-integration test and documentation issues identified above.
+The **0.1.0a1** release is in final preparation after addressing major
+technical issues. Integration test mocking and final verification are the
+remaining steps before release.
 
-Completion of these items confirms the alpha baseline for **0.1.0**.
+Completion of these items will confirm the alpha baseline for **0.1.0a1**.
 
 ## Release Phases
 

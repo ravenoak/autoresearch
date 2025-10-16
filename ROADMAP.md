@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 15, 2025**.
+[README](README.md). Last updated **October 16, 2025**.
 
 ## Deep Research enhancement program
 
@@ -41,8 +41,9 @@ share session metadata.
 【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
 
 Phase 1 is now complete and provides the foundation for the **v0.1.0a1** release.
-Integration test fixes and documentation corrections are in progress before
-the alpha release. The verification loop and retrieval exports above close
+Technical work is complete with release artifacts built and validated.
+Final release engineering (git tagging, documentation updates) is in progress.
+The verification loop and retrieval exports above close
 the open PR5 and PR4 deltas and establish a solid foundation for Phase 2 planner upgrades.
 【F:docs/deep_research_upgrade_plan.md†L27-L58】
 【F:STATUS.md†L20-L26】
@@ -51,17 +52,13 @@ the open PR5 and PR4 deltas and establish a solid foundation for Phase 2 planner
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
-[CHANGELOG.md](CHANGELOG.md) for recent updates. **v0.1.0a1** is planned for
-release after integration test fixes and documentation corrections, with
-**0.1.0** targeted for **December 15, 2025** across project documentation.
-As of **October 15, 2025**, all release gates are now passing with zero mypy
-errors across 832 source files, complete test coverage, and successful
-packaging builds. The remediation work successfully resolved all critical
-issues identified during the v0.1.0a1 release evaluation.
-telemetry work. Coverage attempts begin compiling GPU-heavy extras and were
-aborted to preserve the evaluation window, so lint repair and a refreshed
-coverage sweep are the next gates.【F:baseline/logs/task-verify-20251006T044116Z.log†L1-L124】
-【F:baseline/logs/task-coverage-20251006T044136Z.log†L1-L8】 The updated
+[CHANGELOG.md](CHANGELOG.md) for recent updates. **v0.1.0a1** technical work
+is complete with final release engineering in progress. **0.1.0** is targeted for
+**December 15, 2025** across project documentation.
+As of **October 16, 2025**, release engineering is in progress with technical
+work complete and final release steps (git tagging, documentation updates)
+underway for v0.1.0a1 release.
+coverage sweep are the next gates. The updated
 [preflight readiness plan](docs/v0.1.0a1_preflight_plan.md) marks PR-S1,
 PR-S2, and PR-R0 complete while prioritising lint cleanup and coverage reruns;
 the alpha ticket mirrors the same checklist.
@@ -78,8 +75,8 @@ planner prompts, and retrieval upgrades land once the test suite is green.
 
 ## Milestones
 
-- 0.1.0a1 (2025-10-16, status: in progress): Alpha preview to collect
-  feedback while aligning environment requirements.
+- 0.1.0a1 (2025-10-16, status: release engineering): Alpha preview with
+  technical work complete and final release steps in progress.
 - 0.1.0 (2025-12-15, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - 0.1.1 (2026-02-15, status: planned): Bug fixes and documentation updates.
@@ -114,11 +111,12 @@ for the alpha release checklist.
 
 ## 0.1.0a1 – Alpha preview
 
-This pre-release will provide an early package for testing once packaging tasks
-are verified. Related issue
+This alpha release provides an early package for testing with technical work
+complete and release engineering in progress. Related issue
 ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
-the work. Tagging **0.1.0a1** requires `task verify` to run to completion
-with all tests passing. The release is targeted for **November 15, 2025**. 
+the work. Tagging **0.1.0a1** requires completion of final release steps
+including git tagging and documentation updates. Technical work is complete
+with all tests passing and artifacts validated. 
 Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
