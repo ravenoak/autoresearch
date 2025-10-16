@@ -15,13 +15,29 @@ from autoresearch.llm.adapters import LMStudioAdapter
 
 @given("I have a working LM Studio server running on localhost:1234")
 def step_lmstudio_server_running(context):
-    """Verify LM Studio server is accessible."""
+    """Skip LM Studio tests unless explicitly enabled."""
+    import os
+
+    # Skip LM Studio integration tests by default unless explicitly enabled
+    if not os.getenv("ENABLE_LM_STUDIO_TESTS", "").lower() in ("true", "1", "yes"):
+        context.scenario.skip("LM Studio integration tests disabled (set ENABLE_LM_STUDIO_TESTS=true to enable)")
+
+    # If enabled, check for LM Studio availability with a short timeout
+    import time
+    start_time = time.time()
+
     try:
         adapter = LMStudioAdapter()
         models = adapter.available_models
         context.lmstudio_adapter = adapter
         context.discovered_models = models
+
+        # If we get here quickly, assume LM Studio is available
+        if time.time() - start_time > 3.0:
+            context.scenario.skip("LM Studio server too slow to respond")
+
         assert len(models) > 0, "LM Studio should have at least one model loaded"
+
     except Exception as e:
         context.scenario.skip(f"LM Studio server not available: {e}")
 

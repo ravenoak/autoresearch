@@ -2,27 +2,12 @@
 
 from __future__ import annotations
 
-import json
-import logging
-import time
-import uuid
-from contextlib import contextmanager
-from io import StringIO
 from pathlib import Path
 
 import pytest
-from pytest_bdd import given, then, when
 
-from autoresearch.logging_utils import (
-    configure_logging,
-    get_logger,
-    configure_logging_from_env,
-    get_audit_logger,
-)
-from autoresearch.main.app import app as cli_app
-from tests.behavior.context import BehaviorContext, get_required, set_value
+from autoresearch.logging_utils import configure_logging_from_env
 from tests.typing_helpers import TypedFixture
-from typer.testing import CliRunner
 
 # Test data for sensitive information patterns
 SENSITIVE_TEST_DATA = {
@@ -69,6 +54,7 @@ SENSITIVE_TEST_DATA = {
     ],
 }
 
+
 @pytest.fixture(autouse=True)
 def logging_test_context(
     tmp_path: Path,
@@ -88,6 +74,3 @@ def logging_test_context(
     configure_logging_from_env()
 
     yield None
-
-    # Cleanup would happen here if needed
-    return None
