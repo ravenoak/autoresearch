@@ -445,11 +445,13 @@ class SensitiveDataFilter:
     # Sensitive value patterns
     SENSITIVE_VALUE_PATTERNS = [
         # API Keys (various formats) - more flexible length requirements and patterns
-        (r"\b(?:sk|pk|sk_test|pk_test|sk-live|pk-live)[-_]?[a-zA-Z0-9]{16,}\b", "[API_KEY]"),
-        (r"\b(?:xoxp|xoxb|xapp)-[0-9]+-[0-9]+-[0-9]+-[a-zA-Z0-9]+\b", "[SLACK_TOKEN]"),
-        (r"\bbearer\s+[a-zA-Z0-9\-_\.]{16,}\b", "[BEARER_TOKEN]"),
-        (r"\bghp_[a-zA-Z0-9]{20,}\b", "[GITHUB_TOKEN]"),
-        (r"\bgl-[a-zA-Z0-9\-_]{16,}\b", "[GITLAB_TOKEN]"),
+        # Order matters! API keys must come before credit cards to avoid false matches
+        (r"(?:sk|pk|sk_test|pk_test|sk-live|pk-live)[-_]?[a-zA-Z0-9]{8,}", "[API_KEY]"),
+        (r"(?:xoxp|xoxb|xapp)-[0-9]+-[0-9]+-[0-9]+-[a-zA-Z0-9]+", "[SLACK_TOKEN]"),
+        (r"ghp_[a-zA-Z0-9]{20,}", "[GITHUB_TOKEN]"),
+        (r"gl-[a-zA-Z0-9\-_]{16,}", "[GITLAB_TOKEN]"),
+        (r"\beyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*\b", "[JWT_TOKEN]"),
+        (r"[bB]earer\s+[a-zA-Z0-9\-_\.]{8,}", "[BEARER_TOKEN]"),
         # Passwords and secrets (in quotes or as values) - improved patterns
         (r'(["\'])(?:password|pwd)[=:]?\s*\1([^"\']{3,})', r"\1[REDACTED]\1\2"),
         (r'(["\'])(?:secret)[=:]?\s*\1([^"\']{3,})', r"\1[REDACTED]\1\2"),
@@ -483,8 +485,6 @@ class SensitiveDataFilter:
         (r"(?:^|[^a-zA-Z0-9])\d{10,11}\b(?![a-zA-Z0-9])", "[PHONE]"),
         # Email addresses - handle localhost and unicode
         (r"\b[\w.%+-]+@(?:localhost|[\w.-]+\.[a-zA-Z]{2,63})\b", "[EMAIL]"),
-        # JWT tokens (basic pattern) - more flexible
-        (r"\beyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*\b", "[JWT_TOKEN]"),
         # Generic secrets (long alphanumeric strings) - only in strict mode
         # Generic secrets (long alphanumeric strings) - only in strict mode
         # This pattern is handled in sensitivity level logic
