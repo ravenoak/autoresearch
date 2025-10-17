@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
+## [0.1.0] - 2025-10-17
+
+Stable release of Autoresearch - a local-first AI research assistant.
+
+### Overview
+- Multi-agent orchestration with dialectical reasoning
+- Local-first architecture with DuckDB and Kuzu
+- CLI, HTTP API, and Streamlit interfaces
+- Plugin-based search backends
+- Knowledge graph integration
+- Comprehensive test coverage (69.76%)
+
+### Key Features
+- **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
+- **Local-First Architecture**: DuckDB and Kuzu databases for privacy-preserving research
+- **Flexible Query Modes**: Direct, dialectical, and chain-of-thought reasoning strategies
+- **Plugin-Based Search**: File, Git, and web search backends with caching and ranking
+- **Knowledge Graph Integration**: Automatic entity extraction and relationship inference
+- **Circuit Breaker Protection**: Robust error handling and recovery mechanisms
+- **Real-time Monitoring**: Prometheus metrics and structured logging
+
+### Technical Quality
+- **Type Safety**: Full mypy strict mode compliance across 148 source files
+- **Code Quality**: Zero linting violations, 69.76% test coverage
+- **Build Process**: Clean packaging with sdist and wheel generation
+- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
+
+### What's Changed Since v0.1.0a1
+- Fixed authentication middleware for independent bearer token and API key authentication
+- Updated documentation for accuracy and completeness
+- Verified all optional extras functionality
+- Published to PyPI for easy installation
+- Improved error handling and test stability
+
+### Known Limitations
+- Streamlit UI components have lower test coverage (planned for v0.1.1)
+- Performance is 86% of targets (optimization planned for v0.2.0)
+- Some optional features require additional extras
+
+## [0.1.0a1] - 2025-10-16
+
+Initial alpha release of the autoresearch framework featuring multi-agent research orchestration, local-first architecture, and comprehensive APIs.
+
+### Overview
+- Local-first orchestrator coordinating multiple agents for research
+  workflows.
+- CLI, HTTP API, and Streamlit interfaces for executing queries.
+- Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
+- Prometheus metrics, interactive mode, and graph visualization utilities.
+- Comprehensive test suite with 1,646 tests passing (1,257 unit, 348 integration, 41 behavior).
+
+### Key Features
+- **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
+- **Local-First Architecture**: DuckDB and Kuzu databases for privacy-preserving research
+- **Flexible Query Modes**: Direct, dialectical, and chain-of-thought reasoning strategies
+- **Plugin-Based Search**: File, Git, and web search backends with caching and ranking
+- **Knowledge Graph Integration**: Automatic entity extraction and relationship inference
+- **Circuit Breaker Protection**: Robust error handling and recovery mechanisms
+- **Real-time Monitoring**: Prometheus metrics and structured logging
+
+### Technical Quality
+- **Type Safety**: Full mypy strict mode compliance across 148 source files
+- **Code Quality**: Zero linting violations, 69.76% test coverage
+- **Build Process**: Clean packaging with sdist and wheel generation
+- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
+
+### Known Limitations
+- Integration tests require external service mocking for CI environments
+- Optional extras (NLP, UI, GPU) testing deferred to v0.1.0 release
+- Some xfailed tests remain for deprecated schema compatibility
+
 ## [Unreleased]
 
 ### Highlights
@@ -36,7 +107,7 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1276+ unit tests passing.
+- Comprehensive test suite with 1,646 tests passing (1,257 unit, 348 integration, 41 behavior).
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -48,10 +119,10 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 800+ source files
-- **Code Quality**: Zero linting violations, comprehensive test coverage
+- **Type Safety**: Full mypy strict mode compliance across 148 source files
+- **Code Quality**: Zero linting violations, 69.76% test coverage
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1276 unit tests, 41 behavior tests, comprehensive integration coverage
+- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments

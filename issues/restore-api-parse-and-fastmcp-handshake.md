@@ -19,7 +19,7 @@
 - Documentation or release notes summarise the API and handshake changes.
 
 ## Status
-Closed
+**⏳ DEFERRED TO v0.1.1** - API improvements for future release
 
 ## Resolution
 - Restored the `autoresearch.api` surface by re-exporting rate-limit helpers,

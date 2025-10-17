@@ -64,4 +64,4 @@ exports that the layered UX must surface alongside evaluation telemetry.
   coverage sweep repeats without regressions.
 
 ## Status
-In Review
+**✅ READY FOR v0.1.0** - Layered UX expansion fully implemented with evaluation harness

@@ -104,12 +104,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             key_valid = True
 
         token_valid = False
-        if (auth_header or not key_valid) and cfg.bearer_token:
+        if auth_header and cfg.bearer_token:
             token = None
-            if auth_header:
-                auth_str = auth_header.decode()
-                if auth_str.lower().startswith("bearer "):
-                    token = auth_str.split(" ", 1)[1]
+            auth_str = auth_header.decode()
+            if auth_str.lower().startswith("bearer "):
+                token = auth_str.split(" ", 1)[1]
             token_valid = verify_bearer_token(token, cfg.bearer_token)
             if token and not token_valid:
                 return self._unauthorized("Invalid token", "Bearer")
@@ -120,7 +119,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 return self._unauthorized("Missing token", "Bearer")
             return self._unauthorized("Missing API key", "API-Key")
 
-        if not key_valid and token_valid:
+        if token_valid:
             role = "user"
             auth_scheme = "Bearer"
         elif key_valid:

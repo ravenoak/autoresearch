@@ -37,4 +37,4 @@ during storage interleaving.【F:src/autoresearch/search/core.py†L700-L905】�
   namespace.
 
 ## Status
-Resolved
+**✅ READY FOR v0.1.0** - Search cache determinism restored and tested

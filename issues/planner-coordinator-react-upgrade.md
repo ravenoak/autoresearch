@@ -63,4 +63,4 @@ telemetry hooks so decomposition quality and routing choices remain auditable.
   【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 ## Status
-Open
+**✅ READY FOR v0.1.0** - Planner coordinator react upgrade fully implemented

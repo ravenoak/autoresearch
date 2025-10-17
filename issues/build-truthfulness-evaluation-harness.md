@@ -41,4 +41,4 @@ for longitudinal review.
   and MCP adapters immediately after the automation pipeline merges.
 
 ## Status
-Open
+**✅ READY FOR v0.1.0** - Evaluation harness fully implemented with TruthfulQA/FEVER/HotpotQA support

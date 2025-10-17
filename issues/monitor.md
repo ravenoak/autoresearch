@@ -14,4 +14,4 @@ described only the Prometheus surface, leaving the telemetry API implicit.
 - Cover the helpers and environment metadata providers with unit tests.
 
 ## Status
-Archived
+**⏳ DEFERRED TO v0.1.1** - Additional monitoring features for future release

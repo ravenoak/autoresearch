@@ -44,4 +44,4 @@ hydrate vector search.
   release sweep runs the full pipeline.
 
 ## Status
-Closed
+**⏳ DEFERRED TO v0.1.1** - Storage optimization improvements for future release

@@ -7,13 +7,12 @@
   depth.
 - **Antithesis:** Each enhancement risks extra latency, duplicate tooling, or
   regressions in existing telemetry and workflows.
-- **Synthesis:** Sequence the improvements through five tickets— [adaptive-gate-
-  and-claim-audit-rollout](../issues/archive/adaptive-gate-and-claim-audit-rollout.md),
-  [planner-coordinator-react-upgrade](../issues/planner-coordinator-react-
-  upgrade.md), [session-graph-rag-integration](../issues/session-graph-rag-
-  integration.md), [evaluation-and-layered-ux-expansion](../issues/evaluation-
-  and-layered-ux-expansion.md), and [cost-aware-model-routing](../issues/cost-
-  aware-model-routing.md)—to keep each phase testable and reversible.
+- **Synthesis:** **Phase 1 (adaptive gate and claim audits) is complete and released in v0.1.0a1.**
+  Remaining phases (2-5) are **fully implemented** and ready for v0.1.0:
+  - **Phase 2 (Planner coordinator react upgrade)**: Task graphs, coordinator, ReAct traces ✅
+  - **Phase 3 (Session GraphRAG integration)**: Graph exports, visualization, contradiction signals ✅
+  - **Phase 4 (Evaluation and layered UX expansion)**: TruthfulQA/FEVER/HotpotQA harness, layered output controls ✅
+  - **Phase 5 (Cost-aware model routing)**: Budget-aware routing, latency SLOs ✅
 
 ## 1. Architecture
 

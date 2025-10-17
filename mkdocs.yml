@@ -3,6 +3,8 @@ nav:
   - Overview:
     - Getting Started: getting_started.md
     - Quickstart Guides: quickstart_guides.md
+    - Introduction to Autoresearch: introduction_to_autoresearch.md
+    - User Guide: user_guide.md
     - FAQ: faq.md
     - User Flows: user_flows.md
   - Concepts:
@@ -18,6 +20,7 @@ nav:
     - Storage: storage.md
     - Search Backends: search_backends.md
     - Search Specification: search_spec.md
+    - Knowledge Graph: knowledge_graph.md
     - API Usage: api.md
     - API Authentication: api_authentication.md
     - A2A MCP Integration: a2a_mcp_integration.md
@@ -28,6 +31,8 @@ nav:
     - Config Reference: config.md
     - Advanced Usage: advanced_usage.md
     - Custom UI Extensions: custom_ui_extensions.md
+    - UI Design Guidelines: ui_design_guidelines.md
+    - UI Best Practices: ui_best_practices.md
     - Container Usage: container_usage.md
     - CLI Helpers: cli_helpers.md
     - Caching: caching.md
@@ -45,6 +50,7 @@ nav:
     - Performance Tuning: performance_tuning.md
     - DuckDB Compatibility: duckdb_compatibility.md
     - DuckDB VSS Fallback: duckdb_vss_fallback.md
+    - Storage Resident Floor: storage_resident_floor.md
   - Development Workflow:
     - Development Overview: development.md
     - Developer Guide: developer_guide.md
@@ -52,13 +58,19 @@ nav:
     - Spec Template: spec_template.md
     - Review Guidelines: review_guidelines.md
     - Testing Guidelines: testing_guidelines.md
+    - Typing Strictness: dev/typing-strictness.md
+    - Third Party Stub Audit: dev/third_party_stub_audit.md
     - GPU Wheel Cache: wheels/gpu.md
     - UI Testing Procedures: ui_testing_procedures.md
     - Contributing: contributing.md
     - Releasing Workflow: releasing.md
     - Release Plan: release_plan.md
+    - v0.1.0 Release Checklist: v0.1.0_release_checklist.md
+    - v0.1.0a1 Preflight Plan: v0.1.0a1_preflight_plan.md
+    - Technical Debt Register: technical_debt_register.md
     - Status Reports:
         - Task coverage – 2025-09-17: status/task-coverage-2025-09-17.md
+        - Coverage Baseline: COVERAGE_BASELINE.md
     - Release Notes:
         - Overview: release_notes.md
         - Version 0.1.0a1: release_notes/v0.1.0a1.md
@@ -68,6 +80,8 @@ nav:
     - Plan: plan.md
     - Pseudocode: pseudocode.md
     - Specification Overview: specification.md
+    - Deep Research Upgrade Plan: deep_research_upgrade_plan.md
+    - Phase 2 Planner Coordinator Design: phase2_planner_coordinator_design.md
     - Diagrams:
         - UX Architecture: diagrams/ux_architecture.md
   - API Reference:

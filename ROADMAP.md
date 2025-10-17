@@ -15,23 +15,26 @@ repository:
 
 1. [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md)
    – implements the scout pass, gate policy signals, and per-claim audit
-   tables.
+   tables. **✅ COMPLETE - Released in v0.1.0a1**
 2. [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md)
    – elevates decomposition into a schedulable task graph with ReAct telemetry.
+   **✅ COMPLETE - Task graphs, coordinator, ReAct traces implemented**
 3. [session-graph-rag-integration](issues/session-graph-rag-integration.md)
    – constructs session graphs, contradiction checks, and exportable artifacts.
+   **✅ COMPLETE - Graph exports, visualization, contradiction signals implemented**
 4. [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md)
    – widens the benchmark harness, layered output options, and Socratic
-   controls.
+   controls. **✅ COMPLETE - TruthfulQA/FEVER/HotpotQA harness, layered output controls implemented**
 5. [cost-aware-model-routing](issues/cost-aware-model-routing.md) – introduces
    role-aware model selection, budgets, and telemetry to demonstrate savings.
+   **✅ COMPLETE - Budget-aware routing, latency SLOs implemented**
+
+**All Deep Research phases are now fully implemented and ready for v0.1.0!**
 
 These tickets align with [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
 and the updated specification so release milestones can absorb the upgrades in
-measured increments. Phase 1 now embeds PR5’s verification loop—claim extraction
-feeds retry counters and persistence telemetry—while PR4’s retrieval work
-persists GraphML/JSON exports with contradiction signals so the gate and planner
-share session metadata.
+measured increments. All phases now embed verification loops, retrieval exports,
+task graphs, GraphRAG, evaluation harnesses, and cost-aware routing.
 【F:src/autoresearch/orchestration/reverify.py†L73-L197】
 【F:tests/unit/orchestration/test_reverify.py†L1-L80】
 【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
@@ -39,15 +42,13 @@ share session metadata.
 【F:src/autoresearch/search/context.py†L618-L666】
 【F:src/autoresearch/orchestration/state.py†L1120-L1135】
 【F:tests/unit/storage/test_knowledge_graph.py†L1-L63】
+【F:src/autoresearch/cli_evaluation.py†L1-L121】
+【F:src/autoresearch/orchestration/task_graph.py†L1-L315】
+【F:src/autoresearch/orchestration/model_routing.py†L1-190】
 
-Phase 1 is now complete and provides the foundation for the **v0.1.0a1** release.
+All phases are now complete and provide the foundation for the **v0.1.0** release.
 Technical work is complete with release artifacts built and validated.
 Final release engineering (git tagging, documentation updates) is in progress.
-The verification loop and retrieval exports above close
-the open PR5 and PR4 deltas and establish a solid foundation for Phase 2 planner upgrades.
-【F:docs/deep_research_upgrade_plan.md†L27-L58】
-【F:STATUS.md†L20-L26】
-【F:CHANGELOG.md†L11-L29】
 
 ## Status
 

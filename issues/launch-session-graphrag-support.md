@@ -29,4 +29,4 @@ coordinate schema updates, graph exports, and orchestration integration.
   conditioning is enabled.
 
 ## Status
-Open
+**⏳ DEFERRED TO v0.1.1** - Additional GraphRAG features for future release

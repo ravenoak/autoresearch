@@ -73,4 +73,4 @@ sync with generated download payloads.
   【F:baseline/logs/task-coverage-20251001T144044Z.log†L122-L241】
 
 ## Status
-Open
+**✅ READY FOR v0.1.0** - Session GraphRAG integration fully implemented

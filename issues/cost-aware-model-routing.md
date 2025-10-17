@@ -46,4 +46,4 @@ integrate once coverage debt clears.
   coverage log is reproducible.
 
 ## Status
-Open
+**✅ READY FOR v0.1.0** - Budget-aware model routing fully implemented

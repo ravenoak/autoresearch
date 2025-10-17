@@ -21,7 +21,7 @@ spins up a local cluster during the unit phase.
   continue to run under `uv run task coverage`.
 
 ## Status
-In Review
+**✅ READY FOR v0.1.0** - Ray serialization fixed and tested
 
 - 2025-09-25: `QueryState` now strips its private `RLock` during pickle and
   regenerates the lock on load, so Ray workers no longer abort on the

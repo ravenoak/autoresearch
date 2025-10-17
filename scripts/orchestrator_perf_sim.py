@@ -47,7 +47,16 @@ def main() -> None:
         args.workers, args.arrival_rate, args.service_rate, args.tasks, args.mem_per_task
     )
     if args.benchmark:
-        metrics.update(benchmark_scheduler(args.workers, args.tasks))
+        benchmark_result = benchmark_scheduler(args.workers, args.tasks)
+        # Convert BenchmarkResult to dict for JSON serialization
+        benchmark_metrics = {
+            "benchmark_throughput": benchmark_result.throughput,
+            "benchmark_cpu_time": benchmark_result.cpu_time,
+            "benchmark_mem_kb": benchmark_result.mem_kb,
+            "benchmark_throughput_mean": benchmark_result.throughput_mean,
+            "benchmark_throughput_stddev": benchmark_result.throughput_stddev,
+        }
+        metrics.update(benchmark_metrics)
     print(json.dumps(metrics))
 
 

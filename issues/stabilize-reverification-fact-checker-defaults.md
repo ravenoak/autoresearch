@@ -20,7 +20,7 @@ readiness until sensible defaults are restored.
   or successor release notes.
 
 ## Status
-Resolved – defaults load without validation errors and opt-out is documented.
+**⏳ DEFERRED TO v0.1.1** - Fact checker improvements for future release
 
 ## Resolution
 - Reverification builds FactChecker kwargs from `ConfigModel.verification` and

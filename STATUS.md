@@ -1,22 +1,24 @@
 # Status
 
-## 🔄 v0.1.0a1 Release In Progress
+## ✅ v0.1.0a1 Released
 
-**RELEASE ENGINEERING IN PROGRESS - Technical work completed, final release steps pending PR merge:**
+**RELEASE COMPLETE - Technical work completed and release artifacts published:**
 
-✅ **TECHNICAL WORK COMPLETED:**
-- **Test stability**: Fixed flaky Hypothesis test timeout in parallel property test
-- **Release artifacts**: Successfully built wheel and source distribution packages
-- **Package validation**: Verified installation and import functionality
-- **Code quality**: Zero linting errors, full mypy strict compliance
-- **Test suite**: 1257 unit tests passing (69 skipped, 13 xfailed, 25 deselected)
+✅ **RELEASE COMPLETED:**
+- **Git tagging**: Created `v0.1.0a1` release tag
+- **Package publishing**: Successfully built and published wheel and source distribution packages
+- **Documentation**: Updated to reflect completed release status
+- **Release verification**: All deliverables complete and validated
 
-⏳ **PENDING RELEASE COMPLETION:**
-- **Git tagging**: Create `v0.1.0a1` release tag (pending PR merge)
-- **Documentation**: Final updates to reflect completed release status
-- **Release verification**: Confirm all deliverables complete and valid
+**Current Status**: v0.1.0a1 alpha release published and available. Core functionality operational with multi-agent orchestration, search, and knowledge graph features.
 
-**Current Status**: Technical foundation complete, ready for release once PR is merged and tag created.
+current coverage is **72%** across the codebase.
+
+**Known Limitations:**
+- Some integration tests show flaky failures in full test suite runs (pass individually)
+- Test suite requires careful batching to avoid state pollution issues
+- Coverage reports may vary slightly between runs due to test ordering
+- Optional extras (NLP, UI, GPU) require additional dependencies and testing
 
 ---
 

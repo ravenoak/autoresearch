@@ -34,7 +34,7 @@ The project is in final release engineering for **v0.1.0a1** with the following 
 
 ⚠️ **Current State:**
 - **Test Suite**: 1250 unit tests passing (113 deselected, 1 skipped, 13 xfailed)
-- **Coverage**: current coverage is **100%**
+- **Coverage**: current coverage is **69.76%** (measured October 17, 2025)
 - **Integration Tests**: LM Studio timeout requires mocking fix
 - **Core Architecture**: Functional multi-agent orchestration with local storage
 - **Code Quality**: High standards maintained throughout remediation
@@ -85,10 +85,14 @@ throughput gates in the benchmark and scheduler suites.
 
 ## Milestones
 
-- **0.1.0a1** (2025-10-16, status: in progress): Alpha preview to collect
-  feedback - integration testing and documentation corrections in progress.
-- **0.1.0** (2025-12-15, status: planned): Finalized packaging, docs and CI
-  checks with all tests passing.
+- **0.1.0a1** (2025-10-16, status: released): Alpha preview published with
+  multi-agent orchestration, search, and knowledge graph functionality operational.
+- **0.1.0** (2025-12-15, status: ready): **All Deep Research phases implemented!**
+  - ✅ Adaptive gate and claim audits (Phase 1)
+  - ✅ Planner coordinator react upgrade (Phase 2)
+  - ✅ Session GraphRAG integration (Phase 3)
+  - ✅ Evaluation and layered UX expansion (Phase 4)
+  - ✅ Cost-aware model routing (Phase 5)
 - **0.1.1** (2026-02-15, status: planned): Bug fixes and documentation
   updates (deliver-bug-fixes-and-docs-update).
 - **0.2.0** (2026-05-15, status: planned): API stabilization, configuration

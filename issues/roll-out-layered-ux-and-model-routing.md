@@ -22,4 +22,4 @@ UI, CLI, and orchestration updates plus telemetry and documentation.
   feeds STATUS.md updates.
 
 ## Status
-Open
+**⏳ DEFERRED TO v0.1.1** - Additional UX improvements for future release

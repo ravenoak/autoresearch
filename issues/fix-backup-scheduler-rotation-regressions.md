@@ -29,4 +29,4 @@ backups piled up and coverage blocked.
   shutdown semantics added to the scheduler.
 
 ## Status
-In Review
+**⏳ DEFERRED TO v0.1.1** - Backup scheduler improvements for future release

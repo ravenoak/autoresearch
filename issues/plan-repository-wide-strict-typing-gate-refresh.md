@@ -65,4 +65,4 @@ handoffs and verification notes.
   configuration.
 
 ## Status
-Open
+**⏳ DEFERRED TO v0.1.1** - Type system improvements for future release
