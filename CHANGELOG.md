@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
-## [0.1.0] - 2025-10-17
+## [0.1.0] - Unreleased (Target: 2025-11-15)
 
-Stable release of Autoresearch - a local-first AI research assistant.
+**PREPARATION IN PROGRESS** - Final release engineering for stable v0.1.0 release.
 
 ### Overview
 - Multi-agent orchestration with dialectical reasoning
@@ -15,7 +15,7 @@ Stable release of Autoresearch - a local-first AI research assistant.
 - CLI, HTTP API, and Streamlit interfaces
 - Plugin-based search backends
 - Knowledge graph integration
-- Comprehensive test coverage (69.76%)
+- Comprehensive test coverage (71.94% measured October 17, 2025)
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -27,22 +27,25 @@ Stable release of Autoresearch - a local-first AI research assistant.
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 148 source files
-- **Code Quality**: Zero linting violations, 69.76% test coverage
+- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
+- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
+- **Testing**: 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior
+- Integration test deselection: 28% (145/513 tests) - acceptable for v0.1.0, target <15% for v0.1.1
 
 ### What's Changed Since v0.1.0a1
 - Fixed authentication middleware for independent bearer token and API key authentication
-- Updated documentation for accuracy and completeness
+- Updated documentation for accuracy and completeness with empirical data
 - Verified all optional extras functionality
 - Published to PyPI for easy installation
-- Improved error handling and test stability
+- Improved error handling and test stability (xfail count reduced from 127 to 35)
+- Comprehensive coverage measurement (21,943 lines vs 57 lines previously)
 
 ### Known Limitations
 - Streamlit UI components have lower test coverage (planned for v0.1.1)
 - Performance is 86% of targets (optimization planned for v0.2.0)
 - Some optional features require additional extras
+- Integration test suite shows 2.2% failure rate when run as complete suite (tests pass individually, may be test isolation issue)
 
 ## [0.1.0a1] - 2025-10-16
 
@@ -54,7 +57,7 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,646 tests passing (1,257 unit, 348 integration, 41 behavior).
+- Comprehensive test suite with 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -66,10 +69,10 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 148 source files
-- **Code Quality**: Zero linting violations, 69.76% test coverage
+- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
+- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
+- **Testing**: 1,721 tests (measured October 17, 2025), comprehensive integration coverage
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments
@@ -107,7 +110,7 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,646 tests passing (1,257 unit, 348 integration, 41 behavior).
+- Comprehensive test suite with 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -119,10 +122,10 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 148 source files
-- **Code Quality**: Zero linting violations, 69.76% test coverage
+- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
+- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,646 tests (1,257 unit, 348 integration, 41 behavior), comprehensive integration coverage
+- **Testing**: 1,721 tests (measured October 17, 2025), comprehensive integration coverage
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments

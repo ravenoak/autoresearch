@@ -26,7 +26,7 @@ except PackageNotFoundError:  # pragma: no cover - fallback for tests
     __version__ = "0.1.0"
 
 # Keep release metadata aligned with pyproject.toml and CHANGELOG.md.
-__release_date__ = "2025-10-17"
+__release_date__ = "2025-11-15"
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
     from .distributed import (
