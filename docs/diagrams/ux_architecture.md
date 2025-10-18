@@ -7,7 +7,7 @@ This document provides architecture diagrams highlighting the UX components of t
 ```mermaid
 graph TD
     User[User] --> CLI[CLI Interface]
-    User --> GUI[Streamlit GUI]
+    User --> GUI[PySide6 Desktop GUI]
     User --> A2A[A2A Interface]
     User --> MCP[MCP Interface]
     
@@ -78,11 +78,11 @@ graph TD
     ProgressIndicators --> ScreenReaderSupport
 ```
 
-## Streamlit GUI Components
+## PySide6 Desktop GUI Components
 
 ```mermaid
 graph TD
-    User[User] --> GUI[Streamlit GUI]
+    User[User] --> GUI[PySide6 Desktop GUI]
     
     GUI --> QueryInput[Query Input]
     GUI --> ResultsTabs[Results Tabs]
