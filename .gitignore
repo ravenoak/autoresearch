@@ -195,3 +195,4 @@ rdf_store
 # OS-specific files
 .DS_Store
 Thumbs.db
+.cursor/
