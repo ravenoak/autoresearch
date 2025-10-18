@@ -18,7 +18,6 @@ import random
 import io
 import time
 import psutil
-from .orchestration import metrics as orch_metrics
 import threading
 import os
 import logging
@@ -26,33 +25,67 @@ import re
 from datetime import datetime
 from PIL import Image
 
-from .config import ConfigLoader, ConfigModel
-from .orchestration.orchestrator import Orchestrator
-from .models import QueryResponse
-from .orchestration import ReasoningMode
-from .orchestration.reverify import ReverifyOptions, run_reverification
-from .error_utils import get_error_info, format_error_for_gui
-from .cli_utils import print_success
-from .config_utils import (
-    save_config_to_toml,
-    get_config_presets,
-    apply_preset,
-)
-from .output_format import OutputFormatter, OutputDepth
-from .ui.provenance import (
-    audit_status_rollup,
-    depth_sequence,
-    extract_graphrag_artifacts,
-    format_gate_rationales,
-    generate_socratic_prompts,
-    section_toggle_defaults,
-)
-from .streamlit_ui import (
-    apply_accessibility_settings,
-    apply_theme_settings,
-    display_guided_tour,
-    display_help_sidebar,
-)
+# Handle both module and script execution
+try:
+    # Running as module
+    from .orchestration import metrics as orch_metrics
+    from .config import ConfigLoader, ConfigModel
+    from .orchestration.orchestrator import Orchestrator
+    from .models import QueryResponse
+    from .orchestration import ReasoningMode
+    from .orchestration.reverify import ReverifyOptions, run_reverification
+    from .error_utils import get_error_info, format_error_for_gui
+    from .cli_utils import print_success
+    from .config_utils import (
+        save_config_to_toml,
+        get_config_presets,
+        apply_preset,
+    )
+    from .output_format import OutputFormatter, OutputDepth
+    from .ui.provenance import (
+        audit_status_rollup,
+        depth_sequence,
+        extract_graphrag_artifacts,
+        format_gate_rationales,
+        generate_socratic_prompts,
+        section_toggle_defaults,
+    )
+    from .streamlit_ui import (
+        apply_accessibility_settings,
+        apply_theme_settings,
+        display_guided_tour,
+        display_help_sidebar,
+    )
+except ImportError:
+    # Running as script - adjust imports accordingly
+    from autoresearch.orchestration import metrics as orch_metrics
+    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.orchestration.orchestrator import Orchestrator
+    from autoresearch.models import QueryResponse
+    from autoresearch.orchestration import ReasoningMode
+    from autoresearch.orchestration.reverify import ReverifyOptions, run_reverification
+    from autoresearch.error_utils import get_error_info, format_error_for_gui
+    from autoresearch.cli_utils import print_success
+    from autoresearch.config_utils import (
+        save_config_to_toml,
+        get_config_presets,
+        apply_preset,
+    )
+    from autoresearch.output_format import OutputFormatter, OutputDepth
+    from autoresearch.ui.provenance import (
+        audit_status_rollup,
+        depth_sequence,
+        extract_graphrag_artifacts,
+        format_gate_rationales,
+        generate_socratic_prompts,
+        section_toggle_defaults,
+    )
+    from autoresearch.streamlit_ui import (
+        apply_accessibility_settings,
+        apply_theme_settings,
+        display_guided_tour,
+        display_help_sidebar,
+    )
 
 
 class _PILImage(Protocol):
@@ -1195,14 +1228,14 @@ def display_log_viewer() -> None:
 
     if filter_text:
         pattern = re.compile(filter_text, re.IGNORECASE)
-        filtered_logs = [log for log in filtered_logs if pattern.search(log["formatted"])]
+        filtered_logs = [log for log in filtered_logs if pattern.search(log.get("message", ""))]
 
     # Display log count
     st.markdown(f"Showing {len(filtered_logs)} of {len(logs)} logs")
 
     # Create a download button for logs
     if filtered_logs:
-        log_text = "\n".join(log["formatted"] for log in filtered_logs)
+        log_text = "\n".join(log.get("message", "") for log in filtered_logs)
         st.download_button(
             label="Download Logs",
             data=log_text,
@@ -1828,7 +1861,10 @@ def format_result_as_json(result: QueryResponse, depth: OutputDepth) -> str:
 
 def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
     """Generate a PNG visualization of the current RDF graph."""
-    from .storage import StorageManager
+    try:
+        from .storage import StorageManager
+    except ImportError:
+        from autoresearch.storage import StorageManager
 
     StorageManager.setup()
     StorageManager.visualize_rdf(output_path)
