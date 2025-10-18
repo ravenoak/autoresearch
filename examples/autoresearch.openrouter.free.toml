@@ -1,0 +1,120 @@
+# OpenRouter free-tier configuration for Autoresearch
+# This configuration uses OpenRouter's free-tier models for research tasks
+# Free-tier limitations: 50 requests/day for users with < $10 balance, 1000 requests/day for users with > $10 balance
+
+[core]
+llm_backend = "openrouter"
+loops = 2
+reasoning_mode = "dialectical"
+# Use free-tier models - will be automatically selected from available free models
+default_model = "mistralai/mistral-7b-instruct"
+
+[search]
+backends = [
+    "serper",
+]
+max_results_per_query = 5
+hybrid_query = false
+use_semantic_similarity = false
+use_bm25 = true
+use_source_credibility = false
+
+[storage.duckdb]
+path = "data/autoresearch_openrouter.duckdb"
+vector_extension = false
+
+# OpenRouter specific configuration
+[llm.openrouter]
+# API key will be read from OPENROUTER_API_KEY environment variable
+# Endpoint uses OpenRouter's API
+endpoint = "https://openrouter.ai/api/v1/chat/completions"
+timeout = 60.0
+
+# Cache configuration for model discovery (1 hour TTL)
+cache_ttl_seconds = 3600
+
+# Model preferences - prioritize free-tier models
+[model_routing]
+enabled = true
+default_latency_slo_ms = 5000.0
+budget_pressure_ratio = 0.8
+strategy_name = "balanced"
+
+# Agent configuration with OpenRouter models
+[agent_config.synthesizer]
+# Use free-tier models for synthesis tasks
+preferred_models = [
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+    "qwen/qwen-2-7b-instruct",
+]
+allowed_models = [
+    # Free-tier models
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+    "qwen/qwen-2-7b-instruct",
+    "nousresearch/hermes-3-llama-3.1-405b",
+    "google/gemini-flash-1.5",
+]
+token_share = 0.4
+latency_slo_ms = 5000
+
+[agent_config.contrarian]
+preferred_models = [
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+]
+allowed_models = [
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+    "qwen/qwen-2-7b-instruct",
+]
+token_share = 0.3
+latency_slo_ms = 5000
+
+[agent_config.fact_checker]
+preferred_models = [
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+]
+allowed_models = [
+    "mistralai/mistral-7b-instruct",
+    "meta-llama/llama-3.2-3b-instruct",
+    "qwen/qwen-2-7b-instruct",
+]
+token_share = 0.3
+latency_slo_ms = 5000
+
+# Model profiles for discovered models (will be enhanced with actual data)
+[model_routing.model_profiles]
+# These will be populated with actual model information from OpenRouter API
+# Including cost estimates, latency profiles, and quality rankings
+
+# Context configuration optimized for OpenRouter models
+[context]
+overflow_strategy = "truncate"
+response_reserve_tokens = 512
+accurate_counting = true
+max_chunks = 5
+chunk_overlap = 100
+cache_ttl_seconds = 300
+chars_per_token = 4
+
+# Logging configuration for debugging OpenRouter integration
+[logging]
+level = "INFO"
+# Enable debug logging for OpenRouter adapter
+enable_openrouter_debug = true
+
+# Circuit breaker configuration for OpenRouter API
+[circuit_breaker]
+threshold = 5  # Allow more failures for OpenRouter due to rate limits
+cooldown = 60  # Longer cooldown period for rate limit recovery
+
+# Performance monitoring for free-tier usage tracking
+[monitoring]
+enabled = true
+# Track API usage to stay within free-tier limits
+track_api_usage = true
+usage_warning_threshold = 40  # Warn when approaching 50 request limit
+daily_reset_hour = 0  # Reset usage counter at midnight UTC
