@@ -37,7 +37,7 @@ for longitudinal review.
 - [ ] Schedule PR to implement the automation pipeline once
   `prepare-first-alpha-release` and other release blockers flip to `Closed` so
   the harness lands after the current milestone ships.
-- [ ] Schedule PR to expose layered transcript toggles in the CLI, Streamlit,
+- [ ] Schedule PR to expose layered transcript toggles in the CLI, PySide6 desktop UI,
   and MCP adapters immediately after the automation pipeline merges.
 
 ## Status
