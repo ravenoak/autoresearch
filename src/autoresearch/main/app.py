@@ -1521,6 +1521,42 @@ def sparql_query(
         raise typer.Exit(1)
 
 
+@typed_command("desktop")
+def desktop() -> None:
+    """
+    Launch the PySide6 desktop application.
+
+    This command starts the native desktop GUI for Autoresearch, providing
+    a professional interface for research workflows with multi-window support,
+    rich interactions, and native performance.
+
+    The desktop interface provides:
+    - Native desktop performance with GPU acceleration
+    - Multi-window support for comparing queries
+    - Rich interactions (drag-and-drop, annotations, keyboard shortcuts)
+    - Professional appearance matching research tools
+    - Offline-first operation (no server required)
+
+    Examples:
+        # Launch the desktop application
+        autoresearch desktop
+
+        # The application will open in a native window
+        # Use the interface to run queries and view results
+    """
+    try:
+        from ..ui.desktop.main import main as desktop_main
+    except ImportError as e:
+        print_error(
+            f"Desktop interface not available: {e}",
+            suggestion="Install the desktop extra with: uv sync --extra desktop",
+        )
+        raise typer.Exit(1)
+
+    # Launch the desktop application
+    desktop_main()
+
+
 @typed_command("gui")
 def gui(
     port: int = typer.Option(8501, "--port", "-p", help="Port to run the Streamlit app on"),
