@@ -6,7 +6,7 @@ node "Client Interfaces" {
   component "FastAPI API" as FastAPI
   component "A2A API" as A2A
   component "FastMCP" as FastMCP
-  component "Streamlit GUI" as Streamlit
+  component "PySide6 Desktop GUI" as PySide6GUI
   component "Monitor" as Monitor
   component "TUI Widgets" as TUI
 }
@@ -73,8 +73,8 @@ FastAPI -> Orchestrator : run_query(query)
 user -> A2A : POST /query
 A2A -> Orchestrator : run_query(query)
 
-user -> Streamlit : interactive query
-Streamlit -> Orchestrator : run_query(query)
+user -> PySide6GUI : interactive query
+PySide6GUI -> Orchestrator : run_query(query)
 
 user -> FastMCP : MCP message
 FastMCP -> Orchestrator : run_query(query)
