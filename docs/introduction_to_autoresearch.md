@@ -153,7 +153,7 @@ online stacks without editing the base configuration.
    explicit guardrails.
 4. **Inspect artefacts.** Append `--output json` for downstream parsing,
    `--graphml graph.graphml` for knowledge graph exports, or `--visualise`
-   to hand off results to the Streamlit UI (see
+   to hand off results to the desktop UI (see
    [Quickstart guides](quickstart_guides.md)).
 5. **Iterate.** Re-run with `--reverify` flags or the UI re-verification
    panel when provenance marks a claim as unsupported. Contrast runs to
@@ -240,7 +240,7 @@ can replicate your environment.
 
 ### Deploy surfaces
 
-- **Streamlit UI.** Install the `ui` extra and run `autoresearch ui`.
+- **Desktop UI.** Install the `desktop` extra and run `autoresearch desktop` for a native desktop experience.
   Configure authentication if the instance serves multiple analysts.
 - **HTTP API.** Launch with `autoresearch api --host 0.0.0.0 --port 8080`
   and secure it using `api.api_key` or per-user entries in

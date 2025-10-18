@@ -1,6 +1,6 @@
 # UI/UX Design Guidelines
 
-This document establishes comprehensive design principles and implementation patterns for Autoresearch's user interfaces. These guidelines ensure consistent, accessible, and user-friendly experiences across all interfaces (CLI, Streamlit GUI, API, MCP).
+This document establishes comprehensive design principles and implementation patterns for Autoresearch's user interfaces. These guidelines ensure consistent, accessible, and user-friendly experiences across all interfaces (CLI, PySide6 Desktop GUI, API, MCP).
 
 ## Core Principles
 
