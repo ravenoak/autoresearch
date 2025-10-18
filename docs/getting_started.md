@@ -203,7 +203,7 @@ need pinning?* Capture answers in documentation or follow-up issues.
 
 ### Harden deployment surfaces
 
-- **Streamlit UI:** ensure the `ui` extra is installed, then run
+- **Desktop UI:** ensure the `desktop` extra is installed, then run
   `autoresearch ui`. Add authentication if shared beyond a single
   workstation.
 - **HTTP API:** launch with `autoresearch api --host 0.0.0.0 --port 8080`

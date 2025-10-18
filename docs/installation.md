@@ -421,7 +421,7 @@ table below summarizes their purpose and usage.
 |------|---------|---------------|
 | minimal | core embedding model support | `uv sync --extra minimal` |
 | nlp | spaCy processing | `uv sync --extra nlp` |
-| ui | Streamlit interface | `uv sync --extra ui` |
+| desktop | PySide6 desktop interface | `uv sync --extra desktop` |
 | vss | DuckDB vector search extension | `uv sync --extra vss` |
 | parsers | PDF and DOCX ingestion | `uv sync --extra parsers` |
 | git | local Git repository search | `uv sync --extra git` |

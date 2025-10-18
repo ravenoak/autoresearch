@@ -2,7 +2,7 @@
 
 ## How do I enable dark mode in the GUI?
 
-Set `Dark Mode` in the sidebar of the Streamlit interface.
+Set `Dark Mode` in the View menu of the desktop interface.
 
 ## Why do my token counts change after upgrading?
 

@@ -19,11 +19,11 @@
 | F-15 | Comprehensive test coverage | `tests/` | all |
 | F-16 | Extensible plugin architecture | `agents/registry.py`, `extensions.py` | `tests/unit/test_agent_registry.py`, `tests/unit/test_vss_extension_loader.py` |
 | F-17 | CLI output adapts to context | `output_format.py`, `cli_utils.py` | `tests/unit/test_output_format.py`, `tests/behavior/features/output_formatting.feature` |
-| F-18 | Accessible output | `output_format.py`, `streamlit_app.py` | `tests/behavior/features/ui_accessibility.feature` |
+| F-18 | Accessible output | `output_format.py`, `ui/app.py` | `tests/behavior/features/ui_accessibility.feature` |
 | F-19 | Local directory search | `search.py` | `tests/unit/test_search.py`, `tests/behavior/features/local_sources.feature` |
 | F-20 | Local Git repository search | `search.py` | `tests/unit/test_search.py`, `tests/behavior/features/local_sources.feature` |
 | F-21 | Maintain local indexes | `storage.py`, `search.py` | `tests/unit/test_incremental_updates.py`, `tests/unit/test_storage_validation.py`, `tests/behavior/features/storage_search_integration.feature` |
-| F-22 | Cross-modal interface consistency | `main.py`, `streamlit_app.py` | `tests/behavior/features/cross_modal_integration.feature`, `tests/behavior/features/streamlit_gui.feature` |
+| F-22 | Cross-modal interface consistency | `main.py`, `ui/app.py` | `tests/behavior/features/cross_modal_integration.feature`, `tests/behavior/features/pyside6_gui.feature` |
 | F-23 | Batch query endpoint | `api.py` | `tests/unit/test_api.py`, `tests/integration/test_api_streaming.py`, `tests/integration/test_cli_http.py`, `tests/behavior/features/api_orchestrator_integration.feature` |
 | F-24 | API auth handshake; constant-time token checks | `api.py`,
 `api/utils.py` |

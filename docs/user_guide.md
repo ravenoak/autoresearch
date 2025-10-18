@@ -199,7 +199,7 @@ All interfaces (CLI, Streamlit GUI, API, MCP) now provide:
 - Section-level control
 - Bare mode for accessibility
 
-**Streamlit GUI**:
+**Desktop GUI**:
 - Interactive depth controls
 - Real-time log viewer
 - Section toggles

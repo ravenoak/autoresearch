@@ -100,7 +100,7 @@ Must     | Unit tests for logging utilities.          |
 | ------------------ | ---------------------------- | ---------------------------------------------------------------------- |
 | RDF backend        | SQLite vs BerkeleyDB         | Use **BerkeleyDB** if available (faster writes); fall back to SQLite.  |
 | Vector lib         | DuckDB ext vs FAISS          | Default DuckDB‐vector; expose plugin interface.                        |
-| GUI                | Streamlit vs nothing in v0.8 | Defer; CLI/API + Prometheus first.                                     |
+| GUI                | PySide6 desktop app vs web   | **PySide6** for professional desktop interface; web fallback optional. |
 | Distributed add-on | Ray vs Dask                  | Prototype Ray transport adapter later; keep single-process by default. |
 | Local search tool  | `ripgrep` CLI vs pure Python | Default to **ripgrep** when available for fast indexing; fall back to Python scanning. |
 | Licensing          | MIT + “AGPL preferred”       | Tag core MIT; provide AGPL switch for users who need copyleft.         |

@@ -27,7 +27,7 @@ Dependency pins: `fastapi>=0.116.1` and `slowapi==0.1.9`.
 
 ### Optional Enhancements
 
-- **UI Components**: Streamlit-based web interface for interactive research sessions.
+- **Desktop Interface**: PySide6-based native desktop application for professional research workflows.
 - **Distributed Processing**: Ray and Redis support for scalable agent coordination.
 - **Vector Search**: DuckDB VSS extension integration for semantic search capabilities.
 - **Document Processing**: PDF, DOCX, and web content parsing for comprehensive research inputs.
