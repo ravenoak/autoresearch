@@ -48,9 +48,10 @@ autoresearch desktop
 
 ### Professional Features
 - **Multi-Window Support**: Compare multiple queries side-by-side
-- **Keyboard Shortcuts**: Efficient navigation for power users
+- **Keyboard Shortcuts**: Efficient navigation with native Qt shortcuts
 - **Session Management**: Persistent workspaces and query history
 - **Export Options**: Save results in multiple formats (Markdown, JSON, PDF)
+- **Live Metrics Bar**: Status bar surfaces CPU, memory, and token activity
 
 ## Architecture
 
@@ -68,8 +69,27 @@ results_display.py   # Tabbed results visualization
 #### MainWindow (QMainWindow)
 - Central application window with splitter layout
 - Menu bar with File, Edit, View, Help menus
-- Status bar with real-time metrics
+- Status bar with real-time CPU, memory, and token metrics
 - Dock widgets for secondary information
+
+#### Keyboard Shortcuts
+
+| Action | Shortcut |
+| ------ | -------- |
+| New session | `Ctrl+N` |
+| Export results | `Ctrl+E` |
+| Exit application | `Ctrl+Q` |
+| Undo / Redo query edits | `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`) |
+| Cut / Copy / Paste selection | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` |
+| Toggle configuration dock | `Ctrl+1` |
+| Toggle sessions dock | `Ctrl+2` |
+| Toggle exports dock | `Ctrl+3` |
+| View documentation | `F1` |
+| About dialog | `Shift+F1` |
+
+Status bar metrics refresh every two seconds, combining live orchestrator telemetry with the
+latest `MetricsDashboard` snapshot so researchers always see up-to-date CPU, memory, and
+token usage during long-running analyses.
 
 #### QueryPanel (QWidget)
 - Query text input with syntax highlighting
