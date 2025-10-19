@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import sys
 import uuid
+from enum import Enum
 from typing import Any, Mapping, Optional
 
 from PySide6.QtCore import Qt, QTimer, Slot
@@ -35,7 +36,7 @@ from .export_manager import ExportManager
 
 try:
     # Import core Autoresearch components
-    from ...orchestration import Orchestrator
+    from ...orchestration import Orchestrator, ReasoningMode
     from ...config import ConfigLoader, ConfigModel
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
@@ -44,6 +45,7 @@ try:
 except ImportError:
     # For standalone testing/development
     Orchestrator = None
+    ReasoningMode = None
     ConfigLoader = None
     ConfigModel = None
     QueryResponse = None
@@ -375,6 +377,61 @@ class AutoresearchMainWindow(QMainWindow):
 
         return ConfigModel(**data)
 
+    def _merge_query_panel_configuration(self) -> None:
+        """Synchronise query panel overrides with the active configuration."""
+
+        if not self.query_panel or not self.config:
+            return
+
+        overrides = self.query_panel.get_configuration()
+        if not overrides:
+            return
+
+        self._apply_configuration_overrides(overrides)
+
+    def _apply_configuration_overrides(self, overrides: Mapping[str, Any]) -> None:
+        """Apply configuration overrides and refresh dependent views."""
+
+        if not overrides or not self.config:
+            return
+
+        updates = dict(overrides)
+        reasoning_mode = updates.get("reasoning_mode")
+        if reasoning_mode is not None:
+            updates["reasoning_mode"] = self._coerce_reasoning_mode(reasoning_mode)
+
+        if hasattr(self.config, "model_copy"):
+            self.config = self.config.model_copy(update=updates)  # type: ignore[assignment]
+        elif isinstance(self.config, Mapping):
+            self.config = {**self.config, **updates}
+        else:
+            for key, value in updates.items():
+                setattr(self.config, key, value)
+
+        if self.config_editor:
+            self.config_editor.load_config(self.config)
+
+    def _coerce_reasoning_mode(self, value: Any) -> Any:
+        """Normalise reasoning mode overrides for ConfigModel compatibility."""
+
+        if value is None:
+            return value
+
+        if ReasoningMode and isinstance(value, str):
+            try:
+                return ReasoningMode(value)
+            except ValueError:
+                pass
+
+        current_mode = getattr(self.config, "reasoning_mode", None)
+        if isinstance(current_mode, Enum):
+            try:
+                return type(current_mode)(value)
+            except ValueError:
+                return current_mode
+
+        return value
+
     def on_session_selected(self, session_id: str) -> None:
         """Update status when a session is activated."""
 
@@ -448,6 +505,8 @@ class AutoresearchMainWindow(QMainWindow):
                 "Autoresearch core components are not available. Please check your installation."
             )
             return
+
+        self._merge_query_panel_configuration()
 
         self.is_query_running = True
         self.progress_bar.setVisible(True)

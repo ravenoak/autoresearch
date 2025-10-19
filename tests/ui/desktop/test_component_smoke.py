@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Any, Mapping
 
 import pytest
+
+import autoresearch.ui.desktop.main_window as main_window_module
 
 QtCore = pytest.importorskip(
     "PySide6.QtCore",
@@ -22,7 +24,9 @@ QListWidget = QtWidgets.QListWidget
 QPushButton = QtWidgets.QPushButton
 QLabel = QtWidgets.QLabel
 
+from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.ui.desktop import (
     AutoresearchMainWindow,
     ConfigEditor,
@@ -143,6 +147,74 @@ def test_main_window_smoke(qtbot) -> None:
     assert window.config_editor is not None
     assert window.session_manager is not None
     assert window.export_manager is not None
+
+
+def test_main_window_applies_query_panel_overrides(qtbot, monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    class DummyLoader:
+        def load_config(self) -> ConfigModel:
+            return ConfigModel()
+
+    class DummyOrchestrator:
+        def run_query(self, query: str, config: ConfigModel) -> QueryResponse:
+            captured["query"] = query
+            captured["config"] = config
+            return QueryResponse(
+                query=query,
+                answer="ok",
+                citations=[],
+                reasoning=[],
+                metrics={},
+                warnings=[],
+                claim_audits=[],
+                task_graph=None,
+                react_traces=[],
+                state_id=None,
+            )
+
+    monkeypatch.setattr(main_window_module, "ConfigLoader", DummyLoader)
+    monkeypatch.setattr(main_window_module, "Orchestrator", DummyOrchestrator)
+
+    class ImmediateThreadPool:
+        def start(self, worker) -> None:
+            worker.run()
+
+    monkeypatch.setattr(
+        QtCore.QThreadPool,
+        "globalInstance",
+        staticmethod(lambda: ImmediateThreadPool()),
+    )
+
+    def immediate_single_shot(_interval: int, receiver, slot=None) -> None:
+        callback = slot or receiver
+        callback()
+
+    monkeypatch.setattr(QtCore.QTimer, "singleShot", staticmethod(immediate_single_shot))
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.query_panel is not None
+    combo = window.query_panel.reasoning_mode_combo
+    assert combo is not None
+    combo.setCurrentText(ReasoningMode.CHAIN_OF_THOUGHT.value)
+
+    spinbox = window.query_panel.loops_spinbox
+    assert spinbox is not None
+    spinbox.setValue(5)
+
+    window.on_query_submitted("Test query")
+    qtbot.waitUntil(lambda: "config" in captured, timeout=500)
+
+    config = captured["config"]
+    assert getattr(config, "loops", None) == 5
+    assert getattr(config, "reasoning_mode", None) == ReasoningMode.CHAIN_OF_THOUGHT
+
+    assert window.config_editor is not None
+    editor_text = window.config_editor._editor.toPlainText()
+    assert '"loops": 5' in editor_text
+    assert '"reasoning_mode": "chain-of-thought"' in editor_text
 
 
 def test_results_display_citations_tab_and_controls(qtbot) -> None:
