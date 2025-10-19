@@ -353,7 +353,6 @@ class ResultsDisplay(QWidget):
                 "extra",
                 "sane_lists",
                 "smarty",
-                "toc",
             ],
             output_format="html5",
         )
