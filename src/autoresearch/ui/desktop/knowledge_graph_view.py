@@ -6,9 +6,8 @@ import math
 from typing import Any, Mapping, Sequence
 
 from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QAction, QColor, QPainter, QPen
 from PySide6.QtWidgets import (
-    QAction,
     QGraphicsLineItem,
     QGraphicsScene,
     QGraphicsTextItem,

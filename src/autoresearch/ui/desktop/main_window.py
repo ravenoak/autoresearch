@@ -7,6 +7,7 @@ to interact with Autoresearch through a native desktop application.
 
 from __future__ import annotations
 
+import os
 import sys
 import uuid
 from typing import Any, Mapping, Optional
@@ -14,6 +15,7 @@ from typing import Any, Mapping, Optional
 from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtWidgets import (
     QDockWidget,
+    QLabel,
     QMainWindow,
     QProgressBar,
     QSplitter,
@@ -82,6 +84,41 @@ class AutoresearchMainWindow(QMainWindow):
         self.setup_connections()
         self.load_configuration()
 
+    def _suppress_dialogs(self) -> bool:
+        """Return True when UI dialogs should be suppressed (e.g., automated tests)."""
+
+        flag = os.environ.get("AUTORESEARCH_SUPPRESS_DIALOGS", "")
+        return flag.lower() in {"1", "true", "yes", "on"}
+
+    def _log_dialog(self, level: str, title: str, message: str) -> None:
+        """Record dialog content when suppression is enabled."""
+
+        print(f"[{level.upper()}] {title}: {message}", file=sys.stderr)
+
+    def _show_information(self, title: str, message: str) -> None:
+        if self._suppress_dialogs():
+            self._log_dialog("info", title, message)
+            return
+        QMessageBox.information(self, title, message)
+
+    def _show_warning(self, title: str, message: str) -> None:
+        if self._suppress_dialogs():
+            self._log_dialog("warning", title, message)
+            return
+        QMessageBox.warning(self, title, message)
+
+    def _show_critical(self, title: str, message: str) -> None:
+        if self._suppress_dialogs():
+            self._log_dialog("critical", title, message)
+            return
+        QMessageBox.critical(self, title, message)
+
+    def _ask_question(self, title: str, message: str, buttons: Any, default: Any) -> Any:
+        if self._suppress_dialogs():
+            self._log_dialog("question", title, message)
+            return default
+        return QMessageBox.question(self, title, message, buttons, default)
+
     def setup_ui(self) -> None:
         """Set up the main window user interface."""
         self.setWindowTitle("Autoresearch - AI Research Assistant")
@@ -123,10 +160,9 @@ class AutoresearchMainWindow(QMainWindow):
         """Set up the status bar with real-time information."""
         status_bar = self.statusBar()
 
-        # Left side: current status
-        self.status_label = status_bar.findChild(type(self.progress_bar))
+        # Left side: current status label
+        self.status_label = status_bar.findChild(QLabel)
         if not self.status_label:
-            from PySide6.QtWidgets import QLabel
             self.status_label = QLabel("Ready")
             status_bar.addWidget(self.status_label)
 
@@ -182,8 +218,7 @@ class AutoresearchMainWindow(QMainWindow):
 
             self.status_label.setText("Configuration loaded - Ready for queries")
         except Exception as e:
-            QMessageBox.warning(
-                self,
+            self._show_warning(
                 "Configuration Error",
                 f"Failed to load configuration: {e}\n\nSome features may not work correctly."
             )
@@ -196,8 +231,7 @@ class AutoresearchMainWindow(QMainWindow):
             self.config = self._build_config_model(updated_config)
             self.status_label.setText("Configuration updated - ready to run queries")
         except Exception as exc:
-            QMessageBox.warning(
-                self,
+            self._show_warning(
                 "Configuration",
                 f"Failed to apply configuration changes: {exc}",
             )
@@ -230,8 +264,7 @@ class AutoresearchMainWindow(QMainWindow):
         """Trigger an export action via the storage manager."""
 
         if not StorageManager:
-            QMessageBox.information(
-                self,
+            self._show_information(
                 "Exports Unavailable",
                 "Export functionality is unavailable in this environment.",
             )
@@ -243,22 +276,19 @@ class AutoresearchMainWindow(QMainWindow):
             elif "json" in export_id.lower():
                 StorageManager.export_knowledge_graph_json()
             else:
-                QMessageBox.information(
-                    self,
+                self._show_information(
                     "Export",
                     f"No handler registered for export '{export_id}'.",
                 )
                 return
         except Exception as exc:
-            QMessageBox.warning(
-                self,
+            self._show_warning(
                 "Export Failed",
                 f"Failed to export data: {exc}",
             )
             return
 
-        QMessageBox.information(
-            self,
+        self._show_information(
             "Export Started",
             f"Export '{export_id}' triggered. Check the configured output directory.",
         )
@@ -267,12 +297,12 @@ class AutoresearchMainWindow(QMainWindow):
     def on_query_submitted(self, query: str) -> None:
         """Handle query submission from the query panel."""
         if not query.strip():
-            QMessageBox.warning(self, "Empty Query", "Please enter a query before submitting.")
+            self._show_warning("Empty Query", "Please enter a query before submitting.")
             return
 
         if self.is_query_running:
-            QMessageBox.information(
-                self, "Query in Progress",
+            self._show_information(
+                "Query in Progress",
                 "A query is already running. Please wait for it to complete."
             )
             return
@@ -283,8 +313,8 @@ class AutoresearchMainWindow(QMainWindow):
     def run_query(self) -> None:
         """Execute the current query."""
         if not self.orchestrator or not self.config:
-            QMessageBox.critical(
-                self, "System Error",
+            self._show_critical(
+                "System Error",
                 "Autoresearch core components are not available. Please check your installation."
             )
             return
@@ -366,8 +396,8 @@ class AutoresearchMainWindow(QMainWindow):
         self.progress_bar.setVisible(False)
 
         error_msg = str(error)
-        QMessageBox.critical(
-            self, "Query Error",
+        self._show_critical(
+            "Query Error",
             f"An error occurred while running your query:\n\n{error_msg}"
         )
 
@@ -377,11 +407,11 @@ class AutoresearchMainWindow(QMainWindow):
         """Handle window close event."""
         # Clean up any running queries
         if self.is_query_running:
-            reply = QMessageBox.question(
-                self, "Confirm Close",
+            reply = self._ask_question(
+                "Confirm Close",
                 "A query is currently running. Do you want to close anyway?",
                 QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
+                QMessageBox.No,
             )
 
             if reply == QMessageBox.No:
