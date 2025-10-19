@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Mapping
+
 import pytest
 
 QtCore = pytest.importorskip(
@@ -18,6 +20,7 @@ QtWidgets = pytest.importorskip(
 Qt = QtCore.Qt
 QListWidget = QtWidgets.QListWidget
 QPushButton = QtWidgets.QPushButton
+QLabel = QtWidgets.QLabel
 
 from autoresearch.models import QueryResponse
 from autoresearch.ui.desktop import (
@@ -45,8 +48,61 @@ def test_metrics_dashboard_smoke(qtbot) -> None:
     dashboard = MetricsDashboard()
     qtbot.addWidget(dashboard)
 
-    dashboard.update_metrics({"tokens": {"prompt": 42, "completion": 64}})
+    dashboard.update_metrics(
+        {
+            "system": {"cpu_percent": 37.5, "memory_percent": 62.0},
+            "tokens": {"prompt": 42, "completion": 64},
+        }
+    )
+    summary_label = dashboard.findChild(QLabel, "metrics-summary")
+    assert summary_label is not None
+    assert "Latest metrics snapshot" in summary_label.text()
+
+    toggle_button = dashboard.findChild(QPushButton, "metrics-dashboard-toggle")
+    assert toggle_button is not None
+    if toggle_button.isEnabled():
+        qtbot.mouseClick(toggle_button, Qt.LeftButton)
+        assert toggle_button.isChecked()
+    else:
+        assert "Charts unavailable" in toggle_button.text()
+
     dashboard.clear()
+    assert "Metrics not available" in summary_label.text()
+
+
+def test_metrics_dashboard_auto_refresh(qtbot) -> None:
+    dashboard = MetricsDashboard()
+    qtbot.addWidget(dashboard)
+
+    samples = [
+        {"system": {"cpu_percent": 10.0, "memory_percent": 25.0}, "tokens": {"prompt": 10}},
+        {
+            "system": {"cpu_percent": 20.0, "memory_percent": 40.0},
+            "tokens": {"prompt": 10, "completion": 15},
+        },
+    ]
+    index = {"value": 0}
+
+    def provider() -> Mapping[str, float | dict[str, float]] | None:
+        if index["value"] >= len(samples):
+            return None
+        snapshot = samples[index["value"]]
+        index["value"] += 1
+        return snapshot
+
+    dashboard.bind_metrics_provider(provider, interval_ms=50)
+    qtbot.wait(200)
+    dashboard.bind_metrics_provider(None)
+
+    summary_label = dashboard.findChild(QLabel, "metrics-summary")
+    assert summary_label is not None
+    text = summary_label.text()
+    assert "Latest metrics snapshot" in text
+    assert "Auto-refresh enabled" not in text
+    toggle_button = dashboard.findChild(QPushButton, "metrics-dashboard-toggle")
+    assert toggle_button is not None
+    if not toggle_button.isEnabled():
+        assert "Charts unavailable" in text
 
 
 def test_config_editor_smoke(qtbot) -> None:
