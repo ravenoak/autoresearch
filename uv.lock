@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -244,6 +244,7 @@ dependencies = [
     { name = "langchain-openai" },
     { name = "langgraph" },
     { name = "loguru" },
+    { name = "markdown" },
     { name = "matplotlib" },
     { name = "mcp", extra = ["cli"] },
     { name = "networkx" },
@@ -469,6 +470,7 @@ requires-dist = [
     { name = "lmstudio", marker = "extra == 'gpu'", specifier = ">=1.4.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "lxml", marker = "extra == 'test'", specifier = ">=4.9,<6" },
+    { name = "markdown", specifier = ">=3.5.0" },
     { name = "markdown", marker = "extra == 'desktop'", specifier = ">=3.5.0" },
     { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "matplotlib", marker = "extra == 'desktop'", specifier = ">=3.8.0" },

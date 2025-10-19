@@ -14,6 +14,18 @@ The desktop interface provides:
 
 from __future__ import annotations
 
+import os
+
+# Default to headless-friendly Qt settings so CI and automated tests run
+# without a display server while still allowing callers to override them.
+for key, value in (
+    ("QT_QPA_PLATFORM", "offscreen"),
+    ("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox --disable-gpu --disable-software-rasterizer"),
+    ("QTWEBENGINE_DISABLE_SANDBOX", "1"),
+    ("AUTORESEARCH_SUPPRESS_DIALOGS", "1"),
+):
+    os.environ.setdefault(key, value)
+
 from . import main
 from .config_editor import ConfigEditor
 from .export_manager import ExportManager
