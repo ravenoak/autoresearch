@@ -11,15 +11,13 @@ Displays query results in a tabbed interface with support for:
 
 from __future__ import annotations
 
-import io
-from typing import Optional
+from typing import Mapping, Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import (
-    QHBoxLayout, QLabel, QSplitter, QTabWidget, QTextEdit, QVBoxLayout,
-    QWidget, QProgressBar, QPushButton
-)
+from PySide6.QtWidgets import QTabWidget, QTextEdit, QVBoxLayout, QWidget
+
+from .knowledge_graph_view import KnowledgeGraphView
+from .metrics_dashboard import MetricsDashboard
 
 try:
     from ...models import QueryResponse
@@ -49,9 +47,9 @@ class ResultsDisplay(QWidget):
         # UI components
         self.tab_widget: Optional[QTabWidget] = None
         self.answer_view: Optional[QWebEngineView] = None
-        self.knowledge_graph_view: Optional[QWebEngineView] = None
+        self.knowledge_graph_view: Optional[KnowledgeGraphView] = None
         self.trace_view: Optional[QTextEdit] = None
-        self.metrics_view: Optional[QWebEngineView] = None
+        self.metrics_dashboard: Optional[MetricsDashboard] = None
 
         # Current result
         self.current_result: Optional[QueryResponse] = None
@@ -73,25 +71,9 @@ class ResultsDisplay(QWidget):
         self.tab_widget.addTab(answer_tab, "Answer")
 
         # Knowledge Graph tab
-        self.knowledge_graph_view = QWebEngineView()
+        self.knowledge_graph_view = KnowledgeGraphView()
         kg_tab = QWidget()
         kg_layout = QVBoxLayout(kg_tab)
-        kg_layout.addWidget(self.knowledge_graph_view)
-
-        # Add controls for knowledge graph
-        kg_controls = QWidget()
-        kg_controls_layout = QHBoxLayout(kg_controls)
-
-        zoom_in_btn = QPushButton("Zoom In")
-        zoom_out_btn = QPushButton("Zoom Out")
-        reset_view_btn = QPushButton("Reset View")
-
-        kg_controls_layout.addWidget(zoom_in_btn)
-        kg_controls_layout.addWidget(zoom_out_btn)
-        kg_controls_layout.addWidget(reset_view_btn)
-        kg_controls_layout.addStretch()
-
-        kg_layout.addWidget(kg_controls)
         kg_layout.addWidget(self.knowledge_graph_view)
 
         self.tab_widget.addTab(kg_tab, "Knowledge Graph")
@@ -106,10 +88,10 @@ class ResultsDisplay(QWidget):
         self.tab_widget.addTab(trace_tab, "Agent Trace")
 
         # Metrics tab
-        self.metrics_view = QWebEngineView()
+        self.metrics_dashboard = MetricsDashboard()
         metrics_tab = QWidget()
         metrics_layout = QVBoxLayout(metrics_tab)
-        metrics_layout.addWidget(self.metrics_view)
+        metrics_layout.addWidget(self.metrics_dashboard)
         self.tab_widget.addTab(metrics_tab, "Metrics")
 
         layout.addWidget(self.tab_widget)
@@ -222,28 +204,30 @@ class ResultsDisplay(QWidget):
         if not self.knowledge_graph_view:
             return
 
-        # Placeholder for knowledge graph visualization
-        # In a full implementation, this would use NetworkX + matplotlib
-        # or a JavaScript visualization library
+        graph_payload: Mapping[str, object] | None = None
 
-        placeholder_html = """
-        <html>
-        <body style="font-family: sans-serif; padding: 20px;">
-            <h2>Knowledge Graph Visualization</h2>
-            <p><em>Interactive knowledge graph visualization will be implemented here.</em></p>
-            <p>This will show:</p>
-            <ul>
-                <li>Entity nodes with different types (query, answer, citation, reasoning)</li>
-                <li>Relationships between entities</li>
-                <li>Interactive zoom and pan</li>
-                <li>Node inspection on click</li>
-                <li>Export options (PNG, PDF, GraphML)</li>
-            </ul>
-        </body>
-        </html>
-        """
+        if hasattr(result, "knowledge_graph"):
+            candidate = getattr(result, "knowledge_graph")
+            if isinstance(candidate, Mapping):
+                graph_payload = candidate
 
-        self.knowledge_graph_view.setHtml(placeholder_html)
+        if graph_payload is None and hasattr(result, "metrics"):
+            metrics = getattr(result, "metrics")
+            if isinstance(metrics, Mapping):
+                knowledge_metrics = metrics.get("knowledge_graph")
+                if isinstance(knowledge_metrics, Mapping):
+                    graph_candidate = knowledge_metrics.get("graph")
+                    if isinstance(graph_candidate, Mapping):
+                        graph_payload = graph_candidate
+                    else:
+                        data_candidate = knowledge_metrics.get("data")
+                        if isinstance(data_candidate, Mapping):
+                            graph_payload = data_candidate
+
+        if graph_payload:
+            self.knowledge_graph_view.set_graph_data(graph_payload)
+        else:
+            self.knowledge_graph_view.clear()
 
     def display_trace(self, result: QueryResponse) -> None:
         """Display agent reasoning trace."""
@@ -268,36 +252,14 @@ class ResultsDisplay(QWidget):
 
     def display_metrics(self, result: QueryResponse) -> None:
         """Display performance metrics."""
-        if not self.metrics_view:
+        if not self.metrics_dashboard:
             return
 
-        metrics_html = """
-        <html>
-        <head>
-            <style>
-                body { font-family: sans-serif; padding: 20px; }
-                .metric { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px; }
-                .metric-name { font-weight: bold; color: #2c3e50; }
-                .metric-value { color: #e74c3c; font-size: 1.2em; }
-            </style>
-        </head>
-        <body>
-            <h2>Query Performance Metrics</h2>
-        """
-
-        if hasattr(result, 'metrics') and result.metrics:
-            for key, value in result.metrics.items():
-                metrics_html += f"""
-                <div class="metric">
-                    <span class="metric-name">{key.title()}:</span>
-                    <span class="metric-value">{value}</span>
-                </div>
-                """
+        metrics = getattr(result, "metrics", None)
+        if isinstance(metrics, Mapping):
+            self.metrics_dashboard.update_metrics(metrics)
         else:
-            metrics_html += "<p>No metrics available for this query.</p>"
-
-        metrics_html += "</body></html>"
-        self.metrics_view.setHtml(metrics_html)
+            self.metrics_dashboard.clear()
 
     def markdown_to_html(self, markdown: str) -> str:
         """Convert basic Markdown to HTML (simplified implementation)."""
