@@ -8,18 +8,26 @@ to interact with Autoresearch through a native desktop application.
 from __future__ import annotations
 
 import sys
-from typing import Optional
+import uuid
+from typing import Any, Mapping, Optional
 
 from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtWidgets import (
-    QApplication, QHBoxLayout, QMainWindow, QProgressBar, QPushButton,
-    QSplitter, QStatusBar, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
-    QMessageBox
+    QDockWidget,
+    QMainWindow,
+    QProgressBar,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+    QMessageBox,
 )
 
 # Import desktop components first to avoid Qt-related issues
 from .query_panel import QueryPanel
 from .results_display import ResultsDisplay
+from .config_editor import ConfigEditor
+from .session_manager import SessionManager
+from .export_manager import ExportManager
 
 try:
     # Import core Autoresearch components
@@ -27,6 +35,7 @@ try:
     from ...config import ConfigLoader, ConfigModel
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
+    from ...storage import StorageManager
 except ImportError:
     # For standalone testing/development
     Orchestrator = None
@@ -35,6 +44,7 @@ except ImportError:
     QueryResponse = None
     OutputFormatter = None
     OutputDepth = None
+    StorageManager = None
 
 
 class AutoresearchMainWindow(QMainWindow):
@@ -57,6 +67,12 @@ class AutoresearchMainWindow(QMainWindow):
         self.query_panel: Optional[QueryPanel] = None
         self.results_display: Optional[ResultsDisplay] = None
         self.progress_bar: Optional[QProgressBar] = None
+        self.config_editor: Optional[ConfigEditor] = None
+        self.session_manager: Optional[SessionManager] = None
+        self.export_manager: Optional[ExportManager] = None
+        self.config_dock: Optional[QDockWidget] = None
+        self.session_dock: Optional[QDockWidget] = None
+        self.export_dock: Optional[QDockWidget] = None
 
         # Query execution state
         self.current_query: str = ""
@@ -101,6 +117,7 @@ class AutoresearchMainWindow(QMainWindow):
 
         # Set up status bar
         self.setup_status_bar()
+        self.setup_dock_widgets()
 
     def setup_status_bar(self) -> None:
         """Set up the status bar with real-time information."""
@@ -113,10 +130,43 @@ class AutoresearchMainWindow(QMainWindow):
             self.status_label = QLabel("Ready")
             status_bar.addWidget(self.status_label)
 
+    def setup_dock_widgets(self) -> None:
+        """Create dock widgets for configuration, sessions, and exports."""
+
+        self.config_editor = ConfigEditor()
+        self.config_dock = QDockWidget("Configuration", self)
+        self.config_dock.setObjectName("ConfigurationDock")
+        self.config_dock.setWidget(self.config_editor)
+        self.config_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.config_dock)
+
+        self.session_manager = SessionManager()
+        self.session_dock = QDockWidget("Sessions", self)
+        self.session_dock.setObjectName("SessionsDock")
+        self.session_dock.setWidget(self.session_manager)
+        self.session_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.session_dock)
+        if self.config_dock:
+            self.tabifyDockWidget(self.config_dock, self.session_dock)
+
+        self.export_manager = ExportManager()
+        self.export_dock = QDockWidget("Exports", self)
+        self.export_dock.setObjectName("ExportsDock")
+        self.export_dock.setWidget(self.export_manager)
+        self.export_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.export_dock)
+
     def setup_connections(self) -> None:
         """Set up signal-slot connections."""
         if self.query_panel:
             self.query_panel.query_submitted.connect(self.on_query_submitted)
+        if self.config_editor:
+            self.config_editor.configuration_changed.connect(self.on_configuration_changed)
+        if self.session_manager:
+            self.session_manager.session_selected.connect(self.on_session_selected)
+            self.session_manager.new_session_requested.connect(self.on_new_session_requested)
+        if self.export_manager:
+            self.export_manager.export_requested.connect(self.on_export_requested)
 
     def load_configuration(self) -> None:
         """Load Autoresearch configuration."""
@@ -124,6 +174,8 @@ class AutoresearchMainWindow(QMainWindow):
             if ConfigLoader:
                 self.config_loader = ConfigLoader()
                 self.config = self.config_loader.load_config()
+                if self.config_editor:
+                    self.config_editor.load_config(self.config)
 
             if Orchestrator:
                 self.orchestrator = Orchestrator()
@@ -136,6 +188,80 @@ class AutoresearchMainWindow(QMainWindow):
                 f"Failed to load configuration: {e}\n\nSome features may not work correctly."
             )
             self.status_label.setText("Configuration error - Limited functionality")
+
+    def on_configuration_changed(self, updated_config: dict[str, Any]) -> None:
+        """Handle configuration changes from the dock widget."""
+
+        try:
+            self.config = self._build_config_model(updated_config)
+            self.status_label.setText("Configuration updated - ready to run queries")
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Configuration",
+                f"Failed to apply configuration changes: {exc}",
+            )
+
+    def _build_config_model(self, data: Mapping[str, Any]) -> Any:
+        if not ConfigModel:
+            return data
+
+        if hasattr(ConfigModel, "model_validate"):
+            return ConfigModel.model_validate(data)
+        if hasattr(ConfigModel, "parse_obj"):
+            return ConfigModel.parse_obj(data)
+
+        return ConfigModel(**data)
+
+    def on_session_selected(self, session_id: str) -> None:
+        """Update status when a session is activated."""
+
+        self.status_label.setText(f"Session activated: {session_id}")
+
+    def on_new_session_requested(self) -> None:
+        """Reset the query panel to start a fresh session."""
+
+        if self.query_panel:
+            self.query_panel.clear_query()
+        self.current_query = ""
+        self.status_label.setText("New session ready")
+
+    def on_export_requested(self, export_id: str) -> None:
+        """Trigger an export action via the storage manager."""
+
+        if not StorageManager:
+            QMessageBox.information(
+                self,
+                "Exports Unavailable",
+                "Export functionality is unavailable in this environment.",
+            )
+            return
+
+        try:
+            if export_id.lower().endswith("graphml"):
+                StorageManager.export_knowledge_graph_graphml()
+            elif "json" in export_id.lower():
+                StorageManager.export_knowledge_graph_json()
+            else:
+                QMessageBox.information(
+                    self,
+                    "Export",
+                    f"No handler registered for export '{export_id}'.",
+                )
+                return
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Export Failed",
+                f"Failed to export data: {exc}",
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Export Started",
+            f"Export '{export_id}' triggered. Check the configured output directory.",
+        )
 
     @Slot(str)
     def on_query_submitted(self, query: str) -> None:
@@ -202,11 +328,37 @@ class AutoresearchMainWindow(QMainWindow):
         if self.results_display:
             self.results_display.display_results(result)
 
+        self.update_export_options(result)
+
+        session_title = self.current_query.strip() or "Untitled Query"
+        if len(session_title) > 50:
+            window_title = f"{session_title[:50]}..."
+        else:
+            window_title = session_title
+
+        if self.session_manager:
+            self.session_manager.add_session(uuid.uuid4().hex, session_title)
+
         self.status_label.setText("Query completed")
 
-        # Update window title with query summary
-        query_preview = self.current_query[:50] + "..." if len(self.current_query) > 50 else self.current_query
-        self.setWindowTitle(f"Autoresearch - {query_preview}")
+        self.setWindowTitle(f"Autoresearch - {window_title}")
+
+    def update_export_options(self, result: QueryResponse) -> None:
+        """Update export availability based on the latest result."""
+
+        if not self.export_manager:
+            return
+
+        exports: dict[str, bool] = {}
+        metrics = getattr(result, "metrics", None)
+        if isinstance(metrics, Mapping):
+            knowledge_metrics = metrics.get("knowledge_graph")
+            if isinstance(knowledge_metrics, Mapping):
+                export_info = knowledge_metrics.get("exports")
+                if isinstance(export_info, Mapping):
+                    exports = {str(key): bool(value) for key, value in export_info.items()}
+
+        self.export_manager.set_available_exports(exports)
 
     def display_error(self, error: Exception) -> None:
         """Display query error to the user."""

@@ -15,10 +15,11 @@ src/autoresearch/ui/desktop/
 ├── main_window.py           # Main window implementation
 ├── query_panel.py           # Query input and controls
 ├── results_display.py       # Results visualization
-└── [future components]
-    ├── knowledge_graph_view.py
-    ├── metrics_dashboard.py
-    └── config_editor.py
+├── knowledge_graph_view.py  # Dedicated graph viewer widget
+├── metrics_dashboard.py     # Hierarchical metrics inspector
+├── config_editor.py         # JSON-based configuration editor
+├── session_manager.py       # Recent session listing and navigation
+└── export_manager.py        # Export action launcher
 ```
 
 ### Key Components
@@ -38,9 +39,17 @@ src/autoresearch/ui/desktop/
 #### ResultsDisplay (QTabWidget)
 - Multiple tabs for different result views
 - Markdown rendering (QWebEngineView)
-- Knowledge graph visualization
+- Knowledge graph visualization via `KnowledgeGraphView`
 - Agent trace display
-- Performance metrics
+- Performance metrics via `MetricsDashboard`
+
+#### Dock Widgets
+- **ConfigEditor**: Emits `configuration_changed` with JSON-ready dicts that the main
+  window validates against `ConfigModel` when available.
+- **SessionManager**: Lists prior queries; activating an item emits
+  `session_selected` so future iterations can load persisted state.
+- **ExportManager**: Renders export buttons (GraphML, JSON, etc.) based on the
+  latest `result.metrics['knowledge_graph']['exports']` payload.
 
 ## Development Setup
 
@@ -140,9 +149,7 @@ button.setStyleSheet("""
 ```
 tests/ui/desktop/
 ├── __init__.py
-├── test_main_window.py      # Main window tests
-├── test_query_panel.py      # Query panel tests
-├── test_results_display.py  # Results display tests
+├── test_component_smoke.py  # pytest-qt smoke tests for desktop widgets
 └── integration/
     └── test_desktop_integration.py  # Full workflow tests
 ```
@@ -155,9 +162,14 @@ import pytest
 from PySide6.QtWidgets import QApplication
 from autoresearch.ui.desktop.query_panel import QueryPanel
 
-@pytest.fixture
-def app():
-    return QApplication([])
+from PySide6.QtWidgets import QTreeWidgetItem
+
+
+def test_metrics_dashboard_updates(qtbot):
+    dashboard = MetricsDashboard()
+    qtbot.addWidget(dashboard)
+    dashboard.update_metrics({"tokens": {"prompt": 42, "completion": 64}})
+    assert dashboard.findChildren(QTreeWidgetItem)
 
 def test_query_panel_creation(app):
     panel = QueryPanel()

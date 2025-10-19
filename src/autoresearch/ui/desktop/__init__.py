@@ -14,5 +14,21 @@ The desktop interface provides:
 
 from __future__ import annotations
 
+from . import main
+from .config_editor import ConfigEditor
+from .export_manager import ExportManager
+from .knowledge_graph_view import KnowledgeGraphView
+from .main_window import AutoresearchMainWindow
+from .metrics_dashboard import MetricsDashboard
+from .session_manager import SessionManager
+
 __version__ = "0.1.0"
-__all__ = ["main", "AutoresearchMainWindow"]
+__all__ = [
+    "main",
+    "AutoresearchMainWindow",
+    "ConfigEditor",
+    "ExportManager",
+    "KnowledgeGraphView",
+    "MetricsDashboard",
+    "SessionManager",
+]

@@ -6,6 +6,22 @@ data in local databases so that searches and knowledge graphs remain on your mac
 The project is built around a modular Python package located under `src/autoresearch/`.
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
+## Desktop UI Architecture
+
+The PySide6 desktop interface in `src/autoresearch/ui/desktop/` is composed of small,
+testable widgets that the main window assembles into the full experience:
+
+- `AutoresearchMainWindow` coordinates layout, dock widgets, and orchestrator wiring.
+- `ConfigEditor` surfaces the active configuration in a JSON editor dock for quick tweaks.
+- `SessionManager` tracks recent runs so analysts can jump between query contexts.
+- `KnowledgeGraphView` renders knowledge graph payloads inside a zoomable scene.
+- `MetricsDashboard` shows live metrics as a hierarchical tree for fast inspection.
+- `ExportManager` lists export actions (GraphML, JSON, etc.) that the storage layer supports.
+
+Each widget exposes a focused API (e.g., `ConfigEditor.configuration_changed`) and is
+available via `autoresearch.ui.desktop`. This keeps the UI extensible: new views can be
+tabified or docked without modifying the query or results panes.
+
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
 source for environment setup and optional features. After installing the
 prerequisites, run `./scripts/setup.sh` to verify tooling, install
