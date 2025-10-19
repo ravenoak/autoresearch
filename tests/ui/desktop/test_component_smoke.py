@@ -19,6 +19,7 @@ Qt = QtCore.Qt
 QListWidget = QtWidgets.QListWidget
 QPushButton = QtWidgets.QPushButton
 
+from autoresearch.models import QueryResponse
 from autoresearch.ui.desktop import (
     AutoresearchMainWindow,
     ConfigEditor,
@@ -27,6 +28,7 @@ from autoresearch.ui.desktop import (
     MetricsDashboard,
     SessionManager,
 )
+from autoresearch.ui.desktop.results_display import ResultsDisplay
 
 pytestmark = pytest.mark.requires_ui
 
@@ -85,3 +87,59 @@ def test_main_window_smoke(qtbot) -> None:
     assert window.config_editor is not None
     assert window.session_manager is not None
     assert window.export_manager is not None
+
+
+def test_results_display_citations_tab_and_controls(qtbot) -> None:
+    display = ResultsDisplay()
+    qtbot.addWidget(display)
+
+    assert display.tab_widget is not None
+    tab_titles = [display.tab_widget.tabText(i) for i in range(display.tab_widget.count())]
+    assert "Citations" in tab_titles
+
+    result = QueryResponse(
+        query="Test",
+        answer="Sample answer",
+        citations=[
+            "https://example.com/resource",
+            {"title": "Spec", "url": "https://example.org/spec"},
+        ],
+        reasoning=[],
+        metrics={},
+        warnings=[],
+        claim_audits=[],
+        task_graph=None,
+        react_traces=[],
+        state_id=None,
+    )
+
+    display.display_results(result)
+
+    assert display.citations_list is not None
+    assert display.citations_list.count() == 2
+    assert display.open_source_button is not None
+    assert display.copy_source_button is not None
+    assert display.open_source_button.isEnabled()
+    assert display.copy_source_button.isEnabled()
+
+
+def test_results_display_markdown_conversion_handles_rich_content(qtbot) -> None:
+    display = ResultsDisplay()
+    qtbot.addWidget(display)
+
+    html = display.render_markdown(
+        """# Heading
+
+- Item one
+- Item two
+
+This is *important* information.
+
+<script>alert('x');</script>
+"""
+    )
+
+    assert "<h1>Heading</h1>" in html
+    assert html.count("<li>") == 2
+    assert "<em>important</em>" in html
+    assert "<script>" not in html

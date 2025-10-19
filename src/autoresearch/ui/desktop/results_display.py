@@ -11,10 +11,26 @@ Displays query results in a tabbed interface with support for:
 
 from __future__ import annotations
 
-from typing import Mapping, Optional
+import re
+from html import escape
+from typing import Any, Mapping, Optional
+from urllib.parse import urlparse
 
+from markdown import markdown as markdown_to_html
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QTabWidget, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .knowledge_graph_view import KnowledgeGraphView
 from .metrics_dashboard import MetricsDashboard
@@ -50,6 +66,10 @@ class ResultsDisplay(QWidget):
         self.knowledge_graph_view: Optional[KnowledgeGraphView] = None
         self.trace_view: Optional[QTextEdit] = None
         self.metrics_dashboard: Optional[MetricsDashboard] = None
+        self.citations_list: Optional[QListWidget] = None
+        self.citations_placeholder: Optional[QLabel] = None
+        self.open_source_button: Optional[QPushButton] = None
+        self.copy_source_button: Optional[QPushButton] = None
 
         # Current result
         self.current_result: Optional[QueryResponse] = None
@@ -69,6 +89,38 @@ class ResultsDisplay(QWidget):
         answer_layout = QVBoxLayout(answer_tab)
         answer_layout.addWidget(self.answer_view)
         self.tab_widget.addTab(answer_tab, "Answer")
+
+        # Citations tab
+        citations_tab = QWidget()
+        citations_layout = QVBoxLayout(citations_tab)
+        self.citations_list = QListWidget()
+        self.citations_list.setSelectionMode(QListWidget.SingleSelection)
+        self.citations_list.currentItemChanged.connect(self._update_citation_controls)
+        citations_layout.addWidget(self.citations_list)
+
+        placeholder = QLabel("No citations available.")
+        placeholder.setWordWrap(True)
+        placeholder.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        citations_layout.addWidget(placeholder)
+        self.citations_placeholder = placeholder
+
+        controls_layout = QHBoxLayout()
+        open_button = QPushButton("Open Source")
+        open_button.setEnabled(False)
+        open_button.clicked.connect(self._open_selected_citation)
+        controls_layout.addWidget(open_button)
+        self.open_source_button = open_button
+
+        copy_button = QPushButton("Copy Citation")
+        copy_button.setEnabled(False)
+        copy_button.clicked.connect(self._copy_selected_citation)
+        controls_layout.addWidget(copy_button)
+        self.copy_source_button = copy_button
+
+        controls_layout.addStretch(1)
+        citations_layout.addLayout(controls_layout)
+
+        self.tab_widget.addTab(citations_tab, "Citations")
 
         # Knowledge Graph tab
         self.knowledge_graph_view = KnowledgeGraphView()
@@ -102,6 +154,9 @@ class ResultsDisplay(QWidget):
 
         # Display answer
         self.display_answer(result)
+
+        # Display citations
+        self.display_citations(result)
 
         # Display knowledge graph (placeholder for now)
         self.display_knowledge_graph(result)
@@ -181,7 +236,7 @@ class ResultsDisplay(QWidget):
                 </style>
             </head>
             <body>
-                {self.markdown_to_html(markdown_content)}
+                {self.render_markdown(markdown_content)}
             </body>
             </html>
             """
@@ -198,6 +253,31 @@ class ResultsDisplay(QWidget):
             </html>
             """
             self.answer_view.setHtml(error_html)
+
+    def display_citations(self, result: QueryResponse) -> None:
+        """Display citation entries and enable source management controls."""
+        if not self.citations_list or not self.citations_placeholder:
+            return
+
+        self.citations_list.clear()
+
+        citations = getattr(result, "citations", None)
+        if not citations:
+            self.citations_placeholder.setText("No citations available.")
+            self.citations_placeholder.show()
+            self._update_citation_controls()
+            return
+
+        self.citations_placeholder.hide()
+
+        for citation in citations:
+            label, url = self._normalize_citation(citation)
+            item = QListWidgetItem(label or "Citation")
+            item.setData(Qt.UserRole, {"url": url, "raw": citation, "text": label})
+            self.citations_list.addItem(item)
+
+        self.citations_list.setCurrentRow(0)
+        self._update_citation_controls()
 
     def display_knowledge_graph(self, result: QueryResponse) -> None:
         """Display knowledge graph visualization."""
@@ -261,39 +341,120 @@ class ResultsDisplay(QWidget):
         else:
             self.metrics_dashboard.clear()
 
-    def markdown_to_html(self, markdown: str) -> str:
-        """Convert basic Markdown to HTML (simplified implementation)."""
-        if not markdown:
+    def render_markdown(self, markdown_text: str) -> str:
+        """Convert Markdown into sanitized HTML suitable for web rendering."""
+        if not markdown_text:
             return ""
 
-        # This is a very basic Markdown converter
-        # In a full implementation, you'd use a proper library like markdown
-        html = markdown
+        sanitized_source = escape(markdown_text, quote=False)
+        html_output = markdown_to_html(
+            sanitized_source,
+            extensions=[
+                "extra",
+                "sane_lists",
+                "smarty",
+                "toc",
+            ],
+            output_format="html5",
+        )
+        return self._sanitize_links(html_output)
 
-        # Headers
-        html = html.replace("### ", "</p><h3>").replace("## ", "</p><h2>").replace("# ", "</p><h1>")
-        html = f"<p>{html}</p>"
+    def _sanitize_links(self, html_content: str) -> str:
+        """Ensure anchor tags only contain safe URLs."""
 
-        # Bold and italic (basic)
-        html = html.replace("**", "<strong>").replace("**", "</strong>")
-        html = html.replace("*", "<em>").replace("*", "</em>")
+        def replacer(match: re.Match[str]) -> str:
+            href = match.group(1)
+            text = match.group(2)
+            safe_href = self._validate_url(href)
+            if not safe_href:
+                return text
+            return f'<a href="{safe_href}" rel="noopener noreferrer">{text}</a>'
 
-        # Lists (basic)
-        lines = html.split('\n')
-        for i, line in enumerate(lines):
-            if line.strip().startswith('- '):
-                lines[i] = f"<li>{line.strip()[2:]}</li>"
-            elif line.strip().startswith('* '):
-                lines[i] = f"<li>{line.strip()[2:]}</li>"
+        return re.sub(
+            r'<a\s+href="([^"]+)">(.*?)</a>',
+            replacer,
+            html_content,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
 
-        html = '\n'.join(lines)
+    def _validate_url(self, candidate: Optional[str]) -> Optional[str]:
+        """Return a safe URL if the candidate points to http(s), otherwise None."""
+        if not candidate:
+            return None
 
-        # Wrap in ul if we have list items
-        if '<li>' in html:
-            # Find the start and end of list items
-            start_idx = html.find('<li>')
-            end_idx = html.rfind('</li>') + 5
-            list_content = html[start_idx:end_idx]
-            html = html[:start_idx] + f"<ul>{list_content}</ul>" + html[end_idx:]
+        parsed = urlparse(candidate)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            return candidate
+        return None
 
-        return html
+    def _normalize_citation(self, citation: Any) -> tuple[str, Optional[str]]:
+        """Normalize a citation entry to label and optional URL."""
+        if isinstance(citation, Mapping):
+            url = citation.get("url") or citation.get("href") or citation.get("source")
+            label = citation.get("title") or citation.get("label") or citation.get("text")
+            if url and not label:
+                label = url
+            return str(label or ""), self._validate_url(str(url)) if url else None
+
+        if isinstance(citation, str):
+            url = self._extract_url(citation)
+            return citation.strip(), url
+
+        return str(citation), None
+
+    def _extract_url(self, value: str) -> Optional[str]:
+        """Extract the first valid URL from a citation string."""
+        url_match = re.search(r"https?://[^\s]+", value or "")
+        if not url_match:
+            return None
+        candidate = url_match.group(0).rstrip(".,);")
+        return self._validate_url(candidate)
+
+    def _open_selected_citation(self) -> None:
+        """Open the currently selected citation in the system browser."""
+        if not self.citations_list:
+            return
+
+        current_item = self.citations_list.currentItem()
+        if not current_item:
+            return
+
+        data = current_item.data(Qt.UserRole) or {}
+        url = data.get("url")
+        if isinstance(url, str):
+            QDesktopServices.openUrl(QUrl(url))
+
+    def _copy_selected_citation(self) -> None:
+        """Copy the currently selected citation to the clipboard."""
+        if not self.citations_list:
+            return
+
+        current_item = self.citations_list.currentItem()
+        if not current_item:
+            return
+
+        data = current_item.data(Qt.UserRole) or {}
+        text = data.get("text") or current_item.text()
+        clipboard = QGuiApplication.clipboard()
+        if clipboard and isinstance(text, str):
+            clipboard.setText(text)
+
+    def _update_citation_controls(self) -> None:
+        """Enable or disable citation management buttons based on selection."""
+        if not self.citations_list:
+            return
+
+        current_item = self.citations_list.currentItem()
+        data = current_item.data(Qt.UserRole) if current_item else None
+        has_url = isinstance(data, dict) and isinstance(data.get("url"), str)
+        has_text = isinstance(data, dict) and bool(data.get("text"))
+
+        if self.open_source_button:
+            self.open_source_button.setEnabled(bool(current_item) and has_url)
+        if self.copy_source_button:
+            self.copy_source_button.setEnabled(bool(current_item) and has_text)
+
+        if self.citations_placeholder and self.citations_list.count() == 0:
+            self.citations_placeholder.show()
+        elif self.citations_placeholder:
+            self.citations_placeholder.hide()
