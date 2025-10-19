@@ -13,11 +13,13 @@ import uuid
 from typing import Any, Mapping, Optional
 
 from PySide6.QtCore import Qt, QTimer, Slot
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QDockWidget,
     QLabel,
     QMainWindow,
     QProgressBar,
+    QHBoxLayout,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -38,6 +40,7 @@ try:
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
     from ...storage import StorageManager
+    from ...orchestration.metrics import get_orchestration_metrics
 except ImportError:
     # For standalone testing/development
     Orchestrator = None
@@ -47,6 +50,7 @@ except ImportError:
     OutputFormatter = None
     OutputDepth = None
     StorageManager = None
+    get_orchestration_metrics = None
 
 
 class AutoresearchMainWindow(QMainWindow):
@@ -76,12 +80,23 @@ class AutoresearchMainWindow(QMainWindow):
         self.session_dock: Optional[QDockWidget] = None
         self.export_dock: Optional[QDockWidget] = None
 
+        self._metrics_provider = (
+            get_orchestration_metrics if callable(get_orchestration_metrics) else None
+        )
+        self._latest_metrics_payload: Mapping[str, Any] | None = None
+        self._status_message: str = "Ready"
+        self._metric_labels: dict[str, QLabel] = {}
+        self._menu_actions: list[QAction] = []
+        self.metrics_timer: Optional[QTimer] = None
+
         # Query execution state
         self.current_query: str = ""
         self.is_query_running: bool = False
 
         self.setup_ui()
+        self.setup_menu_bar()
         self.setup_connections()
+        self._start_metrics_timer()
         self.load_configuration()
 
     def _suppress_dialogs(self) -> bool:
@@ -150,21 +165,38 @@ class AutoresearchMainWindow(QMainWindow):
         # Progress bar in status bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        self.statusBar().addPermanentWidget(self.progress_bar)
-
-        # Set up status bar
         self.setup_status_bar()
         self.setup_dock_widgets()
 
     def setup_status_bar(self) -> None:
         """Set up the status bar with real-time information."""
         status_bar = self.statusBar()
+        status_bar.setObjectName("main-status-bar")
 
-        # Left side: current status label
-        self.status_label = status_bar.findChild(QLabel)
-        if not self.status_label:
-            self.status_label = QLabel("Ready")
-            status_bar.addWidget(self.status_label)
+        metrics_container = QWidget()
+        metrics_layout = QHBoxLayout(metrics_container)
+        metrics_layout.setContentsMargins(0, 0, 0, 0)
+        metrics_layout.setSpacing(12)
+
+        metric_defaults = {
+            "cpu": "CPU: --%",
+            "memory": "Memory: -- MB",
+            "tokens": "Tokens: --",
+        }
+        for key, label_text in metric_defaults.items():
+            label = QLabel(label_text)
+            label.setObjectName(f"status-metric-{key}")
+            metrics_layout.addWidget(label)
+            self._metric_labels[key] = label
+
+        metrics_layout.addStretch(1)
+        status_bar.addPermanentWidget(metrics_container)
+
+        if self.progress_bar:
+            status_bar.addPermanentWidget(self.progress_bar)
+
+        self._set_status_message(self._status_message)
+        self._refresh_status_metrics()
 
     def setup_dock_widgets(self) -> None:
         """Create dock widgets for configuration, sessions, and exports."""
@@ -204,6 +236,102 @@ class AutoresearchMainWindow(QMainWindow):
         if self.export_manager:
             self.export_manager.export_requested.connect(self.on_export_requested)
 
+    def setup_menu_bar(self) -> None:
+        """Configure the main menu bar with standard desktop actions."""
+
+        menu_bar = self.menuBar()
+        menu_bar.setNativeMenuBar(False)
+        menu_bar.clear()
+
+        file_menu = menu_bar.addMenu("&File")
+        new_session_action = QAction("&New Session", self)
+        new_session_action.setShortcut(QKeySequence.New)
+        new_session_action.triggered.connect(self.on_new_session_requested)
+        file_menu.addAction(new_session_action)
+        self._register_action(new_session_action)
+
+        export_action = QAction("E&xport Results…", self)
+        export_action.setShortcut(QKeySequence("Ctrl+E"))
+        export_action.triggered.connect(self._trigger_export_action)
+        file_menu.addAction(export_action)
+        self._register_action(export_action)
+
+        file_menu.addSeparator()
+
+        exit_action = QAction("E&xit", self)
+        exit_action.setShortcut(QKeySequence.Quit)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        self._register_action(exit_action)
+
+        edit_menu = menu_bar.addMenu("&Edit")
+        undo_action = QAction("&Undo", self)
+        undo_action.setShortcut(QKeySequence.Undo)
+        undo_action.triggered.connect(lambda: self._invoke_query_text_method("undo"))
+        edit_menu.addAction(undo_action)
+        self._register_action(undo_action)
+
+        redo_action = QAction("&Redo", self)
+        redo_action.setShortcut(QKeySequence.Redo)
+        redo_action.triggered.connect(lambda: self._invoke_query_text_method("redo"))
+        edit_menu.addAction(redo_action)
+        self._register_action(redo_action)
+
+        edit_menu.addSeparator()
+
+        cut_action = QAction("Cu&t", self)
+        cut_action.setShortcut(QKeySequence.Cut)
+        cut_action.triggered.connect(lambda: self._invoke_query_text_method("cut"))
+        edit_menu.addAction(cut_action)
+        self._register_action(cut_action)
+
+        copy_action = QAction("&Copy", self)
+        copy_action.setShortcut(QKeySequence.Copy)
+        copy_action.triggered.connect(lambda: self._invoke_query_text_method("copy"))
+        edit_menu.addAction(copy_action)
+        self._register_action(copy_action)
+
+        paste_action = QAction("&Paste", self)
+        paste_action.setShortcut(QKeySequence.Paste)
+        paste_action.triggered.connect(lambda: self._invoke_query_text_method("paste"))
+        edit_menu.addAction(paste_action)
+        self._register_action(paste_action)
+
+        view_menu = menu_bar.addMenu("&View")
+        if self.config_dock:
+            config_action = self.config_dock.toggleViewAction()
+            config_action.setShortcut(QKeySequence("Ctrl+1"))
+            view_menu.addAction(config_action)
+            self._register_action(config_action)
+        if self.session_dock:
+            session_action = self.session_dock.toggleViewAction()
+            session_action.setShortcut(QKeySequence("Ctrl+2"))
+            view_menu.addAction(session_action)
+            self._register_action(session_action)
+        if self.export_dock:
+            export_dock_action = self.export_dock.toggleViewAction()
+            export_dock_action.setShortcut(QKeySequence("Ctrl+3"))
+            view_menu.addAction(export_dock_action)
+            self._register_action(export_dock_action)
+
+        help_menu = menu_bar.addMenu("&Help")
+        help_action = QAction("&View Documentation", self)
+        help_action.setShortcut(QKeySequence.HelpContents)
+        help_action.triggered.connect(self._open_help_center)
+        help_menu.addAction(help_action)
+        self._register_action(help_action)
+
+        about_action = QAction("&About Autoresearch", self)
+        about_action.setShortcut(QKeySequence("Shift+F1"))
+        about_action.triggered.connect(self._show_about_dialog)
+        help_menu.addAction(about_action)
+        self._register_action(about_action)
+
+    def _register_action(self, action: QAction) -> None:
+        """Retain references to actions to prevent premature garbage collection."""
+
+        self._menu_actions.append(action)
+
     def load_configuration(self) -> None:
         """Load Autoresearch configuration."""
         try:
@@ -216,20 +344,20 @@ class AutoresearchMainWindow(QMainWindow):
             if Orchestrator:
                 self.orchestrator = Orchestrator()
 
-            self.status_label.setText("Configuration loaded - Ready for queries")
+            self._set_status_message("Configuration loaded - ready for queries")
         except Exception as e:
             self._show_warning(
                 "Configuration Error",
                 f"Failed to load configuration: {e}\n\nSome features may not work correctly."
             )
-            self.status_label.setText("Configuration error - Limited functionality")
+            self._set_status_message("Configuration error - limited functionality")
 
     def on_configuration_changed(self, updated_config: dict[str, Any]) -> None:
         """Handle configuration changes from the dock widget."""
 
         try:
             self.config = self._build_config_model(updated_config)
-            self.status_label.setText("Configuration updated - ready to run queries")
+            self._set_status_message("Configuration updated - ready to run queries")
         except Exception as exc:
             self._show_warning(
                 "Configuration",
@@ -250,7 +378,7 @@ class AutoresearchMainWindow(QMainWindow):
     def on_session_selected(self, session_id: str) -> None:
         """Update status when a session is activated."""
 
-        self.status_label.setText(f"Session activated: {session_id}")
+        self._set_status_message(f"Session activated: {session_id}")
 
     def on_new_session_requested(self) -> None:
         """Reset the query panel to start a fresh session."""
@@ -258,7 +386,9 @@ class AutoresearchMainWindow(QMainWindow):
         if self.query_panel:
             self.query_panel.clear_query()
         self.current_query = ""
-        self.status_label.setText("New session ready")
+        self._latest_metrics_payload = None
+        self._refresh_status_metrics()
+        self._set_status_message("New session ready")
 
     def on_export_requested(self, export_id: str) -> None:
         """Trigger an export action via the storage manager."""
@@ -322,7 +452,9 @@ class AutoresearchMainWindow(QMainWindow):
         self.is_query_running = True
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Indeterminate progress
-        self.status_label.setText("Running query...")
+        self._set_status_message("Running query…")
+        self._latest_metrics_payload = None
+        self._refresh_status_metrics()
 
         # Run query in separate thread to keep UI responsive
         from PySide6.QtCore import QThread, QThreadPool, QRunnable, QTimer
@@ -360,6 +492,13 @@ class AutoresearchMainWindow(QMainWindow):
 
         self.update_export_options(result)
 
+        metrics_payload = getattr(result, "metrics", None)
+        if isinstance(metrics_payload, Mapping):
+            self._latest_metrics_payload = metrics_payload
+        else:
+            self._latest_metrics_payload = None
+        self._refresh_status_metrics()
+
         session_title = self.current_query.strip() or "Untitled Query"
         if len(session_title) > 50:
             window_title = f"{session_title[:50]}..."
@@ -369,7 +508,7 @@ class AutoresearchMainWindow(QMainWindow):
         if self.session_manager:
             self.session_manager.add_session(uuid.uuid4().hex, session_title)
 
-        self.status_label.setText("Query completed")
+        self._set_status_message("Query completed")
 
         self.setWindowTitle(f"Autoresearch - {window_title}")
 
@@ -401,7 +540,8 @@ class AutoresearchMainWindow(QMainWindow):
             f"An error occurred while running your query:\n\n{error_msg}"
         )
 
-        self.status_label.setText("Query failed")
+        self._set_status_message("Query failed")
+        self._refresh_status_metrics()
 
     def closeEvent(self, event) -> None:
         """Handle window close event."""
@@ -418,4 +558,147 @@ class AutoresearchMainWindow(QMainWindow):
                 event.ignore()
                 return
 
+        if self.metrics_timer:
+            self.metrics_timer.stop()
         event.accept()
+
+    def _start_metrics_timer(self) -> None:
+        """Start the timer responsible for refreshing status metrics."""
+
+        if self.metrics_timer:
+            return
+
+        self.metrics_timer = QTimer(self)
+        self.metrics_timer.setInterval(2000)
+        self.metrics_timer.timeout.connect(self._refresh_status_metrics)
+        self.metrics_timer.start()
+
+    def _set_status_message(self, message: str) -> None:
+        """Update the persistent status bar message."""
+
+        self._status_message = message
+        self.statusBar().showMessage(message)
+
+    def _invoke_query_text_method(self, method_name: str) -> None:
+        """Invoke a QTextEdit editing command on the query panel when available."""
+
+        if not self.query_panel or not getattr(self.query_panel, "query_input", None):
+            return
+
+        query_input = self.query_panel.query_input
+        if query_input and hasattr(query_input, method_name):
+            getattr(query_input, method_name)()
+
+    def _trigger_export_action(self) -> None:
+        """Surface the exports dock and guide the user to available exports."""
+
+        if self.export_dock:
+            self.export_dock.show()
+            self.export_dock.raise_()
+
+        if self.export_manager and self.export_manager.isVisible():
+            self._set_status_message("Select an export target from the Exports panel.")
+            return
+
+        self._show_information(
+            "Exports",
+            "Use the Exports panel to run the desired export for the active session.",
+        )
+
+    def _open_help_center(self) -> None:
+        """Display guidance on where to find desktop documentation."""
+
+        self._show_information(
+            "Autoresearch Help",
+            (
+                "Refer to the desktop README for workflow guidance and visit the online "
+                "documentation for advanced topics."
+            ),
+        )
+
+    def _show_about_dialog(self) -> None:
+        """Show an about dialog with release metadata."""
+
+        release = os.environ.get("AUTORESEARCH_RELEASE", "development")
+        self._show_information(
+            "About Autoresearch",
+            (
+                "Autoresearch Desktop\n\n"
+                "AI-assisted research orchestration with dialectical reasoning.\n"
+                f"Release channel: {release}"
+            ),
+        )
+
+    def _refresh_status_metrics(self) -> None:
+        """Refresh CPU, memory, and token metrics in the status bar."""
+
+        cpu_text = "CPU: --%"
+        memory_text = "Memory: -- MB"
+        tokens_text = "Tokens: --"
+
+        metrics_obj = self._metrics_provider() if self._metrics_provider else None
+        latest_usage: tuple[float, float, float, float, float] | None = None
+        tokens_total: Optional[int] = None
+
+        if metrics_obj is not None:
+            usage_history = getattr(metrics_obj, "resource_usage", None)
+            if usage_history:
+                latest_usage = usage_history[-1]
+            token_counts = getattr(metrics_obj, "token_counts", None)
+            if token_counts:
+                total_in = sum(int(counts.get("in", 0)) for counts in token_counts.values())
+                total_out = sum(int(counts.get("out", 0)) for counts in token_counts.values())
+                tokens_total = total_in + total_out
+
+        if latest_usage:
+            _, cpu_percent, memory_mb, _, _ = latest_usage
+            if isinstance(cpu_percent, (int, float)):
+                cpu_text = f"CPU: {cpu_percent:.0f}%"
+            if isinstance(memory_mb, (int, float)):
+                memory_text = f"Memory: {memory_mb:.0f} MB"
+
+        if tokens_total is None:
+            tokens_total = self._extract_token_total(self._latest_metrics_payload)
+
+        if tokens_total is not None:
+            tokens_text = f"Tokens: {tokens_total:,}"
+
+        if self._metric_labels.get("cpu"):
+            self._metric_labels["cpu"].setText(cpu_text)
+        if self._metric_labels.get("memory"):
+            self._metric_labels["memory"].setText(memory_text)
+        if self._metric_labels.get("tokens"):
+            self._metric_labels["tokens"].setText(tokens_text)
+
+    def _extract_token_total(self, metrics: Mapping[str, Any] | None) -> Optional[int]:
+        """Extract a total token count from a metrics payload when available."""
+
+        if not isinstance(metrics, Mapping):
+            return None
+
+        tokens_payload = metrics.get("tokens")
+        if isinstance(tokens_payload, Mapping):
+            for key in ("total", "count", "used", "tokens"):
+                value = tokens_payload.get(key)
+                if isinstance(value, (int, float)):
+                    return int(value)
+            input_tokens = tokens_payload.get("input")
+            output_tokens = tokens_payload.get("output")
+            if isinstance(input_tokens, (int, float)) or isinstance(output_tokens, (int, float)):
+                total_value = int(input_tokens or 0) + int(output_tokens or 0)
+                if total_value:
+                    return total_value
+        elif isinstance(tokens_payload, (int, float)):
+            return int(tokens_payload)
+
+        total_tokens_payload = metrics.get("total_tokens")
+        if isinstance(total_tokens_payload, Mapping):
+            total_value = total_tokens_payload.get("total")
+            if isinstance(total_value, (int, float)):
+                return int(total_value)
+            input_tokens = total_tokens_payload.get("input")
+            output_tokens = total_tokens_payload.get("output")
+            if isinstance(input_tokens, (int, float)) or isinstance(output_tokens, (int, float)):
+                return int(input_tokens or 0) + int(output_tokens or 0)
+
+        return None
