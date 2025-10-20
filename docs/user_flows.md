@@ -2,6 +2,108 @@
 
 This document describes the typical user flows for all interface modalities of the Autoresearch system.
 
+For onboarding details and architectural context, see the
+[PySide6 Desktop Interface Developer Guide](developer_guide.md) and the
+[PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
+
+## PySide6 Desktop User Flows
+
+### Launch and Workspace Flow
+
+1. **Start the desktop app**
+   ```bash
+   autoresearch desktop
+   ```
+   - Requires the `desktop` optional dependencies (see installation guide).
+   - The native window titled *Autoresearch - AI Research Assistant* opens with the
+     query panel stacked above the results view.
+
+2. **Confirm dock widgets**
+   - The left side hosts the **Configuration** dock (JSON editor) tabbed with
+     **Sessions**.
+   - The right side hosts the **Exports** dock for downstream report actions.
+   - Use **View ▸ Configuration/Sessions/Exports** or `Ctrl+1/2/3` to toggle docks.
+
+3. **Review status area**
+   - The status bar shows text such as *Configuration loaded - ready for queries*.
+   - CPU, memory, and token counters appear as labels named *CPU*, *Memory*, and
+     *Tokens* and update every second when metrics are available.
+
+### Research Query Flow
+
+1. **Draft the query**
+   - Enter text in the **Research Query** editor (`QTextEdit`) located in the top
+     panel.
+   - Multi-line prompts are supported; use the toolbar shortcuts (`Ctrl+Z`, etc.)
+     or the Edit menu for quick edits.
+
+2. **Tune reasoning parameters**
+   - Choose a reasoning strategy from the **Reasoning Mode** dropdown
+     (`QComboBox`) in the **Reasoning Configuration** group.
+   - Adjust **Reasoning Loops** with the spin box (`QSpinBox`) to control the
+     depth of deliberation.
+
+3. **Run the query**
+   - Press **Run Query** (`QPushButton`).
+   - A progress bar appears in the status bar, and the window title reflects the
+     active run.
+
+4. **Inspect the results**
+   - The lower **Results** splitter pane presents tabbed views:
+     - **Answer** renders Markdown via a `QWebEngineView`.
+     - **Citations** lists sources with **Open Source** and **Copy Citation**
+       actions.
+     - **Knowledge Graph** hosts the interactive graph viewer.
+     - **Agent Trace** shows structured reasoning text.
+     - **Metrics** embeds the live metrics dashboard.
+   - Switch tabs to review each facet of the response.
+
+5. **Capture sessions (optional)**
+   - The **Sessions** dock lists saved runs. Select an entry to reload its
+     content or choose **New Session** to bookmark the current workspace.
+
+### Metrics Monitoring Flow
+
+1. **Watch inline counters**
+   - The status bar metrics reflect CPU %, memory (MB), and aggregate token usage
+     derived from the orchestrator metrics feed.
+
+2. **Open the Metrics tab**
+   - Navigate to the **Metrics** tab inside the results widget.
+   - The embedded **MetricsDashboard** plots CPU, memory, and token totals when
+     matplotlib is available.
+
+3. **Toggle accessibility view**
+   - Click **Show Text Summary** (`QPushButton`) to switch between the chart and
+     a textual breakdown rendered in the same tab.
+   - When charts are unavailable, the control is disabled and a text summary is
+     presented by default.
+
+4. **Reset metrics (optional)**
+   - Clearing or starting a new session resets the plotted history and status
+     summaries.
+
+### Export Flow
+
+1. **Reveal the Exports dock**
+   - Ensure the **Exports** dock is visible via the sidebar toggle or the **View**
+     menu.
+   - The dock lists buttons such as **Export Markdown** or **Export JSON**,
+     reflecting backend capabilities exposed through `ExportManager`.
+
+2. **Run an export**
+   - Click the desired **Export …** button to emit an export request for the
+     active session.
+   - Follow prompts (for example, file pickers) surfaced by the desktop client.
+
+3. **Use the File menu (optional)**
+   - Select **File ▸ Export Results…** or press `Ctrl+E` to focus the exports
+     dock and highlight available options.
+
+> **Note:** The PySide6 desktop app is the forward-looking interface. Refer to
+> the [migration plan](pyside6_migration_plan.md) for rollout phases and the
+> developer guide for onboarding best practices.
+
 ## CLI Interface User Flows
 
 ### Basic Query Flow
@@ -98,6 +200,12 @@ This document describes the typical user flows for all interface modalities of t
    autoresearch search "neural networks in docs"
    ```
    - Results from the local directory and Git repo are merged with web sources.
+
+> **Legacy Interface Notice**
+> The Streamlit GUI remains in maintenance-only support while the PySide6
+> desktop client becomes the primary experience. Deprecation begins once PySide6
+> reaches feature parity, with Streamlit scheduled for removal 1–2 release
+> cycles later (see the [migration plan](pyside6_migration_plan.md)).
 
 ## Streamlit GUI User Flows
 
