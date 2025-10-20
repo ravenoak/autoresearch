@@ -1,4 +1,7 @@
-"""Tests for the PySide6 desktop query panel widget."""
+"""Tests for the PySide6 desktop query panel widget.
+
+Spec: docs/specs/pyside-desktop.md
+"""
 
 from __future__ import annotations
 

@@ -1,5 +1,6 @@
 """Smoke tests for PySide6 desktop widgets."""
 
+# Spec: docs/specs/pyside-desktop.md
 from __future__ import annotations
 
 from typing import Any, Mapping
