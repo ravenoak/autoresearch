@@ -61,7 +61,7 @@ Feature: Comprehensive Logging Subsystem
     And the correlation_id should be available throughout the request lifecycle
     And if no correlation_id is provided, one should be automatically generated
 
-  @correlation @integration
+  @correlation @integration @legacy_streamlit
   Scenario: Correlation ID propagation across Streamlit session
     When a user interacts with the Streamlit GUI
     Then a session-based correlation ID should be generated
@@ -162,7 +162,7 @@ Feature: Comprehensive Logging Subsystem
     And authorization decisions should be logged
     And the correlation ID should be available throughout the request lifecycle
 
-  @integration @gui
+  @integration @gui @legacy_streamlit
   Scenario: Streamlit GUI logging integration
     When a user interacts with the Streamlit interface
     Then session-based correlation should be established

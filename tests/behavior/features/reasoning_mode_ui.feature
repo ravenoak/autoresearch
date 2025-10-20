@@ -1,4 +1,4 @@
-@behavior @reasoning_modes @requires_ui
+@behavior @reasoning_modes @requires_ui @legacy_streamlit
 Feature: Reasoning mode selection in UI
   As a user
   I want to select a reasoning mode via the UI

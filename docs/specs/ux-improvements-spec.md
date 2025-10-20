@@ -143,7 +143,7 @@ steer the team toward sustainable improvements.
 
 | UX Story | Component IDs | Covered Tests | Status |
 | --- | --- | --- | --- |
-| Query submission parity | C1, C2, C3 | T-UI-004, T-UI-002 | Covered |
+| Query parity (P1) | C1,C2,C3 | B-UI-DESK-001/T-UI-004/T-UI-002 | Covered |
 | Progressive disclosure controls | C3, C7 | T-UI-003, T-UI-004 | Covered |
 | Accessibility parity | C2, C3, C4 | T-UI-002, T-UI-001 | Partial |
 | Knowledge graph annotations | C3, C6 | T-UI-003, T-UI-001 | Partial |
@@ -151,6 +151,10 @@ steer the team toward sustainable improvements.
 | Export pipelines | C3, C7 | — | Backlog |
 | Multi-window comparison | C1, C5 | — | Backlog |
 | Performance dashboards | C3, C8 | T-UI-001 | Covered |
+| Streamlit GUI regression (archival) | C3 | L-UI-LEGACY-001 | Archived |
+
+Entries marked as *Archived* refer to legacy Streamlit coverage gated by the
+`@legacy_streamlit` marker.
 
 ### Test ID Legend
 
@@ -162,6 +166,10 @@ steer the team toward sustainable improvements.
   [`tests/ui/desktop/test_results_display.py`][t-ui-003]
 - **T-UI-004**:
   [`tests/ui/desktop/test_desktop_integration.py`][t-ui-004]
+- **B-UI-DESK-001**:
+  [`tests/behavior/features/pyside6_desktop.feature`][b-ui-desk-001]
+- **L-UI-LEGACY-001**:
+  [`tests/behavior/features/streamlit_gui.feature`][l-ui-legacy-001] *(archival)*
 
 ### Test Backlog
 
@@ -192,6 +200,8 @@ steer the team toward sustainable improvements.
 [t-export-e2e]: ../../tests/ui/desktop/integration/test_export_end_to_end.py
 [t-perf]:
   ../../tests/ui/desktop/performance/test_metrics_dashboard_performance.py
+[b-ui-desk-001]: ../../tests/behavior/features/pyside6_desktop.feature
+[l-ui-legacy-001]: ../../tests/behavior/features/streamlit_gui.feature
 
 ### Component ID Legend
 

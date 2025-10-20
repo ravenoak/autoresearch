@@ -6,7 +6,7 @@ Feature: Cross-Modal Integration
   Background:
     Given the Autoresearch system is running
 
-  @requires_ui
+  @requires_ui @legacy_streamlit
   Scenario: Shared Query History
     When I execute a query "What is the capital of France?" via CLI
     And I open the Streamlit GUI
@@ -21,7 +21,7 @@ Feature: Cross-Modal Integration
     When I execute the same invalid query via GUI
     Then I should receive the same error message in the GUI
 
-  @requires_ui
+  @requires_ui @legacy_streamlit
   Scenario: Configuration Synchronization
     When I update the configuration via CLI
     And I open the Streamlit GUI

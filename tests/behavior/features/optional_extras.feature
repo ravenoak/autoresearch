@@ -6,7 +6,7 @@ Feature: Optional extras operate when installed
     When I check nlp extra
     Then the extra is functional
 
-  @requires_ui
+  @requires_ui @legacy_streamlit
   Scenario: UI extra provides Streamlit
     When I check ui extra
     Then the extra is functional

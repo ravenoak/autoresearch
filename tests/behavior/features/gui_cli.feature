@@ -1,3 +1,4 @@
+@legacy_streamlit
 Feature: GUI CLI
   Scenarios for launching the Streamlit GUI
 

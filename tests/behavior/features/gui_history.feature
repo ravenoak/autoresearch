@@ -1,3 +1,4 @@
+@legacy_streamlit
 Feature: GUI Query History
   As a user of the Streamlit GUI
   I want to review and rerun previous queries

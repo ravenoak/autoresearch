@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
+from types import ModuleType, SimpleNamespace
 from typing import Any, TypeVar, overload
 from unittest.mock import MagicMock
 
@@ -16,6 +18,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 __all__ = [
     "APICapture",
     "BehaviorContext",
+    "DesktopRuntimeMocks",
     "CLIInvocation",
     "get_optional",
     "get_cli_invocation",
@@ -26,6 +29,7 @@ __all__ = [
     "set_cli_invocation",
     "set_cli_result",
     "set_value",
+    "desktop_runtime",
     "StreamlitComponentMocks",
     "StreamlitTabMocks",
 ]
@@ -318,3 +322,249 @@ class StreamlitComponentMocks:
 
     expander: MagicMock | None = None
     """Optional mock for :func:`streamlit.expander`."""
+
+
+@dataclass(slots=True)
+class DesktopRuntimeMocks:
+    """Hold patched Qt classes and spy data for desktop UI scenarios."""
+
+    QApplication: type[Any]
+    """Stubbed :class:`QApplication` replacement used during tests."""
+
+    AutoresearchMainWindow: type[Any]
+    """Stubbed desktop main window exposed to the runtime."""
+
+    QMessageBox: type[Any]
+    """Stubbed :class:`QMessageBox` replacement capturing dialogs."""
+
+    apps: list[Any]
+    """Instances created from :class:`QApplication`."""
+
+    windows: list[Any]
+    """Instances of :class:`AutoresearchMainWindow` constructed during a run."""
+
+    message_boxes: list[Any]
+    """Dialog instances spawned by the runtime."""
+
+    information_calls: list[tuple[str, str]]
+    """Calls made to ``QMessageBox.information``."""
+
+    warning_calls: list[tuple[str, str]]
+    """Calls made to ``QMessageBox.warning``."""
+
+    critical_calls: list[tuple[str, str]]
+    """Calls made to ``QMessageBox.critical``."""
+
+    qt: Any
+    """Simplified :mod:`Qt` namespace exposing required attributes."""
+
+    def latest_window(self) -> Any | None:
+        """Return the most recently created desktop window, if any."""
+
+        if self.windows:
+            return self.windows[-1]
+        return None
+
+
+@contextmanager
+def desktop_runtime(
+    monkeypatch: Any, *, exit_code: int = 0
+) -> Iterator[DesktopRuntimeMocks]:
+    """Patch PySide6 modules with deterministic test doubles.
+
+    Parameters
+    ----------
+    monkeypatch:
+        Active :class:`pytest.MonkeyPatch` fixture.
+    exit_code:
+        Value returned from the stubbed ``QApplication.exec`` method.
+    """
+
+    import sys
+    from contextlib import ExitStack
+
+    from autoresearch.models import QueryResponse
+
+    created_apps: list[Any] = []
+    created_windows: list[Any] = []
+    created_boxes: list[Any] = []
+    information_calls: list[tuple[str, str]] = []
+    warning_calls: list[tuple[str, str]] = []
+    critical_calls: list[tuple[str, str]] = []
+
+    class DummyQApplication:
+        """Minimal QApplication stand-in recording lifecycle events."""
+
+        setAttribute = MagicMock()
+        setHighDpiScaleFactorRoundingPolicy = MagicMock()
+
+        def __init__(self, args: Sequence[str]) -> None:
+            self.args = tuple(args)
+            self.setApplicationName = MagicMock()
+            self.setApplicationVersion = MagicMock()
+            self.setOrganizationName = MagicMock()
+            self.exec_call_count = 0
+            created_apps.append(self)
+
+        def exec(self) -> int:
+            self.exec_call_count += 1
+            return exit_code
+
+    class DummyMessageBox:
+        """Stub QMessageBox capturing dialog metadata."""
+
+        Critical = "critical"
+        Ok = 0
+
+        def __init__(self) -> None:
+            self.icon = None
+            self.title = None
+            self.text = None
+            self.detailed_text = None
+            self.standard_buttons = None
+            created_boxes.append(self)
+
+        def setIcon(self, icon: Any) -> None:  # noqa: N802 - Qt-style API
+            self.icon = icon
+
+        def setWindowTitle(self, title: str) -> None:  # noqa: N802 - Qt-style API
+            self.title = title
+
+        def setText(self, text: str) -> None:  # noqa: N802 - Qt-style API
+            self.text = text
+
+        def setDetailedText(self, text: str) -> None:  # noqa: N802 - Qt-style API
+            self.detailed_text = text
+
+        def setStandardButtons(self, buttons: Any) -> None:  # noqa: N802
+            self.standard_buttons = buttons
+
+        def exec(self) -> int:  # noqa: A003 - match Qt API
+            return 0
+
+        @classmethod
+        def information(cls, _parent: Any, title: str, message: str) -> None:
+            information_calls.append((title, message))
+
+        @classmethod
+        def warning(cls, _parent: Any, title: str, message: str) -> None:
+            warning_calls.append((title, message))
+
+        @classmethod
+        def critical(cls, _parent: Any, title: str, message: str) -> None:
+            critical_calls.append((title, message))
+
+    class StubAutoresearchMainWindow:
+        """Simplified desktop window capturing Phase 1 interactions."""
+
+        def __init__(self) -> None:
+            from unittest.mock import MagicMock as _MagicMock
+
+            created_windows.append(self)
+            self.visible = False
+            self.events: list[tuple[str, Any]] = []
+            self.submitted_queries: list[str] = []
+            self._responses: list[QueryResponse] = []
+            self.orchestrator = _MagicMock()
+            self.orchestrator.run_query.side_effect = self._run_query
+
+        def show(self) -> None:
+            self.visible = True
+
+        def submit_query(self, query: str) -> QueryResponse | None:
+            if not query.strip():
+                self.events.append(("warning", "empty"))
+                return None
+            self.submitted_queries.append(query)
+            self.events.append(("controls", "disabled"))
+            response = self.orchestrator.run_query(query)
+            self.events.append(("results", response))
+            self.events.append(("controls", "enabled"))
+            return response
+
+        def _run_query(self, query: str) -> QueryResponse:
+            response = QueryResponse(
+                query=query,
+                answer=f"Synthesized desktop response for {query}",
+                citations=["doc://phase1"],
+                reasoning=[f"Desktop orchestrator ran for {query}"],
+                metrics={"tokens": 42},
+            )
+            self._responses.append(response)
+            return response
+
+        @property
+        def latest_response(self) -> QueryResponse | None:
+            if self._responses:
+                return self._responses[-1]
+            return None
+
+    qt_namespace = SimpleNamespace(
+        ApplicationAttribute=SimpleNamespace(AA_EnableHighDpiScaling="AA_EnableHighDpiScaling"),
+        HighDpiScaleFactorRoundingPolicy=SimpleNamespace(PassThrough="PassThrough"),
+    )
+
+    qtcore_module = ModuleType("PySide6.QtCore")
+    qtcore_module.Qt = qt_namespace
+
+    qtwidgets_module = ModuleType("PySide6.QtWidgets")
+    qtwidgets_module.QApplication = DummyQApplication
+    qtwidgets_module.QMessageBox = DummyMessageBox
+
+    pyside6_module = ModuleType("PySide6")
+    pyside6_module.QtCore = qtcore_module
+    pyside6_module.QtWidgets = qtwidgets_module
+
+    main_window_module = ModuleType("autoresearch.ui.desktop.main_window")
+    main_window_module.AutoresearchMainWindow = StubAutoresearchMainWindow
+
+    patched_modules = {
+        "PySide6": pyside6_module,
+        "PySide6.QtCore": qtcore_module,
+        "PySide6.QtWidgets": qtwidgets_module,
+        "autoresearch.ui.desktop.main_window": main_window_module,
+    }
+
+    original_modules: dict[str, ModuleType | None] = {}
+
+    with ExitStack() as stack:
+        for name, module in patched_modules.items():
+            original_modules[name] = sys.modules.get(name)
+            stack.callback(
+                lambda n=name, original=original_modules[name]: _restore_module(n, original)
+            )
+            sys.modules[name] = module
+
+        original_main = sys.modules.pop("autoresearch.ui.desktop.main", None)
+        stack.callback(lambda: _restore_module("autoresearch.ui.desktop.main", original_main))
+
+        monkeypatch.setenv("AUTORESEARCH_SUPPRESS_DIALOGS", "1")
+
+        mocks = DesktopRuntimeMocks(
+            QApplication=DummyQApplication,
+            AutoresearchMainWindow=StubAutoresearchMainWindow,
+            QMessageBox=DummyMessageBox,
+            apps=created_apps,
+            windows=created_windows,
+            message_boxes=created_boxes,
+            information_calls=information_calls,
+            warning_calls=warning_calls,
+            critical_calls=critical_calls,
+            qt=qt_namespace,
+        )
+
+        try:
+            yield mocks
+        finally:
+            stack.close()
+
+
+def _restore_module(name: str, module: ModuleType | None) -> None:
+    """Return ``sys.modules[name]`` to its original value."""
+
+    import sys
+
+    if module is None:
+        sys.modules.pop(name, None)
+    else:
+        sys.modules[name] = module

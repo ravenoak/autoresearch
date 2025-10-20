@@ -1,4 +1,4 @@
-@behavior @user_workflows
+@behavior @user_workflows @legacy_streamlit
 Feature: User workflows
   As a researcher
   I want to query the system via the CLI
