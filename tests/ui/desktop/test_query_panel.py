@@ -41,6 +41,7 @@ def test_query_panel_emits_signal_and_updates_configuration(qtbot) -> None:
     assert panel.reasoning_mode_combo is not None
     assert panel.loops_spinbox is not None
     assert panel.run_button is not None
+    assert panel.cancel_button is not None
 
     panel.reasoning_mode_combo.setCurrentText("direct")
     qtbot.wait(10)
@@ -121,6 +122,9 @@ def test_query_panel_busy_state_disables_controls_and_restores_focus(qtbot) -> N
     assert not panel.reasoning_mode_combo.isEnabled()
     assert not panel.loops_spinbox.isEnabled()
     assert not panel.run_button.isEnabled()
+    assert panel.cancel_button is not None
+    assert panel.cancel_button.isVisible()
+    assert panel.cancel_button.isEnabled()
 
     panel.set_busy(False)
 
@@ -128,5 +132,7 @@ def test_query_panel_busy_state_disables_controls_and_restores_focus(qtbot) -> N
     assert panel.reasoning_mode_combo.isEnabled()
     assert panel.loops_spinbox.isEnabled()
     assert panel.run_button.isEnabled()
+    assert panel.cancel_button is not None
+    assert not panel.cancel_button.isVisible()
 
     qtbot.waitUntil(lambda: panel.loops_spinbox.hasFocus(), timeout=200)
