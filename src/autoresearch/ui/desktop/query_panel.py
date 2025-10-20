@@ -7,12 +7,21 @@ and configuring reasoning parameters.
 
 from __future__ import annotations
 
+import uuid
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QSlider, QSpinBox, QTextEdit, QVBoxLayout, QWidget
+    QComboBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
 try:
@@ -20,6 +29,8 @@ try:
 except ImportError:
     # For standalone development
     ReasoningMode = None
+
+from .telemetry import telemetry
 
 
 class QueryPanel(QWidget):
@@ -35,6 +46,7 @@ class QueryPanel(QWidget):
 
     # Signals
     query_submitted = Signal(str)  # Emitted when user submits a query
+    query_cancelled = Signal(str)  # Emitted when user cancels the active query
 
     def __init__(self) -> None:
         """Initialize the query panel."""
@@ -45,6 +57,7 @@ class QueryPanel(QWidget):
         self.reasoning_mode_combo: Optional[QComboBox] = None
         self.loops_spinbox: Optional[QSpinBox] = None
         self.run_button: Optional[QPushButton] = None
+        self.cancel_button: Optional[QPushButton] = None
 
         # Current values
         self.current_reasoning_mode: str = "balanced"
@@ -53,6 +66,7 @@ class QueryPanel(QWidget):
         # Busy state tracking
         self._is_busy: bool = False
         self._previous_focus_widget: Optional[QWidget] = None
+        self._active_session_id: Optional[str] = None
 
         self.setup_ui()
         self.setup_connections()
@@ -101,7 +115,8 @@ class QueryPanel(QWidget):
 
         self.run_button = QPushButton("Run Query")
         self.run_button.setMinimumHeight(40)
-        self.run_button.setStyleSheet("""
+        self.run_button.setStyleSheet(
+            """
             QPushButton {
                 background-color: #4CAF50;
                 color: white;
@@ -120,8 +135,33 @@ class QueryPanel(QWidget):
                 background-color: #cccccc;
                 color: #666666;
             }
-        """)
+        """
+        )
         button_layout.addWidget(self.run_button)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.setObjectName("query-cancel-button")
+        self.cancel_button.setMinimumHeight(40)
+        self.cancel_button.setVisible(False)
+        self.cancel_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #d32f2f;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #b71c1c;
+            }
+            QPushButton:pressed {
+                background-color: #9a0007;
+            }
+        """
+        )
+        button_layout.addWidget(self.cancel_button)
 
         # Add some spacing
         button_layout.addStretch()
@@ -135,6 +175,8 @@ class QueryPanel(QWidget):
         """Set up signal-slot connections."""
         if self.run_button:
             self.run_button.clicked.connect(self.on_run_clicked)
+        if self.cancel_button:
+            self.cancel_button.clicked.connect(self.on_cancel_clicked)
 
         if self.reasoning_mode_combo:
             self.reasoning_mode_combo.currentTextChanged.connect(self.on_reasoning_mode_changed)
@@ -149,7 +191,26 @@ class QueryPanel(QWidget):
 
         query = self.query_input.toPlainText().strip()
         if query:
+            session_id = uuid.uuid4().hex
+            self._active_session_id = session_id
+            telemetry.emit(
+                "ui.query.submitted",
+                {
+                    "session_id": session_id,
+                    "query_length": len(query),
+                    "reasoning_mode": self.current_reasoning_mode,
+                    "loops": self.current_loops,
+                },
+            )
             self.query_submitted.emit(query)
+
+    def on_cancel_clicked(self) -> None:
+        """Handle cancel button clicks."""
+
+        if not self._active_session_id:
+            return
+
+        self.query_cancelled.emit(self._active_session_id)
 
     def on_reasoning_mode_changed(self, mode: str) -> None:
         """Handle reasoning mode selection change."""
@@ -189,6 +250,10 @@ class QueryPanel(QWidget):
                 self._previous_focus_widget.setFocus(Qt.OtherFocusReason)
             self._previous_focus_widget = None
 
+        if self.cancel_button:
+            self.cancel_button.setVisible(is_busy)
+            self.cancel_button.setEnabled(is_busy)
+
     def is_busy(self) -> bool:
         """Return whether the panel controls are currently disabled."""
 
@@ -203,6 +268,7 @@ class QueryPanel(QWidget):
         """Clear the query input."""
         if self.query_input:
             self.query_input.clear()
+        self.clear_session_context()
 
     def focus_query_input(self) -> None:
         """Set focus to the query input field."""
@@ -222,3 +288,18 @@ class QueryPanel(QWidget):
             )
             if widget is not None
         ]
+
+    def get_active_session_id(self) -> Optional[str]:
+        """Return the active session identifier, if any."""
+
+        return self._active_session_id
+
+    def set_session_identifier(self, session_id: str) -> None:
+        """Assign the active session identifier."""
+
+        self._active_session_id = session_id
+
+    def clear_session_context(self) -> None:
+        """Clear the active session identifier."""
+
+        self._active_session_id = None

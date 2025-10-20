@@ -510,9 +510,20 @@ class AutoresearchMainWindow(QMainWindow):
             _show_information("Query in Progress", wait_notice())
             return
         current_query = query
-        run_query()
+        session_id = _resolve_session_id()
+        _query_started_at = now()
+        telemetry.emit(
+            "ui.query.submitted",
+            {
+                "session_id": session_id,
+                "query_length": len(query),
+                "reasoning_mode": query_panel.current_reasoning_mode,
+                "loops": query_panel.current_loops,
+            },
+        )
+        run_query(session_id)
 
-    function run_query():
+    function run_query(session_id):
         if orchestrator is None or config is None:
             _show_critical("System Error", missing_core_notice())
             return
@@ -523,25 +534,57 @@ class AutoresearchMainWindow(QMainWindow):
             function run():
                 try:
                     result = orchestrator.run_query(current_query, config)
-                    QTimer.singleShot(0, lambda: display_results(result))
+                    QTimer.singleShot(
+                        0, lambda: display_results(result, session_id)
+                    )
                 except Exception as exc:
-                    QTimer.singleShot(0, lambda: display_error(exc))
+                    QTimer.singleShot(
+                        0, lambda: display_error(exc, session_id)
+                    )
 
         QThreadPool.globalInstance().start(QueryWorker())
 
-    function display_results(result):
+    function on_query_cancelled(session_id):
+        if not is_query_running or session_id != _active_session_id:
+            return
+        _leave_query_busy_state()
+        telemetry.emit(
+            "ui.query.cancelled",
+            _build_payload(session_id, status="cancelled"),
+        )
+
+    function display_results(result, session_id):
         _leave_query_busy_state()
         ResultsDisplay.display_results(result)
         update_export_options(result)
         metrics_payload = getattr(result, "metrics", None)
         _latest_metrics_payload = metrics_payload
+        telemetry.emit(
+            "ui.query.completed",
+            _build_payload(
+                session_id,
+                status="completed",
+                extra={"result_has_metrics": bool(metrics_payload)},
+            ),
+        )
         _refresh_status_metrics()  # metrics timer updates status labels
         session_manager.add_session(uuid4(), title_from(current_query))
         _set_status_message("Query completed")
 
-    function display_error(error):
+    function display_error(error, session_id):
         _leave_query_busy_state()
         _show_critical("Query Error", detail(error))
+        telemetry.emit(
+            "ui.query.failed",
+            _build_payload(
+                session_id,
+                status="failed",
+                extra={
+                    "error_type": error.__class__.__name__,
+                    "error_message": str(error),
+                },
+            ),
+        )
         _set_status_message("Query failed")
         _refresh_status_metrics()
 
@@ -555,6 +598,13 @@ class AutoresearchMainWindow(QMainWindow):
 Busy-state transitions live on `AutoresearchMainWindow` via
 `_enter_query_busy_state()` and `_leave_query_busy_state()`. They keep status
 messaging, progress indicators, and `is_query_running` updates coordinated.
+
+Desktop telemetry sends the following analytics events via `telemetry.emit`:
+
+- `ui.query.submitted`: `session_id`, `query_length`, `reasoning_mode`, `loops`.
+- `ui.query.completed`: adds `duration_ms` and `result_has_metrics`.
+- `ui.query.failed`: adds `duration_ms`, `error_type`, `error_message`.
+- `ui.query.cancelled`: includes `duration_ms` alongside the shared fields.
 
 `_apply_configuration_overrides()` copies QueryPanel overrides, then normalises
 the `reasoning_mode` value through `_coerce_reasoning_mode()` so downstream

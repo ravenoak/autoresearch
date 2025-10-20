@@ -11,6 +11,7 @@ import os
 import sys
 import uuid
 from enum import Enum
+from time import monotonic
 from typing import Any, Mapping, Optional
 
 from PySide6.QtCore import Qt, QTimer, Slot
@@ -33,6 +34,7 @@ from .results_display import ResultsDisplay
 from .config_editor import ConfigEditor
 from .session_manager import SessionManager
 from .export_manager import ExportManager
+from .telemetry import telemetry
 
 try:
     # Import core Autoresearch components
@@ -94,6 +96,10 @@ class AutoresearchMainWindow(QMainWindow):
         # Query execution state
         self.current_query: str = ""
         self.is_query_running: bool = False
+        self._active_session_id: Optional[str] = None
+        self._cancelled_session_ids: set[str] = set()
+        self._query_started_at: Optional[float] = None
+        self._active_worker: Any = None
 
         self.setup_ui()
         self.setup_menu_bar()
@@ -230,6 +236,7 @@ class AutoresearchMainWindow(QMainWindow):
         """Set up signal-slot connections."""
         if self.query_panel:
             self.query_panel.query_submitted.connect(self.on_query_submitted)
+            self.query_panel.query_cancelled.connect(self.on_query_cancelled)
         if self.config_editor:
             self.config_editor.configuration_changed.connect(self.on_configuration_changed)
         if self.session_manager:
@@ -495,6 +502,10 @@ class AutoresearchMainWindow(QMainWindow):
             return
 
         self.current_query = query
+        self._query_started_at = monotonic()
+        session_id = self._resolve_session_id()
+        self._active_session_id = session_id
+        self._cancelled_session_ids.discard(session_id)
         self.run_query()
 
     def run_query(self) -> None:
@@ -512,6 +523,8 @@ class AutoresearchMainWindow(QMainWindow):
             self.query_panel.set_busy(True)
 
         self.is_query_running = True
+        if self._active_session_id is None:
+            self._active_session_id = self._resolve_session_id()
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Indeterminate progress
         self._set_status_message("Running query…")
@@ -522,12 +535,13 @@ class AutoresearchMainWindow(QMainWindow):
         from PySide6.QtCore import QThread, QThreadPool, QRunnable, QTimer
 
         class QueryWorker(QRunnable):
-            def __init__(self, orchestrator, query, config, parent):
+            def __init__(self, orchestrator, query, config, parent, session_id):
                 super().__init__()
                 self.orchestrator = orchestrator
                 self.query = query
                 self.config = config
                 self.parent = parent
+                self.session_id = session_id
 
             def run(self):
                 try:
@@ -535,22 +549,42 @@ class AutoresearchMainWindow(QMainWindow):
                     result = self.orchestrator.run_query(self.query, self.config)
 
                     # Update UI on main thread
-                    QTimer.singleShot(0, lambda: self.parent.display_results(result))
+                    QTimer.singleShot(
+                        0,
+                        lambda: self.parent.display_results(result, self.session_id),
+                    )
 
                 except Exception as e:
-                    QTimer.singleShot(0, lambda: self.parent.display_error(e))
+                    QTimer.singleShot(
+                        0,
+                        lambda: self.parent.display_error(e, self.session_id),
+                    )
 
         # Start the query worker
-        worker = QueryWorker(self.orchestrator, self.current_query, self.config, self)
+        worker = QueryWorker(
+            self.orchestrator,
+            self.current_query,
+            self.config,
+            self,
+            self._active_session_id,
+        )
         QThreadPool.globalInstance().start(worker)
+        self._active_worker = worker
 
-    def display_results(self, result: QueryResponse) -> None:
+    def display_results(
+        self, result: QueryResponse, session_id: Optional[str] = None
+    ) -> None:
         """Display query results in the results panel."""
+        if session_id and session_id in self._cancelled_session_ids:
+            self._cancelled_session_ids.discard(session_id)
+            return
+
         self.is_query_running = False
         self.progress_bar.setVisible(False)
 
         if self.query_panel:
             self.query_panel.set_busy(False)
+            self.query_panel.clear_session_context()
 
         if self.results_display:
             self.results_display.display_results(result)
@@ -577,6 +611,14 @@ class AutoresearchMainWindow(QMainWindow):
 
         self.setWindowTitle(f"Autoresearch - {window_title}")
 
+        payload = self._build_query_payload(
+            session_id or self._active_session_id,
+            status="completed",
+            extra={"result_has_metrics": bool(self._latest_metrics_payload)},
+        )
+        telemetry.emit("ui.query.completed", payload)
+        self._finalise_session_state()
+
     def update_export_options(self, result: QueryResponse) -> None:
         """Update export availability based on the latest result."""
 
@@ -594,13 +636,18 @@ class AutoresearchMainWindow(QMainWindow):
 
         self.export_manager.set_available_exports(exports)
 
-    def display_error(self, error: Exception) -> None:
+    def display_error(self, error: Exception, session_id: Optional[str] = None) -> None:
         """Display query error to the user."""
+        if session_id and session_id in self._cancelled_session_ids:
+            self._cancelled_session_ids.discard(session_id)
+            return
+
         self.is_query_running = False
         self.progress_bar.setVisible(False)
 
         if self.query_panel:
             self.query_panel.set_busy(False)
+            self.query_panel.clear_session_context()
 
         error_msg = str(error)
         self._show_critical(
@@ -610,6 +657,38 @@ class AutoresearchMainWindow(QMainWindow):
 
         self._set_status_message("Query failed")
         self._refresh_status_metrics()
+        payload = self._build_query_payload(
+            session_id or self._active_session_id,
+            status="failed",
+            extra={
+                "error_type": error.__class__.__name__,
+                "error_message": error_msg,
+            },
+        )
+        telemetry.emit("ui.query.failed", payload)
+        self._finalise_session_state()
+
+    def on_query_cancelled(self, session_id: str) -> None:
+        """Handle cancellation requests from the query panel."""
+
+        if not self.is_query_running:
+            return
+
+        if self._active_session_id and session_id != self._active_session_id:
+            return
+
+        self._cancelled_session_ids.add(session_id)
+        self.is_query_running = False
+        self.progress_bar.setVisible(False)
+
+        if self.query_panel:
+            self.query_panel.set_busy(False)
+            self.query_panel.clear_session_context()
+
+        self._set_status_message("Query cancelled")
+        payload = self._build_query_payload(session_id, status="cancelled")
+        telemetry.emit("ui.query.cancelled", payload)
+        self._finalise_session_state()
 
     def closeEvent(self, event) -> None:
         """Handle window close event."""
@@ -629,6 +708,63 @@ class AutoresearchMainWindow(QMainWindow):
         if self.metrics_timer:
             self.metrics_timer.stop()
         event.accept()
+
+    def _resolve_session_id(self) -> str:
+        """Return the session identifier for the next query run."""
+
+        if self.query_panel:
+            existing = self.query_panel.get_active_session_id()
+            if existing:
+                return existing
+
+        session_id = uuid.uuid4().hex
+        if self.query_panel:
+            self.query_panel.set_session_identifier(session_id)
+        return session_id
+
+    def _compute_duration_ms(self) -> Optional[float]:
+        """Compute the elapsed runtime for the active query."""
+
+        if self._query_started_at is None:
+            return None
+
+        elapsed_ms = (monotonic() - self._query_started_at) * 1000
+        return max(0.0, elapsed_ms)
+
+    def _build_query_payload(
+        self,
+        session_id: Optional[str],
+        *,
+        status: str,
+        extra: Optional[Mapping[str, Any]] = None,
+    ) -> dict[str, Any]:
+        """Compose a telemetry payload for query lifecycle events."""
+
+        payload: dict[str, Any] = {
+            "session_id": session_id,
+            "status": status,
+            "query_length": len(self.current_query.strip()),
+        }
+
+        if self.query_panel:
+            payload["reasoning_mode"] = self.query_panel.current_reasoning_mode
+            payload["loops"] = self.query_panel.current_loops
+
+        duration_ms = self._compute_duration_ms()
+        if duration_ms is not None:
+            payload["duration_ms"] = duration_ms
+
+        if extra:
+            payload.update(extra)
+
+        return {key: value for key, value in payload.items() if value is not None}
+
+    def _finalise_session_state(self) -> None:
+        """Reset session bookkeeping after a terminal query state."""
+
+        self._active_session_id = None
+        self._query_started_at = None
+        self._active_worker = None
 
     def _start_metrics_timer(self) -> None:
         """Start the timer responsible for refreshing status metrics."""

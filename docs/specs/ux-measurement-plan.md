@@ -8,15 +8,20 @@ experience goals.
 
 ## Instrumentation Overview
 
-- **Event routing**: Telemetry funnels through the existing analytics sink used
-  by the desktop extra. Signals are emitted via `QLoggingCategory` streams and
-  forwarded to `analytics.dispatch_event`.
-- **Component hooks**: Key PySide6 widgets emit structured events, including:
-  - `QLineEdit` query submissions tagged `ui.query.submitted`.
-  - `QDockWidget` toggles tagged `ui.progressive_disclosure` with open/close
-    payloads.
-  - `QMdiSubWindow` creation tagged `ui.window.spawned` with session identifiers.
-  - `QWizard` onboarding steps tagged `ui.migration_nudge.step_completed`.
+- **Event routing**: Desktop telemetry publishes through a shared
+  `QLoggingCategory` and forwards payloads to `analytics.dispatch_event`. When
+  analytics is unavailable the helper silently degrades to logging only.
+- **Component hooks**: Query lifecycle instrumentation now emits:
+  - `ui.query.submitted` from `QueryPanel.on_run_clicked` with
+    `session_id`, `query_length`, `reasoning_mode`, and `loops`.
+  - `ui.query.completed` from `AutoresearchMainWindow.display_results` with the
+    shared fields plus `duration_ms` and `result_has_metrics`.
+  - `ui.query.failed` from `AutoresearchMainWindow.display_error` with
+    `duration_ms`, `error_type`, and `error_message`.
+  - `ui.query.cancelled` from the cancellation handler with
+    `duration_ms` alongside the shared fields.
+- **Component hooks (future)**: Dock toggles and wizard instrumentation remain
+  targeted for later phases as originally specified.
 - **Test observability**: CI captures Qt log categories and telemetry payloads
   alongside `pytest` artifacts to validate entry/exit conditions.
 

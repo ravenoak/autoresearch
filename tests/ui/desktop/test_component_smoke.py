@@ -37,8 +37,24 @@ from autoresearch.ui.desktop import (
     SessionManager,
 )
 from autoresearch.ui.desktop.results_display import ResultsDisplay
+from autoresearch.ui.desktop.telemetry import get_dispatcher, set_dispatcher
 
 pytestmark = pytest.mark.requires_ui
+
+
+@pytest.fixture
+def telemetry_events() -> list[tuple[str, Mapping[str, Any]]]:
+    original_dispatcher = get_dispatcher()
+    captured: list[tuple[str, Mapping[str, Any]]] = []
+
+    def _collector(event: str, payload: Mapping[str, Any]) -> None:
+        captured.append((event, payload))
+
+    set_dispatcher(_collector)
+
+    yield captured
+
+    set_dispatcher(original_dispatcher)
 
 
 def test_knowledge_graph_view_smoke(qtbot) -> None:
@@ -272,3 +288,171 @@ This is *important* information.
     assert html.count("<li>") == 2
     assert "<em>important</em>" in html
     assert "<script>" not in html
+
+
+def _install_instant_worker(monkeypatch: pytest.MonkeyPatch) -> None:
+    class ImmediateThreadPool:
+        def start(self, worker) -> None:
+            worker.run()
+
+    monkeypatch.setattr(
+        QtCore.QThreadPool,
+        "globalInstance",
+        staticmethod(lambda: ImmediateThreadPool()),
+    )
+
+    def immediate_single_shot(_interval: int, receiver, slot=None) -> None:
+        callback = slot or receiver
+        callback()
+
+    monkeypatch.setattr(QtCore.QTimer, "singleShot", staticmethod(immediate_single_shot))
+
+
+def _install_deferred_worker(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
+    class DeferredThreadPool:
+        def __init__(self) -> None:
+            self.worker = None
+
+        def start(self, worker) -> None:
+            self.worker = worker
+
+    pool = DeferredThreadPool()
+
+    monkeypatch.setattr(
+        QtCore.QThreadPool,
+        "globalInstance",
+        staticmethod(lambda: pool),
+    )
+
+    def immediate_single_shot(_interval: int, receiver, slot=None) -> None:
+        callback = slot or receiver
+        callback()
+
+    monkeypatch.setattr(QtCore.QTimer, "singleShot", staticmethod(immediate_single_shot))
+    return {"pool": pool}
+
+
+def _install_stub_configuration(monkeypatch: pytest.MonkeyPatch, *, raise_error: bool = False) -> None:
+    class DummyLoader:
+        def load_config(self) -> ConfigModel:
+            return ConfigModel()
+
+    class DummyOrchestrator:
+        def run_query(self, query: str, config: ConfigModel) -> QueryResponse:
+            if raise_error:
+                raise RuntimeError("boom")
+            return QueryResponse(
+                query=query,
+                answer="ok",
+                citations=[],
+                reasoning=[],
+                metrics={"tokens": {"total": 3}},
+                warnings=[],
+                claim_audits=[],
+                task_graph=None,
+                react_traces=[],
+                state_id=None,
+            )
+
+    monkeypatch.setattr(main_window_module, "ConfigLoader", DummyLoader)
+    monkeypatch.setattr(main_window_module, "Orchestrator", DummyOrchestrator)
+
+
+def test_main_window_emits_completed_telemetry(
+    qtbot, monkeypatch: pytest.MonkeyPatch, telemetry_events
+) -> None:
+    _install_stub_configuration(monkeypatch)
+    _install_instant_worker(monkeypatch)
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.query_panel is not None
+    window.query_panel.set_query_text("Telemetry flow")
+    window.query_panel.on_run_clicked()
+
+    qtbot.waitUntil(
+        lambda: any(event == "ui.query.completed" for event, _ in telemetry_events),
+        timeout=500,
+    )
+
+    submitted_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.submitted"
+    )
+    completed_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.completed"
+    )
+
+    assert submitted_payload["session_id"] == completed_payload["session_id"]
+    assert completed_payload["query_length"] == len("Telemetry flow")
+    assert completed_payload["duration_ms"] >= 0
+
+
+def test_main_window_emits_failed_telemetry(
+    qtbot, monkeypatch: pytest.MonkeyPatch, telemetry_events
+) -> None:
+    _install_stub_configuration(monkeypatch, raise_error=True)
+    _install_instant_worker(monkeypatch)
+    monkeypatch.setenv("AUTORESEARCH_SUPPRESS_DIALOGS", "1")
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.query_panel is not None
+    window.query_panel.set_query_text("Failure flow")
+    window.query_panel.on_run_clicked()
+
+    qtbot.waitUntil(
+        lambda: any(event == "ui.query.failed" for event, _ in telemetry_events),
+        timeout=500,
+    )
+
+    submitted_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.submitted"
+    )
+    failed_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.failed"
+    )
+
+    assert submitted_payload["session_id"] == failed_payload["session_id"]
+    assert failed_payload["status"] == "failed"
+    assert failed_payload["error_type"] == "RuntimeError"
+
+
+def test_main_window_emits_cancelled_telemetry(
+    qtbot, monkeypatch: pytest.MonkeyPatch, telemetry_events
+) -> None:
+    _install_stub_configuration(monkeypatch)
+    pool_ref = _install_deferred_worker(monkeypatch)
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.query_panel is not None
+    window.query_panel.set_query_text("Cancellation flow")
+    window.query_panel.on_run_clicked()
+
+    qtbot.waitUntil(lambda: pool_ref["pool"].worker is not None, timeout=500)
+    qtbot.waitUntil(lambda: window.query_panel.cancel_button.isVisible(), timeout=500)
+    qtbot.mouseClick(window.query_panel.cancel_button, Qt.LeftButton)
+
+    qtbot.waitUntil(
+        lambda: any(event == "ui.query.cancelled" for event, _ in telemetry_events),
+        timeout=500,
+    )
+
+    submitted_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.submitted"
+    )
+    cancelled_payload = next(
+        payload for event, payload in telemetry_events if event == "ui.query.cancelled"
+    )
+
+    assert submitted_payload["session_id"] == cancelled_payload["session_id"]
+    assert cancelled_payload["status"] == "cancelled"
+
+    worker = pool_ref["pool"].worker
+    assert worker is not None
+    worker.run()
+
+    assert not any(event == "ui.query.completed" for event, _ in telemetry_events)
