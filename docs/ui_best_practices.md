@@ -1,6 +1,8 @@
 # UI/UX Best Practices
 
-This document provides practical guidance for implementing UI/UX features in Autoresearch, focusing on when to use specific patterns and how to maintain consistency.
+This document provides practical guidance for implementing UI/UX features in
+Autoresearch, focusing on when to use specific patterns and how to maintain
+consistency.
 
 ## When to Use Different Output Formats
 
@@ -118,7 +120,7 @@ Feature: New Component Functionality
 ### Error Message Guidelines
 
 1. **Be Specific**: Clearly state what went wrong
-2. **Provide Context**: Include relevant details about when/where the error occurred
+2. **Provide Context**: Include where and when the error occurred
 3. **Offer Solutions**: Suggest specific actions the user can take
 4. **Include Examples**: Show correct usage when applicable
 5. **Maintain Consistency**: Use the same format across all interfaces
@@ -127,11 +129,11 @@ Feature: New Component Functionality
 
 | Error Type | Example Message | Suggested Action |
 |------------|----------------|------------------|
-| Configuration | "Invalid log format: 'invalid'" | "Valid options: json, console, auto" |
-| Network | "Connection failed to LM Studio" | "Check that LM Studio is running" |
+| Configuration | "Invalid log format" | "Valid options: json/console/auto" |
+| Network | "Connection failed to LM Studio" | "Confirm LM Studio is running" |
 | Validation | "Query cannot be empty" | "Provide a non-empty query string" |
 | Permission | "Access denied to database" | "Check file permissions" |
-| Resource | "Out of memory during processing" | "Reduce query complexity or increase memory" |
+| Resource | "Out of memory" | "Trim query size or add memory" |
 
 ### Error Code Standards
 
@@ -152,18 +154,47 @@ Feature: New Component Functionality
 - Skip links for main content
 
 **Implementation**:
+Use a dedicated `DepthSelector` (see Integrating Shared UX Standards in Qt).
 ```python
-# Ensure focusable elements have proper tab order
-elements = [
-    "query_input",
-    "depth_selector", 
-    "format_selector",
-    "submit_button"
-]
+from PySide6.QtGui import QKeySequence
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QLineEdit,
+    QPushButton,
+    QShortcut,
+    QWidget,
+)
+from autoresearch.output_format import OutputDepth
 
-# Add keyboard shortcuts for common actions
-if key_pressed == "ctrl+s":
-    save_results()
+
+class QueryPanel(QWidget):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.query_input = QLineEdit(self)
+        self.depth_selector = DepthSelector(self)
+        self.submit_button = QPushButton("Run Query", self)
+
+        layout = QFormLayout(self)
+        layout.addRow("Query", self.query_input)
+        layout.addRow("Depth", self.depth_selector)
+        layout.addRow(self.submit_button)
+
+        self.setTabOrder(self.query_input, self.depth_selector)
+        self.setTabOrder(self.depth_selector, self.submit_button)
+
+        save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        save_shortcut.activated.connect(self.save_results)
+        self.submit_button.clicked.connect(self.run_query)
+        self.depth_selector.depthChanged.connect(self.update_depth_hint)
+
+    def save_results(self) -> None:
+        ...
+
+    def run_query(self) -> None:
+        ...
+
+    def update_depth_hint(self, depth: OutputDepth) -> None:
+        ...
 ```
 
 ### Screen Reader Support
@@ -176,17 +207,27 @@ if key_pressed == "ctrl+s":
 
 **Implementation**:
 ```python
-# Use semantic HTML elements
-st.markdown("<h1>Query Results</h1>", unsafe_allow_html=True)
+from PySide6.QtGui import QAccessible
+from PySide6.QtWidgets import QLabel
 
-# Provide alt text for images
-st.image("chart.png", caption="Query performance chart")
+result_header = QLabel("Query Results", parent)
+result_header.setAccessibleName("Query results heading")
+result_header.setAccessibleDescription(
+    "Summary of the current query execution."
+)
 
-# Add ARIA labels for complex widgets
-st.selectbox(
-    "Select depth level",
-    options=["TLDR", "Concise", "Standard", "Trace"],
-    key="depth_selector"
+chart_view = PerformanceChart(parent)
+chart_view.setAccessibleName("Query performance chart")
+chart_view.setAccessibleDescription(
+    "Bar chart comparing response times across depth levels."
+)
+
+depth_selector.setAccessibleName("Depth level")
+depth_selector.setAccessibleDescription(
+    "Choose TL;DR, Concise, Standard, or Trace summarization depth."
+)
+depth_selector.currentIndexChanged.connect(
+    lambda _: QAccessible.updateAccessibility()
 )
 ```
 
@@ -199,14 +240,36 @@ st.selectbox(
 
 **Implementation**:
 ```python
-# Use color palettes that meet contrast requirements
-success_color = "#28a745"  # Meets 4.5:1 ratio
-warning_color = "#ffc107"   # Meets 4.5:1 ratio
-error_color = "#dc3545"     # Meets 4.5:1 ratio
+from PySide6.QtGui import QColor, QPalette
 
-# Provide text alternatives
-if color_indicates_error:
-    st.error("Error: " + error_message)  # Text + color
+palette = window.palette()
+palette.setColor(QPalette.WindowText, QColor("#1b1b1f"))
+palette.setColor(QPalette.Highlight, QColor("#1c7c54"))
+palette.setColor(QPalette.HighlightedText, QColor("#ffffff"))
+window.setPalette(palette)
+
+window.setStyleSheet(
+    """
+    QPushButton.success {
+        background-color: #1c7c54;
+        color: #ffffff;
+    }
+    QPushButton.warning {
+        background-color: #b38728;
+        color: #101010;
+    }
+    QPushButton.error {
+        background-color: #a12830;
+        color: #ffffff;
+    }
+    """
+)
+
+status_label.setText(f"Error: {error_message}")
+status_label.setProperty("state", "error")
+status_label.setAccessibleDescription(
+    "Error message with high-contrast styling."
+)
 ```
 
 ## Performance Optimization
@@ -254,14 +317,37 @@ def process_large_dataset(data: list) -> Iterator[dict]:
 
 **Implementation**:
 ```python
-# Show progress for long operations
-with st.spinner("Processing query..."):
-    result = run_query(query)
+from PySide6.QtCore import QObject, QThread, Signal
 
-# Allow cancellation
-if st.button("Cancel"):
-    cancel_operation()
-    st.info("Operation cancelled")
+
+class QueryWorker(QObject):
+    finished = Signal(QueryResult)
+    progress = Signal(int)
+    failed = Signal(str)
+
+    def __init__(self, query: str) -> None:
+        super().__init__()
+        self._query = query
+
+    def run(self) -> None:
+        try:
+            for percent in execute_query(self._query):
+                self.progress.emit(percent)
+            self.finished.emit(load_results())
+        except QueryError as exc:
+            self.failed.emit(str(exc))
+
+
+worker = QueryWorker(query)
+thread = QThread(window)
+worker.moveToThread(thread)
+thread.started.connect(worker.run)
+worker.finished.connect(show_results)
+worker.progress.connect(progress_bar.setValue)
+worker.failed.connect(show_error)
+
+cancel_button.clicked.connect(thread.requestInterruption)
+thread.start()
 ```
 
 ## Cross-Interface Consistency
@@ -320,6 +406,73 @@ PUT /api/v1/config
   }
 }
 ```
+
+## Integrating Shared UX Standards in Qt
+
+### Progressive Disclosure with Depth Levels
+
+The CLI, API, and PySide6 surfaces must expose the same progressive
+disclosure depths so users always know how much detail to expect. Reuse the
+enumerations in `autoresearch.output_format` instead of redefining widget
+options.
+
+```python
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QComboBox, QWidget
+from autoresearch.output_format import OutputDepth
+
+
+class DepthSelector(QComboBox):
+    depthChanged = Signal(OutputDepth)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        for depth in OutputDepth:
+            self.addItem(depth.label, userData=depth)
+        self.currentIndexChanged.connect(self._emit_depth)
+
+    def _emit_depth(self, index: int) -> None:
+        depth = self.itemData(index)
+        if depth is not None:
+            self.depthChanged.emit(depth)
+```
+
+Use the shared depth metadata to progressively disclose panels and hints.
+
+```python
+from PySide6.QtWidgets import QWidget
+from autoresearch.output_format import (
+    OutputDepth,
+    describe_depth_features,
+)
+
+
+class DepthAwarePanel(QWidget):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._features = describe_depth_features()
+        self.claim_panel.hide()
+        self.trace_panel.hide()
+        self.graph_panel.hide()
+        self.knowledge_panel.hide()
+
+    def bind_selector(self, selector: DepthSelector) -> None:
+        selector.depthChanged.connect(self.apply_depth)
+
+    def apply_depth(self, depth: OutputDepth) -> None:
+        features = self._features[depth]
+        self.claim_panel.setVisible(features["claim_audits"])
+        self.trace_panel.setVisible(features["full_trace"])
+        self.graph_panel.setVisible(features["graph_exports"])
+        self.knowledge_panel.setVisible(features["knowledge_graph"])
+```
+
+#### Operational Considerations
+
+- Mirror CLI microcopy when displaying depth labels and tooltips.
+- Emit telemetry whenever a depth change occurs to keep analytics aligned.
+- Provide contextual help (e.g., "Trace depth includes raw payloads") by
+  reading `OutputDepth.description`.
 
 ## Testing Best Practices
 
@@ -453,8 +606,50 @@ if user_consent_given():
 - Test thoroughly before deployment
 - Document all changes and rationale
 
+## Appendix A: Streamlit Guidance (Deprecated)
+
+Streamlit examples remain for legacy maintenance only. Review the
+[PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md) for
+sunset milestones before touching these snippets.
+
+```python
+# Legacy accessibility hook
+st.markdown("<h1>Query Results</h1>", unsafe_allow_html=True)
+st.image("chart.png", caption="Query performance chart")
+depth = st.selectbox(
+    "Select depth level",
+    options=["TLDR", "Concise", "Standard", "Trace"],
+    key="depth_selector",
+)
+```
+
+```python
+# Legacy color messaging
+success_color = "#28a745"
+warning_color = "#ffc107"
+error_color = "#dc3545"
+
+if color_indicates_error:
+    st.error(f"Error: {error_message}")
+```
+
+```python
+# Legacy long-running task handling
+with st.spinner("Processing query..."):
+    result = run_query(query)
+
+if st.button("Cancel"):
+    cancel_operation()
+    st.info("Operation cancelled")
+```
+
 ## Conclusion
 
-These best practices provide a foundation for consistent, accessible, and maintainable UI/UX implementation in Autoresearch. By following these guidelines, developers can create interfaces that are both functional and delightful to use while ensuring long-term maintainability and accessibility.
+These best practices provide a foundation for consistent, accessible, and
+maintainable UI/UX implementation in Autoresearch. By following these
+guidelines, developers can create interfaces that are both functional and
+delightful to use while ensuring long-term maintainability and accessibility.
 
-Remember: Good UI/UX is iterative. Start with core functionality, gather feedback, and continuously improve based on real user needs and usage patterns.
+Remember: Good UI/UX is iterative. Start with core functionality, gather
+feedback, and continuously improve based on real user needs and usage
+patterns.
