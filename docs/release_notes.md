@@ -32,6 +32,13 @@ Dependency pins: `fastapi>=0.116.1` and `slowapi==0.1.9`.
 - **Vector Search**: DuckDB VSS extension integration for semantic search capabilities.
 - **Document Processing**: PDF, DOCX, and web content parsing for comprehensive research inputs.
 
+### Documentation updates
+
+- Reference the [Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md)
+  in every release summary that modifies UI access paths.
+- Link to the [Streamlit refactor plan](specs/streamlit-refactor-plan.md) when
+  communicating support windows or archive milestones.
+
 ### Known Limitations
 
 - Fresh environments omit the Go Task CLI, so `task --version` reports

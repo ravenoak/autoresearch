@@ -35,25 +35,65 @@ communicating with users, and archiving Streamlit assets.
 The following milestones mirror the PySide6 migration phases to ensure a
 coordinated transition:
 
-1. **Phase 1 – PySide6 POC Implementation (2 weeks)**
+1. **Phase 1 – PySide6 POC Implementation (2 weeks)** (targets
+   [0.1.0a1][release-0-1-0a1])
    - Announce limited support status for Streamlit in release notes.
    - Freeze new feature work on Streamlit modules.
-2. **Phase 2 – Feature Parity Implementation (6 weeks)**
+   - **Checklist**
+     - [ ] Communication: Publish Streamlit support downgrade in release notes
+       and the champion newsletter.
+     - [ ] CLI gating: Capture `AUTORESEARCH_ENABLE_STREAMLIT` launch logs in
+       the Phase 1 QA report.
+     - [ ] Archive prep: Inventory Streamlit-only assets earmarked for Phase 5
+       migration.
+2. **Phase 2 – Feature Parity Implementation (6 weeks)** (targets the
+   [0.1.0 beta checkpoint][release-0-1-0-beta])
    - Maintain parity tracking dashboard comparing Streamlit and PySide6.
    - Schedule end-user testing sessions to validate PySide6 coverage.
-3. **Phase 3 – Professional Features (4 weeks)**
+   - **Checklist**
+     - [ ] Communication: Circulate the parity dashboard update and migration
+       FAQ preview.
+     - [ ] CLI gating: Verify opt-in gating across supported shells and record
+       evidence in the CLI validation spreadsheet.
+     - [ ] Archive prep: Stage Streamlit analytics bundles for read-only
+       archival in `archive/streamlit/`.
+3. **Phase 3 – Professional Features (4 weeks)** (targets the
+   [0.1.0 release candidate build][release-0-1-0-rc])
    - Publish migration FAQ and collect final feedback from Streamlit power
      users.
    - Begin tagging Streamlit issues with `sunset` label for weekly review.
-4. **Phase 4 – Testing and Quality Assurance (3 weeks)**
+   - **Checklist**
+     - [ ] Communication: Deliver customer webinar recap and distribute the
+       PySide6 migration worksheet.
+     - [ ] CLI gating: Confirm release candidate builds log deprecation
+       warnings when the flag is unset.
+     - [ ] Archive prep: Export Streamlit issue labels and attach them to the
+       archive manifest.
+4. **Phase 4 – Testing and Quality Assurance (3 weeks)** (targets the
+   [0.1.0 general availability milestone][release-0-1-0-ga])
    - Deliver release candidate of PySide6 client and extend legacy support by
      six weeks for critical fixes only.
    - Confirm availability of the migration guide and hands-on onboarding
      sessions.
-5. **Phase 5 – Deprecation and Removal (2 weeks)**
+   - **Checklist**
+     - [ ] Communication: Include PySide6 readiness notes and Streamlit sunset
+       reminders in release candidate communications.
+     - [ ] CLI gating: Run regression verifying exit messaging when the flag is
+       absent and store the transcript in the QA matrix.
+     - [ ] Archive prep: Transfer Streamlit documentation PDFs into the
+       release archive staging bucket.
+5. **Phase 5 – Deprecation and Removal (2 weeks)** (targets the
+   [0.1.1 maintenance release][release-0-1-1])
    - Mark Streamlit interface as deprecated in all documentation.
    - Announce final support date (two releases after Phase 5 completes) and
      outline archival schedule.
+   - **Checklist**
+     - [ ] Communication: Publish sunset closure note referencing the final
+       migration guide update.
+     - [ ] CLI gating: Confirm the default CLI path blocks launch and links to
+       the archive notice.
+     - [ ] Archive prep: Finalize asset moves and sign off on the archive
+       manifest with Change Champions.
 
 ## Archival Steps
 
@@ -82,3 +122,8 @@ windows, and actionable migration paths while the PySide6 experience becomes
 the default interface.
 
 [pyside6-timeline]: ../pyside6_migration_plan.md#migration-timeline
+[release-0-1-0a1]: ../../release_notes.md#010a1-planned
+[release-0-1-0-beta]: ../../release_plan.md#milestones
+[release-0-1-0-rc]: ../../release_plan.md#milestones
+[release-0-1-0-ga]: ../../release_plan.md#milestones
+[release-0-1-1]: ../../release_plan.md#milestones

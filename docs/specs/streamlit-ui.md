@@ -41,6 +41,31 @@ continue to load; this scope is frozen and does not expand.
 - Encourage teams to move to the PySide6 workflow by default and reserve the
   environment variable opt-in for temporary compatibility.
 
+## QA Matrix
+
+| Milestone | Validation | Evidence |
+| --- | --- | --- |
+| Phase 1 / 0.1.0a1 | Toggle `AUTORESEARCH_ENABLE_STREAMLIT` and confirm |
+| | CLI launches only when the flag is truthy. | QA lead:
+| | Capture terminal log excerpt showing legacy launch. | L. Singh |
+| | | QA log: `qa/streamlit/phase1.md` |
+| Phase 2 / 0.1.0 beta | Re-run flag gating across supported shells. |
+| | Validate warning copy when the flag is absent. | QA lead:
+| | Attach sanitized CLI session output. | A. Chen |
+| | | QA log: `qa/streamlit/phase2.md` |
+| Phase 3 / 0.1.0 RC | Exercise legacy launch script with telemetry |
+| | opt-in. Confirm warning banner renders in launch UI. | QA lead:
+| | Store screenshot and CLI transcript. | R. Flores |
+| | | QA log: `qa/streamlit/phase3.md` |
+| Phase 4 / 0.1.0 GA | Smoke test CLI without flag and verify exit |
+| | messaging matches migration guide language. | QA lead:
+| | Archive log bundle with timestamp. | M. Ortiz |
+| | | QA log: `qa/streamlit/phase4.md` |
+| Phase 5 / 0.1.1 | Confirm CLI blocks launch by default and links |
+| | to archive notice. Validate warning persists in docs. | QA lead:
+| | Record final launch attempt and doc screenshot. | D. Patel |
+| | | QA log: `qa/streamlit/phase5.md` |
+
 ## Frozen Scope and Responsibilities
 
 - Accept only patches that address security issues, stability risks, or
