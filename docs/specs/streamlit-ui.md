@@ -2,53 +2,53 @@
 
 ## Overview
 
-The Streamlit interface is now in maintenance-only mode while the project
-completes the PySide6 migration. Support is limited to preserving the existing
-entry points and regression-tested behaviors documented below. New feature
-requests, UI experiments, or integrations must route through the PySide6
-desktop client initiative; see the [Streamlit support sunset plan][sunset-plan]
-for schedule details and migration guidance.
+The Streamlit interface is frozen in maintenance-only mode while the project
+completes the PySide6 migration. Supported work is limited to preserving the
+legacy launch path, configuration switches, and core visualization widgets
+already in production. New feature requests, UI changes, and integration work
+must target the PySide6 desktop client; see the [Streamlit refactor plan][plan]
+for the deprecation schedule and migration milestones.
 
 ## Supported Surface Area
 
-- **Launcher glue**: `launch()` and related helpers exposed in
-  `src/autoresearch/streamlit_ui.py` remain callable to unblock automation
-  scripts that hardcode Streamlit entry points.
-- **Telemetry toggles**: The opt-in flags and configuration wiring required to
-  disable analytics for regulated environments continue to function.
-- **Data preview widgets**: Existing summary tables, trace viewers, and status
-  panels render with their current layout and styling.
+- **Launcher glue**: `launch()` and related helpers in
+  `src/autoresearch/streamlit_ui.py` remain callable for existing automation.
+- **Telemetry toggles**: Opt-in analytics flags continue to respect regulated
+  environment requirements.
+- **Data preview widgets**: Current summary tables, trace viewers, and status
+  panels render without layout or styling changes.
 
-These components are frozen; we do not expand their scope beyond compatibility
-and defect corrections.
+These behaviors are regression-tested only to ensure compatibility with
+archived deployments; their scope does not expand.
 
 ## Frozen Scope and Responsibilities
 
-- We accept only security patches, crash fixes, and regressions blocking
-  supported deployments.
-- Behavioral changes must be justified as part of sunset compliance (for
-  example, deprecation warnings or migration affordances).
-- Any enhancements or UX revisions must target the PySide6 desktop client and
-  reference `docs/specs/pyside-desktop.md` instead of this document.
+- Accept only fixes for security issues, crashes, or regressions affecting the
+  supported surface area.
+- Permit behavioral changes solely when required for the sunset plan (for
+  example, new deprecation warnings or migration affordances).
+- Route enhancements, UX revisions, and integration work through the PySide6
+  client documented in [docs/specs/pyside-desktop.md][pyside6].
 
 ## Traceability
 
 - **Modules (archived legacy coverage)**
-  - [src/autoresearch/streamlit_ui.py][m1]
+  - [src/autoresearch/streamlit_ui.py][module]
 - **Tests (archived legacy suite)**
-  - [tests/unit/legacy/test_streamlit_ui_helpers.py][t1]
+  - [tests/unit/legacy/test_streamlit_ui_helpers.py][tests]
 - **Forward development path**
-  - [docs/specs/pyside-desktop.md][pyside6]
+  - Streamlit successors must reference [docs/specs/pyside-desktop.md][pyside6]
+    for new work.
 
 ## Known Deviation
 
 !!! warning "Security and stability fixes only"
-    Streamlit support follows the deprecation timeline in the
-    [Streamlit support sunset plan][sunset-plan]. We accept security and
-    stability patches exclusively; feature-level work must target the PySide6
-    surface area before the final removal milestone.
+    The Streamlit UI stays in maintenance until its removal milestone in the
+    [Streamlit refactor plan][plan]. Only security or stability patches are
+    accepted; all feature or UX work must proceed through the PySide6 desktop
+    surface area.
 
-[sunset-plan]: ./streamlit-refactor-plan.md
-[m1]: ../../src/autoresearch/streamlit_ui.py
-[t1]: ../../tests/unit/legacy/test_streamlit_ui_helpers.py
+[plan]: ./streamlit-refactor-plan.md
+[module]: ../../src/autoresearch/streamlit_ui.py
+[tests]: ../../tests/unit/legacy/test_streamlit_ui_helpers.py
 [pyside6]: ./pyside-desktop.md
