@@ -21,7 +21,12 @@ from urllib.parse import urlparse
 from markdown import markdown as markdown_to_html
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
-from PySide6.QtWebEngineWidgets import QWebEngineView
+
+try:
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+except ImportError:  # pragma: no cover - import guard exercised in tests via monkeypatch
+    QWebEngineView = None  # type: ignore[assignment]
+
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -29,6 +34,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QTabWidget,
+    QTextBrowser,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -66,7 +72,8 @@ class ResultsDisplay(QWidget):
 
         # UI components
         self.tab_widget: Optional[QTabWidget] = None
-        self.answer_view: Optional[QWebEngineView] = None
+        self.answer_view: Optional[QWidget] = None
+        self.answer_fallback_label: Optional[QLabel] = None
         self.knowledge_graph_view: Optional[KnowledgeGraphView] = None
         self.trace_view: Optional[QTextEdit] = None
         self.metrics_dashboard: Optional[MetricsDashboard] = None
@@ -74,6 +81,9 @@ class ResultsDisplay(QWidget):
         self.citations_placeholder: Optional[QLabel] = None
         self.open_source_button: Optional[QPushButton] = None
         self.copy_source_button: Optional[QPushButton] = None
+
+        # Runtime feature flags
+        self._web_engine_available = QWebEngineView is not None
 
         # Current result
         self.current_result: Optional[QueryResponse] = None
@@ -88,10 +98,29 @@ class ResultsDisplay(QWidget):
         self.tab_widget = QTabWidget()
 
         # Answer tab
-        self.answer_view = QWebEngineView()
+        if self._web_engine_available and QWebEngineView is not None:
+            self.answer_view = QWebEngineView()
+        else:
+            fallback_label = QLabel(
+                "Qt WebEngine is unavailable. Rendering answers with a simplified "
+                "text viewer. Install PySide6-WebEngine for the rich preview."
+            )
+            fallback_label.setWordWrap(True)
+            fallback_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            fallback_label.setObjectName("results-display-webengine-notice")
+            self.answer_fallback_label = fallback_label
+
+            fallback_browser = QTextBrowser()
+            fallback_browser.setOpenExternalLinks(True)
+            fallback_browser.setObjectName("results-display-answer-fallback")
+            self.answer_view = fallback_browser
+
         answer_tab = QWidget()
         answer_layout = QVBoxLayout(answer_tab)
-        answer_layout.addWidget(self.answer_view)
+        if self.answer_fallback_label is not None:
+            answer_layout.addWidget(self.answer_fallback_label)
+        if self.answer_view is not None:
+            answer_layout.addWidget(self.answer_view)
         self.tab_widget.addTab(answer_tab, "Answer")
 
         # Citations tab
@@ -245,7 +274,7 @@ class ResultsDisplay(QWidget):
             </html>
             """
 
-            self.answer_view.setHtml(html_content)
+            self._set_answer_html(html_content)
 
         except Exception as e:
             error_html = f"""
@@ -256,7 +285,22 @@ class ResultsDisplay(QWidget):
             </body>
             </html>
             """
-            self.answer_view.setHtml(error_html)
+            self._set_answer_html(error_html)
+
+    def _set_answer_html(self, html_content: str) -> None:
+        """Render HTML content on the active answer widget."""
+
+        if not self.answer_view:
+            return
+
+        set_html = getattr(self.answer_view, "setHtml", None)
+        if callable(set_html):
+            set_html(html_content)
+            return
+
+        set_text = getattr(self.answer_view, "setText", None)
+        if callable(set_text):
+            set_text(html_content)
 
     def display_citations(self, result: QueryResponse) -> None:
         """Display citation entries and enable source management controls."""

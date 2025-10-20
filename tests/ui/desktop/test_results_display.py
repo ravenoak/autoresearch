@@ -21,13 +21,10 @@ pytest.importorskip(
     reason="PySide6 is required for desktop UI tests",
     exc_type=ImportError,
 )
-pytest.importorskip(
-    "PySide6.QtWebEngineWidgets",
-    reason="Qt WebEngine is required for results display tests",
-    exc_type=ImportError,
-)
 
 Qt = QtCore.Qt
+
+from PySide6.QtWidgets import QTextBrowser
 
 import autoresearch.ui.desktop.results_display as results_display_module
 
@@ -230,3 +227,31 @@ def test_results_display_uses_graph_json_export(qtbot) -> None:
     assert display.knowledge_graph_view is not None
     graph_data = display.knowledge_graph_view._graph_data  # type: ignore[attr-defined]
     assert graph_data == {"nodes": ["Earth", "Moon"], "edges": [["Earth", "Moon", "orbits"]]}
+
+
+def test_results_display_falls_back_without_webengine(monkeypatch, qtbot) -> None:
+    monkeypatch.setattr(results_display_module, "QWebEngineView", None)
+
+    display = results_display_module.ResultsDisplay()
+    qtbot.addWidget(display)
+    display.show()
+    qtbot.wait(10)
+
+    assert not display._web_engine_available
+    assert isinstance(display.answer_view, QTextBrowser)
+    assert display.answer_fallback_label is not None
+    assert display.answer_fallback_label.isVisible()
+
+    result = SimpleNamespace(
+        answer="# Heading\n\nBody text",
+        citations=[],
+        reasoning=["Reasoning step"],
+        metrics={"latency_s": 0.42},
+        knowledge_graph=None,
+    )
+
+    display.display_results(result)
+
+    assert "Heading" in display.answer_view.toPlainText()
+    assert display.metrics_dashboard is not None
+    assert display.metrics_dashboard._metrics == result.metrics  # type: ignore[attr-defined]
