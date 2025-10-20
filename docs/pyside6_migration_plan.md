@@ -185,18 +185,46 @@ uv run python -m autoresearch.ui.desktop.main
 ## Testing Strategy
 
 ### New Test Structure
-```
-tests/ui/desktop/
-├── __init__.py
-├── test_main_window.py      # Main window functionality
-├── test_query_panel.py      # Query input and controls
-├── test_results_display.py  # Results rendering
-├── test_knowledge_graph.py  # Graph visualization
-├── test_metrics_dashboard.py # Metrics display
-└── integration/
-    ├── test_gui_integration.py   # Full workflow tests
-    └── test_cross_platform.py    # Platform compatibility
-```
+
+The PySide6 desktop test suite lives under `tests/ui/desktop/`. Delivered
+modules are marked with a checked box so current coverage is visible, while the
+remaining backlog is tracked separately with clear owners and phase targets.
+
+#### Delivered Modules
+- <a id="delivered-test-component-smoke"></a>[x]
+  `tests/ui/desktop/test_component_smoke.py` - Validates the PySide6 bootstrap
+  and baseline UI wiring; maps to
+  [Query submission and results display](#scenario-query-results).
+- <a id="delivered-test-query-panel"></a>[x]
+  `tests/ui/desktop/test_query_panel.py` - Exercises interactive controls for
+  the query form; maps to
+  [Query submission and results display](#scenario-query-results) and
+  [Keyboard navigation and shortcuts](#scenario-keyboard).
+- <a id="delivered-test-results-display"></a>[x]
+  `tests/ui/desktop/test_results_display.py` - Covers rendering of responses and
+  citations; maps to
+  [Query submission and results display](#scenario-query-results).
+- <a id="delivered-test-desktop-integration"></a>[x]
+  `tests/ui/desktop/test_desktop_integration.py` - Provides end-to-end smoke
+  coverage for window bootstrap; maps to
+  [Multi-window session management](#scenario-multi-window).
+
+#### Backlog Checklist (Unimplemented)
+- <a id="backlog-test-main-window"></a>[ ]
+  `tests/ui/desktop/test_main_window.py` - Owner: Desktop Guild; Target: Phase 1
+  (POC) once the main window API stabilizes.
+- <a id="backlog-test-knowledge"></a>[ ]
+  `tests/ui/desktop/test_knowledge_graph.py` - Owner: Graph Visualization Pod;
+  Target: Phase 2 (Feature Parity) alongside the knowledge graph widget.
+- <a id="backlog-test-metrics"></a>[ ]
+  `tests/ui/desktop/test_metrics_dashboard.py` - Owner: Metrics Squad; Target:
+  Phase 2 (Feature Parity) when telemetry panels ship.
+- <a id="backlog-test-gui-integration"></a>[ ]
+  `tests/ui/desktop/integration/test_gui_integration.py` - Owner: Desktop Guild;
+  Target: Phase 3 (Professional Features) after workspace flows land.
+- <a id="backlog-test-cross-platform"></a>[ ]
+  `tests/ui/desktop/integration/test_cross_platform.py` - Owner: QA Team;
+  Target: Phase 4 (Testing and QA) for platform matrix validation.
 
 ### Test Categories
 1. **Unit Tests**: Individual component functionality
@@ -207,14 +235,37 @@ tests/ui/desktop/
 6. **Cross-Platform Tests**: Windows, macOS, Linux compatibility
 
 ### Key Test Scenarios
-- [ ] Query submission and results display
-- [ ] Configuration editor functionality
-- [ ] Knowledge graph interaction (zoom, pan, select)
-- [ ] Multi-window session management
-- [ ] Export functionality (all formats)
-- [ ] Keyboard navigation and shortcuts
-- [ ] Screen reader compatibility
-- [ ] Performance under load
+- <a id="scenario-query-results"></a>[x] Query submission and results display
+  - Covered by
+    [`test_component_smoke.py`](#delivered-test-component-smoke),
+    [`test_query_panel.py`](#delivered-test-query-panel), and
+    [`test_results_display.py`](#delivered-test-results-display).
+- <a id="scenario-configuration"></a>[ ] Configuration editor functionality
+  - Pending; planned in
+    [`test_main_window.py`](#backlog-test-main-window) once configuration panes
+    are in place.
+- <a id="scenario-knowledge"></a>[ ] Knowledge graph interaction (zoom, pan,
+  select)
+  - Pending; covered when
+    [`test_knowledge_graph.py`](#backlog-test-knowledge) lands.
+- <a id="scenario-multi-window"></a>[x] Multi-window session management
+  - Partially covered by
+    [`test_desktop_integration.py`](#delivered-test-desktop-integration); full
+    coverage requires
+    [`test_gui_integration.py`](#backlog-test-gui-integration).
+- <a id="scenario-export"></a>[ ] Export functionality (all formats)
+  - Pending; to be addressed in the integration backlog once export flows are
+    implemented.
+- <a id="scenario-keyboard"></a>[x] Keyboard navigation and shortcuts
+  - Exercised through
+    [`test_query_panel.py`](#delivered-test-query-panel); additional coverage is
+    expected in `test_main_window.py`.
+- <a id="scenario-accessibility"></a>[ ] Screen reader compatibility
+  - Pending accessibility audit; tests will be captured in a11y-specific
+    modules during Phase 4.
+- <a id="scenario-performance"></a>[ ] Performance under load
+  - Pending; to be validated via dedicated benchmarks and the platform
+    integration backlog.
 
 ## Risk Mitigation
 
