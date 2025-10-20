@@ -18,3 +18,15 @@ Feature: PySide6 desktop Phase 1 workflow
     Then the desktop query controls are disabled while the query runs
     And the orchestrator receives the submitted query
     And I see the synthesized desktop results
+
+  Scenario: Cancelling a running query after a worker error
+    When I launch the PySide6 desktop shell
+    And I stage a running desktop query for "supply chain resilience"
+    And the desktop worker will fail with "network-timeout"
+    And I request to cancel the running desktop query
+    And I confirm the cancellation prompt
+    And the desktop worker failure is processed
+    Then the cancellation confirmation prompt is shown
+    And the desktop worker receives a cancel signal
+    And the desktop status bar returns to idle
+    And the desktop shows a critical error notice for "network-timeout"

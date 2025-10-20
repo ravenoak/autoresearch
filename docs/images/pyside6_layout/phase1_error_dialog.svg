@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="640"
+     height="360"
+     viewBox="0 0 640 360">
+  <rect x="0" y="0" width="640" height="360" fill="#f5f5f5" />
+  <rect x="40" y="40" width="560" height="280" fill="#ffffff" stroke="#424242" />
+  <rect x="80" y="80" width="480" height="60" fill="#c62828" fill-opacity="0.15" />
+  <text x="100"
+        y="120"
+        font-family="Inter, Arial, sans-serif"
+        font-size="20"
+        fill="#c62828">
+    Query failed: network-timeout
+  </text>
+  <rect x="80" y="160" width="480" height="120" fill="#fafafa" stroke="#bdbdbd" />
+  <text x="100"
+        y="200"
+        font-family="Inter, Arial, sans-serif"
+        font-size="16"
+        fill="#424242">
+    Worker shutdown surfaced a timeout. Logs were saved and exports remain
+  </text>
+  <text x="100"
+        y="224"
+        font-family="Inter, Arial, sans-serif"
+        font-size="16"
+        fill="#424242">
+    disabled until the next successful run.
+  </text>
+  <rect x="480" y="260" width="80" height="36" fill="#c62828" rx="4" />
+  <text x="502"
+        y="285"
+        font-family="Inter, Arial, sans-serif"
+        font-size="16"
+        fill="#ffffff">
+    Close
+  </text>
+  <rect x="80" y="300" width="200" height="24" fill="#eeeeee" rx="4" />
+  <text x="92"
+        y="317"
+        font-family="Inter, Arial, sans-serif"
+        font-size="12"
+        fill="#616161">
+    Status bar: Ready · metrics polling resumed
+  </text>
+</svg>

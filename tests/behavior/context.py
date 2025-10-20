@@ -465,6 +465,15 @@ def desktop_runtime(
             self.events: list[tuple[str, Any]] = []
             self.submitted_queries: list[str] = []
             self._responses: list[QueryResponse] = []
+            self.status_bar_message = "Idle"
+            self.status_history: list[str] = [self.status_bar_message]
+            self.timer_state = "stopped"
+            self.timer_events: list[str] = []
+            self.dialog_log: list[str] = []
+            self.worker_events: list[tuple[str, str]] = []
+            self.pending_failure: tuple[str, str] | None = None
+            self.current_query: str | None = None
+            self.state = "idle"
             self.orchestrator = _MagicMock()
             self.orchestrator.run_query.side_effect = self._run_query
 
@@ -477,12 +486,66 @@ def desktop_runtime(
                 return None
             self.submitted_queries.append(query)
             self.events.append(("controls", "disabled"))
-            response = self.orchestrator.run_query(query)
+            self._start_running(query)
+            try:
+                response = self.orchestrator.run_query(query)
+            except RuntimeError as error:
+                self.events.append(("error", str(error)))
+                self._stop_timer()
+                self._record_status("Idle")
+                self.events.append(("controls", "enabled"))
+                return None
             self.events.append(("results", response))
+            self._finish_success(response)
             self.events.append(("controls", "enabled"))
             return response
 
+        def stage_running_query(self, query: str) -> None:
+            if not query.strip():
+                self.events.append(("warning", "empty"))
+                return
+            self.submitted_queries.append(query)
+            self.events.append(("controls", "disabled"))
+            self._start_running(query)
+            self.pending_failure = None
+
+        def set_pending_failure(self, code: str, message: str | None = None) -> None:
+            failure_message = message or f"Worker failed: {code}"
+            self.pending_failure = (code, failure_message)
+
+        def request_cancel(self) -> None:
+            self.dialog_log.append("cancel_prompt")
+            DummyMessageBox.warning(
+                None,
+                "Cancel query?",
+                "Cancel the active desktop query?",
+            )
+
+        def confirm_cancel(self) -> None:
+            self.dialog_log.append("cancel_confirmed")
+            self.worker_events.append(("cancel", "requested"))
+            self.state = "cancelling"
+            self._stop_timer()
+            self._record_status("Cancelling")
+
+        def resolve_pending_failure(self) -> None:
+            if self.pending_failure is None:
+                return
+            code, message = self.pending_failure
+            DummyMessageBox.critical(None, "Query failed", message)
+            self.events.append(("error", code))
+            self.worker_events.append(("teardown", "complete"))
+            self.worker_events.append(("status_bar", "reset"))
+            self.pending_failure = None
+            self._stop_timer()
+            self._record_status("Idle")
+            self.events.append(("controls", "enabled"))
+            self.state = "failed"
+
         def _run_query(self, query: str) -> QueryResponse:
+            if self.pending_failure is not None:
+                code, _ = self.pending_failure
+                raise RuntimeError(code)
             response = QueryResponse(
                 query=query,
                 answer=f"Synthesized desktop response for {query}",
@@ -490,8 +553,33 @@ def desktop_runtime(
                 reasoning=[f"Desktop orchestrator ran for {query}"],
                 metrics={"tokens": 42},
             )
-            self._responses.append(response)
             return response
+
+        def _start_running(self, query: str) -> None:
+            self.state = "running"
+            self.current_query = query
+            self.timer_state = "running"
+            self.timer_events.append("started")
+            self.events.append(("timer", "started"))
+            self._record_status("Running")
+
+        def _finish_success(self, response: QueryResponse) -> QueryResponse:
+            self._responses.append(response)
+            self._stop_timer()
+            self._record_status("Idle")
+            self.state = "idle"
+            return response
+
+        def _stop_timer(self) -> None:
+            if self.timer_state == "running":
+                self.timer_state = "stopped"
+                self.timer_events.append("stopped")
+                self.events.append(("timer", "stopped"))
+
+        def _record_status(self, label: str) -> None:
+            self.status_bar_message = label
+            self.status_history.append(label)
+            self.events.append(("status", label.lower()))
 
         @property
         def latest_response(self) -> QueryResponse | None:
