@@ -47,9 +47,11 @@ documented behaviour.
 | `src/autoresearch/storage_backends.py` | [storage-backends.md](storage-backends.md) | `../../tests/unit/legacy/test_duckdb_storage_backend.py<br>../../tests/unit/legacy/test_duckdb_storage_backend_extended.py` |
 | `src/autoresearch/storage_backup.py` | [storage-backup.md](storage-backup.md) | `../../tests/unit/legacy/test_storage_backup.py` |
 | `src/autoresearch/storage_utils.py` | [storage-utils.md](storage-utils.md) | `../../tests/integration/test_storage_schema.py` |
-| `src/autoresearch/streamlit_app.py` | [streamlit-app.md](streamlit-app.md) | `../../tests/unit/legacy/test_streamlit_app_edgecases.py` |
-| `src/autoresearch/streamlit_ui.py` | [streamlit-ui.md](streamlit-ui.md) | `../../tests/unit/legacy/test_streamlit_ui_helpers.py` |
+| `src/autoresearch/ui/desktop/` | [pyside-desktop.md](pyside-desktop.md) | `../../tests/ui/desktop/test_component_smoke.py`<br>`../../tests/ui/desktop/test_desktop_integration.py`<br>`../../tests/ui/desktop/test_query_panel.py`<br>`../../tests/ui/desktop/test_results_display.py` |
+| `src/autoresearch/streamlit_app.py` *(legacy)* | [streamlit-app.md](streamlit-app.md) *(legacy)* | `../../tests/unit/legacy/test_streamlit_app_edgecases.py` |
+| `src/autoresearch/streamlit_ui.py` *(legacy)* | [streamlit-ui.md](streamlit-ui.md) *(legacy)* | `../../tests/unit/legacy/test_streamlit_ui_helpers.py` |
 | `src/autoresearch/test_tools.py` | [test-tools.md](test-tools.md) | `../../tests/unit/legacy/test_test_tools.py` |
+
 | `src/autoresearch/visualization.py` | [visualization.md](visualization.md) | `../../tests/unit/legacy/test_visualization.py<br>../../tests/behavior/features/visualization_cli.feature` |
 | `src/git/__init__.py` | [git.md](git.md) | `../../tests/integration/test_local_git_backend.py`<br>`../../tests/targeted/test_git_search.py` |
 

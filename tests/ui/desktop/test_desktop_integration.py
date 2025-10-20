@@ -1,4 +1,7 @@
-"""Integration tests for the PySide6 desktop application shell."""
+"""Integration tests for the PySide6 desktop application shell.
+
+Spec: docs/specs/pyside-desktop.md
+"""
 
 from __future__ import annotations
 

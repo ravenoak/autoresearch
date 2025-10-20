@@ -1,5 +1,8 @@
 # Streamlit App
 
+⚠️ Legacy interface: The Streamlit app has been superseded by the PySide6
+desktop application documented in [pyside-desktop.md](pyside-desktop.md).
+
 ## Overview
 
 Streamlit GUI for Autoresearch.
