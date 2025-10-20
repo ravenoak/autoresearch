@@ -9,6 +9,11 @@ session history, and export tools. Supporting widgets, including
 KnowledgeGraphView and MetricsDashboard, extend the interface with
 visualisation, accessibility, and runtime telemetry.
 
+Phase 1 wireframes capture the baseline layout and running-query feedback in
+[Figure 1](../diagrams/pyside6_layout.md#visual-references) so engineering,
+design, and product teams can validate keyboard-first submission, accessible
+configuration editing, and export gating cues together.
+
 ## Algorithms
 
 - AutoresearchMainWindow bootstraps orchestrator dependencies, wires signals,

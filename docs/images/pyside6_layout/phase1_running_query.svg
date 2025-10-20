@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"
+     viewBox="0 0 960 540">
+  <style>
+    text { font-family: "DejaVu Sans", Arial, sans-serif; fill: #1b1f23; }
+    .title { font-size: 22px; font-weight: 600; }
+    .label { font-size: 16px; font-weight: 500; }
+    .annotation { font-size: 14px; fill: #2d3748; }
+    .status { font-size: 14px; fill: #2f855a; font-weight: 600; }
+    .alert { font-size: 14px; fill: #c53030; font-weight: 600; }
+    .panel { fill: #e6fffa; stroke: #2c7a7b; stroke-width: 2; }
+    .progress { fill: #81e6d9; stroke: #2c7a7b; stroke-width: 2; }
+    .dock { fill: #faf089; stroke: #b7791f; stroke-width: 2; }
+    .overlay { fill: rgba(45, 55, 72, 0.1); }
+  </style>
+  <rect x="0" y="0" width="960" height="540" fill="#f7fafc" />
+  <text x="480" y="40" text-anchor="middle" class="title">
+    Phase 1 Running Query State — Feedback + Controls
+  </text>
+  <rect x="60" y="80" width="560" height="160" class="panel" />
+  <rect x="60" y="240" width="560" height="220" fill="#c6f6d5"
+        stroke="#2f855a" stroke-width="2" />
+  <rect x="640" y="80" width="120" height="220" class="dock" />
+  <rect x="780" y="80" width="120" height="220" class="dock" />
+  <rect x="640" y="320" width="260" height="140" class="dock" />
+  <rect x="80" y="108" width="360" height="28" class="progress" />
+  <text x="260" y="128" text-anchor="middle" class="label">
+    Progress Bar (indeterminate)
+  </text>
+  <text x="360" y="190" text-anchor="end" class="status">
+    Status: Running orchestrator query…
+  </text>
+  <text x="520" y="190" text-anchor="start" class="annotation">
+    • Phase 1 Story: user feedback while processing
+  </text>
+  <text x="320" y="270" text-anchor="middle" class="label">
+    Streaming ResultsDisplay
+  </text>
+  <text x="320" y="300" text-anchor="middle" class="annotation">
+    • Live tokens append to transcript area
+  </text>
+  <text x="320" y="328" text-anchor="middle" class="annotation">
+    • Phase 1 Story: maintain scroll position + focus trap
+  </text>
+  <text x="700" y="120" text-anchor="middle" class="label">
+    ConfigEditor Dock (read-only during run)
+  </text>
+  <text x="700" y="150" text-anchor="middle" class="annotation">
+    • Disabled controls with tooltip explaining lock
+  </text>
+  <text x="700" y="180" text-anchor="middle" class="annotation">
+    • Phase 1 Story: prevent conflicting edits mid-run
+  </text>
+  <text x="840" y="120" text-anchor="middle" class="label">
+    SessionManager Dock
+  </text>
+  <text x="840" y="150" text-anchor="middle" class="annotation">
+    • Highlights active session row
+  </text>
+  <text x="840" y="180" text-anchor="middle" class="annotation">
+    • Pause/resume button hidden until Phase 2
+  </text>
+  <text x="770" y="360" text-anchor="middle" class="label">
+    Export Queue + Metrics Snapshot
+  </text>
+  <text x="770" y="390" text-anchor="middle" class="annotation">
+    • Disabled exports until response finalised
+  </text>
+  <text x="770" y="420" text-anchor="middle" class="annotation">
+    • Metrics Dashboard pulse updates every 5s
+  </text>
+  <text x="480" y="468" text-anchor="middle" class="alert">
+    Escape cancels run → Phase 1 story: cancellation confirmation dialog.
+  </text>
+</svg>

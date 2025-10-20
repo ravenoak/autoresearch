@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"
+     viewBox="0 0 960 540">
+  <style>
+    text { font-family: "DejaVu Sans", Arial, sans-serif; fill: #1b1f23; }
+    .title { font-size: 22px; font-weight: 600; }
+    .label { font-size: 16px; font-weight: 500; }
+    .annotation { font-size: 14px; fill: #4a5568; }
+    .callout { stroke: #2b6cb0; stroke-width: 2; fill: none; }
+    .panel { fill: #edf2f7; stroke: #718096; stroke-width: 2; }
+    .dock { fill: #fefcbf; stroke: #b7791f; stroke-width: 2; }
+  </style>
+  <rect x="0" y="0" width="960" height="540" fill="#f7fafc" />
+  <text x="480" y="40" text-anchor="middle" class="title">
+    Phase 1 Initial Layout — PySide6 Desktop Shell
+  </text>
+  <rect x="60" y="80" width="560" height="380" class="panel" />
+  <rect x="60" y="80" width="560" height="160" fill="#bee3f8"
+        stroke="#2b6cb0" stroke-width="2" />
+  <rect x="60" y="240" width="560" height="220" fill="#c6f6d5"
+        stroke="#2f855a" stroke-width="2" />
+  <rect x="640" y="80" width="120" height="220" class="dock" />
+  <rect x="780" y="80" width="120" height="220" class="dock" />
+  <rect x="640" y="320" width="260" height="140" class="dock" />
+  <text x="340" y="110" text-anchor="middle" class="label">
+    QueryPanel
+  </text>
+  <text x="340" y="138" text-anchor="middle" class="annotation">
+    • Accepts prompt text
+  </text>
+  <text x="340" y="162" text-anchor="middle" class="annotation">
+    • Phase 1 Story: keyboard focus retained after submit
+  </text>
+  <text x="340" y="198" text-anchor="middle" class="annotation">
+    • Submit button emits query_submitted
+  </text>
+  <text x="340" y="282" text-anchor="middle" class="label">
+    ResultsDisplay Tabs
+  </text>
+  <text x="340" y="312" text-anchor="middle" class="annotation">
+    • Default Markdown view summarises responses
+  </text>
+  <text x="340" y="338" text-anchor="middle" class="annotation">
+    • Phase 1 Story: preserve Streamlit-equivalent parity
+  </text>
+  <text x="340" y="364" text-anchor="middle" class="annotation">
+    • Placeholder tabs for graph + metrics
+  </text>
+  <text x="700" y="110" text-anchor="middle" class="label">
+    ConfigEditor Dock
+  </text>
+  <text x="700" y="140" text-anchor="middle" class="annotation">
+    • Inline overrides for runtime parameters
+  </text>
+  <text x="700" y="170" text-anchor="middle" class="annotation">
+    • Phase 1 Story: accessible controls + presets
+  </text>
+  <text x="840" y="110" text-anchor="middle" class="label">
+    SessionManager Dock
+  </text>
+  <text x="840" y="140" text-anchor="middle" class="annotation">
+    • Displays history of executed queries
+  </text>
+  <text x="840" y="170" text-anchor="middle" class="annotation">
+    • Phase 1 Story: restore previous run
+  </text>
+  <text x="770" y="350" text-anchor="middle" class="label">
+    Export + Status Area
+  </text>
+  <text x="770" y="380" text-anchor="middle" class="annotation">
+    • ExportManager shows available artefacts
+  </text>
+  <text x="770" y="406" text-anchor="middle" class="annotation">
+    • Status bar metrics (CPU, tokens)
+  </text>
+  <path d="M 620 160 L 700 160" class="callout" marker-end="url(#arrow)" />
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2b6cb0" />
+    </marker>
+  </defs>
+</svg>
