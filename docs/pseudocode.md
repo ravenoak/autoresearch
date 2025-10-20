@@ -502,38 +502,29 @@ class AutoresearchMainWindow(QMainWindow):
 function desktop.main(argv):
     configure_high_dpi_scaling()
     try:
-        app = ensure_qapplication(argv)  # wraps QApplication(argv)
+        app = QApplication(argv)
     except ImportError:
         print("PySide6 missing; install with `uv add PySide6`")
         return 1
 
-    window = AutoresearchMainWindow()
-    wire_desktop_signals(window)
-    window.show()
+    app.setApplicationName("Autoresearch")
+    app.setApplicationVersion("0.1.0")
+    app.setOrganizationName("Autoresearch Project")
 
     try:
+        window = AutoresearchMainWindow()
+        window.show()
         return app.exec()
     except Exception as exc:
         handle_startup_error(window, exc)
         return 1
+```
 
-function wire_desktop_signals(window):
-    panel: QueryPanel = window.query_panel
-    sessions: SessionManager = window.session_manager
-
-    if panel:
-        panel.query_submitted.connect(window.on_query_submitted)
-    if window.config_editor:
-        window.config_editor.configuration_changed.connect(
-            window.on_configuration_changed
-        )
-    if sessions:
-        sessions.session_selected.connect(window.on_session_selected)
-        sessions.new_session_requested.connect(window.on_new_session_requested)
-    if window.export_manager:
-        window.export_manager.export_requested.connect(
-            window.on_export_requested
-        )
+AutoresearchMainWindow.__init__ immediately calls `setup_connections()`,
+which wires query, configuration, session, and export signals to their
+handlers as part of its startup routine. This keeps the signal wiring
+co-located with widget initialization and ensures new panels register
+their slots by extending `setup_connections()`.
 
 function AutoresearchMainWindow.run_query():
     if orchestrator is None or config is None:
