@@ -6,18 +6,31 @@ outputs.
 ## Depth controls
 
 Autoresearch responses are organised by depth levels that determine how much
-context is displayed. Depth can be selected from the CLI with `--depth` or via
-the Streamlit radio group. Each depth level now advertises the sections it
-unlocks—TL;DR summaries, key findings, claim tables, the knowledge graph, graph
-export links, and the full reasoning trace. The CLI `--help` output lists these
-combinations, and JSON exports include a `sections` map so that downstream tools
-can enforce depth-aware policies.
+context is displayed. Depth can be selected from the CLI with `--depth`, or by
+editing the desktop configuration so the PySide6 client loads the appropriate
+sections by default. Each depth level advertises the sections it unlocks—TL;DR
+summaries, key findings, claim tables, the knowledge graph, graph export links,
+and the full reasoning trace. The CLI `--help` output lists these combinations,
+and JSON exports include a `sections` map so that downstream tools can enforce
+depth-aware policies.
 
-The Streamlit app mirrors these options with toggle switches for every layer:
-**Show TL;DR**, **Show key findings**, **Show claim table**, **Show full
-trace**, **Show knowledge graph**, and **Enable graph exports**. Toggle defaults
-are bound to the current depth so that moving to deeper views surfaces more
-context without retaining stale preferences.
+On the desktop, open **View → Configuration** (Ctrl+1) to reveal the
+configuration dock. Set `output.depth` to the level you need, then run queries
+from the **QueryPanel**. The **ResultsDisplay** tabs reflect the active depth:
+lightweight views keep you in the **Answer** and **Citations** tabs, while
+deeper modes enable the **Knowledge Graph**, **Agent Trace**, and **Metrics**
+tabs. Dock layouts persist between sessions, so tailor one layout for quick
+audits and another for deep dives.
+
+> **Tip:** Combine the **QueryPanel** loops selector with saved configurations
+> to jump between concise and comprehensive passes without rewriting JSON by
+> hand.
+
+!!! info "Legacy Streamlit"
+    Streamlit radio groups remain documented in the
+    [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
+    Refer to the plan if you must maintain the web app while preparing your
+    PySide6 rollout.
 
 ## Planner graph conditioning
 
@@ -33,16 +46,24 @@ operators can confirm the cues before enabling the option in production.
 
 ## Provenance verification
 
-Claim verification is surfaced through the dedicated Provenance panel. Claim
-statuses are summarised in natural order (supported, needs review, unsupported)
-and the detailed table remains available when the claim table toggle is active.
-Each row exposes a **Show details for claim** toggle that reveals the full audit
-payload, top sources, and analyst notes. Badges reuse the CLI legend—green for
-supported, amber for needs review, red for unsupported—so the table, CLI, and
-CSV exports convey the same meaning. GraphRAG artifacts are also exposed in the
-Provenance panel to verify that graph reasoning supplied the cited evidence. At
-lower depths the panel explains which artefacts are hidden and how to reveal
-them.
+Claim verification lives in the **Citations** tab of the PySide6
+**ResultsDisplay**. Selecting an item activates the **Open Source** and
+**Copy Citation** buttons so you can audit provenance without leaving the app.
+The tab lists claims in the same order reported by the CLI, and coloured badges
+reuse the CLI legend—green for supported, amber for needs review, red for
+unsupported—when audits provide FEVER-style verdicts. GraphRAG artefacts surface
+in the **Knowledge Graph** tab and through export buttons whenever the backend
+delivers supporting files.
+
+> **Tip:** Keep the **Exports** dock (Ctrl+3) visible when investigating
+> provenance-heavy runs. Export buttons light up as soon as Markdown or JSON
+> digests are ready, making it easy to archive the audit trail.
+
+!!! info "Legacy Streamlit"
+    The deprecated Streamlit provenance panel and claim table toggles are
+    covered in the
+    [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
+    Use them only for maintenance fixes while migrating teams to the desktop UI.
 
 ## Interactive re-verification
 
