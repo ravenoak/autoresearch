@@ -3,6 +3,10 @@
 This document illustrates the layout and primary interactions of the PySide6
 application using the current widget names.
 
+The ResultsDisplay tab stack now incorporates a structured search results pane
+adjacent to the narrative answer, providing a dedicated table for ranked hits
+alongside the existing citations, knowledge graph, and metrics views.
+
 ```mermaid
 graph TD
     AutoresearchMainWindow[AutoresearchMainWindow]
