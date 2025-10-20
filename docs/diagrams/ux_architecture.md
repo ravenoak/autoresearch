@@ -115,20 +115,24 @@ graph TD
 ```mermaid
 graph TD
     CLI[CLI Interface] --> SharedConfig[Shared Configuration]
-    GUI[Streamlit GUI] --> SharedConfig
+    PySide6GUI[PySide6 Desktop GUI] --> SharedConfig
+    StreamlitGUI[Streamlit GUI (Legacy)] --> SharedConfig
     A2A[A2A Interface] --> SharedConfig
     MCP[MCP Interface] --> SharedConfig
-    
+
     CLI --> SharedQueryHistory[Shared Query History]
-    GUI --> SharedQueryHistory
-    
+    PySide6GUI --> SharedQueryHistory
+    StreamlitGUI --> SharedQueryHistory
+
     CLI --> ConsistentOutput[Consistent Output Format]
-    GUI --> ConsistentOutput
+    PySide6GUI --> ConsistentOutput
+    StreamlitGUI --> ConsistentOutput
     A2A --> ConsistentOutput
     MCP --> ConsistentOutput
-    
+
     CLI --> ConsistentErrors[Consistent Error Handling]
-    GUI --> ConsistentErrors
+    PySide6GUI --> ConsistentErrors
+    StreamlitGUI --> ConsistentErrors
     A2A --> ConsistentErrors
     MCP --> ConsistentErrors
 ```
