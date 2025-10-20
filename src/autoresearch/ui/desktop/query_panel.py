@@ -50,6 +50,10 @@ class QueryPanel(QWidget):
         self.current_reasoning_mode: str = "balanced"
         self.current_loops: int = 3
 
+        # Busy state tracking
+        self._is_busy: bool = False
+        self._previous_focus_widget: Optional[QWidget] = None
+
         self.setup_ui()
         self.setup_connections()
 
@@ -162,6 +166,34 @@ class QueryPanel(QWidget):
             "loops": self.current_loops
         }
 
+    def set_busy(self, is_busy: bool) -> None:
+        """Toggle the busy state for the query controls.
+
+        Args:
+            is_busy: Whether the panel should disable controls during query execution.
+        """
+
+        if is_busy == self._is_busy:
+            return
+
+        if is_busy:
+            self._previous_focus_widget = self.focusWidget()
+
+        for widget in self._iter_control_widgets():
+            widget.setEnabled(not is_busy)
+
+        self._is_busy = is_busy
+
+        if not is_busy and self._previous_focus_widget is not None:
+            if self._previous_focus_widget.isEnabled():
+                self._previous_focus_widget.setFocus(Qt.OtherFocusReason)
+            self._previous_focus_widget = None
+
+    def is_busy(self) -> bool:
+        """Return whether the panel controls are currently disabled."""
+
+        return self._is_busy
+
     def set_query_text(self, text: str) -> None:
         """Set the query text (useful for loading saved queries)."""
         if self.query_input:
@@ -176,3 +208,17 @@ class QueryPanel(QWidget):
         """Set focus to the query input field."""
         if self.query_input:
             self.query_input.setFocus()
+
+    def _iter_control_widgets(self) -> list[QWidget]:
+        """Yield all interactive controls managed by the panel."""
+
+        return [
+            widget
+            for widget in (
+                self.query_input,
+                self.reasoning_mode_combo,
+                self.loops_spinbox,
+                self.run_button,
+            )
+            if widget is not None
+        ]

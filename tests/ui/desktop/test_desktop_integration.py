@@ -69,6 +69,7 @@ def _patch_global_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_desktop_main_window_runs_query_end_to_end(qtbot, monkeypatch) -> None:
     captured: dict[str, object] = {}
+    busy_transitions: list[bool] = []
 
     class DummyConfigLoader:
         def load_config(self) -> ConfigModel:
@@ -100,6 +101,19 @@ def test_desktop_main_window_runs_query_end_to_end(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(main_window_module, "ConfigLoader", DummyConfigLoader)
     monkeypatch.setattr(main_window_module, "Orchestrator", DummyOrchestrator)
 
+    original_set_busy = main_window_module.QueryPanel.set_busy
+
+    def _recording_set_busy(self, is_busy: bool) -> None:
+        busy_transitions.append(is_busy)
+        original_set_busy(self, is_busy)
+
+    monkeypatch.setattr(
+        main_window_module.QueryPanel,
+        "set_busy",
+        _recording_set_busy,
+        raising=False,
+    )
+
     window = main_window_module.AutoresearchMainWindow()
     qtbot.addWidget(window)
 
@@ -115,6 +129,8 @@ def test_desktop_main_window_runs_query_end_to_end(qtbot, monkeypatch) -> None:
 
     qtbot.waitUntil(lambda: window.results_display.current_result is not None, timeout=1000)
 
+    assert busy_transitions == [True, False]
+
     assert captured["query"] == "How do dialectical agents coordinate?"
     config = captured["config"]
     assert isinstance(config, ConfigModel)
@@ -123,6 +139,11 @@ def test_desktop_main_window_runs_query_end_to_end(qtbot, monkeypatch) -> None:
 
     assert window.progress_bar.isVisible() is False
     assert window.statusBar().currentMessage() == "Query completed"
+
+    assert window.query_panel.query_input.isEnabled()
+    assert window.query_panel.reasoning_mode_combo.isEnabled()
+    assert window.query_panel.loops_spinbox.isEnabled()
+    assert window.query_panel.run_button.isEnabled()
 
     result = window.results_display.current_result
     assert isinstance(result, QueryResponse)
