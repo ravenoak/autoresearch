@@ -25,9 +25,10 @@ communicating with users, and archiving Streamlit assets.
   a six-week grace period for legacy Streamlit users. During this window we
   publish weekly status updates, host office hours, and prioritize migration
   assistance over new fixes.
-- **Migration guidance**: A dedicated migration guide will be published in
-  `docs/guides/streamlit-to-pyside6.md` (link forthcoming). Once available it
-  will be cross-linked here and throughout the user documentation.
+- **Migration guidance**: See the
+  [Streamlit to PySide6 migration guide](../guides/streamlit-to-pyside6.md) for
+  feature parity tracking, the desktop extra setup checklist, troubleshooting
+  steps, and FAQs targeted at legacy teams.
 
 ## Sunset Milestones
 
