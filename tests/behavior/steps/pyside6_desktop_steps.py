@@ -33,6 +33,14 @@ def test_submit_query_and_review_results() -> None:
     """BDD scenario covering the end-to-end Phase 1 desktop query flow."""
 
 
+@scenario(
+    "../features/pyside6_desktop.feature",
+    "Cancelling a running query after a worker error",
+)
+def test_cancel_running_query_after_error() -> None:
+    """BDD scenario exercising the cancellation and error recovery path."""
+
+
 @given("the PySide6 desktop runtime is stubbed")
 def stub_desktop_runtime(
     monkeypatch: MonkeyPatch, bdd_context: BehaviorContext
@@ -61,6 +69,39 @@ def submit_desktop_query(bdd_context: BehaviorContext, query: str) -> None:
     response = window.submit_query(query)
     set_value(bdd_context, "desktop_last_query", query)
     set_value(bdd_context, "desktop_query_response", response)
+
+
+@when(parsers.parse('I stage a running desktop query for "{query}"'))
+def stage_running_desktop_query(bdd_context: BehaviorContext, query: str) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    window.stage_running_query(query)
+    set_value(bdd_context, "desktop_last_query", query)
+
+
+@when(parsers.parse('the desktop worker will fail with "{error_code}"'))
+def configure_desktop_worker_failure(
+    bdd_context: BehaviorContext, error_code: str
+) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    window.set_pending_failure(error_code)
+
+
+@when("I request to cancel the running desktop query")
+def request_desktop_cancellation(bdd_context: BehaviorContext) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    window.request_cancel()
+
+
+@when("I confirm the cancellation prompt")
+def confirm_desktop_cancellation(bdd_context: BehaviorContext) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    window.confirm_cancel()
+
+
+@when("the desktop worker failure is processed")
+def process_desktop_worker_failure(bdd_context: BehaviorContext) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    window.resolve_pending_failure()
 
 
 @then("the desktop main window is shown")
@@ -101,3 +142,38 @@ def assert_results_visible(bdd_context: BehaviorContext) -> None:
     assert cast(str, response.answer).startswith("Synthesized desktop response")
     assert response.citations
     assert response.reasoning
+
+
+@then("the cancellation confirmation prompt is shown")
+def assert_cancellation_prompt(bdd_context: BehaviorContext) -> None:
+    runtime = get_required(
+        bdd_context, "desktop_runtime", DesktopRuntimeMocks
+    )
+    assert runtime.warning_calls, "No cancellation prompt was recorded."
+    title, message = runtime.warning_calls[-1]
+    assert title == "Cancel query?"
+    assert "Cancel the active desktop query?" in message
+
+
+@then("the desktop worker receives a cancel signal")
+def assert_worker_cancelled(bdd_context: BehaviorContext) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    assert ("cancel", "requested") in window.worker_events
+
+
+@then("the desktop status bar returns to idle")
+def assert_status_bar_idle(bdd_context: BehaviorContext) -> None:
+    window = get_required(bdd_context, "desktop_window")
+    assert window.status_bar_message == "Idle"
+    assert window.status_history[-1] == "Idle"
+
+
+@then(parsers.parse('the desktop shows a critical error notice for "{error_code}"'))
+def assert_error_notice(bdd_context: BehaviorContext, error_code: str) -> None:
+    runtime = get_required(
+        bdd_context, "desktop_runtime", DesktopRuntimeMocks
+    )
+    assert runtime.critical_calls, "No error notice was recorded."
+    title, message = runtime.critical_calls[-1]
+    assert title == "Query failed"
+    assert error_code in message

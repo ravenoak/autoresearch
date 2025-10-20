@@ -212,6 +212,61 @@ class AuditPolicy:
         )
 ```
 
+## 6b. Desktop Cancellation & Recovery (main_window.py)
+```
+class AutoresearchMainWindow:
+    function request_cancel():
+        if not self.is_query_running:
+            return
+
+        confirmed = QMessageBox.warning(
+            self,
+            title="Cancel query?",
+            message="Cancel the active desktop query?",
+            buttons=[QMessageBox.Cancel, QMessageBox.Destructive],
+        )
+
+        if confirmed != QMessageBox.Destructive:
+            return
+
+        self.status_bar.set_message("Cancelling…")
+        self.metrics_timer.stop()
+        self.query_panel.setEnabled(False)
+        self.worker.cancel()
+        self.worker.on_finished(self._complete_cancellation)
+
+    function _complete_cancellation(result):
+        try:
+            result.unwrap()
+            self._reset_after_success(result.payload)
+        except WorkerError as error:
+            self._show_failure_dialog(error)
+        finally:
+            self._teardown_worker()
+            self._reset_status_bar()
+
+    function _show_failure_dialog(error):
+        QMessageBox.critical(
+            self,
+            title="Query failed",
+            message=f"Worker failed: {error.code}",
+            details=error.traceback,
+        )
+        self.results_display.annotate_error(error)
+
+    function _teardown_worker():
+        self.worker.cancel()
+        self.worker.deleteLater()
+        self.worker = None
+
+    function _reset_status_bar():
+        self.status_bar.set_message("Ready")
+        self.metrics_timer.start(DEFAULT_TIMER_INTERVAL)
+        self.is_query_running = False
+        self.query_panel.setEnabled(True)
+        self.status_bar.reset_counters()
+```
+
 ## 7. Adaptive Gate (orchestration/gating.py)
 ```
 function run_orchestration(query, config):

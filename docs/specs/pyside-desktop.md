@@ -50,6 +50,36 @@ no data is present so subsequent queries render correctly.
 optional libraries such as NetworkX or Matplotlib are unavailable, preserving
 usability.
 
+## State Machine
+
+The desktop shell progresses through explicit UI states while orchestrator
+workers execute. Each transition records timer and worker activity so the
+status bar remains truthful even when cancellations or failures occur.
+
+- **Idle → Running** — Triggered when QueryPanel emits ``query_submitted``. The
+  main window disables QueryPanel inputs, sets ``is_query_running``, swaps the
+  status bar message to “Running query…”, and starts the polling timer that
+  refreshes CPU, memory, and token counters.
+- **Running → Succeeded** — Fired when the worker reports a ``QueryResponse``.
+  The timer stops, metrics snapshots are flushed into ResultsDisplay and the
+  status bar, controls are re-enabled, and the worker reference is cleared so a
+  fresh worker is created for the next query.
+- **Running → Cancelling** — Entered after the user presses the cancel affordance
+  and confirms the modal prompt. The timer halts immediately, the status bar
+  shows “Cancelling…”, the busy overlay persists, and the worker receives a
+  cooperative ``cancel`` request before teardown callbacks fire.
+- **Cancelling → Failed** — Reached when the worker surfaces an error during
+  shutdown (for example ``network-timeout``). The failure dialog is raised,
+  error telemetry is persisted, timers remain stopped, and the worker teardown
+  hook clears thread-pool futures before the state drops back to Idle.
+- **Cancelling → Succeeded** — Occurs when teardown finishes cleanly without
+  additional errors. The export gating flags reset, timers stay stopped, and
+  the status bar message reverts to “Ready” prior to returning to Idle.
+- **Succeeded → Idle** and **Failed → Idle** — Both paths normalise the busy
+  flag, restore keyboard focus to QueryPanel, reset the timer to its paused
+  state, and ensure the worker pointer is ``None`` so follow-up queries
+  initialise a fresh execution path.
+
 ## Optional Dependency Fallbacks
 
 - Answer Tab — When Qt WebEngine cannot be imported the ResultsDisplay swaps the

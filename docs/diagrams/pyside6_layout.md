@@ -48,6 +48,18 @@ sequenceDiagram
     ExportManager-->>User: Present export choices
 ```
 
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running: query submitted / start timer
+    Running --> Succeeded: worker done / stop timer
+    Running --> Cancelling: confirm cancel / stop timer
+    Cancelling --> Failed: worker error / show dialog
+    Cancelling --> Succeeded: teardown clean / reset flags
+    Succeeded --> Idle: reset status, focus query panel
+    Failed --> Idle: reset status, focus query panel
+```
+
 ## Visual References
 
 ![Phase 1 initial layout wireframe](../images/pyside6_layout/phase1_initial_layout.svg)
@@ -58,3 +70,11 @@ configuration controls, and results parity.*
 ![Phase 1 running query wireframe](../images/pyside6_layout/phase1_running_query.svg)
 *Figure 2: Running-query feedback emphasising progress, disabled controls, and
 export gating tied to Phase 1 cancellation and status feedback stories.*
+
+![Phase 1 cancel confirmation wireframe](../images/pyside6_layout/phase1_cancel_confirmation.svg)
+*Figure 3: Cancellation prompt illustrating the modal copy, destructive
+confirmation button, and persistent busy overlay used before worker teardown.*
+
+![Phase 1 error dialog wireframe](../images/pyside6_layout/phase1_error_dialog.svg)
+*Figure 4: Error state showing the critical dialog, status-bar reset, and
+export gating after a cancellation surfaces a worker failure.*
