@@ -508,6 +508,9 @@ class AutoresearchMainWindow(QMainWindow):
 
         self._merge_query_panel_configuration()
 
+        if self.query_panel:
+            self.query_panel.set_busy(True)
+
         self.is_query_running = True
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Indeterminate progress
@@ -545,6 +548,9 @@ class AutoresearchMainWindow(QMainWindow):
         """Display query results in the results panel."""
         self.is_query_running = False
         self.progress_bar.setVisible(False)
+
+        if self.query_panel:
+            self.query_panel.set_busy(False)
 
         if self.results_display:
             self.results_display.display_results(result)
@@ -592,6 +598,9 @@ class AutoresearchMainWindow(QMainWindow):
         """Display query error to the user."""
         self.is_query_running = False
         self.progress_bar.setVisible(False)
+
+        if self.query_panel:
+            self.query_panel.set_busy(False)
 
         error_msg = str(error)
         self._show_critical(

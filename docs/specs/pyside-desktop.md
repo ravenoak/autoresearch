@@ -42,8 +42,8 @@ optional dependencies are missing.
 View menu toggle actions stored on AutoresearchMainWindow to prevent garbage
 collection.
 - Query execution toggles is_query_running, displays an indeterminate progress
-bar, and resets status messaging regardless of success, failure, or user
-cancellation paths.
+  bar, disables QueryPanel inputs via the busy state, and resets status
+  messaging regardless of success, failure, or user cancellation paths.
 - ResultsDisplay preserves tab instances and clears state-specific widgets when
 no data is present so subsequent queries render correctly.
 - KnowledgeGraphView and MetricsDashboard fall back to textual summaries when

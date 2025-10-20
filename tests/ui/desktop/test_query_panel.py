@@ -98,3 +98,35 @@ def test_query_panel_handles_long_text_without_truncation(qtbot) -> None:
 
     panel.clear_query()
     assert panel.query_input.toPlainText() == ""
+
+
+def test_query_panel_busy_state_disables_controls_and_restores_focus(qtbot) -> None:
+    panel = QueryPanel()
+    qtbot.addWidget(panel)
+    panel.show()
+    qtbot.waitActive(panel)
+
+    assert panel.query_input is not None
+    assert panel.reasoning_mode_combo is not None
+    assert panel.loops_spinbox is not None
+    assert panel.run_button is not None
+
+    panel.loops_spinbox.setFocus()
+    qtbot.wait(10)
+    assert panel.loops_spinbox.hasFocus()
+
+    panel.set_busy(True)
+
+    assert not panel.query_input.isEnabled()
+    assert not panel.reasoning_mode_combo.isEnabled()
+    assert not panel.loops_spinbox.isEnabled()
+    assert not panel.run_button.isEnabled()
+
+    panel.set_busy(False)
+
+    assert panel.query_input.isEnabled()
+    assert panel.reasoning_mode_combo.isEnabled()
+    assert panel.loops_spinbox.isEnabled()
+    assert panel.run_button.isEnabled()
+
+    qtbot.waitUntil(lambda: panel.loops_spinbox.hasFocus(), timeout=200)
