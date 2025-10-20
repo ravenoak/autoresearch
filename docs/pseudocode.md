@@ -426,3 +426,73 @@ function run_prdv_cycle(state, harness):
     harness.persist(summary)
     return validated
 ```
+
+## 13. Desktop Startup & Query Cycle (ui/desktop/main_window.py)
+```
+class AutoresearchMainWindow(QMainWindow):
+    function __init__():
+        setup_ui()  # splitter binds QueryPanel and ResultsDisplay
+        setup_connections()  # QueryPanel.query_submitted → on_query_submitted
+        _start_metrics_timer()  # QTimer polls orchestrator metrics facade
+        load_configuration()
+
+    function load_configuration():
+        try:
+            config_loader = ConfigLoader()
+            config = config_loader.load_config()
+            orchestrator = Orchestrator()
+            status = "Configuration loaded - ready for queries"
+        except Exception as exc:
+            _show_warning("Configuration Error", render_config_error(exc))
+            status = "Configuration error - limited functionality"
+        _set_status_message(status)
+
+    function on_query_submitted(query):
+        if not query.strip():
+            _show_warning("Empty Query", prompt_for_input())
+            return
+        if is_query_running:
+            _show_information("Query in Progress", wait_notice())
+            return
+        current_query = query
+        run_query()
+
+    function run_query():
+        if orchestrator is None or config is None:
+            _show_critical("System Error", missing_core_notice())
+            return
+        merge_config_from(QueryPanel.get_configuration())
+        mark_busy(progress_bar)
+
+        class QueryWorker(QRunnable):
+            function run():
+                try:
+                    result = orchestrator.run_query(current_query, config)
+                    QTimer.singleShot(0, lambda: display_results(result))
+                except Exception as exc:
+                    QTimer.singleShot(0, lambda: display_error(exc))
+
+        QThreadPool.globalInstance().start(QueryWorker())
+
+    function display_results(result):
+        mark_idle(progress_bar)
+        ResultsDisplay.display_results(result)
+        update_export_options(result)
+        metrics_payload = getattr(result, "metrics", None)
+        _latest_metrics_payload = metrics_payload
+        _refresh_status_metrics()  # metrics timer updates status labels
+        session_manager.add_session(uuid4(), title_from(current_query))
+        _set_status_message("Query completed")
+
+    function display_error(error):
+        mark_idle(progress_bar)
+        _show_critical("Query Error", detail(error))
+        _set_status_message("Query failed")
+        _refresh_status_metrics()
+
+    function _show_warning(title, message):
+        if _suppress_dialogs():  # AUTORESEARCH_SUPPRESS_DIALOGS bypasses UI
+            _log_dialog("warning", title, message)
+            return
+        QMessageBox.warning(self, title, message)
+```
