@@ -413,15 +413,20 @@ installed by `task install`; enable them with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. `scripts/setup.sh` accepts extras via the
 `AR_EXTRAS` environment variable.
 
-`pyproject.toml` defines these groups: minimal, nlp, ui, vss, parsers, git,
-distributed, analysis, gpu, llm, test, full, dev, dev-minimal, and build. The
-table below summarizes their purpose and usage.
+Install the PySide6 desktop experience with `uv sync --extra desktop` and run
+`autoresearch desktop` to launch the native UI once dependencies finish
+syncing. Optional groups remain modular so you can add only what your workflow
+requires.
+
+`pyproject.toml` defines these groups: minimal, desktop, nlp, ui, vss, parsers,
+git, distributed, analysis, gpu, llm, test, full, dev, dev-minimal, and build.
+The table below summarizes their purpose and usage.
 
 | Extra | Purpose | Setup command |
 |------|---------|---------------|
+| desktop | PySide6 desktop interface | `uv sync --extra desktop` |
 | minimal | core embedding model support | `uv sync --extra minimal` |
 | nlp | spaCy processing | `uv sync --extra nlp` |
-| desktop | PySide6 desktop interface | `uv sync --extra desktop` |
 | vss | DuckDB vector search extension | `uv sync --extra vss` |
 | parsers | PDF and DOCX ingestion | `uv sync --extra parsers` |
 | git | local Git repository search | `uv sync --extra git` |
@@ -430,10 +435,17 @@ table below summarizes their purpose and usage.
 | gpu | GPU-only packages | `uv sync --extra gpu` |
 | llm | CPU LLM libraries | `uv sync --extra llm` |
 | test | packages needed only for tests | `uv sync --extra test` |
+| docs | documentation toolchain | `uv sync --extra docs` |
 | full | all optional features | `uv sync --extra full` |
 | dev | developer tools | `uv sync --extra dev` |
 | dev-minimal | minimal developer toolchain | `uv sync --extra dev-minimal` |
 | build | packaging utilities | `uv sync --extra build` |
+
+!!! warning "Legacy Streamlit interface"
+    The `ui` extra keeps the Streamlit application available for maintenance
+    only. Review [docs/specs/streamlit-refactor-plan.md](specs/streamlit-
+    refactor-plan.md) before enabling it and prefer the `desktop` extra for new
+    deployments.
 
 The `llm` extra installs CPU-friendly libraries such as `fastembed` and
 `dspy-ai`. GPU-focused transformer stacks are no longer included.
@@ -447,8 +459,8 @@ state.
 Examples:
 
 ```bash
+uv sync --extra desktop      # PySide6 desktop workflow
 uv sync --extra nlp          # language processing
-uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
 uv sync --extra llm          # CPU LLM libraries
 uv sync --extra gpu          # BERTopic and lmstudio
@@ -502,8 +514,11 @@ otherwise it falls back to `pip install -U autoresearch`.
 Use pip extras when upgrading to ensure optional dependencies remain
 installed. For example:
 ```bash
-pip install -U "autoresearch[nlp,ui]"
+pip install -U "autoresearch[nlp,desktop]"
+autoresearch desktop  # launch after upgrade
 ```
+To retain the Streamlit interface, add `ui` only after reviewing the legacy
+warning above.
 The project follows semantic versioning. Minor releases within the same
 major version are backwards compatible. Check the
 [duckdb_compatibility.md](duckdb_compatibility.md) document for extension
@@ -514,7 +529,8 @@ version notes.
 If you installed Autoresearch before ``0.1.0`` simply upgrade the base
 package and reinstall any extras you require:
 ```bash
-pip install -U "autoresearch[full,gpu]"
+pip install -U "autoresearch[full,gpu,desktop]"
+autoresearch desktop
 ```
 
 ## Troubleshooting optional package builds
