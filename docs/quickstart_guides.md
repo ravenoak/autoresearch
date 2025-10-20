@@ -129,59 +129,85 @@ autoresearch --install-completion bash
 autoresearch --install-completion zsh
 ```
 
-## Streamlit GUI Quickstart Guide
+## PySide6 Desktop Quickstart Guide
 
-### Starting the GUI
+### Installation
 
 ```bash
-autoresearch gui
+# Recommended: use uv with the desktop extra
+uv sync --extra desktop
+
+# Alternative: install from PyPI with the desktop dependencies
+pip install "autoresearch[desktop]"
 ```
 
-This will start the Streamlit server and open the GUI in your default web browser.
+The desktop extra installs PySide6, Qt WebEngine, and the graph libraries that
+power the native UI. Ensure system-level Qt dependencies are present on Linux
+before launching the app.
 
-### Basic Usage
+### Starting the desktop app
 
-1. **Enter a query:**
-   - Type your query in the text input field at the top of the page
-   - Click the "Run" button or press Enter
+```bash
+autoresearch desktop
+```
 
-2. **View results:**
-   - The answer will appear in the "Answer" tab
-   - Click on other tabs to view reasoning, citations, claim audits,
-     metrics, and the knowledge graph. The **Claim Audits** tab surfaces
-     FEVER-style status badges (🟢 supported, 🔴 unsupported,
-     🟡 needs review) together with the top evidence snippet and
-     entailment score for each claim.
-   - Use the depth toggles above the results to reveal the knowledge graph
-     preview or enable graph export downloads when they are available.
+The command boots the PySide6 main window. Configuration and session data load
+from the same directories used by the CLI, so saved profiles are shared.
 
-3. **Export results:**
-   - Click the "Export" button
-   - Choose the format (JSON or Markdown)
-   - Save the file to your computer
+### Running your first query
 
-### Configuration
+1. **Compose the prompt:** Enter your research question in the multiline text
+   field inside the **QueryPanel**.
+2. **Select a reasoning mode:** Choose the agent strategy from the
+   **Reasoning Mode** dropdown. The options mirror `autoresearch search --mode`
+   so CLI and desktop sessions stay consistent.
+3. **Adjust loop depth:** Tune the **Reasoning Loops** spin box to influence
+   how deep the orchestration will iterate.
+4. **Run the query:** Click **Run Query** to submit. The status bar reports
+   progress while agents work.
 
-1. **Access configuration:**
-   - Click on "Configuration" in the sidebar
+> **Tip:** The **QueryPanel** remembers the last configuration that produced a
+> result. Use the configuration dock to persist different presets per project.
 
-2. **Edit configuration:**
-   - Modify values in the form
-   - Click "Save Changes" to apply
+### Inspecting results
 
-3. **Use configuration presets:**
-   - Select a preset from the dropdown
-   - Click "Apply Preset"
+Results stream into the tabbed **ResultsDisplay** in the centre of the window:
 
-### History
+- **Answer** renders the Markdown synthesis with inline citations.
+- **Citations** lists every source with **Open Source** and **Copy Citation**
+  buttons.
+- **Knowledge Graph** renders the interactive network view when graph data is
+  available.
+- **Agent Trace** captures the full reasoning transcript.
+- **Metrics** surfaces retrieval, planner, and graph statistics.
 
-1. **View query history:**
-   - Click on "History" in the sidebar
-   - See a list of previous queries
+> **Tip:** Switch tabs in the **ResultsDisplay** to match your current depth.
+> The desktop client only loads heavy knowledge-graph assets when you visit the
+> corresponding tab, keeping lightweight reviews responsive.
 
-2. **Rerun a query:**
-   - Find the query in the history
-   - Click the "Rerun" button
+### Managing docks and exports
+
+Three docks sit around the main canvas:
+
+- **Configuration** (Ctrl+1) exposes the JSON editor for runtime settings.
+- **Sessions** (Ctrl+2) lists saved runs and lets you restore previous
+  responses.
+- **Exports** (Ctrl+3) lights up when structured downloads are ready.
+
+Use **View → Configuration/Sessions/Exports** to toggle each dock. When an
+export is available, click the corresponding button inside the **Exports** dock
+to save JSON, Markdown, or graph artifacts.
+
+> **Tip:** Dock visibility is global. Collapse panes you do not need, then press
+> their shortcuts to summon them when you pivot workflows mid-investigation.
+
+### Legacy Streamlit interface
+
+The Streamlit GUI remains available for short-term compatibility. See the
+[legacy appendix](#appendix-a-streamlit-gui-quickstart-legacy) for launch and
+navigation details while planning your migration.
+
+## A2A (Agent-to-Agent) Interface Quickstart Guide
 
 ## A2A (Agent-to-Agent) Interface Quickstart Guide
 
@@ -328,4 +354,39 @@ print(f"System Status: {status['content']['status']}")
 print(f"Active Agents: {', '.join(status['content']['active_agents'])}")
 ```
 
-These quickstart guides provide the essential information needed to get started with each interface of the Autoresearch system. For more detailed information, refer to the full documentation.
+These quickstart guides provide the essential information needed to get
+started with each interface of the Autoresearch system. For more detailed
+information, refer to the full documentation.
+
+## Appendix A: Streamlit GUI Quickstart (Legacy)
+
+> **Status:** Maintenance only. Follow the
+> [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md) for
+> support timelines and mitigation steps.
+
+### Starting the legacy GUI
+
+```bash
+autoresearch gui
+```
+
+The command launches the Streamlit server and opens the browser interface.
+
+### Basic usage
+
+1. **Enter a query:** Type your prompt into the textbox at the top of the page
+   and click **Run** (or press Enter).
+2. **Inspect results:** Use the tabs to flip between the answer, reasoning,
+   claim audits, metrics, and the knowledge graph. Depth toggles above the
+   results control which sections render.
+3. **Export:** Press **Export**, choose JSON or Markdown, and download the file.
+
+### Configuration and history
+
+- **Configuration:** Expand the sidebar, open **Configuration**, update values,
+  then click **Save Changes**.
+- **History:** Select **History** in the sidebar to re-run stored queries.
+
+> **Tip:** Treat the Streamlit workflow as a fallback for teams that have not
+> yet deployed the PySide6 desktop runtime. Plan migrations promptly to benefit
+> from the native client improvements documented above.
