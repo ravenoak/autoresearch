@@ -26,6 +26,17 @@ official deprecation timeline.
   PySide6. Streamlit component hooks are frozen and will not receive new API
   work.
 
+## Parity Checklist and Dashboard
+
+- Review the [UX Measurement Plan](../specs/ux-measurement-plan.md) for the
+  telemetry and research metrics that gate each migration phase.
+- Track live progress in the internal parity dashboard shared in release notes;
+  it visualizes the acceptance criteria events (e.g., `ui.query.submitted`,
+  `ui.window.spawned`) and flags regressions against phase targets.
+- Before deprecating a Streamlit workflow, confirm the checklist reports
+  "green" for the relevant PySide6 components and that supporting tests exist
+  in the paths cited by the UX improvements specification.
+
 ## Setup Checklist for the Desktop Extra
 
 1. **Install optional dependencies**
