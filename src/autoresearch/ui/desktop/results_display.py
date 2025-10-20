@@ -11,7 +11,9 @@ Displays query results in a tabbed interface with support for:
 
 from __future__ import annotations
 
+import json
 import re
+from collections.abc import Sequence
 from html import escape
 from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
@@ -38,11 +40,13 @@ from .metrics_dashboard import MetricsDashboard
 try:
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
+    from ...storage import StorageManager
 except ImportError:
     # For standalone development
     QueryResponse = None
     OutputFormatter = None
     OutputDepth = None
+    StorageManager = None  # type: ignore[assignment]
 
 
 class ResultsDisplay(QWidget):
@@ -284,10 +288,26 @@ class ResultsDisplay(QWidget):
         if not self.knowledge_graph_view:
             return
 
+        graph_payload = self._prepare_graph_payload_from_result(result)
+
+        if graph_payload is None:
+            graph_payload = self._load_graph_from_storage()
+
+        if graph_payload:
+            self.knowledge_graph_view.set_graph_data(graph_payload)
+        else:
+            self.knowledge_graph_view.clear()
+
+    def _prepare_graph_payload_from_result(
+        self, result: QueryResponse
+    ) -> Mapping[str, list[Any]] | None:
         graph_payload: Mapping[str, object] | None = None
 
         if hasattr(result, "knowledge_graph"):
             candidate = getattr(result, "knowledge_graph")
+            converted = self._convert_graph_like(candidate)
+            if converted is not None:
+                return converted
             if isinstance(candidate, Mapping):
                 graph_payload = candidate
 
@@ -296,18 +316,213 @@ class ResultsDisplay(QWidget):
             if isinstance(metrics, Mapping):
                 knowledge_metrics = metrics.get("knowledge_graph")
                 if isinstance(knowledge_metrics, Mapping):
-                    graph_candidate = knowledge_metrics.get("graph")
-                    if isinstance(graph_candidate, Mapping):
-                        graph_payload = graph_candidate
-                    else:
-                        data_candidate = knowledge_metrics.get("data")
-                        if isinstance(data_candidate, Mapping):
-                            graph_payload = data_candidate
+                    for key in ("graph", "data"):
+                        graph_candidate = knowledge_metrics.get(key)
+                        converted = self._convert_graph_like(graph_candidate)
+                        if converted is not None:
+                            return converted
+                        if isinstance(graph_candidate, Mapping):
+                            graph_payload = graph_candidate
 
-        if graph_payload:
-            self.knowledge_graph_view.set_graph_data(graph_payload)
+                    exports = knowledge_metrics.get("exports")
+                    if isinstance(exports, Mapping):
+                        json_payload = exports.get("graph_json")
+                        converted = self._convert_graph_like(json_payload)
+                        if converted is not None:
+                            return converted
+
+        return self._coerce_nodes_edges(graph_payload)
+
+    def _convert_graph_like(self, graph_like: Any) -> Mapping[str, list[Any]] | None:
+        if isinstance(graph_like, Mapping):
+            return self._coerce_nodes_edges(graph_like)
+
+        if graph_like is None:
+            return None
+
+        if isinstance(graph_like, str):
+            stripped = graph_like.strip()
+            if not stripped:
+                return None
+            if stripped.startswith("{"):
+                try:
+                    payload = json.loads(stripped)
+                except Exception:
+                    return None
+                if isinstance(payload, Mapping):
+                    return self._coerce_nodes_edges(payload)
+            return None
+
+        return self._convert_graph_object(graph_like)
+
+    def _load_graph_from_storage(self) -> Mapping[str, list[Any]] | None:
+        if StorageManager is None:
+            return None
+
+        try:
+            graph_obj = StorageManager.get_knowledge_graph(create=False)
+        except Exception:
+            return None
+
+        return self._convert_graph_object(graph_obj)
+
+    def _convert_graph_object(self, graph_obj: Any) -> Mapping[str, list[Any]] | None:
+        if graph_obj is None:
+            return None
+
+        nodes_attr = getattr(graph_obj, "nodes", None)
+        if nodes_attr is None:
+            return None
+
+        try:
+            nodes_iterable = nodes_attr()
+        except TypeError:
+            nodes_iterable = nodes_attr
+        except Exception:
+            return None
+
+        if not self._is_sequence(nodes_iterable):
+            try:
+                nodes_list = list(nodes_iterable)  # type: ignore[arg-type]
+            except Exception:
+                return None
         else:
-            self.knowledge_graph_view.clear()
+            nodes_list = list(nodes_iterable)
+
+        if not nodes_list:
+            return None
+
+        edges = self._extract_edges_from_graph(graph_obj)
+        return {"nodes": nodes_list, "edges": edges}
+
+    def _extract_edges_from_graph(self, graph_obj: Any) -> list[list[Any]]:
+        edges_callable = getattr(graph_obj, "edges", None)
+        if not callable(edges_callable):
+            return []
+
+        try:
+            edges_with_meta = list(edges_callable(keys=True, data=True))
+        except TypeError:
+            edges_with_meta = []
+        except Exception:
+            edges_with_meta = []
+
+        if edges_with_meta:
+            return self._format_edges(edges_with_meta, include_key=True, include_data=True)
+
+        try:
+            edges_with_data = list(edges_callable(data=True))
+        except TypeError:
+            edges_with_data = []
+        except Exception:
+            edges_with_data = []
+
+        if edges_with_data:
+            return self._format_edges(edges_with_data, include_key=False, include_data=True)
+
+        try:
+            edges_plain = list(edges_callable())
+        except Exception:
+            edges_plain = []
+
+        formatted: list[list[Any]] = []
+        for edge in edges_plain:
+            if not self._is_sequence(edge):
+                continue
+            items = list(edge)
+            if len(items) < 2:
+                continue
+            formatted.append([items[0], items[1]])
+        return formatted
+
+    def _format_edges(
+        self,
+        edges: Sequence[Sequence[Any]],
+        *,
+        include_key: bool,
+        include_data: bool,
+    ) -> list[list[Any]]:
+        formatted: list[list[Any]] = []
+        for edge in edges:
+            if not self._is_sequence(edge):
+                continue
+            items = list(edge)
+            if len(items) < 2:
+                continue
+            source, target = items[0], items[1]
+            label: Any | None = None
+
+            if include_data:
+                data_index = 3 if include_key else 2
+                if len(items) > data_index:
+                    label = self._stringify_graph_value(items[data_index])
+
+            if label is None and include_key and len(items) >= 3:
+                label = self._stringify_graph_value(items[2])
+
+            if label is not None:
+                formatted.append([source, target, label])
+            else:
+                formatted.append([source, target])
+
+        return formatted
+
+    def _coerce_nodes_edges(
+        self, payload: Mapping[str, object] | None
+    ) -> Mapping[str, list[Any]] | None:
+        if payload is None:
+            return None
+
+        nodes = payload.get("nodes")
+        edges = payload.get("edges")
+        if not self._is_sequence(nodes):
+            return None
+
+        nodes_list = [node for node in nodes if node is not None]
+
+        edges_list: list[list[Any]] = []
+        if self._is_sequence(edges):
+            for edge in edges:
+                if not self._is_sequence(edge):
+                    continue
+                items = [item for item in edge]
+                if len(items) >= 2:
+                    edges_list.append(items)
+
+        if not nodes_list:
+            return None
+
+        return {"nodes": nodes_list, "edges": edges_list}
+
+    @staticmethod
+    def _is_sequence(value: object) -> bool:
+        return isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray))
+
+    def _stringify_graph_value(self, value: Any) -> str | None:
+        if value is None:
+            return None
+
+        if isinstance(value, Mapping):
+            for key in ("label", "relation", "type", "name", "predicate"):
+                candidate = value.get(key)
+                text = self._stringify_graph_value(candidate)
+                if text:
+                    return text
+            for candidate in value.values():
+                text = self._stringify_graph_value(candidate)
+                if text:
+                    return text
+            return None
+
+        if self._is_sequence(value):
+            for item in value:
+                text = self._stringify_graph_value(item)
+                if text:
+                    return text
+            return None
+
+        text = str(value).strip()
+        return text or None
 
     def display_trace(self, result: QueryResponse) -> None:
         """Display agent reasoning trace."""
