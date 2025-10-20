@@ -2,33 +2,35 @@
 
 ## Overview
 
-The Streamlit interface is frozen in maintenance-only mode while the project
-completes the PySide6 migration. Supported work is limited to preserving the
-legacy launch path, configuration switches, and core visualization widgets
-already in production. New feature requests, UI changes, and integration work
-must target the PySide6 desktop client; see the [Streamlit refactor plan][plan]
-for the deprecation schedule and migration milestones.
+The Streamlit-driven interface now lives in a maintenance-only track while the
+product team completes the PySide6 migration. The only supported effort is to
+keep the legacy launch sequence, environment configuration, and baseline
+visualization widgets running for existing deployments. Any new feature
+requests, UX experiments, or platform integrations must target the PySide6
+client instead; the deprecation runway is documented in the [Streamlit refactor
+plan][plan].
 
 ## Supported Surface Area
 
-- **Launcher glue**: `launch()` and related helpers in
-  `src/autoresearch/streamlit_ui.py` remain callable for existing automation.
-- **Telemetry toggles**: Opt-in analytics flags continue to respect regulated
-  environment requirements.
-- **Data preview widgets**: Current summary tables, trace viewers, and status
-  panels render without layout or styling changes.
+- **Launcher glue**: `launch()` and downstream helpers in
+  `src/autoresearch/streamlit_ui.py` remain callable for automation that has not
+  migrated.
+- **Configuration switches**: Existing flag handling, including telemetry opt-in
+  logic, must continue to respect regulated environments.
+- **Data display widgets**: Legacy summary tables, trace viewers, and status
+  panels render exactly as they do today.
 
-These behaviors are regression-tested only to ensure compatibility with
-archived deployments; their scope does not expand.
+Regression coverage is confined to these paths to ensure archived deployments
+continue to load; this scope is frozen and does not expand.
 
 ## Frozen Scope and Responsibilities
 
-- Accept only fixes for security issues, crashes, or regressions affecting the
-  supported surface area.
-- Permit behavioral changes solely when required for the sunset plan (for
-  example, new deprecation warnings or migration affordances).
+- Accept only patches that address security issues, stability risks, or
+  regressions within the supported surface area.
+- Allow behavioral adjustments solely when required to deliver the sunset plan,
+  such as issuing migration warnings or enabling data export for handoff.
 - Route enhancements, UX revisions, and integration work through the PySide6
-  client documented in [docs/specs/pyside-desktop.md][pyside6].
+  desktop client described in [docs/specs/pyside-desktop.md][pyside6].
 
 ## Traceability
 
@@ -37,8 +39,8 @@ archived deployments; their scope does not expand.
 - **Tests (archived legacy suite)**
   - [tests/unit/legacy/test_streamlit_ui_helpers.py][tests]
 - **Forward development path**
-  - Streamlit successors must reference [docs/specs/pyside-desktop.md][pyside6]
-    for new work.
+  - New UI investment must go through the PySide6 track in
+    [docs/specs/pyside-desktop.md][pyside6]; Streamlit work remains frozen.
 
 ## Known Deviation
 
