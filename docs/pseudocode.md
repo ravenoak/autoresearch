@@ -461,8 +461,8 @@ class AutoresearchMainWindow(QMainWindow):
         if orchestrator is None or config is None:
             _show_critical("System Error", missing_core_notice())
             return
-        merge_config_from(QueryPanel.get_configuration())
-        mark_busy(progress_bar)
+        _merge_query_panel_configuration()
+        _enter_query_busy_state()
 
         class QueryWorker(QRunnable):
             function run():
@@ -475,7 +475,7 @@ class AutoresearchMainWindow(QMainWindow):
         QThreadPool.globalInstance().start(QueryWorker())
 
     function display_results(result):
-        mark_idle(progress_bar)
+        _leave_query_busy_state()
         ResultsDisplay.display_results(result)
         update_export_options(result)
         metrics_payload = getattr(result, "metrics", None)
@@ -485,7 +485,7 @@ class AutoresearchMainWindow(QMainWindow):
         _set_status_message("Query completed")
 
     function display_error(error):
-        mark_idle(progress_bar)
+        _leave_query_busy_state()
         _show_critical("Query Error", detail(error))
         _set_status_message("Query failed")
         _refresh_status_metrics()
@@ -496,6 +496,41 @@ class AutoresearchMainWindow(QMainWindow):
             return
         QMessageBox.warning(self, title, message)
 ```
+
+Busy-state transitions live on `AutoresearchMainWindow` via
+`_enter_query_busy_state()` and `_leave_query_busy_state()`. They keep status
+messaging, progress indicators, and `is_query_running` updates coordinated.
+
+`_apply_configuration_overrides()` copies QueryPanel overrides, then normalises
+the `reasoning_mode` value through `_coerce_reasoning_mode()` so downstream
+ConfigModel validation and reasoning transcripts remain consistent.
+
+```
+    function _merge_query_panel_configuration():
+        overrides = QueryPanel.get_configuration()
+        if overrides:
+            _apply_configuration_overrides(overrides)
+
+    function _apply_configuration_overrides(overrides):
+        updates = copy(overrides)
+        if "reasoning_mode" in updates:
+            updates["reasoning_mode"] =
+                _coerce_reasoning_mode(updates["reasoning_mode"])
+
+        if hasattr(config, "model_copy"):
+            config = config.model_copy(update=updates)
+        elif isinstance(config, Mapping):
+            config = {**config, **updates}
+        else:
+            for key, value in updates.items():
+                setattr(config, key, value)
+
+        ConfigEditor.load_config(config)
+```
+
+`_coerce_reasoning_mode()` follows the runtime guard: it tries to build a
+`ReasoningMode` from string inputs and otherwise preserves the existing enum so
+desktop reasoning histories stay intact.
 
 ## 14. PySide6 Desktop Loop (ui/desktop/main.py)
 ```
