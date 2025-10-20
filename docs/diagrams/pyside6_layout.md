@@ -1,7 +1,7 @@
 # PySide6 Layout Diagram
 
 This document illustrates the layout and primary interactions of the PySide6
-application.
+application using the current widget names.
 
 ```mermaid
 graph TD
@@ -9,37 +9,50 @@ graph TD
     MenuBar[Menu Bar]
     ToolBar[Tool Bar]
     CentralStack[Central Stack]
-    LeftDock[Left Dock: Task Queue]
-    RightDock[Right Dock: Context]
-    BottomDock[Bottom Dock: Logs]
+    ConfigDock[Dock: ConfigEditor]
+    SessionDock[Dock: SessionManager]
+    ExportDock[Dock: ExportManager]
 
     MainWindow --> MenuBar
     MainWindow --> ToolBar
     MainWindow --> CentralStack
-    MainWindow --> LeftDock
-    MainWindow --> RightDock
-    MainWindow --> BottomDock
+    MainWindow --> ConfigDock
+    MainWindow --> SessionDock
+    MainWindow --> ExportDock
 
-    CentralStack --> QueryEditor[Query Editor Tab]
-    CentralStack --> ResultsView[Results View Tab]
-    CentralStack --> MetricsView[Metrics View Tab]
+    CentralStack --> QueryPanel[QueryPanel]
+    CentralStack --> ResultsDisplay[ResultsDisplay]
 
-    LeftDock --> QueueList[Queued Runs List]
-    QueueList --> InspectRun[Inspect Run Details]
-
-    RightDock --> ContextPanel[Context Panel]
-    ContextPanel --> AttachFiles[Attach Files]
-    ContextPanel --> ManagePrompts[Manage Prompts]
-
-    BottomDock --> LogStream[Live Log Stream]
-    LogStream --> JumpToTrace[Jump to Trace]
-
-    QueryEditor --> TriggerRun[Trigger Run]
-    TriggerRun --> QueueList
-
-    ResultsView --> ReviewArtifacts[Review Artifacts]
-    ReviewArtifacts --> ContextPanel
-
-    MetricsView --> ExportMetrics[Export Metrics]
-    ExportMetrics --> MenuBar
+    QueryPanel --> ConfigEditor[ConfigEditor]
+    ConfigEditor --> SessionManager[SessionManager]
+    SessionManager --> ResultsDisplay
+    ResultsDisplay --> ExportManager[ExportManager]
 ```
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant QueryPanel
+    participant ConfigEditor
+    participant SessionManager
+    participant WorkerPool
+    participant ResultsDisplay
+    participant ExportManager
+
+    User->>QueryPanel: Submit query request
+    QueryPanel->>ConfigEditor: Collect execution parameters
+    ConfigEditor->>SessionManager: Bundle session configuration
+    SessionManager->>WorkerPool: Dispatch work item
+    WorkerPool-->>SessionManager: Return completion payload
+    SessionManager->>ResultsDisplay: Stream results and metrics data
+    ResultsDisplay->>SessionManager: Request metrics refresh
+    SessionManager-->>ResultsDisplay: Push updated metrics snapshot
+    ResultsDisplay->>ExportManager: Signal export availability
+    ExportManager-->>User: Offer export options
+```
+
+## Visual References
+
+Supporting screenshots and wireframes will be stored under
+`docs/images/pyside6_layout/` (placeholder). Add new assets to that directory
+and reference them here once captures are available.
