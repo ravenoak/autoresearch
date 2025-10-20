@@ -30,7 +30,9 @@ audits and another for deep dives.
     Streamlit radio groups remain documented in the
     [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
     Refer to the plan if you must maintain the web app while preparing your
-    PySide6 rollout.
+    PySide6 rollout. Use the
+    [Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) to
+    map each setting to its desktop equivalent.
 
 ## Planner graph conditioning
 
@@ -63,7 +65,10 @@ delivers supporting files.
     The deprecated Streamlit provenance panel and claim table toggles are
     covered in the
     [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
-    Use them only for maintenance fixes while migrating teams to the desktop UI.
+    Use them only for maintenance fixes while migrating teams to the desktop UI
+    and consult the
+    [Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) for
+    parity updates and troubleshooting tips.
 
 ## Interactive re-verification
 
@@ -72,7 +77,9 @@ The Streamlit claim panel adds a **Refresh claim audits** button plus optional
 controls for broadening retrieval or selecting an alternate
 `fact_checker.verification.<variant>` prompt. Pressing the button replays the
 FactChecker with the chosen settings and refreshes the badges, provenance,
-and source list without rerunning the full query. The CLI mirrors the workflow via
+and source list without rerunning the full query. Review the
+[Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) for the
+equivalent PySide6 workflow and import steps. The CLI mirrors the workflow via
 `autoresearch reverify <state_id> --broaden-sources --max-results 12` so audits
 can be updated in scripted environments. The API also accepts
 `POST /query/reverify` with the same parameters, enabling integrations to

@@ -5,6 +5,9 @@ This document describes the typical user flows for all interface modalities of t
 For onboarding details and architectural context, see the
 [PySide6 Desktop Interface Developer Guide](developer_guide.md) and the
 [PySide6 Migration and Streamlit Removal Plan](pyside6_migration_plan.md).
+Legacy Streamlit teams should review the
+[Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) for
+parity milestones, desktop setup instructions, and troubleshooting tips.
 
 ## PySide6 Desktop User Flows
 
@@ -101,8 +104,10 @@ For onboarding details and architectural context, see the
      dock and highlight available options.
 
 > **Note:** The PySide6 desktop app is the forward-looking interface. Refer to
-> the [migration plan](pyside6_migration_plan.md) for rollout phases and the
-> developer guide for onboarding best practices.
+> the [migration plan](pyside6_migration_plan.md) for rollout phases, the
+> developer guide for onboarding best practices, and the
+> [Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) for
+> feature parity status plus the desktop setup checklist.
 
 ## CLI Interface User Flows
 
@@ -208,6 +213,12 @@ For onboarding details and architectural context, see the
 > cycles later (see the [migration plan](pyside6_migration_plan.md)).
 
 ## Streamlit GUI User Flows
+
+> **Migration reminder:** New deployments should prioritize the PySide6 desktop
+> interface. Use the
+> [Streamlit to PySide6 migration guide](guides/streamlit-to-pyside6.md) to map
+> Streamlit tasks to their PySide6 equivalents and learn how to
+> install the `desktop` extra.
 
 ### Basic Query Flow
 
