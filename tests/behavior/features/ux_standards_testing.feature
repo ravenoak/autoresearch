@@ -1,3 +1,4 @@
+@legacy_streamlit
 Feature: UX/UI Standards Testing
   As a user interface standards validator
   I want comprehensive testing of UX/UI standards compliance

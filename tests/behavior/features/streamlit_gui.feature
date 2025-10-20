@@ -1,3 +1,4 @@
+@legacy_streamlit
 Feature: Streamlit GUI Features
   As a user
   I want a web-based GUI for Autoresearch

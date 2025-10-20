@@ -66,7 +66,7 @@ Feature: UI Accessibility
     Then a guided tour modal should describe the main features
     And I should be able to dismiss the tour
 
-  @requires_ui
+  @requires_ui @legacy_streamlit
   Scenario: Skip to content link
     Given the modular UI components are running
     When I load the Streamlit page
