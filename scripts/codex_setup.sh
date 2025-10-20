@@ -4,8 +4,8 @@
 # for repository-wide guidelines. Do not use or document this script outside the
 # AGENTS.md system. For any other environment, use ./scripts/setup.sh.
 # Installs the project in editable mode with development and test extras. It
-# invokes bootstrap.sh to install Go Task when missing. Use AR_EXTRAS to
-# specify optional extras.
+# provisions the Task CLI through uvx when missing. Use AR_EXTRAS to specify
+# optional extras.
 set -euo pipefail
 
 START_TIME=$(date +%s)
@@ -135,15 +135,41 @@ PY
     fi
 }
 
-# Ensure Go Task is available before platform-specific setup
-"$SCRIPT_DIR/bootstrap.sh"
+ensure_task_with_uvx() {
+    ensure_uv
+
+    local venv_bin="$PWD/.venv/bin"
+    mkdir -p "$venv_bin"
+    ensure_venv_bin_on_path "$venv_bin"
+
+    if command -v task >/dev/null 2>&1; then
+        if ! task --version >/dev/null 2>&1; then
+            echo "Go Task detected but unusable; reinstall or remove it." >&2
+            exit 1
+        fi
+        return
+    fi
+
+    local task_wrapper="$venv_bin/task"
+    cat >"$task_wrapper" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exec uvx --from go-task-bin task "$@"
+EOF
+    chmod +x "$task_wrapper"
+    export PATH="$venv_bin:$PATH"
+
+    if ! task --version >/dev/null 2>&1; then
+        echo "Failed to provision Task via uvx. See docs/installation.md for manual steps." >&2
+        exit 1
+    fi
+}
+
+ensure_task_with_uvx
+
 VENV_BIN="$PWD/.venv/bin"
 ensure_venv_bin_on_path "$VENV_BIN"
 export PATH="$VENV_BIN:$PATH"
-if ! task --version >/dev/null 2>&1; then
-    echo "Go Task installation failed. See docs/installation.md for manual steps." >&2
-    exit 1
-fi
 
 install_pyside6_system_deps
 
