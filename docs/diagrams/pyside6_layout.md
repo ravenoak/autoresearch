@@ -5,50 +5,47 @@ application using the current widget names.
 
 ```mermaid
 graph TD
-    MainWindow[Main Window]
-    MenuBar[Menu Bar]
-    ToolBar[Tool Bar]
-    CentralStack[Central Stack]
-    ConfigDock[Dock: ConfigEditor]
-    SessionDock[Dock: SessionManager]
-    ExportDock[Dock: ExportManager]
+    AutoresearchMainWindow[AutoresearchMainWindow]
+    QueryPanel[QueryPanel]
+    ResultsDisplay[ResultsDisplay]
+    ConfigEditor[ConfigEditor]
+    SessionManager[SessionManager]
+    ExportManager[ExportManager]
 
-    MainWindow --> MenuBar
-    MainWindow --> ToolBar
-    MainWindow --> CentralStack
-    MainWindow --> ConfigDock
-    MainWindow --> SessionDock
-    MainWindow --> ExportDock
+    AutoresearchMainWindow -->|central splitter| QueryPanel
+    AutoresearchMainWindow -->|central splitter| ResultsDisplay
+    AutoresearchMainWindow -->|dock| ConfigEditor
+    AutoresearchMainWindow -->|dock| SessionManager
+    AutoresearchMainWindow -->|dock| ExportManager
 
-    CentralStack --> QueryPanel[QueryPanel]
-    CentralStack --> ResultsDisplay[ResultsDisplay]
-
-    QueryPanel --> ConfigEditor[ConfigEditor]
-    ConfigEditor --> SessionManager[SessionManager]
+    QueryPanel --> ConfigEditor
+    ConfigEditor --> SessionManager
     SessionManager --> ResultsDisplay
-    ResultsDisplay --> ExportManager[ExportManager]
+    ResultsDisplay --> ExportManager
 ```
 
 ```mermaid
 sequenceDiagram
     participant User
     participant QueryPanel
-    participant ConfigEditor
-    participant SessionManager
-    participant WorkerPool
+    participant AutoresearchMainWindow
+    participant QThreadPool
+    participant QueryWorker
     participant ResultsDisplay
+    participant SessionManager
     participant ExportManager
 
     User->>QueryPanel: Submit query request
-    QueryPanel->>ConfigEditor: Collect execution parameters
-    ConfigEditor->>SessionManager: Bundle session configuration
-    SessionManager->>WorkerPool: Dispatch work item
-    WorkerPool-->>SessionManager: Return completion payload
-    SessionManager->>ResultsDisplay: Stream results and metrics data
-    ResultsDisplay->>SessionManager: Request metrics refresh
-    SessionManager-->>ResultsDisplay: Push updated metrics snapshot
-    ResultsDisplay->>ExportManager: Signal export availability
-    ExportManager-->>User: Offer export options
+    QueryPanel->>AutoresearchMainWindow: emit query_submitted(query)
+    AutoresearchMainWindow->>AutoresearchMainWindow: Merge runtime configuration
+    AutoresearchMainWindow->>QThreadPool: start(QueryWorker)
+    QThreadPool->>QueryWorker: run query with config context
+    QueryWorker-->>AutoresearchMainWindow: Deliver QueryResponse payload
+    AutoresearchMainWindow->>ResultsDisplay: display_results(result)
+    AutoresearchMainWindow->>SessionManager: add_session(metadata)
+    AutoresearchMainWindow->>AutoresearchMainWindow: _refresh_status_metrics()
+    AutoresearchMainWindow->>ExportManager: set_available_exports(exports)
+    ExportManager-->>User: Present export choices
 ```
 
 ## Visual References
