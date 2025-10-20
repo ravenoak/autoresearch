@@ -78,10 +78,17 @@ task check
 the dependency sync fails. If installation fails, see `docs/installation.md`
 for manual steps or package manager commands.
 
-Optional extras provide features such as NLP, a UI, or distributed
-processing. Install them on demand with `uv sync --extra <name>`, `task
-install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`. LLM
-capabilities depend on the `llm` extra and are skipped unless you enable it.
+Optional extras provide features such as the PySide6 desktop app, NLP, or
+distributed processing. Install them on demand with `uv sync --extra <name>`,
+`task install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`. Install
+the native desktop workflow with `uv sync --extra desktop` and launch it via
+`autoresearch desktop` once the sync completes. LLM capabilities depend on the
+`llm` extra and are skipped unless you enable it.
+
+The legacy Streamlit UI remains available through the `ui` extra for
+maintenance scenarios. See the [Streamlit refactor plan](docs/specs/streamlit-
+refactor-plan.md) for the migration roadmap and prefer the `desktop` extra for
+new deployments.
 
 ### Enabling heavy extras
 
@@ -242,15 +249,16 @@ dependencies and are not synced by `task verify`.
 
 Autoresearch exposes optional extras to enable additional features:
 
+- `desktop` – PySide6-powered desktop interface (`autoresearch desktop`)
 - `nlp` – language processing via spaCy and BERTopic
-- `ui` – reference Streamlit interface
+- `ui` – reference Streamlit interface (legacy only)
 - `vss` – DuckDB VSS extension for vector search
 - `git` – local Git repository search
 - `distributed` – Ray and Redis for distributed processing
 - `analysis` – Polars-based data analysis utilities
 - `llm` – heavy LLM libraries like `sentence-transformers`
 - `parsers` – PDF and DOCX document ingestion
-- `full` – installs `nlp`, `ui`, `vss`, `git`, `distributed`,
+- `full` – installs `nlp`, `desktop`, `ui`, `vss`, `git`, `distributed`,
   `analysis`, `llm`, and `parsers`
 
 PDF and DOCX ingestion is in-scope for the 0.1.0a1 milestone when the
@@ -262,12 +270,17 @@ Install extras with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. Examples:
 
 ```bash
+uv sync --extra desktop      # native desktop workflow (PySide6)
 uv sync --extra nlp          # language processing
-uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
 uv sync --extra parsers      # PDF and DOCX ingestion for local files
 uv sync --extra llm          # LLM libraries
 ```
+
+To keep the legacy Streamlit interface available, sync `uv sync --extra ui`
+after reviewing the migration notes in
+[docs/specs/streamlit-refactor-plan.md](docs/specs/streamlit-refactor-plan.md)
+and prefer the desktop extra for day-to-day usage.
 
 ## Building the documentation
 
