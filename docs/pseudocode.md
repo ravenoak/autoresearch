@@ -624,3 +624,89 @@ function AutoresearchMainWindow.closeEvent(event):
         metrics_timer.stop()
     event.accept()
 ```
+
+## 14a. Desktop Optional Modules (ui/desktop/results_display.py)
+```
+try:
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+except ImportError:
+    QWebEngineView = None
+
+class ResultsDisplay(QWidget):
+    function __init__():
+        self._web_engine_available = QWebEngineView is not None
+        self.answer_notice = None
+        if self._web_engine_available:
+            self.answer_view = QWebEngineView()
+        else:
+            self.answer_notice = QLabel(
+                "Qt WebEngine missing. Falling back to a simplified view."
+            )
+            self.answer_notice.setWordWrap(True)
+            self.answer_view = QTextBrowser()
+            self.answer_view.setOpenExternalLinks(True)
+        answer_layout = QVBoxLayout()
+        if self.answer_notice:
+            answer_layout.addWidget(self.answer_notice)
+        answer_layout.addWidget(self.answer_view)
+
+    function display_answer(result):
+        if OutputFormatter:
+            body = OutputFormatter.render(result, "markdown", depth="standard")
+        else:
+            body = markdown_to_html(result.answer)
+        html = wrap_html_template(render_markdown(body))
+        if hasattr(self.answer_view, "setHtml"):
+            self.answer_view.setHtml(html)
+        else:
+            self.answer_view.setText(html)
+
+try:
+    import networkx as nx
+except Exception:
+    nx = None
+
+class KnowledgeGraphView(QWidget):
+    function __init__():
+        self._layout_mode = "circular"
+        self._message = QLabel("Graph data will appear here when available.")
+        if nx is None:
+            disable_layout_actions(["spring", "spectral"])
+
+    function _compute_layout_positions(nodes, edges):
+        if nx and self._layout_mode != "circular":
+            return nx.layout(self._layout_mode, nodes, edges)
+        return circular_layout(nodes)
+
+try:
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+    from matplotlib.figure import Figure
+except ImportError:
+    FigureCanvasQTAgg = None
+    Figure = None
+
+class MetricsDashboard(QWidget):
+    function __init__():
+        self._chart_available = bool(FigureCanvasQTAgg and Figure)
+        self._summary_label = QLabel("Metrics not available yet.")
+        self._stack = QStackedWidget()
+        if self._chart_available:
+            self._canvas = FigureCanvasQTAgg(Figure(figsize=(6.0, 3.5)))
+            self._stack.addWidget(self._canvas)
+            self._stack.addWidget(self._summary_label)
+        else:
+            self._stack.addWidget(self._summary_label)
+            disable_toggle_button(
+                text="Charts unavailable",
+                description="Install matplotlib to enable plotting."
+            )
+
+    function update_metrics(metrics):
+        snapshot = extract_snapshot(metrics)
+        if not self._chart_available:
+            self._summary_label.setText(render_text_summary(snapshot))
+            return
+        append_snapshot_to_chart(snapshot)
+        redraw_chart()
+        self._summary_label.setText(render_text_summary(snapshot))
+```

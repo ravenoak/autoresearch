@@ -50,6 +50,23 @@ no data is present so subsequent queries render correctly.
 optional libraries such as NetworkX or Matplotlib are unavailable, preserving
 usability.
 
+## Optional Dependency Fallbacks
+
+- Answer Tab — When Qt WebEngine cannot be imported the ResultsDisplay swaps the
+  embedded QWebEngineView for a QTextBrowser paired with a QLabel notice so the
+  formatted answer still renders without scripting support. Users keep external
+  link access while being prompted to install PySide6-WebEngine for full
+  interactivity.
+- Knowledge Graph — KnowledgeGraphView detects missing NetworkX at import time
+  and disables non-circular layouts while keeping the textual detail panel,
+  export buttons, and a placeholder message so graph data remains accessible as
+  node and edge summaries.
+- Metrics Dashboard — The metrics stack instantiates Matplotlib canvases only
+  when ``Figure`` and ``FigureCanvasQTAgg`` import successfully. Otherwise, it
+  pins the stacked widget to the textual summary view, disables the toggle
+  button, and annotates the screen-reader description to clarify that charts are
+  unavailable until Matplotlib is installed.
+
 ## Proof Sketch
 
 Signal-slot bindings connect QueryPanel to AutoresearchMainWindow, which
