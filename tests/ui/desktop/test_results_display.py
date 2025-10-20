@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from types import SimpleNamespace
 
@@ -161,3 +162,68 @@ def test_results_display_handles_missing_citations_gracefully(qtbot) -> None:
 
     assert display.knowledge_graph_view is not None
     assert display.knowledge_graph_view._graph_data is None  # type: ignore[attr-defined]
+
+
+def test_results_display_loads_graph_from_storage(monkeypatch, qtbot) -> None:
+    display = results_display_module.ResultsDisplay()
+    qtbot.addWidget(display)
+    display.show()
+    qtbot.wait(10)
+
+    class _DummyGraph:
+        def nodes(self):  # noqa: D401 - mimic networkx signature
+            return ["Source", "Target"]
+
+        def edges(self, keys=False, data=False):  # noqa: D401 - mimic networkx signature
+            if keys and data:
+                return [("Source", "Target", "rel", {"type": "connects"})]
+            if data:
+                return [("Source", "Target", {"type": "connects"})]
+            return [("Source", "Target")]
+
+    class _DummyStorage:
+        @staticmethod
+        def get_knowledge_graph(*, create: bool = True):  # noqa: D401 - mimic storage signature
+            assert create is False
+            return _DummyGraph()
+
+    monkeypatch.setattr(results_display_module, "StorageManager", _DummyStorage)
+
+    result = SimpleNamespace(
+        answer="Graph answer",
+        citations=[],
+        reasoning=[],
+        metrics={},
+        knowledge_graph=None,
+    )
+
+    display.display_results(result)
+
+    assert display.knowledge_graph_view is not None
+    graph_data = display.knowledge_graph_view._graph_data  # type: ignore[attr-defined]
+    assert graph_data is not None
+    assert graph_data["nodes"] == ["Source", "Target"]
+    assert any(edge[:2] == ["Source", "Target"] for edge in graph_data["edges"])
+
+
+def test_results_display_uses_graph_json_export(qtbot) -> None:
+    display = results_display_module.ResultsDisplay()
+    qtbot.addWidget(display)
+    display.show()
+    qtbot.wait(10)
+
+    graph_json = json.dumps({"nodes": ["Earth", "Moon"], "edges": [["Earth", "Moon", "orbits"]]})
+
+    result = SimpleNamespace(
+        answer="Graph answer",
+        citations=[],
+        reasoning=[],
+        metrics={"knowledge_graph": {"exports": {"graph_json": graph_json}}},
+        knowledge_graph=None,
+    )
+
+    display.display_results(result)
+
+    assert display.knowledge_graph_view is not None
+    graph_data = display.knowledge_graph_view._graph_data  # type: ignore[attr-defined]
+    assert graph_data == {"nodes": ["Earth", "Moon"], "edges": [["Earth", "Moon", "orbits"]]}
