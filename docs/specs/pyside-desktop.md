@@ -80,10 +80,21 @@ management across realistic UI lifecycles.
   - [src/autoresearch/ui/desktop/metrics_dashboard.py][m8]
   - [src/autoresearch/ui/desktop/main.py][m9]
 - Tests
-  - [tests/ui/desktop/test_component_smoke.py][t1]
-  - [tests/ui/desktop/test_desktop_integration.py][t2]
-  - [tests/ui/desktop/test_query_panel.py][t3]
-  - [tests/ui/desktop/test_results_display.py][t4]
+  - [tests/ui/desktop/test_component_smoke.py][t1] (**T-UI-001**)
+  - [tests/ui/desktop/test_desktop_integration.py][t2] (**T-UI-004**)
+  - [tests/ui/desktop/test_query_panel.py][t3] (**T-UI-002**)
+  - [tests/ui/desktop/test_results_display.py][t4] (**T-UI-003**)
+
+### Test ID Legend
+
+- **T-UI-001** — Smoke checks for widget fallbacks and export readiness. See
+  [tests/ui/desktop/test_component_smoke.py][t1].
+- **T-UI-002** — Query submission ergonomics and keyboard traversal. See
+  [tests/ui/desktop/test_query_panel.py][t3].
+- **T-UI-003** — Results rendering, citations, and telemetry surfaces. See
+  [tests/ui/desktop/test_results_display.py][t4].
+- **T-UI-004** — End-to-end desktop orchestration flow. See
+  [tests/ui/desktop/test_desktop_integration.py][t2].
 
 [m1]: ../../src/autoresearch/ui/desktop/main_window.py
 [m2]: ../../src/autoresearch/ui/desktop/query_panel.py

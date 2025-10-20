@@ -141,35 +141,57 @@ steer the team toward sustainable improvements.
 
 ## Traceability Matrix
 
-| UX Story | Component IDs | Test IDs |
-| --- | --- | --- |
-| Query submission parity | C1, C2 | T1, T2 |
-| Progressive disclosure controls | C3 | T3, T10 |
-| Accessibility parity | C1, C3, C4 | T6, T13 |
-| Multi-window comparison | C1, C5 | T7, T11 |
-| Knowledge graph annotations | C6 | T4, T12 |
-| Drag-and-drop imports | C1, C4 | T8, T14 |
-| Export pipelines | C3, C7 | T9, T15 |
-| Performance dashboards | C8 | T5, T16 |
+| UX Story | Component IDs | Covered Tests | Status |
+| --- | --- | --- | --- |
+| Query submission parity | C1, C2, C3 | T-UI-004, T-UI-002 | Covered |
+| Progressive disclosure controls | C3, C7 | T-UI-003, T-UI-004 | Covered |
+| Accessibility parity | C2, C3, C4 | T-UI-002, T-UI-001 | Partial |
+| Knowledge graph annotations | C3, C6 | T-UI-003, T-UI-001 | Partial |
+| Drag-and-drop imports | C4, C7 | T-UI-001 | Partial |
+| Export pipelines | C3, C7 | — | Backlog |
+| Multi-window comparison | C1, C5 | — | Backlog |
+| Performance dashboards | C3, C8 | T-UI-001 | Covered |
 
 ### Test ID Legend
 
-- **T1**: `tests/ui/desktop/test_main_window.py`
-- **T2**: `tests/ui/desktop/test_query_panel.py`
-- **T3**: `tests/ui/desktop/test_results_display.py`
-- **T4**: `tests/ui/desktop/test_knowledge_graph.py`
-- **T5**: `tests/ui/desktop/test_metrics_dashboard.py`
-- **T6**: `tests/ui/desktop/test_accessibility.py`
-- **T7**: `tests/ui/desktop/test_session_manager.py`
-- **T8**: `tests/ui/desktop/test_drag_drop.py`
-- **T9**: `tests/ui/desktop/test_export_manager.py`
-- **T10**: `tests/ui/desktop/integration/test_gui_integration.py`
-- **T11**: `tests/ui/desktop/integration/test_multi_window.py`
-- **T12**: `tests/ui/desktop/integration/test_graph_workflows.py`
-- **T13**: `tests/ui/desktop/integration/test_accessibility_workflows.py`
-- **T14**: `tests/ui/desktop/integration/test_import_workflows.py`
-- **T15**: `tests/ui/desktop/integration/test_export_end_to_end.py`
-- **T16**: `tests/ui/desktop/integration/test_performance_monitoring.py`
+- **T-UI-001**:
+  [`tests/ui/desktop/test_component_smoke.py`][t-ui-001]
+- **T-UI-002**:
+  [`tests/ui/desktop/test_query_panel.py`][t-ui-002]
+- **T-UI-003**:
+  [`tests/ui/desktop/test_results_display.py`][t-ui-003]
+- **T-UI-004**:
+  [`tests/ui/desktop/test_desktop_integration.py`][t-ui-004]
+
+### Test Backlog
+
+- **Multi-window orchestration** — planned coverage in
+  [`tests/ui/desktop/integration/test_multi_window.py`][t-multi-window] to
+  validate synchronized workspaces and shared session state.
+- **Accessibility regression sweep** — expand focus-order and assistive
+  technology checks in
+  [`tests/ui/desktop/accessibility/test_keyboard_navigation.py`][t-a11y] to
+  exercise screen reader cues and high-contrast themes.
+- **Drag-and-drop import flows** — deepen coverage in
+  [`tests/ui/desktop/test_drag_drop.py`][t-drag-drop] for artifact ingest parity
+  with Streamlit.
+- **Export pipeline end-to-end** — exercise background export tasks in
+  [`tests/ui/desktop/integration/test_export_end_to_end.py`][t-export-e2e] to
+  confirm report generation and progress feedback.
+- **Performance telemetry stress** — benchmark metrics dashboards in
+  [`tests/ui/desktop/performance/test_metrics_dashboard_performance.py`][t-perf]
+  to guard latency budgets across tabs.
+
+[t-ui-001]: ../../tests/ui/desktop/test_component_smoke.py
+[t-ui-002]: ../../tests/ui/desktop/test_query_panel.py
+[t-ui-003]: ../../tests/ui/desktop/test_results_display.py
+[t-ui-004]: ../../tests/ui/desktop/test_desktop_integration.py
+[t-multi-window]: ../../tests/ui/desktop/integration/test_multi_window.py
+[t-a11y]: ../../tests/ui/desktop/accessibility/test_keyboard_navigation.py
+[t-drag-drop]: ../../tests/ui/desktop/test_drag_drop.py
+[t-export-e2e]: ../../tests/ui/desktop/integration/test_export_end_to_end.py
+[t-perf]:
+  ../../tests/ui/desktop/performance/test_metrics_dashboard_performance.py
 
 ### Component ID Legend
 
