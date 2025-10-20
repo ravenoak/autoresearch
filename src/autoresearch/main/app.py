@@ -1581,6 +1581,26 @@ def gui(
     import subprocess
     from pathlib import Path
 
+    enable_flag = os.getenv("AUTORESEARCH_ENABLE_STREAMLIT")
+    is_opted_in = False
+    if enable_flag is not None:
+        normalized_flag = enable_flag.strip().lower()
+        is_opted_in = normalized_flag in {"1", "true", "yes", "on"}
+
+    if not is_opted_in:
+        print_warning(
+            "The Streamlit GUI is deprecated and disabled by default during the "
+            "PySide6 migration window.",
+        )
+        print_error(
+            "Legacy Streamlit launch now requires an explicit opt-in.",
+            suggestion=(
+                "Re-run with AUTORESEARCH_ENABLE_STREAMLIT=1 autoresearch gui or use "
+                "the PySide6 desktop interface via `autoresearch desktop`."
+            ),
+        )
+        raise typer.Exit(1)
+
     # Get the path to the streamlit_app.py file
     # Go up two levels: from main/ to autoresearch/ where streamlit_app.py is located
     app_path = Path(__file__).parent.parent / "streamlit_app.py"

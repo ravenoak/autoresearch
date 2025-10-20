@@ -23,6 +23,24 @@ plan][plan].
 Regression coverage is confined to these paths to ensure archived deployments
 continue to load; this scope is frozen and does not expand.
 
+## Opt-In Launch Workflow
+
+- The CLI command `autoresearch gui` now checks the
+  `AUTORESEARCH_ENABLE_STREAMLIT` environment variable. The legacy Streamlit UI
+  only launches when the flag is set to a truthy value such as `1`, `true`,
+  `yes`, or `on`.
+- When the flag is absent the CLI exits with a migration warning and directs
+  operators to the PySide6 desktop app. This keeps the grace-period launch
+  constrained to teams who explicitly require the fallback.
+- To launch the legacy interface during the maintenance window run:
+
+  ```bash
+  AUTORESEARCH_ENABLE_STREAMLIT=1 autoresearch gui --port 8501
+  ```
+
+- Encourage teams to move to the PySide6 workflow by default and reserve the
+  environment variable opt-in for temporary compatibility.
+
 ## Frozen Scope and Responsibilities
 
 - Accept only patches that address security issues, stability risks, or
