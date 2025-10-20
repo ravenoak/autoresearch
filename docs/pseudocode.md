@@ -496,3 +496,105 @@ class AutoresearchMainWindow(QMainWindow):
             return
         QMessageBox.warning(self, title, message)
 ```
+
+## 14. PySide6 Desktop Loop (ui/desktop/main.py)
+```
+function desktop.main(argv):
+    configure_high_dpi_scaling()
+    try:
+        app = ensure_qapplication(argv)  # wraps QApplication(argv)
+    except ImportError:
+        print("PySide6 missing; install with `uv add PySide6`")
+        return 1
+
+    window = AutoresearchMainWindow()
+    wire_desktop_signals(window)
+    window.show()
+
+    try:
+        return app.exec()
+    except Exception as exc:
+        handle_startup_error(window, exc)
+        return 1
+
+function wire_desktop_signals(window):
+    panel: QueryPanel = window.query_panel
+    sessions: SessionManager = window.session_manager
+
+    if panel:
+        panel.query_submitted.connect(window.on_query_submitted)
+    if window.config_editor:
+        window.config_editor.configuration_changed.connect(
+            window.on_configuration_changed
+        )
+    if sessions:
+        sessions.session_selected.connect(window.on_session_selected)
+        sessions.new_session_requested.connect(window.on_new_session_requested)
+    if window.export_manager:
+        window.export_manager.export_requested.connect(
+            window.on_export_requested
+        )
+
+function AutoresearchMainWindow.run_query():
+    if orchestrator is None or config is None:
+        _show_critical("System Error", missing_core_notice())
+        return
+    _merge_query_panel_configuration()
+    mark_busy(progress_bar)
+    _latest_metrics_payload = None
+
+    class QueryWorker(QRunnable):
+        function run():
+            try:
+                result = orchestrator.run_query(current_query, config)
+                QTimer.singleShot(0, lambda: display_results(result))
+            except Exception as exc:
+                QTimer.singleShot(0, lambda: display_error(exc))
+
+    worker = QueryWorker()
+    QThreadPool.globalInstance().start(worker)
+
+function AutoresearchMainWindow.display_results(result):
+    mark_idle(progress_bar)
+    if results_display:
+        results_display.display_results(result)
+    update_export_options(result)
+    if session_manager:
+        session_manager.add_session(uuid4(), title_from(current_query))
+    _latest_metrics_payload = getattr(result, "metrics", None)
+    _refresh_status_metrics()
+
+function handle_startup_error(window, exc):
+    if window._suppress_dialogs():
+        window._log_dialog("critical", "Startup Error", str(exc))
+    else:
+        QMessageBox.critical(
+            window,
+            "Autoresearch - Startup Error",
+            render_startup_failure(exc)
+        )
+
+function AutoresearchMainWindow._start_metrics_timer():
+    if metrics_timer exists:
+        return
+    metrics_timer = QTimer(interval=2000)
+    metrics_timer.timeout.connect(_refresh_status_metrics)
+    metrics_timer.start()
+
+function AutoresearchMainWindow.display_error(exc):
+    mark_idle(progress_bar)
+    if _suppress_dialogs():
+        _log_dialog("critical", "Query Error", detail(exc))
+    else:
+        QMessageBox.critical(self, "Query Error", detail(exc))
+    _set_status_message("Query failed")
+    _refresh_status_metrics()
+
+function AutoresearchMainWindow.closeEvent(event):
+    if is_query_running and _ask_question(confirm_close()) == QMessageBox.No:
+        event.ignore()
+        return
+    if metrics_timer:
+        metrics_timer.stop()
+    event.accept()
+```
