@@ -50,6 +50,11 @@ sequenceDiagram
 
 ## Visual References
 
-Supporting screenshots and wireframes will be stored under
-`docs/images/pyside6_layout/` (placeholder). Add new assets to that directory
-and reference them here once captures are available.
+![Phase 1 initial layout wireframe](../images/pyside6_layout/phase1_initial_layout.svg)
+*Figure 1: Baseline window composition showing QueryPanel and dock widgets
+required for the Phase 1 stories about keyboard-first submission, accessible
+configuration controls, and results parity.*
+
+![Phase 1 running query wireframe](../images/pyside6_layout/phase1_running_query.svg)
+*Figure 2: Running-query feedback emphasising progress, disabled controls, and
+export gating tied to Phase 1 cancellation and status feedback stories.*

@@ -48,6 +48,9 @@ steer the team toward sustainable improvements.
     a single window without regressions from Streamlit.
   - As a Configuration Curator, I can adjust core runtime parameters using
     accessible controls with keyboard navigation.
+- **Shared reference**: Use the
+  [Phase 1 wireframes](../diagrams/pyside6_layout.md#visual-references) to
+  verify layout, feedback, and gating details during story kick-offs.
 - **Success metrics**:
   - Functional parity demo covering query submission and results display.
   - Keyboard-only interaction path validated through exploratory testing.
