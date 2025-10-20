@@ -9,6 +9,10 @@ session history, and export tools. Supporting widgets, including
 KnowledgeGraphView and MetricsDashboard, extend the interface with
 visualisation, accessibility, and runtime telemetry.
 
+The ResultsDisplay now pairs the narrative answer with a structured results
+table, allowing users to triage ranked search hits alongside citations and
+metrics without leaving the desktop shell.
+
 Phase 1 wireframes capture the baseline layout and running-query feedback in
 [Figure 1](../diagrams/pyside6_layout.md#visual-references) so engineering,
 design, and product teams can validate keyboard-first submission, accessible
@@ -23,9 +27,10 @@ active orchestrator metrics provider.
 collecting reasoning parameters, ensuring configuration overrides flow back to
 the main window before execution.
 - ResultsDisplay renders QueryResponse payloads by delegating Markdown output
-to OutputFormatter, normalising citations for accessibility, rendering
-knowledge graphs via KnowledgeGraphView, and relaying metrics to
-MetricsDashboard.
+  to OutputFormatter, normalising citations for accessibility, rendering
+  knowledge graphs via KnowledgeGraphView, relaying metrics to
+  MetricsDashboard, and surfacing structured search hits through
+  SearchResultsModel and SearchResultsTableView.
 - KnowledgeGraphView normalises node and edge data, applies a circular layout
 fallback, and uses optional NetworkX layouts when available before rendering a
 Qt graphics scene with export actions.
@@ -45,7 +50,8 @@ collection.
   bar, disables QueryPanel inputs via the busy state, and resets status
   messaging regardless of success, failure, or user cancellation paths.
 - ResultsDisplay preserves tab instances and clears state-specific widgets when
-no data is present so subsequent queries render correctly.
+no data is present so subsequent queries render correctly. Structured search
+rows are regenerated on each update so keyboard selection stays predictable.
 - KnowledgeGraphView and MetricsDashboard fall back to textual summaries when
 optional libraries such as NetworkX or Matplotlib are unavailable, preserving
 usability.

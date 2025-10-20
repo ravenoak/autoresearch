@@ -32,6 +32,7 @@ from .export_manager import ExportManager
 from .knowledge_graph_view import KnowledgeGraphView
 from .main_window import AutoresearchMainWindow
 from .metrics_dashboard import MetricsDashboard
+from .results_table import SearchResultsModel, SearchResultsTableView
 from .session_manager import SessionManager
 
 __version__ = "0.1.0"
@@ -42,5 +43,7 @@ __all__ = [
     "ExportManager",
     "KnowledgeGraphView",
     "MetricsDashboard",
+    "SearchResultsModel",
+    "SearchResultsTableView",
     "SessionManager",
 ]

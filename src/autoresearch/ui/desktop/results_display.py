@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
 
 from .knowledge_graph_view import KnowledgeGraphView
 from .metrics_dashboard import MetricsDashboard
+from .results_table import SearchResultRow, SearchResultsModel, SearchResultsTableView
 
 try:
     from ...models import QueryResponse
@@ -81,6 +82,8 @@ class ResultsDisplay(QWidget):
         self.citations_placeholder: Optional[QLabel] = None
         self.open_source_button: Optional[QPushButton] = None
         self.copy_source_button: Optional[QPushButton] = None
+        self.search_results_view: Optional[SearchResultsTableView] = None
+        self.search_results_model: Optional[SearchResultsModel] = None
 
         # Runtime feature flags
         self._web_engine_available = QWebEngineView is not None
@@ -122,6 +125,16 @@ class ResultsDisplay(QWidget):
         if self.answer_view is not None:
             answer_layout.addWidget(self.answer_view)
         self.tab_widget.addTab(answer_tab, "Answer")
+
+        # Structured results tab
+        self.search_results_model = SearchResultsModel()
+        results_view = SearchResultsTableView()
+        results_view.setModel(self.search_results_model)
+        results_tab = QWidget()
+        results_layout = QVBoxLayout(results_tab)
+        results_layout.addWidget(results_view)
+        self.tab_widget.addTab(results_tab, "Structured Results")
+        self.search_results_view = results_view
 
         # Citations tab
         citations_tab = QWidget()
@@ -181,12 +194,22 @@ class ResultsDisplay(QWidget):
 
         layout.addWidget(self.tab_widget)
 
+        if self.search_results_view and self.citations_list:
+            QWidget.setTabOrder(self.search_results_view, self.citations_list)
+        if self.citations_list and self.trace_view:
+            QWidget.setTabOrder(self.citations_list, self.trace_view)
+        if self.trace_view and self.metrics_dashboard:
+            QWidget.setTabOrder(self.trace_view, self.metrics_dashboard)
+
     def display_results(self, result: QueryResponse) -> None:
         """Display query results in all tabs."""
         self.current_result = result
 
         # Display answer
         self.display_answer(result)
+
+        # Display structured search results
+        self.display_structured_results(result)
 
         # Display citations
         self.display_citations(result)
@@ -599,6 +622,143 @@ class ResultsDisplay(QWidget):
             self.metrics_dashboard.update_metrics(metrics)
         else:
             self.metrics_dashboard.clear()
+
+    def display_structured_results(self, result: QueryResponse) -> None:
+        """Populate the structured results table from query metadata."""
+
+        if not self.search_results_model:
+            return
+
+        structured = self._extract_structured_results(result)
+        if not structured:
+            structured = self._synthesize_structured_results(result)
+
+        self.search_results_model.set_results(structured)
+
+        if self.search_results_view:
+            if structured:
+                self.search_results_view.setEnabled(True)
+                self.search_results_view.selectRow(0)
+            else:
+                self.search_results_view.setEnabled(False)
+                self.search_results_view.clearSelection()
+
+    def _extract_structured_results(self, result: QueryResponse) -> list[SearchResultRow]:
+        rows: list[SearchResultRow] = []
+
+        for attr in ("metadata", "metrics"):
+            payload = getattr(result, attr, None)
+            if isinstance(payload, Mapping):
+                self._walk_metadata(payload, (), rows)
+
+        return rows
+
+    def _walk_metadata(
+        self,
+        node: Any,
+        context_keys: tuple[str, ...],
+        accumulator: list[SearchResultRow],
+    ) -> None:
+        keywords = ("search", "result", "hit", "retrieval", "document", "source")
+
+        if isinstance(node, Mapping):
+            for key, value in node.items():
+                lowered = str(key).lower()
+                next_context = context_keys + (lowered,)
+                self._walk_metadata(value, next_context, accumulator)
+            return
+
+        if isinstance(node, Sequence) and not isinstance(node, (str, bytes, bytearray)):
+            context_match = context_keys and any(
+                any(keyword in piece for keyword in keywords) for piece in context_keys
+            )
+
+            if context_match:
+                for item in node:
+                    normalized = self._normalize_result_entry(item, len(accumulator) + 1)
+                    if normalized is not None:
+                        accumulator.append(normalized)
+                    else:
+                        self._walk_metadata(item, context_keys, accumulator)
+            else:
+                for item in node:
+                    self._walk_metadata(item, context_keys, accumulator)
+
+    def _normalize_result_entry(
+        self,
+        item: Any,
+        ordinal: int,
+    ) -> SearchResultRow | None:
+        if isinstance(item, Mapping):
+            rank_value = self._first_nonempty(item, ["rank", "position", "index", "order"])
+            title_value = self._first_nonempty(
+                item,
+                ["title", "name", "label", "headline", "text", "snippet", "summary"],
+            )
+            source_value = self._first_nonempty(
+                item,
+                ["source", "url", "href", "link", "document", "origin"],
+            )
+
+            if not title_value and not source_value:
+                return None
+
+            rank = self._coerce_rank(rank_value, ordinal)
+            title = str(title_value) if title_value is not None else ""
+            source = str(source_value) if source_value is not None else ""
+            return SearchResultRow(rank=rank, title=title, source=source)
+
+        if isinstance(item, str) and item.strip():
+            return SearchResultRow(rank=ordinal, title=item.strip(), source="")
+
+        return None
+
+    def _first_nonempty(
+        self,
+        mapping: Mapping[str, Any],
+        keys: Sequence[str],
+    ) -> Any:
+        for key in keys:
+            if key in mapping:
+                value = mapping[key]
+                if value not in (None, ""):
+                    return value
+        return None
+
+    def _coerce_rank(self, value: Any, fallback: int) -> int:
+        try:
+            if value is None:
+                raise ValueError
+            parsed = int(value)
+            if parsed < 1:
+                raise ValueError
+            return parsed
+        except (TypeError, ValueError):
+            return fallback
+
+    def _synthesize_structured_results(self, result: QueryResponse) -> list[SearchResultRow]:
+        answer = getattr(result, "answer", "") or ""
+        snippets = [
+            segment.strip()
+            for segment in re.split(r"[\n\.?!]+", answer)
+            if segment.strip()
+        ]
+
+        if not snippets:
+            snippets = ["Narrative answer available"]
+
+        rows: list[SearchResultRow] = []
+        for idx, snippet in enumerate(snippets[:3], start=1):
+            truncated = snippet if len(snippet) <= 80 else f"{snippet[:77]}…"
+            rows.append(
+                SearchResultRow(
+                    rank=idx,
+                    title=truncated,
+                    source="Derived from narrative answer",
+                )
+            )
+
+        return rows
 
     def render_markdown(self, markdown_text: str) -> str:
         """Convert Markdown into sanitized HTML suitable for web rendering."""

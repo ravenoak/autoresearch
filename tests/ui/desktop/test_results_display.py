@@ -78,8 +78,33 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
                 "graph": {"nodes": ["A", "B"], "edges": [["A", "B"]]},
                 "exports": {"graphml": True, "graph_json": False},
             },
+            "search": {
+                "hits": [
+                    {
+                        "rank": 1,
+                        "title": "Structured Document",
+                        "url": "https://example.com/structured",
+                    },
+                    {
+                        "rank": 2,
+                        "title": "Supporting Note",
+                        "source": "https://example.com/support",
+                    },
+                ]
+            },
         },
         knowledge_graph=None,
+        metadata={
+            "supplemental_search": {
+                "results": [
+                    {
+                        "rank": 3,
+                        "title": "Extended Hit",
+                        "href": "https://example.com/extended",
+                    }
+                ]
+            }
+        },
     )
 
     start = time.perf_counter()
@@ -117,6 +142,13 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     assert display.metrics_dashboard is not None
     assert display.metrics_dashboard._metrics == result.metrics  # type: ignore[attr-defined]
 
+    assert display.search_results_model is not None
+    assert display.search_results_model.rowCount() == 3
+    assert display.search_results_view is not None
+    assert display.search_results_view.isEnabled()
+    selected_rows = display.search_results_view.selectionModel().selectedRows()
+    assert len(selected_rows) == 1
+
 
 def test_results_display_handles_missing_citations_gracefully(qtbot) -> None:
     display = results_display_module.ResultsDisplay()
@@ -138,6 +170,7 @@ def test_results_display_handles_missing_citations_gracefully(qtbot) -> None:
         reasoning=[],
         metrics={},
         knowledge_graph=None,
+        metadata={}
     )
 
     display.display_results(result)
@@ -162,6 +195,13 @@ def test_results_display_handles_missing_citations_gracefully(qtbot) -> None:
 
     assert display.knowledge_graph_view is not None
     assert display.knowledge_graph_view._graph_data is None  # type: ignore[attr-defined]
+
+    assert display.search_results_model is not None
+    assert display.search_results_model.rowCount() >= 1
+    assert display.search_results_view is not None
+    assert display.search_results_view.isEnabled()
+    synthetic_selection = display.search_results_view.selectionModel().selectedRows()
+    assert synthetic_selection
 
 
 def test_results_display_loads_graph_from_storage(monkeypatch, qtbot) -> None:
