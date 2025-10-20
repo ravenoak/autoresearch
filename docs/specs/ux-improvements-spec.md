@@ -56,6 +56,15 @@ steer the team toward sustainable improvements.
   - Keyboard-only interaction path validated through exploratory testing.
   - Initial accessibility audit documenting color contrast and focus order
     deltas.
+- **Acceptance criteria**:
+  - **Entry**: `QMainWindow` shell with `QLineEdit` query input and `QPushButton`
+    submit control render without runtime warnings and mirror Streamlit field
+    defaults.
+  - **Exit**: `QTableView` results widget displays mocked search responses, and
+    `QStatusBar` exposes submission/processing states observable through Qt
+    debug logs.
+  - **Observability**: Enable `QLoggingCategory("desktop.query")` tracing for
+    submit/response events recorded in telemetry (see measurement plan).
 
 ### Phase 2: Feature Parity Implementation (6 weeks)
 
@@ -76,6 +85,14 @@ steer the team toward sustainable improvements.
   - Progressive disclosure usability test with at least three internal users,
     capturing task completion times and qualitative feedback.
   - Automated accessibility smoke tests executing in CI for the PySide6 UI.
+- **Acceptance criteria**:
+  - **Entry**: `QDockWidget` progressive disclosure panels registered in the
+    `MainWindow` and toggled via `QAction` shortcuts without layout thrash.
+  - **Exit**: `QAccessibleInterface` annotations verified for `QTreeView`
+    configuration editors and `QDialog` validation prompts, with NVDA/VoiceOver
+    parity notes captured.
+  - **Observability**: Emit structured events from `QAction.triggered` handlers
+    tagged `ui.progressive_disclosure` for telemetry correlation.
 
 ### Phase 3: Professional Features (4 weeks)
 
@@ -94,6 +111,15 @@ steer the team toward sustainable improvements.
     reference hardware.
   - Accessibility parity maintained through regression testing across new
     interactions (graph annotations, drag-and-drop).
+- **Acceptance criteria**:
+  - **Entry**: `QMdiArea` or `QTabWidget` orchestration scaffold present with
+    session state shared through `QObject` signals/slots, and baseline telemetry
+    timers wired.
+  - **Exit**: Secondary `QMainWindow` instances synchronize query context via
+    `QSharedMemory` or signal relays, and `QGraphicsView` annotations persist on
+    save/load.
+  - **Observability**: Capture `QElapsedTimer` metrics for window focus, drag
+    operations, and export actions published to telemetry timers.
 
 ### Phase 4: Testing and Quality Assurance (3 weeks)
 
@@ -110,6 +136,14 @@ steer the team toward sustainable improvements.
   - Accessibility parity report generated automatically per release.
   - Performance benchmarks showing equal or better responsiveness than the
     Streamlit baseline.
+- **Acceptance criteria**:
+  - **Entry**: CI artifacts include `pytest --markers requires_ui` suites and
+    `QTest` harness logs for `QMainWindow`, `QDialog`, and `QAccessibleWidget`
+    surfaces.
+  - **Exit**: `QtTest.QSignalSpy` assertions cover `QThreadPool` workloads,
+    generating trace files archived with build metadata.
+  - **Observability**: Performance counters from `QApplication::processEvents`
+    loops export to the telemetry sink for triage dashboards.
 
 ### Phase 5: Deprecation and Removal (2 weeks)
 
@@ -127,8 +161,18 @@ steer the team toward sustainable improvements.
   - Support tickets related to the migration resolved within one release
     cadence.
   - Streamlit code removal completed with no open UX regressions.
+- **Acceptance criteria**:
+  - **Entry**: `QWizard` onboarding and `QLabel` helper texts aligned with
+    updated docs; Streamlit launchers flag deprecated paths.
+  - **Exit**: Final release build hides Streamlit modules, and `QMessageBox`
+    parity warnings removed after telemetry shows <5% fallback usage.
+  - **Observability**: Migration helper prompts emit `ui.migration_nudge`
+    events to track onboarding completion.
 
 ## Cross-Phase Success Metrics
+
+See the [UX Measurement Plan](ux-measurement-plan.md) for data collection
+details supporting the following targets.
 
 - Task completion times for core workflows improve by 15% compared with the
   Streamlit baseline.
