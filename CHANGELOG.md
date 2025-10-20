@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
+## [Unreleased]
+
+- Added an opt-in guard for the legacy Streamlit GUI. The CLI now requires the
+  `AUTORESEARCH_ENABLE_STREAMLIT` environment variable and emits migration
+  guidance pointing teams to the PySide6 desktop interface.
+
 ## [0.1.0] - Unreleased (Target: 2025-11-15)
 
 **PREPARATION IN PROGRESS** - Final release engineering for stable v0.1.0 release.

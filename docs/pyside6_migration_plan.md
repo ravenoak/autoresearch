@@ -169,6 +169,19 @@ uv run python -m autoresearch.ui.desktop.main
 - Provide both interfaces during transition period
 - Gather user feedback on PySide6 experience
 
+### Legacy Streamlit Opt-In
+- Gate the legacy `autoresearch gui` command behind the
+  `AUTORESEARCH_ENABLE_STREAMLIT` environment variable during the grace period.
+- When the flag is not set, emit a migration warning and direct teams to
+  `autoresearch desktop` so the PySide6 workflow becomes the default habit.
+- Publish the opt-in command in release notes and internal announcements:
+
+  ```bash
+  AUTORESEARCH_ENABLE_STREAMLIT=1 autoresearch gui --no-browser
+  ```
+
+- Remove the opt-in instructions once Streamlit support is fully sunset.
+
 ## Testing Strategy
 
 ### New Test Structure
