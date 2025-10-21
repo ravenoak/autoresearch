@@ -30,7 +30,9 @@ repository:
    **✅ COMPLETE - Budget-aware routing, latency SLOs implemented**
 6. [hierarchical-retrieval-lattice-integration](issues/hierarchical-retrieval-lattice-integration.md)
    – integrates a prototype LATTICE-style semantic tree and calibration harness.
-   – Ships dynamic-corpus safeguards ahead of the **0.1.1** window.
+   – Prerequisites: prototype tree builder, calibration validation, dynamic-
+     corpus safeguards.
+   – Targets the **0.1.1** release window with telemetry and fallback guardrails.
    – **🚧 IN PROGRESS - Pending prototype tree builder, calibration validation, and
      dynamic-corpus safeguards**
 
@@ -55,7 +57,9 @@ that foundation.
 
 Phases 1–5 provide the foundation for the **v0.1.0** release. Phase 6
 hierarchical retrieval is staged for **0.1.1** once the prototype tree builder,
-calibration validation, and dynamic-corpus safeguards finish implementation.
+calibration validation, and dynamic-corpus safeguards finish implementation and
+the telemetry plus GraphRAG fallback strategy prove stable against the
+LATTICE-derived targets.
 Technical work for 0.1.0 is complete with release artifacts built and
 validated. Final release engineering (git tagging, documentation updates) is in
 progress.

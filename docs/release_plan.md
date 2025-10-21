@@ -69,6 +69,10 @@ Phase 6 targets the **0.1.1** release window with the following prerequisites:
   incremental rebuilds plus fall back to GraphRAG when calibration confidence
   slips.
 
+Phase 6 remains preview-only until the tree builder, calibration harness, and
+dynamic-corpus safeguards validate successfully. The target release window stays
+at **0.1.1** with GraphRAG fallback guardrails in place for regressions.
+
 Telemetry requirements include `hierarchical_retrieval.traversal_depth`,
 `hierarchical_retrieval.path_score`, calibration residuals, and latency
 aggregates so operators can observe traversal behaviour. The fallback strategy

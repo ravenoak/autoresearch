@@ -19,6 +19,31 @@ details.
 - Prototype tree builder and calibration scaffolding landing in feature branches
   tracked through the deep research coordination ticket
 
+## Deliverables
+- Prototype semantic tree builder that maintains logarithmic traversal depth
+  and persists clustering metadata for calibration replays.
+- Calibration validation harness that reproduces the ≈9 % Recall@100 and ≈5 %
+  nDCG@10 BRIGHT uplift reported for LATTICE before the feature ships by
+  default.
+- Dynamic-corpus safeguards covering detection, incremental rebuild triggers,
+  and GraphRAG fallback invocation when calibration confidence drifts.
+- Telemetry exports for `hierarchical_retrieval.traversal_depth`,
+  `hierarchical_retrieval.path_score`, calibration residuals, and fallback
+  counters wired into STATUS.md dashboards and ROADMAP updates.
+- Operator runbook that documents enablement, rebuild cadence, and rollback
+  expectations tied to the above telemetry.
+
+## Evaluation checkpoints
+- Bench traversal quality monthly against BRIGHT corpora to confirm the LATTICE
+  Recall@100 and nDCG@10 uplifts remain within ±1 % of the published figures.
+- Capture dry-run telemetry snapshots that exercise dynamic-corpus safeguards
+  and fallback logic before production enablement.
+- Record decision outcomes and calibration drift in STATUS.md and the release
+  plan prior to promoting Phase 6 beyond preview.
+- Reference [LATTICE hierarchical retrieval findings]
+  (../docs/external_research_papers/arxiv.org/2510.13217v1.md) in every
+  checkpoint summary for traceability.
+
 ## Acceptance Criteria
 - Prototype tree builder clusters corpus shards by intent/summary depth and
   persists traversal metadata for calibration replay.

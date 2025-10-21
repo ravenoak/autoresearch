@@ -30,6 +30,8 @@ current coverage is **71.94%** across 21,943 lines (measured October 17, 2025).
   fallback triggers to GraphRAG when confidence drops below validated bands.
 - Evaluation goals follow the ≈9 % Recall@100 and ≈5 % nDCG@10 BRIGHT gains
   reported for LATTICE.
+  Target release window remains **0.1.1** once the prototype tree builder,
+  calibration validation harness, and dynamic-corpus safeguards prove stable.
   See [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
   and [LATTICE hierarchical retrieval findings]
   (docs/external_research_papers/arxiv.org/2510.13217v1.md).
