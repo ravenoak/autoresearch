@@ -9,8 +9,10 @@ experience goals.
 ## Instrumentation Overview
 
 - **Event routing**: Desktop telemetry publishes through a shared
-  `QLoggingCategory` and forwards payloads to `analytics.dispatch_event`. When
-  analytics is unavailable the helper silently degrades to logging only.
+  `QLoggingCategory` named ``desktop.query`` (exported as
+  ``DESKTOP_TELEMETRY_CATEGORY``) and forwards payloads to
+  `analytics.dispatch_event`. When analytics is unavailable the helper silently
+  degrades to logging only.
 - **Component hooks**: Query lifecycle instrumentation now emits:
   - `ui.query.submitted` from `QueryPanel.on_run_clicked` with
     `session_id`, `query_length`, `reasoning_mode`, and `loops`.
