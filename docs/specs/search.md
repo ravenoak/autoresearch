@@ -38,6 +38,23 @@ and hybrid queries and exposes a CLI entry point. See the
   ranking falls back to equal weighting across enabled components.
 - Resolves ties by deterministic document identifier.
 
+### Hierarchical traversal
+
+- Builds a navigation tree that alternates between bottom-up clustering and
+  top-down summaries so dense neighborhoods cluster first, then curator nodes
+  emit distilled topic guides.
+- Augments traversal slates with calibrated sibling or leaf exemplars. Each
+  batch reserves 20 percent of the slots for contrasting samples that anchor
+  latent score estimation to observed edges.
+- Fits latent edge scores with a constrained maximum-likelihood estimator that
+  enforces non-negative weights and keeps branch priors normalized.
+- Applies path relevance momentum where the running score for a node path uses
+  an exponential moving average with decay ``\beta`` sourced from telemetry.
+- Records telemetry for tree height, branching factor, slate acceptance rate,
+  and a ``hierarchy_quality`` diagnostic. The traversal aborts to flat hybrid
+  ranking when ``hierarchy_quality`` drops below the ``0.62`` threshold or when
+  ``momentum_drift`` exceeds ``0.18`` for three consecutive iterations.
+
 ## Invariants
 
 - Results are ordered by descending final score and are stable for repeated
