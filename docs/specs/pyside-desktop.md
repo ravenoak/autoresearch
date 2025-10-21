@@ -136,11 +136,16 @@ management across realistic UI lifecycles.
   - [src/autoresearch/ui/desktop/knowledge_graph_view.py][m7]
   - [src/autoresearch/ui/desktop/metrics_dashboard.py][m8]
   - [src/autoresearch/ui/desktop/main.py][m9]
+  - [src/autoresearch/ui/desktop/results_table.py][m10]
+  - [src/autoresearch/ui/desktop/telemetry.py][m11]
 - Tests
   - [tests/ui/desktop/test_component_smoke.py][t1] (**T-UI-001**)
   - [tests/ui/desktop/test_desktop_integration.py][t2] (**T-UI-004**)
   - [tests/ui/desktop/test_query_panel.py][t3] (**T-UI-002**)
   - [tests/ui/desktop/test_results_display.py][t4] (**T-UI-003**)
+  - [tests/ui/desktop/test_drag_drop.py][t5] (**T-UI-005**, skipped)
+  - [tests/ui/desktop/performance/test_metrics_dashboard_performance.py][t6]
+    (**T-UI-006**, skipped)
 
 ### Test ID Legend
 
@@ -152,6 +157,11 @@ management across realistic UI lifecycles.
   [tests/ui/desktop/test_results_display.py][t4].
 - **T-UI-004** — End-to-end desktop orchestration flow. See
   [tests/ui/desktop/test_desktop_integration.py][t2].
+- **T-UI-005** — Drag-and-drop ingestion parity validations. See
+  [tests/ui/desktop/test_drag_drop.py][t5] (skipped pending parity coverage).
+- **T-UI-006** — Metrics dashboard performance telemetry. See
+  [tests/ui/desktop/performance/test_metrics_dashboard_performance.py][t6]
+  (skipped pending benchmarking harness).
 
 [m1]: ../../src/autoresearch/ui/desktop/main_window.py
 [m2]: ../../src/autoresearch/ui/desktop/query_panel.py
@@ -162,7 +172,11 @@ management across realistic UI lifecycles.
 [m7]: ../../src/autoresearch/ui/desktop/knowledge_graph_view.py
 [m8]: ../../src/autoresearch/ui/desktop/metrics_dashboard.py
 [m9]: ../../src/autoresearch/ui/desktop/main.py
+[m10]: ../../src/autoresearch/ui/desktop/results_table.py
+[m11]: ../../src/autoresearch/ui/desktop/telemetry.py
 [t1]: ../../tests/ui/desktop/test_component_smoke.py
 [t2]: ../../tests/ui/desktop/test_desktop_integration.py
 [t3]: ../../tests/ui/desktop/test_query_panel.py
 [t4]: ../../tests/ui/desktop/test_results_display.py
+[t5]: ../../tests/ui/desktop/test_drag_drop.py
+[t6]: ../../tests/ui/desktop/performance/test_metrics_dashboard_performance.py
