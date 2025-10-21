@@ -66,19 +66,24 @@ stateDiagram-v2
 
 ## Visual References
 
-![Phase 1 initial layout wireframe](../images/pyside6_layout/phase1_initial_layout.svg)
+![Phase 1 initial layout wireframe][phase1-initial]
 *Figure 1: Baseline window composition showing QueryPanel and dock widgets
 required for the Phase 1 stories about keyboard-first submission, accessible
 configuration controls, and results parity.*
 
-![Phase 1 running query wireframe](../images/pyside6_layout/phase1_running_query.svg)
+![Phase 1 running query wireframe][phase1-running]
 *Figure 2: Running-query feedback emphasising progress, disabled controls, and
 export gating tied to Phase 1 cancellation and status feedback stories.*
 
-![Phase 1 cancel confirmation wireframe](../images/pyside6_layout/phase1_cancel_confirmation.svg)
+![Phase 1 cancel confirmation wireframe][phase1-cancel]
 *Figure 3: Cancellation prompt illustrating the modal copy, destructive
 confirmation button, and persistent busy overlay used before worker teardown.*
 
-![Phase 1 error dialog wireframe](../images/pyside6_layout/phase1_error_dialog.svg)
+![Phase 1 error dialog wireframe][phase1-error]
 *Figure 4: Error state showing the critical dialog, status-bar reset, and
 export gating after a cancellation surfaces a worker failure.*
+
+[phase1-initial]: ../images/pyside6_layout/phase1_initial_layout.svg
+[phase1-running]: ../images/pyside6_layout/phase1_running_query.svg
+[phase1-cancel]: ../images/pyside6_layout/phase1_cancel_confirmation.svg
+[phase1-error]: ../images/pyside6_layout/phase1_error_dialog.svg
