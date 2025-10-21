@@ -56,6 +56,27 @@ and wrote refreshed log and checksum artefacts.
 【F:baseline/logs/publish-dev-20251009T215824Z.log†L1-L14】
 【F:baseline/logs/publish-dev-20251009T215824Z.sha256†L1-L1】
 
+### Hierarchical retrieval integration preview
+
+Phase 6 targets the **0.1.1** release window with the following prerequisites:
+
+- Prototype semantic tree builder capable of clustering corpus shards and
+  generating multi-level summaries for logarithmic traversal costs.
+- Calibration validation harness that reproduces the ≈9 % Recall@100 and ≈5 %
+  nDCG@10 BRIGHT gains reported for LATTICE before enabling the feature by
+  default.
+- Dynamic-corpus safeguards that monitor ingestion drift and trigger
+  incremental rebuilds plus fall back to GraphRAG when calibration confidence
+  slips.
+
+Telemetry requirements include `hierarchical_retrieval.traversal_depth`,
+`hierarchical_retrieval.path_score`, calibration residuals, and latency
+aggregates so operators can observe traversal behaviour. The fallback strategy
+invokes Phase 3 GraphRAG search when calibration drops below the validated
+confidence band or when dynamic updates outpace the rebuild cadence. Benchmark
+targets follow [LATTICE hierarchical retrieval findings]
+(docs/external_research_papers/arxiv.org/2510.13217v1.md).
+
 ## Announcement draft
 
 Autoresearch 0.1.0a1 is in final preparation with core functionality working and
@@ -87,14 +108,18 @@ throughput gates in the benchmark and scheduler suites.
 
 - **0.1.0a1** (2025-10-16, status: released): Alpha preview published with
   multi-agent orchestration, search, and knowledge graph functionality operational.
-- **0.1.0** (2025-12-15, status: ready): **All Deep Research phases implemented!**
+- **0.1.0** (2025-12-15, status: ready): Deep Research phases 1–5 implemented;
+  hierarchical retrieval follows in **0.1.1**.
   - ✅ Adaptive gate and claim audits (Phase 1)
   - ✅ Planner coordinator react upgrade (Phase 2)
   - ✅ Session GraphRAG integration (Phase 3)
   - ✅ Evaluation and layered UX expansion (Phase 4)
   - ✅ Cost-aware model routing (Phase 5)
-- **0.1.1** (2026-02-15, status: planned): Bug fixes and documentation
-  updates (deliver-bug-fixes-and-docs-update).
+- **0.1.1** (2026-02-15, status: planned):
+  - Bug fixes and documentation updates.
+  - Phase 6 hierarchical retrieval integration targeting the **0.1.1** window.
+  - Prerequisites: prototype tree builder, calibration validation,
+    dynamic-corpus safeguards (deliver-bug-fixes-and-docs-update).
 - **0.2.0** (2026-05-15, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - stabilize-api-and-improve-search

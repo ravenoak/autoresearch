@@ -25,6 +25,17 @@ gate policy reasons over agreement metrics.
 【F:src/autoresearch/orchestration/metrics.py†L180-L220】【F:src/autoresearch/orchestration/orchestrator.py†L190-L280】
 【F:tests/unit/orchestration/test_auto_mode.py†L90-L135】【F:tests/behavior/steps/reasoning_modes_auto_steps.py†L350-L375】
 
+Phase 6 introduces hierarchical retrieval built on a prototype semantic tree,
+calibration validation harness, and dynamic-corpus safeguards before default
+rollout. Telemetry will extend to traversal depth, path scoring, calibration
+residuals, and GraphRAG fallback triggers so operators can track integration
+health. Benchmark targets match the ≈9 % Recall@100 and ≈5 % nDCG@10 BRIGHT
+uplift documented for LATTICE, guiding the evaluation envelope for the release
+window targeted at **0.1.1**.
+【F:docs/deep_research_upgrade_plan.md†L125-L150】
+【F:docs/release_plan.md†L63-L108】
+【F:STATUS.md†L15-L32】
+
 `task check` and `task verify` now invoke `task mypy-strict` directly, giving the
 initiative an automated strict gate in every local run while the CI workflow
 keeps the TestPyPI flag paused by default. The deterministic storage resident
@@ -45,9 +56,12 @@ telemetry.
 - Documentation and pseudo-code describe the new components ahead of
   implementation.
 - Resource, risk, and schedule updates are reported in STATUS.md after each
-  phase checkpoint.
+  phase checkpoint, including Phase 6 telemetry readiness.
 - Completion criteria are reviewed with project maintainers before phase
   transitions.
+- Hierarchical retrieval workstreams (tree builder, calibration validation,
+  dynamic-corpus safeguards) are scheduled, tracked, and evaluated against the
+  LATTICE benchmark targets before the Phase 6 release window.
 
 ## Status
 Open

@@ -22,6 +22,18 @@ current coverage is **71.94%** across 21,943 lines (measured October 17, 2025).
 - Previously flaky tests now pass consistently (Hypothesis cache tests, adaptive rewrite)
 - Optional extras (NLP, UI, GPU) require additional dependencies and testing
 
+**Phase 6 preview (targets 0.1.1):**
+- Prototype semantic tree builder, calibration validation harness, and
+  dynamic-corpus safeguards must land before enabling hierarchical retrieval by
+  default.
+- Telemetry will track traversal depth, path scoring, calibration residuals, and
+  fallback triggers to GraphRAG when confidence drops below validated bands.
+- Evaluation goals follow the ≈9 % Recall@100 and ≈5 % nDCG@10 BRIGHT gains
+  reported for LATTICE.
+  See [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
+  and [LATTICE hierarchical retrieval findings]
+  (docs/external_research_papers/arxiv.org/2510.13217v1.md).
+
 ---
 
 Install Go Task with `scripts/setup.sh` or your package manager to enable
