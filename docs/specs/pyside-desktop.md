@@ -86,6 +86,23 @@ status bar remains truthful even when cancellations or failures occur.
   state, and ensure the worker pointer is ``None`` so follow-up queries
   initialise a fresh execution path.
 
+### Cancellation lifecycle
+
+- The query panel exposes a Cancel button only while ``set_busy(True)`` is
+  active. It emits ``query_cancelled`` with the current session identifier so
+  the main window can route the request.
+- ``AutoresearchMainWindow.cancel_query`` confirms the destructive action,
+  marks the worker for cancellation, disables the Cancel button, clears any
+  cached metrics payload, and updates the status bar to “Cancelling…” while the
+  background thread winds down.
+- When the worker reports a cooperative cancellation, the window hides the
+  busy state, restores metrics labels to ``--``, emits
+  ``ui.query.cancelled`` telemetry (including duration), and resets the active
+  session bookkeeping so the next query starts fresh.
+- Errors raised after a cancellation request still route through
+  ``display_error`` so the critical dialog, failure telemetry, and status bar
+  messaging reflect the shutdown issue before the interface returns to Idle.
+
 ## Optional Dependency Fallbacks
 
 - Answer Tab — When Qt WebEngine cannot be imported the ResultsDisplay swaps the

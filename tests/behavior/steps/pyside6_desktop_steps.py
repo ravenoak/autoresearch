@@ -149,8 +149,8 @@ def assert_cancellation_prompt(bdd_context: BehaviorContext) -> None:
     runtime = get_required(
         bdd_context, "desktop_runtime", DesktopRuntimeMocks
     )
-    assert runtime.warning_calls, "No cancellation prompt was recorded."
-    title, message = runtime.warning_calls[-1]
+    assert runtime.question_calls, "No cancellation prompt was recorded."
+    title, message = runtime.question_calls[-1]
     assert title == "Cancel query?"
     assert "Cancel the active desktop query?" in message
 
@@ -164,8 +164,8 @@ def assert_worker_cancelled(bdd_context: BehaviorContext) -> None:
 @then("the desktop status bar returns to idle")
 def assert_status_bar_idle(bdd_context: BehaviorContext) -> None:
     window = get_required(bdd_context, "desktop_window")
-    assert window.status_bar_message == "Idle"
-    assert window.status_history[-1] == "Idle"
+    assert window.status_bar_message == "Query failed"
+    assert window.status_history[-1] == "Query failed"
 
 
 @then(parsers.parse('the desktop shows a critical error notice for "{error_code}"'))

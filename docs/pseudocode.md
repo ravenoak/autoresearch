@@ -530,28 +530,43 @@ class AutoresearchMainWindow(QMainWindow):
         _merge_query_panel_configuration()
         _enter_query_busy_state()
 
-        class QueryWorker(QRunnable):
-            function run():
-                try:
-                    result = orchestrator.run_query(current_query, config)
-                    QTimer.singleShot(
-                        0, lambda: display_results(result, session_id)
-                    )
-                except Exception as exc:
-                    QTimer.singleShot(
-                        0, lambda: display_error(exc, session_id)
-                    )
-
-        QThreadPool.globalInstance().start(QueryWorker())
-
-    function on_query_cancelled(session_id):
-        if not is_query_running or session_id != _active_session_id:
-            return
-        _leave_query_busy_state()
-        telemetry.emit(
-            "ui.query.cancelled",
-            _build_payload(session_id, status="cancelled"),
+        worker = QueryWorker(
+            orchestrator,
+            current_query,
+            config,
+            session_id,
         )
+        thread = QThread()
+        worker.moveToThread(thread)
+        worker.result_ready.connect(display_results)
+        worker.error_occurred.connect(display_error)
+        worker.cancelled.connect(_complete_cancellation)
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        _active_worker = worker
+        _worker_thread = thread
+        thread.start()
+
+    function cancel_query(session_id):
+        if not is_query_running or _active_worker is None:
+            return
+        if session_id != _active_session_id:
+            return
+        choice = _ask_question(
+            "Cancel query?",
+            destructive_prompt(),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if choice != QMessageBox.Yes:
+            return
+        _cancelled_session_ids.add(session_id)
+        _set_status_message("Cancelling…")
+        _latest_metrics_payload = None
+        _refresh_status_metrics()
+        query_panel.cancel_button.setEnabled(False)
+        _active_worker.request_cancel()
 
     function display_results(result, session_id):
         _leave_query_busy_state()
@@ -587,6 +602,21 @@ class AutoresearchMainWindow(QMainWindow):
         )
         _set_status_message("Query failed")
         _refresh_status_metrics()
+        _finalise_session_state()
+
+    function _complete_cancellation(session_id):
+        if not is_query_running and _active_session_id is None:
+            return
+        _cancelled_session_ids.discard(session_id)
+        _leave_query_busy_state()
+        _latest_metrics_payload = None
+        _refresh_status_metrics()
+        _set_status_message("Ready")
+        telemetry.emit(
+            "ui.query.cancelled",
+            _build_payload(session_id, status="cancelled"),
+        )
+        _finalise_session_state()
 
     function _show_warning(title, message):
         if _suppress_dialogs():  # AUTORESEARCH_SUPPRESS_DIALOGS bypasses UI

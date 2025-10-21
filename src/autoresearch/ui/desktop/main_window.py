@@ -11,10 +11,11 @@ import os
 import sys
 import uuid
 from enum import Enum
+from threading import Event
 from time import monotonic
 from typing import Any, Mapping, Optional
 
-from PySide6.QtCore import Qt, QTimer, Slot
+from PySide6.QtCore import QObject, QThread, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -29,11 +30,11 @@ from PySide6.QtWidgets import (
 )
 
 # Import desktop components first to avoid Qt-related issues
+from .config_editor import ConfigEditor
+from .export_manager import ExportManager
 from .query_panel import QueryPanel
 from .results_display import ResultsDisplay
-from .config_editor import ConfigEditor
 from .session_manager import SessionManager
-from .export_manager import ExportManager
 from .telemetry import telemetry
 
 try:
@@ -55,6 +56,70 @@ except ImportError:
     OutputDepth = None
     StorageManager = None
     get_orchestration_metrics = None
+
+
+class QueryWorker(QObject):
+    """Background worker responsible for executing orchestrator queries."""
+
+    result_ready = Signal(object, str)
+    """Emitted when the orchestrator returns a successful response."""
+
+    error_occurred = Signal(Exception, str)
+    """Emitted when the orchestrator raises an exception."""
+
+    cancelled = Signal(str)
+    """Emitted when a cancellation request completes before publishing results."""
+
+    finished = Signal(str)
+    """Emitted after the worker finishes its run loop (success, failure, or cancel)."""
+
+    def __init__(
+        self,
+        orchestrator: Any,
+        query: str,
+        config: Any,
+        session_id: str,
+        parent: QObject | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._orchestrator = orchestrator
+        self._query = query
+        self._config = config
+        self._session_id = session_id
+        self._cancel_event = Event()
+
+    @Slot()
+    def run(self) -> None:
+        """Execute the orchestrator run loop on the worker thread."""
+
+        session_id = self._session_id
+
+        if self._cancel_event.is_set():
+            self.cancelled.emit(session_id)
+            self.finished.emit(session_id)
+            return
+
+        try:
+            result = self._orchestrator.run_query(self._query, self._config)
+        except Exception as exc:  # noqa: BLE001 - propagate rich error context
+            self.error_occurred.emit(exc, session_id)
+        else:
+            if self._cancel_event.is_set():
+                self.cancelled.emit(session_id)
+            else:
+                self.result_ready.emit(result, session_id)
+        finally:
+            self.finished.emit(session_id)
+
+    def request_cancel(self) -> None:
+        """Mark the worker as cancelled so results are suppressed."""
+
+        self._cancel_event.set()
+
+    def cancel_requested(self) -> bool:
+        """Return whether the worker has received a cancellation request."""
+
+        return self._cancel_event.is_set()
 
 
 class AutoresearchMainWindow(QMainWindow):
@@ -99,7 +164,8 @@ class AutoresearchMainWindow(QMainWindow):
         self._active_session_id: Optional[str] = None
         self._cancelled_session_ids: set[str] = set()
         self._query_started_at: Optional[float] = None
-        self._active_worker: Any = None
+        self._active_worker: QueryWorker | None = None
+        self._worker_thread: QThread | None = None
 
         self.setup_ui()
         self.setup_menu_bar()
@@ -236,7 +302,7 @@ class AutoresearchMainWindow(QMainWindow):
         """Set up signal-slot connections."""
         if self.query_panel:
             self.query_panel.query_submitted.connect(self.on_query_submitted)
-            self.query_panel.query_cancelled.connect(self.on_query_cancelled)
+            self.query_panel.query_cancelled.connect(self.cancel_query)
         if self.config_editor:
             self.config_editor.configuration_changed.connect(self.on_configuration_changed)
         if self.session_manager:
@@ -531,53 +597,37 @@ class AutoresearchMainWindow(QMainWindow):
         self._latest_metrics_payload = None
         self._refresh_status_metrics()
 
-        # Run query in separate thread to keep UI responsive
-        from PySide6.QtCore import QThread, QThreadPool, QRunnable, QTimer
-
-        class QueryWorker(QRunnable):
-            def __init__(self, orchestrator, query, config, parent, session_id):
-                super().__init__()
-                self.orchestrator = orchestrator
-                self.query = query
-                self.config = config
-                self.parent = parent
-                self.session_id = session_id
-
-            def run(self):
-                try:
-                    # Execute the query
-                    result = self.orchestrator.run_query(self.query, self.config)
-
-                    # Update UI on main thread
-                    QTimer.singleShot(
-                        0,
-                        lambda: self.parent.display_results(result, self.session_id),
-                    )
-
-                except Exception as e:
-                    QTimer.singleShot(
-                        0,
-                        lambda: self.parent.display_error(e, self.session_id),
-                    )
-
-        # Start the query worker
+        # Start the query worker on a dedicated thread to keep the UI responsive
+        session_id = self._active_session_id or self._resolve_session_id()
+        self._active_session_id = session_id
         worker = QueryWorker(
             self.orchestrator,
             self.current_query,
             self.config,
-            self,
-            self._active_session_id,
+            session_id,
         )
-        QThreadPool.globalInstance().start(worker)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        worker.result_ready.connect(self.display_results)
+        worker.error_occurred.connect(self.display_error)
+        worker.cancelled.connect(self._on_worker_cancelled)
+        worker.finished.connect(lambda _: worker.deleteLater())
+        worker.finished.connect(lambda _: thread.quit())
+        worker.finished.connect(lambda sid: self._on_worker_finished(sid))
+        thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(self._on_worker_thread_finished)
+        thread.started.connect(worker.run)
+
         self._active_worker = worker
+        self._worker_thread = thread
+        thread.start()
 
     def display_results(
         self, result: QueryResponse, session_id: Optional[str] = None
     ) -> None:
         """Display query results in the results panel."""
-        if session_id and session_id in self._cancelled_session_ids:
+        if session_id:
             self._cancelled_session_ids.discard(session_id)
-            return
 
         self.is_query_running = False
         self.progress_bar.setVisible(False)
@@ -639,7 +689,7 @@ class AutoresearchMainWindow(QMainWindow):
     def display_error(self, error: Exception, session_id: Optional[str] = None) -> None:
         """Display query error to the user."""
         if session_id and session_id in self._cancelled_session_ids:
-            self._cancelled_session_ids.discard(session_id)
+            self._complete_cancellation(session_id)
             return
 
         self.is_query_running = False
@@ -668,27 +718,58 @@ class AutoresearchMainWindow(QMainWindow):
         telemetry.emit("ui.query.failed", payload)
         self._finalise_session_state()
 
-    def on_query_cancelled(self, session_id: str) -> None:
-        """Handle cancellation requests from the query panel."""
+    @Slot(str)
+    def cancel_query(self, session_id: str) -> None:
+        """Handle cancellation requests emitted by the query panel."""
 
-        if not self.is_query_running:
+        if not self.is_query_running or not self._active_worker:
             return
 
         if self._active_session_id and session_id != self._active_session_id:
             return
 
+        buttons = QMessageBox.Yes | QMessageBox.No
+        reply = self._ask_question(
+            "Cancel query?",
+            "Cancel the active query? This action cannot be undone.",
+            buttons,
+            QMessageBox.No,
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
         self._cancelled_session_ids.add(session_id)
-        self.is_query_running = False
-        self.progress_bar.setVisible(False)
+        self._set_status_message("Cancelling…")
+        self._latest_metrics_payload = None
+        self._refresh_status_metrics()
 
-        if self.query_panel:
-            self.query_panel.set_busy(False)
-            self.query_panel.clear_session_context()
+        if self.query_panel and getattr(self.query_panel, "cancel_button", None):
+            self.query_panel.cancel_button.setEnabled(False)
 
-        self._set_status_message("Query cancelled")
-        payload = self._build_query_payload(session_id, status="cancelled")
-        telemetry.emit("ui.query.cancelled", payload)
-        self._finalise_session_state()
+        if self.progress_bar:
+            self.progress_bar.setVisible(True)
+            self.progress_bar.setRange(0, 0)
+
+        self._active_worker.request_cancel()
+
+    @Slot(str)
+    def _on_worker_cancelled(self, session_id: str) -> None:
+        """Handle completion callbacks from a cancelled worker."""
+
+        self._complete_cancellation(session_id)
+
+    @Slot(str)
+    def _on_worker_finished(self, session_id: str) -> None:
+        """Normalize bookkeeping once the worker emits its finished signal."""
+
+        self._cancelled_session_ids.discard(session_id)
+
+    @Slot()
+    def _on_worker_thread_finished(self) -> None:
+        """Clear thread references after the worker thread shuts down."""
+
+        self._worker_thread = None
 
     def closeEvent(self, event) -> None:
         """Handle window close event."""
@@ -758,6 +839,36 @@ class AutoresearchMainWindow(QMainWindow):
             payload.update(extra)
 
         return {key: value for key, value in payload.items() if value is not None}
+
+    def _complete_cancellation(self, session_id: Optional[str]) -> None:
+        """Finalize UI state after a cancellation request completes."""
+
+        already_finalised = (
+            not self.is_query_running
+            and self._active_worker is None
+            and self._active_session_id is None
+        )
+        if already_finalised:
+            return
+
+        payload_session = session_id or self._active_session_id
+        if session_id:
+            self._cancelled_session_ids.discard(session_id)
+
+        self.is_query_running = False
+        self.progress_bar.setVisible(False)
+
+        if self.query_panel:
+            self.query_panel.set_busy(False)
+            self.query_panel.clear_session_context()
+
+        self._latest_metrics_payload = None
+        self._refresh_status_metrics()
+        self._set_status_message("Ready")
+
+        payload = self._build_query_payload(payload_session, status="cancelled")
+        telemetry.emit("ui.query.cancelled", payload)
+        self._finalise_session_state()
 
     def _finalise_session_state(self) -> None:
         """Reset session bookkeeping after a terminal query state."""

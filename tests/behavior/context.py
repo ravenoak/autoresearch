@@ -6,8 +6,8 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from types import ModuleType, SimpleNamespace
-from typing import Any, TypeVar, overload
+from types import SimpleNamespace
+from typing import Any, Optional, TypeVar, overload
 from unittest.mock import MagicMock
 
 from click.testing import Result
@@ -329,22 +329,16 @@ class DesktopRuntimeMocks:
     """Hold patched Qt classes and spy data for desktop UI scenarios."""
 
     QApplication: type[Any]
-    """Stubbed :class:`QApplication` replacement used during tests."""
+    """Instrumented :class:`QApplication` replacement used during tests."""
 
     AutoresearchMainWindow: type[Any]
-    """Stubbed desktop main window exposed to the runtime."""
-
-    QMessageBox: type[Any]
-    """Stubbed :class:`QMessageBox` replacement capturing dialogs."""
+    """Instrumented desktop main window exposed to the runtime."""
 
     apps: list[Any]
     """Instances created from :class:`QApplication`."""
 
     windows: list[Any]
     """Instances of :class:`AutoresearchMainWindow` constructed during a run."""
-
-    message_boxes: list[Any]
-    """Dialog instances spawned by the runtime."""
 
     information_calls: list[tuple[str, str]]
     """Calls made to ``QMessageBox.information``."""
@@ -355,8 +349,8 @@ class DesktopRuntimeMocks:
     critical_calls: list[tuple[str, str]]
     """Calls made to ``QMessageBox.critical``."""
 
-    qt: Any
-    """Simplified :mod:`Qt` namespace exposing required attributes."""
+    question_calls: list[tuple[str, str]]
+    """Calls made to ``QMessageBox.question``."""
 
     def latest_window(self) -> Any | None:
         """Return the most recently created desktop window, if any."""
@@ -366,43 +360,38 @@ class DesktopRuntimeMocks:
         return None
 
 
+
 @contextmanager
 def desktop_runtime(
     monkeypatch: Any, *, exit_code: int = 0
 ) -> Iterator[DesktopRuntimeMocks]:
-    """Patch PySide6 modules with deterministic test doubles.
-
-    Parameters
-    ----------
-    monkeypatch:
-        Active :class:`pytest.MonkeyPatch` fixture.
-    exit_code:
-        Value returned from the stubbed ``QApplication.exec`` method.
-    """
+    """Patch PySide6 modules with instrumented doubles that call real widgets."""
 
     import sys
-    from contextlib import ExitStack
+    from threading import Event
+    from types import MethodType, SimpleNamespace
+    from unittest.mock import MagicMock
+
+    from PySide6 import QtWidgets
+    from PySide6.QtWidgets import QMessageBox
 
     from autoresearch.models import QueryResponse
+    from autoresearch.ui.desktop.main_window import (
+        AutoresearchMainWindow as _BaseMainWindow,
+    )
 
     created_apps: list[Any] = []
     created_windows: list[Any] = []
-    created_boxes: list[Any] = []
     information_calls: list[tuple[str, str]] = []
     warning_calls: list[tuple[str, str]] = []
     critical_calls: list[tuple[str, str]] = []
+    question_calls: list[tuple[str, str]] = []
 
-    class DummyQApplication:
-        """Minimal QApplication stand-in recording lifecycle events."""
-
-        setAttribute = MagicMock()
-        setHighDpiScaleFactorRoundingPolicy = MagicMock()
+    class InstrumentedQApplication(QtWidgets.QApplication):
+        """Record lifecycle events for the QApplication instance."""
 
         def __init__(self, args: Sequence[str]) -> None:
-            self.args = tuple(args)
-            self.setApplicationName = MagicMock()
-            self.setApplicationVersion = MagicMock()
-            self.setOrganizationName = MagicMock()
+            super().__init__(list(args))
             self.exec_call_count = 0
             created_apps.append(self)
 
@@ -410,249 +399,179 @@ def desktop_runtime(
             self.exec_call_count += 1
             return exit_code
 
-    class DummyMessageBox:
-        """Stub QMessageBox capturing dialog metadata."""
+    def information_stub(_parent: Any, title: str, message: str) -> int:
+        information_calls.append((title, message))
+        return QMessageBox.Ok
 
-        Critical = "critical"
-        Ok = 0
+    def warning_stub(_parent: Any, title: str, message: str) -> int:
+        warning_calls.append((title, message))
+        return QMessageBox.Ok
 
-        def __init__(self) -> None:
-            self.icon = None
-            self.title = None
-            self.text = None
-            self.detailed_text = None
-            self.standard_buttons = None
-            created_boxes.append(self)
+    def critical_stub(_parent: Any, title: str, message: str) -> int:
+        critical_calls.append((title, message))
+        return QMessageBox.Ok
 
-        def setIcon(self, icon: Any) -> None:  # noqa: N802 - Qt-style API
-            self.icon = icon
-
-        def setWindowTitle(self, title: str) -> None:  # noqa: N802 - Qt-style API
-            self.title = title
-
-        def setText(self, text: str) -> None:  # noqa: N802 - Qt-style API
-            self.text = text
-
-        def setDetailedText(self, text: str) -> None:  # noqa: N802 - Qt-style API
-            self.detailed_text = text
-
-        def setStandardButtons(self, buttons: Any) -> None:  # noqa: N802
-            self.standard_buttons = buttons
-
-        def exec(self) -> int:  # noqa: A003 - match Qt API
-            return 0
-
-        @classmethod
-        def information(cls, _parent: Any, title: str, message: str) -> None:
-            information_calls.append((title, message))
-
-        @classmethod
-        def warning(cls, _parent: Any, title: str, message: str) -> None:
-            warning_calls.append((title, message))
-
-        @classmethod
-        def critical(cls, _parent: Any, title: str, message: str) -> None:
-            critical_calls.append((title, message))
-
-    class StubAutoresearchMainWindow:
-        """Simplified desktop window capturing Phase 1 interactions."""
+    class InstrumentedMainWindow(_BaseMainWindow):
+        """Autoresearch main window with synchronous helpers for BDD tests."""
 
         def __init__(self) -> None:
-            from unittest.mock import MagicMock as _MagicMock
-
-            created_windows.append(self)
             self.visible = False
             self.events: list[tuple[str, Any]] = []
-            self.submitted_queries: list[str] = []
-            self._responses: list[QueryResponse] = []
-            self.status_bar_message = "Idle"
-            self.status_history: list[str] = [self.status_bar_message]
-            self.timer_state = "stopped"
-            self.timer_events: list[str] = []
-            self.dialog_log: list[str] = []
+            self.status_history: list[str] = []
             self.worker_events: list[tuple[str, str]] = []
+            self.dialog_log: list[str] = []
             self.pending_failure: tuple[str, str] | None = None
-            self.current_query: str | None = None
-            self.state = "idle"
-            self.orchestrator = _MagicMock()
-            self.orchestrator.run_query.side_effect = self._run_query
+            self._last_result: QueryResponse | None = None
+            self._orchestrator_release = Event()
+            self._orchestrator_release.set()
+            self._result_event = Event()
+            self.status_bar_message = "Ready"
+            super().__init__()
+            created_windows.append(self)
+            self.status_history.append(self._status_message)
+            self.status_bar_message = self._status_message
+            self._install_instrumentation()
+
+        def load_configuration(self) -> None:  # noqa: D401 - documented upstream
+            """Load a lightweight configuration and stub orchestrator."""
+
+            self.config = SimpleNamespace(reasoning_mode="balanced", loops=2)
+            orchestrator = MagicMock()
+            orchestrator.run_query = MagicMock(side_effect=self._orchestrator_run)
+            self.orchestrator = orchestrator
+            self._set_status_message("Configuration loaded - ready for queries")
+
+        def _install_instrumentation(self) -> None:
+            panel = self.query_panel
+            if not panel:
+                return
+
+            original_set_busy = panel.set_busy
+            window_self = self
+
+            def instrumented_set_busy(panel_self: Any, is_busy: bool) -> None:
+                original_set_busy(is_busy)
+                window_self.events.append(
+                    ("controls", "disabled" if is_busy else "enabled")
+                )
+
+            panel.set_busy = MethodType(instrumented_set_busy, panel)
 
         def show(self) -> None:
             self.visible = True
+            super().show()
+
+        def _set_status_message(self, message: str) -> None:
+            super()._set_status_message(message)
+            self.status_bar_message = message
+            self.status_history.append(message)
+
+        def _ask_question(self, title: str, message: str, buttons: Any, default: Any) -> Any:
+            question_calls.append((title, message))
+            self.dialog_log.append("cancel_prompt")
+            return QMessageBox.Yes
+
+        def cancel_query(self, session_id: str) -> None:
+            self.worker_events.append(("cancel", "requested"))
+            super().cancel_query(session_id)
+
+        def _complete_cancellation(self, session_id: Optional[str]) -> None:
+            super()._complete_cancellation(session_id)
+            self.worker_events.append(("teardown", "complete"))
+
+        def display_results(
+            self, result: QueryResponse, session_id: Optional[str] = None
+        ) -> None:
+            self.events.append(("results", result))
+            super().display_results(result, session_id)
+            self._last_result = result
+            self._result_event.set()
+
+        def display_error(self, error: Exception, session_id: Optional[str] = None) -> None:
+            self.events.append(("error", str(error)))
+            super().display_error(error, session_id)
+            self.worker_events.append(("status_bar", "reset"))
 
         def submit_query(self, query: str) -> QueryResponse | None:
-            if not query.strip():
-                self.events.append(("warning", "empty"))
+            panel = self.query_panel
+            if not panel or not query.strip():
                 return None
-            self.submitted_queries.append(query)
-            self.events.append(("controls", "disabled"))
-            self._start_running(query)
-            try:
-                response = self.orchestrator.run_query(query)
-            except RuntimeError as error:
-                self.events.append(("error", str(error)))
-                self._stop_timer()
-                self._record_status("Idle")
-                self.events.append(("controls", "enabled"))
+            self._result_event.clear()
+            panel.set_query_text(query)
+            panel.on_run_clicked()
+            if not self._orchestrator_release.is_set():
                 return None
-            self.events.append(("results", response))
-            self._finish_success(response)
-            self.events.append(("controls", "enabled"))
-            return response
+            if not self._result_event.wait(timeout=5):
+                raise TimeoutError("Timed out waiting for orchestrator result")
+            self._result_event.clear()
+            return self._last_result
 
         def stage_running_query(self, query: str) -> None:
-            if not query.strip():
-                self.events.append(("warning", "empty"))
-                return
-            self.submitted_queries.append(query)
-            self.events.append(("controls", "disabled"))
-            self._start_running(query)
-            self.pending_failure = None
+            self._orchestrator_release.clear()
+            self.submit_query(query)
 
         def set_pending_failure(self, code: str, message: str | None = None) -> None:
             failure_message = message or f"Worker failed: {code}"
             self.pending_failure = (code, failure_message)
 
         def request_cancel(self) -> None:
-            self.dialog_log.append("cancel_prompt")
-            DummyMessageBox.warning(
-                None,
-                "Cancel query?",
-                "Cancel the active desktop query?",
-            )
+            session_id = self._active_session_id or self._resolve_session_id()
+            self.cancel_query(session_id)
 
         def confirm_cancel(self) -> None:
             self.dialog_log.append("cancel_confirmed")
-            self.worker_events.append(("cancel", "requested"))
-            self.state = "cancelling"
-            self._stop_timer()
-            self._record_status("Cancelling")
 
         def resolve_pending_failure(self) -> None:
-            if self.pending_failure is None:
-                return
-            code, message = self.pending_failure
-            DummyMessageBox.critical(None, "Query failed", message)
-            self.events.append(("error", code))
-            self.worker_events.append(("teardown", "complete"))
-            self.worker_events.append(("status_bar", "reset"))
-            self.pending_failure = None
-            self._stop_timer()
-            self._record_status("Idle")
-            self.events.append(("controls", "enabled"))
-            self.state = "failed"
+            self._orchestrator_release.set()
 
-        def _run_query(self, query: str) -> QueryResponse:
+        @property
+        def latest_response(self) -> QueryResponse | None:
+            return self._last_result
+
+        def _orchestrator_run(self, query: str, _config: Any) -> QueryResponse:
+            if not self._orchestrator_release.wait(timeout=5):
+                raise TimeoutError("Instrumented orchestrator blocked")
+            self._orchestrator_release.set()
             if self.pending_failure is not None:
-                code, _ = self.pending_failure
-                raise RuntimeError(code)
-            response = QueryResponse(
+                _code, message = self.pending_failure
+                raise RuntimeError(message)
+            return QueryResponse(
                 query=query,
                 answer=f"Synthesized desktop response for {query}",
                 citations=["doc://phase1"],
                 reasoning=[f"Desktop orchestrator ran for {query}"],
                 metrics={"tokens": 42},
             )
-            return response
 
-        def _start_running(self, query: str) -> None:
-            self.state = "running"
-            self.current_query = query
-            self.timer_state = "running"
-            self.timer_events.append("started")
-            self.events.append(("timer", "started"))
-            self._record_status("Running")
-
-        def _finish_success(self, response: QueryResponse) -> QueryResponse:
-            self._responses.append(response)
-            self._stop_timer()
-            self._record_status("Idle")
-            self.state = "idle"
-            return response
-
-        def _stop_timer(self) -> None:
-            if self.timer_state == "running":
-                self.timer_state = "stopped"
-                self.timer_events.append("stopped")
-                self.events.append(("timer", "stopped"))
-
-        def _record_status(self, label: str) -> None:
-            self.status_bar_message = label
-            self.status_history.append(label)
-            self.events.append(("status", label.lower()))
-
-        @property
-        def latest_response(self) -> QueryResponse | None:
-            if self._responses:
-                return self._responses[-1]
-            return None
-
-    qt_namespace = SimpleNamespace(
-        ApplicationAttribute=SimpleNamespace(AA_EnableHighDpiScaling="AA_EnableHighDpiScaling"),
-        HighDpiScaleFactorRoundingPolicy=SimpleNamespace(PassThrough="PassThrough"),
+    monkeypatch.setattr(QtWidgets, "QApplication", InstrumentedQApplication)
+    monkeypatch.setattr(
+        "PySide6.QtWidgets.QApplication", InstrumentedQApplication, raising=False
+    )
+    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.information", information_stub)
+    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.warning", warning_stub)
+    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.critical", critical_stub)
+    monkeypatch.setattr(
+        "autoresearch.ui.desktop.main_window.AutoresearchMainWindow",
+        InstrumentedMainWindow,
     )
 
-    qtcore_module = ModuleType("PySide6.QtCore")
-    qtcore_module.Qt = qt_namespace
+    original_main = sys.modules.pop("autoresearch.ui.desktop.main", None)
 
-    qtwidgets_module = ModuleType("PySide6.QtWidgets")
-    qtwidgets_module.QApplication = DummyQApplication
-    qtwidgets_module.QMessageBox = DummyMessageBox
+    mocks = DesktopRuntimeMocks(
+        QApplication=InstrumentedQApplication,
+        AutoresearchMainWindow=InstrumentedMainWindow,
+        apps=created_apps,
+        windows=created_windows,
+        information_calls=information_calls,
+        warning_calls=warning_calls,
+        critical_calls=critical_calls,
+        question_calls=question_calls,
+    )
 
-    pyside6_module = ModuleType("PySide6")
-    pyside6_module.QtCore = qtcore_module
-    pyside6_module.QtWidgets = qtwidgets_module
-
-    main_window_module = ModuleType("autoresearch.ui.desktop.main_window")
-    main_window_module.AutoresearchMainWindow = StubAutoresearchMainWindow
-
-    patched_modules = {
-        "PySide6": pyside6_module,
-        "PySide6.QtCore": qtcore_module,
-        "PySide6.QtWidgets": qtwidgets_module,
-        "autoresearch.ui.desktop.main_window": main_window_module,
-    }
-
-    original_modules: dict[str, ModuleType | None] = {}
-
-    with ExitStack() as stack:
-        for name, module in patched_modules.items():
-            original_modules[name] = sys.modules.get(name)
-            stack.callback(
-                lambda n=name, original=original_modules[name]: _restore_module(n, original)
-            )
-            sys.modules[name] = module
-
-        original_main = sys.modules.pop("autoresearch.ui.desktop.main", None)
-        stack.callback(lambda: _restore_module("autoresearch.ui.desktop.main", original_main))
-
-        monkeypatch.setenv("AUTORESEARCH_SUPPRESS_DIALOGS", "1")
-
-        mocks = DesktopRuntimeMocks(
-            QApplication=DummyQApplication,
-            AutoresearchMainWindow=StubAutoresearchMainWindow,
-            QMessageBox=DummyMessageBox,
-            apps=created_apps,
-            windows=created_windows,
-            message_boxes=created_boxes,
-            information_calls=information_calls,
-            warning_calls=warning_calls,
-            critical_calls=critical_calls,
-            qt=qt_namespace,
-        )
-
-        try:
-            yield mocks
-        finally:
-            stack.close()
-
-
-def _restore_module(name: str, module: ModuleType | None) -> None:
-    """Return ``sys.modules[name]`` to its original value."""
-
-    import sys
-
-    if module is None:
-        sys.modules.pop(name, None)
-    else:
-        sys.modules[name] = module
+    try:
+        yield mocks
+    finally:
+        if original_main is not None:
+            sys.modules["autoresearch.ui.desktop.main"] = original_main
+        else:
+            sys.modules.pop("autoresearch.ui.desktop.main", None)
