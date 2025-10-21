@@ -60,13 +60,31 @@ The overall system architecture is defined in `docs/diagrams/system_architecture
    - RDFLib Store: For RDF data interchange
    - TinyDB Cache: For caching
 
-3. **Agent → Search**: Agents can perform external searches to gather information.
+3. **Agent → Search**: Agents can perform external searches to gather
+   information.
 
-4. **Search → VectorSearch**: Vector search capabilities enhance search precision through semantic similarity.
+4. **Search → Semantic Tree Builder**: Search forwards aggregated retrieval
+   results to the Semantic Tree Builder, which clusters passages and emits tree
+   nodes with calibrated path scores. These artefacts are registered under the
+   context-aware search toggles documented in
+   [ContextAwareSearchConfig](specs/config.md#contextawaresearchconfig).
 
-5. **Orchestrator → OutputFormatter**: The Orchestrator formats the final results using the OutputFormatter.
+5. **Semantic Tree Builder → Traversal LLM**: The Semantic Tree Builder
+   serialises the hierarchy and calibrated scores so the Traversal LLM can
+   prioritise branches, produce hop-level rationales, and stream path telemetry
+   back to the Orchestrator. Summaries created during traversal are attached to
+   Knowledge Graph updates for GraphRAG ingestion.
 
-6. **OutputFormatter → Synthesis**: The OutputFormatter uses the Synthesis component to build coherent answers.
+6. **Traversal LLM → StorageManager / Orchestrator**: Traversal outputs extend
+   the scout-gate signal set that the Orchestrator consumes while persisting
+   tree nodes, summaries, and calibrated scores through the StorageManager to
+   downstream stores and agents.
+
+7. **Orchestrator → OutputFormatter**: The Orchestrator formats the final
+   results using the OutputFormatter.
+
+8. **OutputFormatter → Synthesis**: The OutputFormatter uses the Synthesis
+   component to build coherent answers.
 
 ## Detailed Component Interactions
 
