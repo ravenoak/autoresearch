@@ -178,29 +178,30 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
 6. **Phase 6 – Hierarchical Retrieval Integration**
    - Stand up a prototype tree builder that clusters corpus shards by intent
      and summary depth so hierarchical traversals stay logarithmic in corpus
-     size, matching the semantic tree approach reported for LATTICE.
-   - Calibrate the traversal scorer against the BRIGHT benchmark gains
-     (≈9 % Recall@100, ≈5 % nDCG@10 over zero-shot baselines) to validate that
-     AUTO’s hierarchical routing matches the paper’s performance envelope before
-     general release.
-   - Extend telemetry with `hierarchical_retrieval.traversal_depth`,
-     `hierarchical_retrieval.path_score`, and latency aggregates so dashboards
-     capture depth, calibration error, and compute footprints per query.
-   - Implement dynamic-corpus safeguards that detect out-of-tree documents,
-     trigger incremental rebuilds, and fall back to the Phase 3 GraphRAG search
-     path when calibration confidence drops below the validated threshold.
-   - Document the operator workflow for enabling the hierarchical retriever,
-     including playbooks for rebuild cadence, calibration replays, and dynamic
-     corpus ingestion.
+     size, mirroring the LATTICE semantic tree approach.
+   - **Evaluation goals:** Calibrate traversal scoring against the BRIGHT
+     benchmark uplift (≈9 % Recall@100, ≈5 % nDCG@10 over zero-shot baselines)
+     before broader rollout so AUTO’s hierarchical routing matches the paper’s
+     performance envelope.
+   - **Telemetry requirements:** Emit `hierarchical_retrieval.traversal_depth`,
+     `hierarchical_retrieval.path_score`, calibration residuals, and latency
+     aggregates so dashboards capture depth, error bounds, and compute
+     profiles per query.
+   - **Fallback strategy:** Detect out-of-tree corpus updates, trigger
+     incremental rebuilds, and fall back to the Phase 3 GraphRAG search path
+     whenever calibration confidence drops below the validated threshold.
+   - Document operator workflows for enabling the hierarchical retriever,
+     including rebuild cadence, calibration replays, dynamic ingestion, and
+     dashboard expectations.
    - **Acceptance criteria:** Ship the prototype tree builder, calibration
      validation harness, telemetry stream, and GraphRAG fallback policy backed
      by regression coverage and BRIGHT benchmark comparisons.
    - **Prerequisite:** Requires the prototype tree builder, calibration
      validation, and dynamic-corpus safeguards to reach feature complete status
-     before release. Target alignment with the **0.1.1** window so the
-     integration matures after the initial v0.1.0 cut while maintaining audit
-     trails for the release dossier.
-     See [LATTICE hierarchical retrieval findings]
+     before release.
+   - **Target release window:** Align with **0.1.1** so integration matures
+     after the initial v0.1.0 cut while maintaining audit trails for the release
+     dossier. See [LATTICE hierarchical retrieval findings]
      (docs/external_research_papers/arxiv.org/2510.13217v1.md) for benchmark
      details guiding the evaluation goals.
 

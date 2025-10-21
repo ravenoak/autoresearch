@@ -49,6 +49,20 @@ telemetry.
 
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
+- [hierarchical-retrieval-lattice-integration](hierarchical-retrieval-lattice-integration.md)
+
+## Phase 6 tasks
+- Land the prototype semantic tree builder and calibration harness tracked in
+  [hierarchical-retrieval-lattice-integration](hierarchical-retrieval-lattice-integration.md).
+- Instrument telemetry for `hierarchical_retrieval.traversal_depth`,
+  `hierarchical_retrieval.path_score`, calibration residuals, and fallback
+  counters so STATUS.md and ROADMAP.md receive live signals.
+- Document the fallback playbook that routes queries back to Phase 3 GraphRAG
+  whenever calibration confidence drops below validated thresholds or dynamic
+  corpus updates exceed guardrails.
+- Schedule evaluation checkpoints that reproduce the ≈9 % Recall@100 and ≈5 %
+  nDCG@10 BRIGHT uplift reported for LATTICE before enabling the feature by
+  default.
 
 ## Acceptance Criteria
 - Phased work items (issues, docs, roadmap) exist for each enhancement area.
@@ -62,6 +76,11 @@ telemetry.
 - Hierarchical retrieval workstreams (tree builder, calibration validation,
   dynamic-corpus safeguards) are scheduled, tracked, and evaluated against the
   LATTICE benchmark targets before the Phase 6 release window.
+- Telemetry and fallback playbooks cover the GraphRAG downgrade path and are
+  published alongside operator enablement guidance.
+- Evaluation checkpoints document BRIGHT metric deltas (≈9 % Recall@100, ≈5 %
+  nDCG@10) prior to launch, with regressions triggering the recorded fallback
+  strategy.
 
 ## Status
 Open
