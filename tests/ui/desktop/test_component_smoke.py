@@ -355,7 +355,12 @@ def _install_deferred_worker(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     return {"pool": pool}
 
 
-def _install_stub_configuration(monkeypatch: pytest.MonkeyPatch, *, raise_error: bool = False) -> None:
+def _install_stub_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    raise_error: bool = False,
+    exports: Mapping[str, bool] | None = None,
+) -> None:
     class DummyLoader:
         def load_config(self) -> ConfigModel:
             return ConfigModel()
@@ -364,12 +369,18 @@ def _install_stub_configuration(monkeypatch: pytest.MonkeyPatch, *, raise_error:
         def run_query(self, query: str, config: ConfigModel) -> QueryResponse:
             if raise_error:
                 raise RuntimeError("boom")
+            metrics: Mapping[str, Any] = {"tokens": {"total": 3}}
+            if exports is not None:
+                metrics = {
+                    **metrics,
+                    "knowledge_graph": {"exports": dict(exports)},
+                }
             return QueryResponse(
                 query=query,
                 answer="ok",
                 citations=[],
                 reasoning=[],
-                metrics={"tokens": {"total": 3}},
+                metrics=metrics,
                 warnings=[],
                 claim_audits=[],
                 task_graph=None,
@@ -379,6 +390,56 @@ def _install_stub_configuration(monkeypatch: pytest.MonkeyPatch, *, raise_error:
 
     monkeypatch.setattr(main_window_module, "ConfigLoader", DummyLoader)
     monkeypatch.setattr(main_window_module, "Orchestrator", DummyOrchestrator)
+
+
+def test_export_buttons_gated_during_query(
+    qtbot, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _install_stub_configuration(monkeypatch, exports={"graphml": True})
+    pool_ref = _install_deferred_worker(monkeypatch)
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.export_manager is not None
+    window.export_manager.set_available_exports({"graphml": True})
+    export_buttons = [
+        button
+        for button in window.export_manager.findChildren(QPushButton)
+        if button.text().startswith("Export")
+    ]
+    assert export_buttons
+    initial_button = export_buttons[0]
+    assert initial_button.isEnabled()
+
+    assert window.query_panel is not None
+    window.query_panel.set_query_text("Gate exports")
+    window.query_panel.on_run_clicked()
+
+    qtbot.waitUntil(lambda: pool_ref["pool"].worker is not None, timeout=500)
+    assert not initial_button.isEnabled()
+
+    worker = pool_ref["pool"].worker
+    assert worker is not None
+    worker.run()
+
+    def _all_enabled() -> bool:
+        buttons = [
+            button
+            for button in window.export_manager.findChildren(QPushButton)
+            if button.text().startswith("Export")
+        ]
+        return bool(buttons) and all(button.isEnabled() for button in buttons)
+
+    qtbot.waitUntil(_all_enabled, timeout=500)
+
+    final_buttons = [
+        button
+        for button in window.export_manager.findChildren(QPushButton)
+        if button.text().startswith("Export")
+    ]
+    assert final_buttons
+    assert all(button.isEnabled() for button in final_buttons)
 
 
 def test_main_window_emits_completed_telemetry(

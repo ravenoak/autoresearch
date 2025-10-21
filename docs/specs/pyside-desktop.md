@@ -46,6 +46,9 @@ optional dependencies are missing.
 - Dock widgets for configuration, sessions, and exports remain accessible via
 View menu toggle actions stored on AutoresearchMainWindow to prevent garbage
 collection.
+- ExportManager disables export buttons while a query is in flight and restores
+  availability once results or error handling completes so exports always
+  reflect the active session state.
 - Query execution toggles is_query_running, displays an indeterminate progress
   bar, disables QueryPanel inputs via the busy state, and resets status
   messaging regardless of success, failure, or user cancellation paths.
