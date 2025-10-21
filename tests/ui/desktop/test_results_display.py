@@ -24,7 +24,7 @@ pytest.importorskip(
 
 Qt = QtCore.Qt
 
-from PySide6.QtWidgets import QTextBrowser
+from PySide6.QtWidgets import QLabel, QSplitter, QTextBrowser, QWidget
 
 import autoresearch.ui.desktop.results_display as results_display_module
 
@@ -51,6 +51,12 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     qtbot.addWidget(display)
     display.show()
     qtbot.wait(10)
+
+    answer_tab = display.tab_widget.widget(0)
+    assert answer_tab is not None
+    splitter = answer_tab.findChild(QSplitter, "results-display-answer-splitter")
+    assert splitter is not None
+    assert splitter.count() == 2
 
     answer_sink: dict[str, str] = {}
 
@@ -112,6 +118,8 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     elapsed = time.perf_counter() - start
 
     assert elapsed < 0.5
+    assert display.answer_view is not None
+    assert display.answer_view.accessibleName() == "Formatted answer display"
     assert "&lt;script" in answer_sink.get("html", "")
     assert "ftp://invalid" not in answer_sink.get("html", "")
 
@@ -146,6 +154,13 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     assert display.search_results_model.rowCount() == 3
     assert display.search_results_view is not None
     assert display.search_results_view.isEnabled()
+    table_in_tab = answer_tab.findChild(type(display.search_results_view), "results-display-search-table")
+    assert table_in_tab is display.search_results_view
+    header_label = answer_tab.findChild(QLabel, "results-display-structured-header")
+    assert header_label is not None
+    assert header_label.text() == "Structured Results"
+    structured_panel = answer_tab.findChild(QWidget, "results-display-structured-panel")
+    assert structured_panel is not None
     assert (
         display.search_results_view.accessibleDescription()
         == "Displays ranked search hits with titles and source locations."
@@ -281,10 +296,16 @@ def test_results_display_falls_back_without_webengine(monkeypatch, qtbot) -> Non
     display.show()
     qtbot.wait(10)
 
+    answer_tab = display.tab_widget.widget(0)
+    assert answer_tab is not None
+
     assert not display._web_engine_available
     assert isinstance(display.answer_view, QTextBrowser)
     assert display.answer_fallback_label is not None
     assert display.answer_fallback_label.isVisible()
+    answer_panel = answer_tab.findChild(QWidget, "results-display-answer-panel")
+    assert answer_panel is not None
+    assert display.answer_fallback_label.parentWidget() is answer_panel
 
     result = SimpleNamespace(
         answer="# Heading\n\nBody text",

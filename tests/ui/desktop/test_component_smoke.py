@@ -264,6 +264,11 @@ def test_results_display_citations_tab_and_controls(qtbot) -> None:
     assert display.tab_widget is not None
     tab_titles = [display.tab_widget.tabText(i) for i in range(display.tab_widget.count())]
     assert "Citations" in tab_titles
+    answer_tab = display.tab_widget.widget(0)
+    assert answer_tab is not None
+    splitter = answer_tab.findChild(QtWidgets.QSplitter, "results-display-answer-splitter")
+    assert splitter is not None
+    assert splitter.count() == 2
 
     result = QueryResponse(
         query="Test",
