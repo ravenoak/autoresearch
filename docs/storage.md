@@ -14,9 +14,13 @@ The storage component consists of several key classes:
 - **Global Storage State** - Maintains the state of the storage system
 - **StorageConfig** - Configuration for the storage system
 - **StorageError** - Error hierarchy for storage-related errors
+- **SemanticHierarchyStore** - Persists semantic trees for later traversal
+- **PathRelevanceStore** - Records branch scores in the vector store
+- **CalibrationEngine** - Tunes semantic tree weights from feedback loops
 
 The relationships between these classes and their external dependencies are
-documented in `docs/diagrams/storage.puml`.
+documented in `docs/diagrams/storage.puml`, which now highlights the semantic
+tree lifecycle and its DuckDB integrations.
 
 ## Backup Guarantees
 

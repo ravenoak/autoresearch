@@ -59,6 +59,22 @@ package "Storage & Search" {
     + optimize_weights(data, step): Tuple[Tuple[float,float,float], float]
   }
 
+  class SemanticHierarchyStore {
+    + persist_tree(tree): None
+    + load_tree(query_id): SemanticTree
+    - _normalize_branch_scores(tree): None
+  }
+
+  class PathRelevanceStore {
+    + record_path_scores(tree): None
+    + fetch_path_scores(query_id): List[PathScore]
+  }
+
+  class CalibrationEngine {
+    + calibrate(tree, feedback): None
+    + rebalance_weights(metrics): None
+  }
+
   class "Global Storage State" as GlobalState {
     - _delegate: type[StorageManager] | None
     - _lock: Lock
@@ -143,6 +159,17 @@ StorageManager --> KGReasoning : runs ontology reasoning
 
 Search --> FileLoader : load_files
 Search --> GitRepoIndexer : index_repo
+Search --> SemanticHierarchyStore : build_semantic_tree
+Search --> PathRelevanceStore : load_path_scores
+Search --> CalibrationEngine : calibrate_feedback
+
+CalibrationEngine --> SemanticHierarchyStore : refine_tree_weights
+CalibrationEngine --> PathRelevanceStore : tune_path_scores
+
+StorageManager --> SemanticHierarchyStore : persist_semantic_tree
+SemanticHierarchyStore --> PathRelevanceStore : propagate_scores
+PathRelevanceStore --> DuckDBStorageBackend : persist_vectors
+PathRelevanceStore --> DuckDB : query_path_embeddings
 
 ConfigLoader --> ConfigModel : provides
 ConfigModel --> StorageConfig : contains

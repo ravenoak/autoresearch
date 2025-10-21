@@ -45,6 +45,9 @@ package "Storage & Search" {
   component "Storage Manager" as StorageManager
   component "DuckDB Backend" as DuckDBBackend
   component "Search" as Search
+  component "Semantic Tree Builder" as SemanticTreeBuilder
+  component "Traversal Agent" as TraversalAgent
+  component "Path Relevance Store" as PathRelevanceStore
   component "Vector Search" as VectorSearch
   component "File Loader" as FileLoader
   component "Git Repo Indexer" as GitRepoIndexer
@@ -122,12 +125,18 @@ StorageManager -> StorageBackup : backup()
 StorageManager -> KGReasoning : run_reasoner()
 
 Orchestrator -> Search : search()
+Orchestrator -> TraversalAgent : traverse_semantic_paths()
 Search -> VectorSearch : vector_search()
 Search -> FileLoader : load_files()
 Search -> GitRepoIndexer : index_repo()
 Search -> LocalFileBackend
 Search -> GitBackend
+Search -> SemanticTreeBuilder : build_semantic_tree()
+TraversalAgent -> SemanticTreeBuilder : expand_paths()
+SemanticTreeBuilder -> PathRelevanceStore : store_path_scores()
+PathRelevanceStore -> StorageManager : update_relevance()
 VectorSearch -> DuckDB : query
+PathRelevanceStore -> DuckDB : persist_scores()
 
 Orchestrator -> OutputFormatter : format_result()
 OutputFormatter -> Synthesis : build_answer()/build_rationale()

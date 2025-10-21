@@ -4,6 +4,10 @@ Autoresearch can combine results from multiple search backends. By default the
 system merges all responses and ranks them together using a hybrid algorithm
 that mixes BM25 keyword scores, semantic similarity and source credibility.
 
+See `docs/diagrams/system_architecture.puml` and
+`docs/diagrams/storage.puml` for the semantic tree and relevance storage
+flows that enrich backend scoring.
+
 Enable or disable backends in the `[search]` section of `autoresearch.toml`:
 
 ```toml

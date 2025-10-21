@@ -43,6 +43,17 @@ This specification outlines expected behaviors for the
   Simulation trials in `ranking_convergence.py` report a mean
   convergence step of `1`, confirming the idempotent ranking.
 
+## Semantic tree traversal
+
+The [system architecture diagram](diagrams/system_architecture.puml)
+shows how `Search` collaborates with the `TraversalAgent` and
+`SemanticTreeBuilder` to expand semantic trees while persisting branch
+scores in the `PathRelevanceStore`. Storage flows in
+`docs/diagrams/storage.puml` detail how the semantic hierarchy feeds the
+vector indexes. Implementations must keep these links intact so
+`Search.external_lookup` can fuse calibrated path relevance with vector
+matches during ranking.
+
 ## Vector extension fallback
 
 - The DuckDB VSS extension is optional. `VSSExtensionLoader` installs it from
