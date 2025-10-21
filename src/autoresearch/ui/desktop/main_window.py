@@ -677,6 +677,23 @@ class AutoresearchMainWindow(QMainWindow):
         if self._active_session_id and session_id != self._active_session_id:
             return
 
+        reply = self._ask_question(
+            "Cancel running query",
+            (
+                "The current query is still running. Do you want to stop it? "
+                "Any partial progress will be lost."
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if reply != QMessageBox.Yes:
+            if self.query_panel:
+                self.query_panel.set_busy(True)
+            return
+
+        self._set_status_message("Cancelling…")
+
         self._cancelled_session_ids.add(session_id)
         self.is_query_running = False
         self.progress_bar.setVisible(False)
