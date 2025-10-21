@@ -22,6 +22,11 @@ experience goals.
     `duration_ms`, `error_type`, and `error_message`.
   - `ui.query.cancelled` from the cancellation handler with
     `duration_ms` alongside the shared fields.
+- **CLI guard hooks**: The `autoresearch gui` command emits
+  `ui.legacy_gui.blocked` when the opt-in flag is absent and
+  `ui.legacy_gui.launch` with `port` and `browser` payloads when the legacy UI
+  launches. Both rely on the shared analytics dispatcher and fail open when the
+  module is unavailable.
 - **Component hooks (future)**: Dock toggles and wizard instrumentation remain
   targeted for later phases as originally specified.
 - **Test observability**: CI captures Qt log categories and telemetry payloads
