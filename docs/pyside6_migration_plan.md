@@ -125,7 +125,6 @@ src/autoresearch/ui/desktop/
 "markdown >=3.5.0"           # For Markdown rendering
 "networkx >=3.2.0"           # For graph visualization
 "matplotlib >=3.8.0"         # For charts and graphs
-"plotly >=5.17.0"            # For interactive visualizations
 
 [project.optional-dependencies]
 desktop = [
@@ -133,14 +132,17 @@ desktop = [
     "markdown >=3.5.0",
     "networkx >=3.2.0",
     "matplotlib >=3.8.0",
-    "plotly >=5.17.0",
 ]
 ```
+
+> **Note:** Plotly can be evaluated as a future enhancement if interactive
+> visualizations become necessary. Should that happen, add it to both the
+> documentation and `pyproject.toml` to keep dependencies aligned.
 
 ### Installation Commands
 ```bash
 # Install PySide6 and desktop dependencies
-uv add PySide6 markdown networkx matplotlib plotly
+uv add PySide6 markdown networkx matplotlib
 
 # Install in development mode
 uv pip install -e . --extra desktop
