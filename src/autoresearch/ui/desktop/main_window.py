@@ -517,6 +517,7 @@ class AutoresearchMainWindow(QMainWindow):
             )
             return
 
+        self._set_export_gating(True)
         self._merge_query_panel_configuration()
 
         if self.query_panel:
@@ -590,6 +591,7 @@ class AutoresearchMainWindow(QMainWindow):
             self.results_display.display_results(result)
 
         self.update_export_options(result)
+        self._set_export_gating(False)
 
         metrics_payload = getattr(result, "metrics", None)
         if isinstance(metrics_payload, Mapping):
@@ -657,6 +659,7 @@ class AutoresearchMainWindow(QMainWindow):
 
         self._set_status_message("Query failed")
         self._refresh_status_metrics()
+        self._set_export_gating(False)
         payload = self._build_query_payload(
             session_id or self._active_session_id,
             status="failed",
@@ -779,9 +782,16 @@ class AutoresearchMainWindow(QMainWindow):
     def _finalise_session_state(self) -> None:
         """Reset session bookkeeping after a terminal query state."""
 
+        self._set_export_gating(False)
         self._active_session_id = None
         self._query_started_at = None
         self._active_worker = None
+
+    def _set_export_gating(self, gated: bool) -> None:
+        """Toggle availability of export actions during query execution."""
+
+        if self.export_manager:
+            self.export_manager.set_export_gating(gated)
 
     def _start_metrics_timer(self) -> None:
         """Start the timer responsible for refreshing status metrics."""
