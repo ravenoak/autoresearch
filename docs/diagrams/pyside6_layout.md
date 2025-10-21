@@ -76,8 +76,9 @@ configuration controls, and results parity.*
 export gating tied to Phase 1 cancellation and status feedback stories.*
 
 ![Phase 1 cancel confirmation wireframe][phase1-cancel]
-*Figure 3: Cancellation prompt illustrating the modal copy, destructive
-confirmation button, and persistent busy overlay used before worker teardown.*
+*Figure 3: Cancellation prompt illustrating the “Cancel running query” copy,
+destructive confirmation button, and persistent busy overlay used before worker
+teardown.*
 
 ![Phase 1 error dialog wireframe][phase1-error]
 *Figure 4: Error state showing the critical dialog, status-bar reset, and

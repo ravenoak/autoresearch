@@ -24,6 +24,7 @@ Qt = QtCore.Qt
 QListWidget = QtWidgets.QListWidget
 QPushButton = QtWidgets.QPushButton
 QLabel = QtWidgets.QLabel
+QMessageBox = QtWidgets.QMessageBox
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
@@ -420,10 +421,29 @@ def test_main_window_emits_failed_telemetry(
 
 
 def test_main_window_emits_cancelled_telemetry(
-    qtbot, monkeypatch: pytest.MonkeyPatch, telemetry_events
+    qtbot,
+    monkeypatch: pytest.MonkeyPatch,
+    telemetry_events,
+    capfd: pytest.CaptureFixture[str],
 ) -> None:
     _install_stub_configuration(monkeypatch)
     pool_ref = _install_deferred_worker(monkeypatch)
+    monkeypatch.setenv("AUTORESEARCH_SUPPRESS_DIALOGS", "1")
+
+    prompts: list[tuple[str, str, Any, Any]] = []
+
+    def fake_question(
+        self,
+        title: str,
+        message: str,
+        buttons: Any,
+        default: Any,
+    ) -> int:
+        prompts.append((title, message, buttons, default))
+        self._log_dialog("question", title, message)
+        return QMessageBox.Yes
+
+    monkeypatch.setattr(AutoresearchMainWindow, "_ask_question", fake_question)
 
     window = AutoresearchMainWindow()
     qtbot.addWidget(window)
@@ -441,6 +461,15 @@ def test_main_window_emits_cancelled_telemetry(
         timeout=500,
     )
 
+    captured = capfd.readouterr()
+    assert "[QUESTION] Cancel running query" in captured.err
+    assert prompts
+    title, message, buttons, default = prompts[-1]
+    assert title == "Cancel running query"
+    assert "current query is still running" in message
+    assert buttons == (QMessageBox.Yes | QMessageBox.No)
+    assert default == QMessageBox.No
+
     submitted_payload = next(
         payload for event, payload in telemetry_events if event == "ui.query.submitted"
     )
@@ -450,9 +479,61 @@ def test_main_window_emits_cancelled_telemetry(
 
     assert submitted_payload["session_id"] == cancelled_payload["session_id"]
     assert cancelled_payload["status"] == "cancelled"
+    assert not window.query_panel.is_busy()
+    assert not window.progress_bar.isVisible()
 
     worker = pool_ref["pool"].worker
     assert worker is not None
     worker.run()
 
     assert not any(event == "ui.query.completed" for event, _ in telemetry_events)
+
+
+def test_main_window_cancel_decline_keeps_worker_running(
+    qtbot,
+    monkeypatch: pytest.MonkeyPatch,
+    telemetry_events,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    _install_stub_configuration(monkeypatch)
+    pool_ref = _install_deferred_worker(monkeypatch)
+    monkeypatch.setenv("AUTORESEARCH_SUPPRESS_DIALOGS", "1")
+
+    prompts: list[tuple[str, str, Any, Any]] = []
+
+    def fake_question(
+        self,
+        title: str,
+        message: str,
+        buttons: Any,
+        default: Any,
+    ) -> int:
+        prompts.append((title, message, buttons, default))
+        self._log_dialog("question", title, message)
+        return QMessageBox.No
+
+    monkeypatch.setattr(AutoresearchMainWindow, "_ask_question", fake_question)
+
+    window = AutoresearchMainWindow()
+    qtbot.addWidget(window)
+
+    assert window.query_panel is not None
+    window.query_panel.set_query_text("Keep running")
+    window.query_panel.on_run_clicked()
+
+    qtbot.waitUntil(lambda: pool_ref["pool"].worker is not None, timeout=500)
+    qtbot.waitUntil(lambda: window.query_panel.cancel_button.isVisible(), timeout=500)
+    qtbot.mouseClick(window.query_panel.cancel_button, Qt.LeftButton)
+
+    captured = capfd.readouterr()
+    assert "[QUESTION] Cancel running query" in captured.err
+    assert prompts
+    _, message, _, _ = prompts[-1]
+    assert "current query is still running" in message
+
+    assert window.is_query_running
+    assert window.query_panel.is_busy()
+    assert window.progress_bar.isVisible()
+    assert pool_ref["pool"].worker is not None
+    assert not any(event == "ui.query.cancelled" for event, _ in telemetry_events)
+
