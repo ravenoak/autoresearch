@@ -76,6 +76,26 @@ app = cast(
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def _dispatch_gui_event(event: str, payload: Optional[Mapping[str, Any]] = None) -> None:
+    """Best-effort forwarding of legacy GUI telemetry events."""
+
+    try:
+        analytics_module = importlib.import_module("autoresearch.analytics")
+    except Exception:  # pragma: no cover - analytics optional in tests
+        return
+
+    dispatch = getattr(analytics_module, "dispatch_event", None)
+    if not callable(dispatch):
+        return
+
+    try:
+        dispatch(event, dict(payload or {}))
+    except Exception:  # pragma: no cover - defensive guard
+        logging.getLogger(__name__).debug(
+            "Failed to dispatch GUI analytics event '%s'", event, exc_info=True
+        )
+
+
 def typed_callback(**kwargs: Any) -> Callable[[F], F]:
     """Return a type-preserving Typer callback decorator."""
 
@@ -1582,12 +1602,20 @@ def gui(
     from pathlib import Path
 
     enable_flag = os.getenv("AUTORESEARCH_ENABLE_STREAMLIT")
+    normalized_flag: Optional[str] = None
     is_opted_in = False
     if enable_flag is not None:
         normalized_flag = enable_flag.strip().lower()
         is_opted_in = normalized_flag in {"1", "true", "yes", "on"}
 
     if not is_opted_in:
+        _dispatch_gui_event(
+            "ui.legacy_gui.blocked",
+            {
+                "has_opt_in_flag": enable_flag is not None,
+                "normalized_value": normalized_flag,
+            },
+        )
         print_warning(
             "The Streamlit GUI is deprecated and disabled by default during the "
             "PySide6 migration window.",
@@ -1624,6 +1652,14 @@ def gui(
 
     if not browser:
         cmd.extend(["--server.headless", "true"])
+
+    _dispatch_gui_event(
+        "ui.legacy_gui.launch",
+        {
+            "port": port,
+            "browser": browser,
+        },
+    )
 
     print_info(f"Launching Streamlit GUI on port {port}...")
     print_info(f"URL: http://localhost:{port}")

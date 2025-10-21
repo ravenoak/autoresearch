@@ -1,3 +1,6 @@
+import sys
+from types import SimpleNamespace
+
 from typer.testing import CliRunner
 
 from autoresearch.main.app import app
@@ -5,18 +8,40 @@ from autoresearch.main.app import app
 
 def test_gui_requires_opt_in(monkeypatch):
     monkeypatch.delenv("AUTORESEARCH_ENABLE_STREAMLIT", raising=False)
+    events = []
+    monkeypatch.setitem(
+        sys.modules,
+        "autoresearch.analytics",
+        SimpleNamespace(
+            dispatch_event=lambda name, payload: events.append((name, payload)),
+        ),
+    )
     runner = CliRunner()
     result = runner.invoke(app, ["gui"])
 
     assert result.exit_code == 1
     assert "Streamlit GUI is deprecated" in result.stdout
     assert "AUTORESEARCH_ENABLE_STREAMLIT=1 autoresearch gui" in result.stdout
+    assert events == [
+        (
+            "ui.legacy_gui.blocked",
+            {"has_opt_in_flag": False, "normalized_value": None},
+        )
+    ]
 
 
 def test_gui_runs_with_opt_in(monkeypatch):
     import subprocess
 
     monkeypatch.setenv("AUTORESEARCH_ENABLE_STREAMLIT", "1")
+    events = []
+    monkeypatch.setitem(
+        sys.modules,
+        "autoresearch.analytics",
+        SimpleNamespace(
+            dispatch_event=lambda name, payload: events.append((name, payload)),
+        ),
+    )
     recorded = {}
 
     def fake_run(cmd, *args, **kwargs):
@@ -34,3 +59,9 @@ def test_gui_runs_with_opt_in(monkeypatch):
     assert recorded["cmd"][2].endswith("streamlit_app.py")
     assert recorded["cmd"][4] == "8600"
     assert recorded["cmd"][5:] == ["--server.headless", "true"]
+    assert events == [
+        (
+            "ui.legacy_gui.launch",
+            {"port": 8600, "browser": False},
+        )
+    ]
