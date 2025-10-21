@@ -24,6 +24,7 @@ trap finish EXIT
 LOG_FILE="codex_maintenance.log"
 : >"$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
+echo "Streaming codex maintenance logs to $LOG_FILE"
 set -x
 
 if [[ "$(uname -s)" != "Linux" ]]; then
@@ -49,17 +50,11 @@ export PATH="$PWD/.venv/bin:$PATH"
 
 install_pyside6_system_deps
 
-extras_args=(--extra dev-minimal --extra test)
-if [ -n "${AR_EXTRAS:-}" ]; then
-    for extra in $AR_EXTRAS; do
-        [ -n "$extra" ] || continue
-        extras_args+=(--extra "$extra")
-    done
-fi
-
-if ! uv sync --frozen "${extras_args[@]}"; then
+mapfile -t codex_extras < <(collect_codex_extras)
+echo "Syncing dependencies for extras: ${codex_extras[*]}"
+if ! uv_sync_with_codex_extras --frozen; then
     echo "Frozen dependency sync failed; attempting full uv sync." >&2
-    uv sync "${extras_args[@]}"
+    uv_sync_with_codex_extras
 fi
 
 ensure_pyside6_ready \
