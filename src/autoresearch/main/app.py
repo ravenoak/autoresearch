@@ -47,6 +47,7 @@ from ..errors import StorageError
 from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
+from ..models import QueryResponse
 from ..orchestration.reverify import ReverifyOptions, run_reverification
 from ..output_format import OutputDepth
 
@@ -455,6 +456,14 @@ def search(
         "--visualize",
         help="Render an inline knowledge graph after the query completes",
     ),
+    tui: bool = typer.Option(
+        False,
+        "--tui",
+        help=(
+            "Display an interactive Textual dashboard while the query runs "
+            "(requires a TTY and Textual; see docs/tui_dashboard.md)."
+        ),
+    ),
     graphml: Optional[Path] = typer.Option(
         None,
         "--graphml",
@@ -503,6 +512,9 @@ def search(
 
         # Display a simple knowledge graph in the terminal
         autoresearch search "What is quantum computing?" --visualize
+
+        # Watch query progress in the Textual dashboard
+        autoresearch search --tui "What is quantum computing?"
 
         # Export knowledge graph artifacts for offline analysis
         autoresearch search "Explain AI ethics" --graphml graph.graphml --graph-json graph.json
@@ -610,21 +622,32 @@ def search(
     try:
         loops = getattr(config, "loops", 1)
 
-        from . import Progress, Prompt
+        def _run_serial_with_callbacks(
+            callbacks: Mapping[str, Callable[..., Any]] | None = None,
+        ) -> QueryResponse:
+            callback_map = dict(callbacks or {})
+            return OrchestratorLocal().run_query(
+                query,
+                config,
+                callbacks=callback_map,
+                visualize=visualize,
+            )
 
-        def on_cycle_end(loop: int, state: Any) -> None:
-            progress.update(task, advance=1)
-            if interactive and loop < loops - 1:
-                refinement = Prompt.ask(
-                    "Refine query or press Enter to continue (q to abort)",
-                    default="",
-                )
-                if refinement.lower() == "q":
-                    state.error_count = getattr(config, "max_errors", 3)
-                elif refinement:
-                    state.query = refinement
+        def _run_with_progress() -> QueryResponse:
+            from . import Progress, Prompt
 
-        try:
+            def on_cycle_end(loop: int, state: Any) -> None:
+                progress.update(task, advance=1)
+                if interactive and loop < loops - 1:
+                    refinement = Prompt.ask(
+                        "Refine query or press Enter to continue (q to abort)",
+                        default="",
+                    )
+                    if refinement.lower() == "q":
+                        state.error_count = getattr(config, "max_errors", 3)
+                    elif refinement:
+                        state.query = refinement
+
             with Progress() as progress:
                 if parallel and agent_groups:
                     groups = parse_agent_groups([agent_groups])
@@ -632,22 +655,62 @@ def search(
                         "[green]Processing query...",
                         total=len(groups),
                     )
-                    # Respect test monkeypatching by using the module-level orchestrator handle
-                    result = OrchestratorLocal.run_parallel_query(query, config, groups)
-                else:
-                    task = progress.add_task(
-                        "[green]Processing query...",
-                        total=loops,
+                    return OrchestratorLocal.run_parallel_query(query, config, groups)
+                task = progress.add_task(
+                    "[green]Processing query...",
+                    total=loops,
+                )
+                return _run_serial_with_callbacks({"on_cycle_end": on_cycle_end})
+
+        bare_mode_active = os.getenv("AUTORESEARCH_BARE_MODE", "false").lower() in {
+            "true",
+            "1",
+            "yes",
+            "on",
+        }
+        use_tui = False
+        tui_block_reason: str | None = None
+        if tui:
+            if not sys.stdout.isatty():
+                tui_block_reason = (
+                    "Interactive dashboard requires a TTY; falling back to standard output."
+                )
+            elif bare_mode_active:
+                tui_block_reason = (
+                    "Bare mode disables the dashboard to preserve plain output; using legacy renderer."
+                )
+            elif interactive:
+                tui_block_reason = (
+                    "Interactive refinement is not supported inside the Textual dashboard; using standard output."
+                )
+            elif parallel or agent_groups:
+                tui_block_reason = (
+                    "The dashboard does not yet support parallel execution or custom agent groups;"
+                    " using standard output."
+                )
+            else:
+                use_tui = True
+        if tui_block_reason:
+            print_warning(tui_block_reason)
+
+        try:
+            if use_tui:
+                from ..ui.tui import DashboardUnavailableError, run_dashboard
+
+                try:
+                    result = run_dashboard(
+                        runner=_run_serial_with_callbacks,
+                        total_loops=int(loops),
+                        hooks=visualization_hooks,
                     )
-                    # Use the resolved orchestrator (monkeypatched in tests when provided)
-                    result = OrchestratorLocal().run_query(
-                        query,
-                        config,
-                        callbacks={"on_cycle_end": on_cycle_end},
-                        visualize=visualize,
-                    )
+                except DashboardUnavailableError as exc:
+                    if exc.__cause__ is not None:
+                        raise exc.__cause__ from exc
+                    print_warning(str(exc))
+                    result = _run_with_progress()
+            else:
+                result = _run_with_progress()
         except Exception as e:
-            # Handle orchestration errors and other exceptions
             error_info = get_error_info(e)
             error_msg, suggestion, code_example = format_error_for_cli(error_info)
             print_error(
@@ -882,9 +945,6 @@ def search(
             OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)
     except Exception as e:
-        # Create a valid QueryResponse object with error information
-        from ..models import QueryResponse
-
         # Get error information with suggestions and code examples
         error_info = get_error_info(e)
         error_msg, suggestion, code_example = format_error_for_cli(error_info)
