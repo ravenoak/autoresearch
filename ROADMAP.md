@@ -28,13 +28,20 @@ repository:
 5. [cost-aware-model-routing](issues/cost-aware-model-routing.md) – introduces
    role-aware model selection, budgets, and telemetry to demonstrate savings.
    **✅ COMPLETE - Budget-aware routing, latency SLOs implemented**
+6. [hierarchical-retrieval-lattice-integration](issues/hierarchical-retrieval-lattice-integration.md)
+   – integrates a prototype LATTICE-style semantic tree and calibration harness.
+   – Ships dynamic-corpus safeguards ahead of the **0.1.1** window.
+   – **🚧 IN PROGRESS - Pending prototype tree builder, calibration validation, and
+     dynamic-corpus safeguards**
 
-**All Deep Research phases are now fully implemented and ready for v0.1.0!**
+**Phases 1–5 are complete for v0.1.0; Phase 6 extends the roadmap toward v0.1.1.**
 
 These tickets align with [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
 and the updated specification so release milestones can absorb the upgrades in
-measured increments. All phases now embed verification loops, retrieval exports,
-task graphs, GraphRAG, evaluation harnesses, and cost-aware routing.
+measured increments. Phases 1–5 embed verification loops, retrieval exports,
+task graphs, GraphRAG, evaluation harnesses, and cost-aware routing, while
+Phase 6 layers hierarchical retrieval evaluation, telemetry, and fallbacks onto
+that foundation.
 【F:src/autoresearch/orchestration/reverify.py†L73-L197】
 【F:tests/unit/orchestration/test_reverify.py†L1-L80】
 【F:tests/behavior/features/reasoning_modes.feature†L8-L22】
@@ -46,9 +53,12 @@ task graphs, GraphRAG, evaluation harnesses, and cost-aware routing.
 【F:src/autoresearch/orchestration/task_graph.py†L1-L315】
 【F:src/autoresearch/orchestration/model_routing.py†L1-190】
 
-All phases are now complete and provide the foundation for the **v0.1.0** release.
-Technical work is complete with release artifacts built and validated.
-Final release engineering (git tagging, documentation updates) is in progress.
+Phases 1–5 provide the foundation for the **v0.1.0** release. Phase 6
+hierarchical retrieval is staged for **0.1.1** once the prototype tree builder,
+calibration validation, and dynamic-corpus safeguards finish implementation.
+Technical work for 0.1.0 is complete with release artifacts built and
+validated. Final release engineering (git tagging, documentation updates) is in
+progress.
 
 ## Status
 
@@ -204,6 +214,15 @@ details. The phases integrate with existing milestones as follows:
 5. **Phase 5 – Cost-Aware Model Routing** (feeds performance objectives)
    - Route tasks to heterogeneous models with budget-aware fallbacks.
    - Monitor token, latency, and accuracy telemetry for regression detection.
+6. **Phase 6 – Hierarchical Retrieval Integration** (targets 0.1.1 window)
+   - Deliver the prototype tree builder, calibration validation suite, and
+     dynamic-corpus safeguards before enabling the retriever by default.
+   - Instrument traversal depth, path scoring, and fallback telemetry so
+     operators can monitor calibration drift.
+   - Benchmark against LATTICE’s ≈9 % Recall@100 and ≈5 % nDCG@10 uplift on
+     BRIGHT before expanding rollout.
+     [LATTICE hierarchical retrieval findings]
+     (docs/external_research_papers/arxiv.org/2510.13217v1.md)
 
 Roadmap checkpoints and release notes should reference the phase identifiers
 when logging progress or opening follow-up tickets.
