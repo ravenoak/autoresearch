@@ -38,7 +38,12 @@ from autoresearch.ui.desktop import (
     SessionManager,
 )
 from autoresearch.ui.desktop.results_display import ResultsDisplay
-from autoresearch.ui.desktop.telemetry import get_dispatcher, set_dispatcher
+from autoresearch.ui.desktop.telemetry import (
+    DESKTOP_TELEMETRY_CATEGORY,
+    DesktopTelemetry,
+    get_dispatcher,
+    set_dispatcher,
+)
 
 pytestmark = pytest.mark.requires_ui
 
@@ -56,6 +61,23 @@ def telemetry_events() -> list[tuple[str, Mapping[str, Any]]]:
     yield captured
 
     set_dispatcher(original_dispatcher)
+
+
+def test_desktop_telemetry_emits_default_category(monkeypatch) -> None:
+    emitted: dict[str, Any] = {}
+
+    def fake_qcinfo(category: Any, message: str) -> None:
+        emitted["category"] = category
+        emitted["message"] = message
+
+    monkeypatch.setattr("autoresearch.ui.desktop.telemetry.qCInfo", fake_qcinfo)
+
+    telemetry = DesktopTelemetry()
+    telemetry.emit("ui.test.event")
+
+    assert "category" in emitted
+    category = emitted["category"]
+    assert category.categoryName() == DESKTOP_TELEMETRY_CATEGORY
 
 
 def test_knowledge_graph_view_smoke(qtbot) -> None:

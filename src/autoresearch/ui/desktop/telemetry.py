@@ -10,6 +10,8 @@ from PySide6.QtCore import QLoggingCategory, qCInfo, qCWarning
 
 Dispatcher = Callable[[str, Mapping[str, Any]], None]
 
+DESKTOP_TELEMETRY_CATEGORY = "desktop.query"
+
 _dispatcher_lock = threading.Lock()
 _dispatcher: Optional[Dispatcher] = None
 
@@ -45,7 +47,7 @@ def get_dispatcher() -> Optional[Dispatcher]:
 class DesktopTelemetry:
     """Emit desktop UI telemetry via Qt logging and optional analytics."""
 
-    def __init__(self, category_name: str = "autoresearch.ui.desktop") -> None:
+    def __init__(self, category_name: str = DESKTOP_TELEMETRY_CATEGORY) -> None:
         self._category = QLoggingCategory(category_name)
 
     def emit(self, event: str, payload: Optional[Mapping[str, Any]] = None) -> None:
@@ -79,4 +81,10 @@ telemetry = DesktopTelemetry()
 
 _initialise_dispatcher()
 
-__all__ = ["DesktopTelemetry", "telemetry", "set_dispatcher", "get_dispatcher"]
+__all__ = [
+    "DESKTOP_TELEMETRY_CATEGORY",
+    "DesktopTelemetry",
+    "telemetry",
+    "set_dispatcher",
+    "get_dispatcher",
+]
