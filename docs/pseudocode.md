@@ -267,6 +267,161 @@ class AutoresearchMainWindow:
         self.status_bar.reset_counters()
 ```
 
+## 6c. Desktop Launch & Query Lifecycle (PySide6 modules)
+
+See the [PySide desktop specification](specs/pyside-desktop.md) and the
+[PySide6 layout diagram](diagrams/pyside6_layout.md) for the widget structure
+referenced below.
+
+```
+module autoresearch.ui.desktop.main:
+    function main():
+        configure_high_dpi_attributes()
+        app = QApplication(sys.argv)
+        window = AutoresearchMainWindow()
+        window.show()
+        return app.exec()
+
+module autoresearch.ui.desktop.main_window:
+    function __init__():
+        self.query_panel = QueryPanel()
+        self.results_display = ResultsDisplay()
+        self.progress_bar = QProgressBar()
+        self._metrics_provider = get_orchestration_metrics or None
+        self.setup_connections()
+        self._start_metrics_timer()
+        self.load_configuration()
+
+    function setup_connections():
+        self.query_panel.query_submitted.connect(self.on_query_submitted)
+        self.query_panel.query_cancelled.connect(self.on_query_cancelled)
+        if self.export_manager:
+            self.export_manager.export_requested.connect(
+                self.on_export_requested
+            )
+
+    function on_query_submitted(query):
+        if not query.strip():
+            self._show_warning(
+                "Empty Query", "Please enter a query before submitting."
+            )
+            return
+        session_id = self._resolve_session_id()
+        self.current_query = query
+        self.run_query()
+
+    function run_query():
+        if not self.orchestrator or not self.config:
+            self._show_critical(
+                "System Error",
+                "Autoresearch core components are not available."
+            )
+            return
+        self.query_panel.set_busy(True)
+        self.progress_bar.setRange(0, 0)
+        self._set_status_message("Running query…")
+        worker = QueryWorker(self.orchestrator, self.current_query,
+                             self.config, self, self._active_session_id)
+        QThreadPool.globalInstance().start(worker)
+
+    class QueryWorker(QRunnable):
+        function run():
+            try:
+                result = orchestrator.run_query(query, config)
+                QTimer.singleShot(0, lambda: parent.display_results(result,
+                                                                   session_id))
+            except Exception as error:
+                QTimer.singleShot(0, lambda: parent.display_error(error,
+                                                                  session_id))
+
+    function display_results(result, session_id):
+        self.query_panel.set_busy(False)
+        self.results_display.display_results(result)
+        self._latest_metrics_payload = getattr(result, "metrics", None)
+        self._refresh_status_metrics()
+        telemetry.emit("ui.query.completed", self._build_query_payload(
+            session_id, status="completed",
+            extra={"result_has_metrics": bool(self._latest_metrics_payload)}))
+
+    function display_error(error, session_id):
+        self.query_panel.set_busy(False)
+        self._set_status_message("Query failed")
+        telemetry.emit("ui.query.failed", self._build_query_payload(
+            session_id,
+            status="failed",
+            extra={
+                "error_type": error.__class__.__name__,
+                "error_message": str(error),
+            },
+        ))
+
+    function on_query_cancelled(session_id):
+        self.query_panel.set_busy(False)
+        self._set_status_message("Query cancelled")
+        telemetry.emit(
+            "ui.query.cancelled",
+            self._build_query_payload(session_id, status="cancelled"),
+        )
+
+module autoresearch.ui.desktop.query_panel:
+    function on_run_clicked():
+        query = self.query_input.toPlainText().strip()
+        session_id = uuid.uuid4().hex
+        self._active_session_id = session_id
+        telemetry.emit("ui.query.submitted", {
+            "session_id": session_id,
+            "query_length": len(query),
+            "reasoning_mode": self.current_reasoning_mode,
+            "loops": self.current_loops,
+        })
+        self.query_submitted.emit(query)
+
+    function set_busy(is_busy):
+        for widget in self._iter_control_widgets():
+            widget.setEnabled(not is_busy)
+        if self.cancel_button:
+            self.cancel_button.setVisible(is_busy)
+            self.cancel_button.setEnabled(is_busy)
+        if not ReasoningMode:  # fallback when orchestration enums are missing
+            self.reasoning_mode_combo.setCurrentText("balanced")
+
+module autoresearch.ui.desktop.results_display:
+    function display_answer(result):
+        if self._web_engine_available and QWebEngineView is not None:
+            html = render_markdown_as_html(result)
+            self.answer_view.setHtml(html)
+        else:  # fallback when Qt WebEngine is absent
+            self.answer_fallback_label.setText(
+                "Qt WebEngine is unavailable. Rendering simplified text."
+            )
+            html = render_markdown_as_html(result)
+            set_html = getattr(self.answer_view, "setHtml", None)
+            if callable(set_html):
+                set_html(html)
+            else:
+                self.answer_view.setText(strip_markup(html))
+
+    function display_metrics(result):
+        metrics = getattr(result, "metrics", None)
+        self.metrics_dashboard.update_metrics(metrics)
+
+module autoresearch.ui.desktop.metrics_dashboard:
+    function update_metrics(metrics):
+        if self._chart_available and metrics:
+            snapshot = self._extract_snapshot(metrics)
+            self._append_snapshot(snapshot)
+            self._render_chart()
+        else:  # fallback text mode when matplotlib is missing or metrics absent
+            self._update_summary(no_data=not metrics)
+
+module autoresearch.ui.desktop.telemetry:
+    function emit(event, payload):
+        qCInfo(category, message_from(payload))
+        dispatcher = get_dispatcher()
+        if dispatcher:
+            dispatcher(event, payload)
+```
+
 ## 7. Adaptive Gate (orchestration/gating.py)
 ```
 function run_orchestration(query, config):
