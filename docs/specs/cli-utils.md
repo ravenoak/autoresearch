@@ -2,7 +2,10 @@
 
 ## Overview
 
-CLI utilities for consistent formatting and accessibility.
+CLI utilities for consistent formatting and accessibility. The upcoming
+terminal experience work layers Textual dashboards, prompt-toolkit prompts, and
+Rich renderables on top of the existing Typer flows without breaking
+automation-friendly fallbacks.
 
 ## Algorithms
 
@@ -13,6 +16,12 @@ CLI utilities for consistent formatting and accessibility.
 - CLI options resolve to deterministic defaults when unspecified.
 - Output formatting preserves ANSI codes and width constraints.
 - Help text lists commands in alphabetical order.
+- Prompt abstraction selects prompt-toolkit only when a TTY and dependency
+  check succeed; otherwise Typer handles the prompt.
+- Rich renderables provide ASCII fallbacks whenever bare mode or non-TTY
+  contexts are detected.
+- Textual dashboards launch only when `sys.stdout.isatty()` and bare mode are
+  satisfied, and they exit cleanly without corrupting stdout.
 
 ## Proof Sketch
 

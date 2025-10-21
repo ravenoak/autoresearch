@@ -46,6 +46,10 @@ Must     | Unit tests for logging utilities.          |
 | **F-21** | Maintain local indexes for directories and Git repositories. Indexing occurs at startup or on user command, capturing file contents and commit history for offline queries. | Should   | Unit tests verifying incremental updates; BDD scenario. |
 | **F-22** | Interfaces behave consistently across CLI and GUI. | Must | BDD tests for cross-modal consistency. |
 | **F-23** | Batch query endpoint processes multiple queries with pagination. | Should | Unit/integration tests for `/query/batch`. |
+| **F-24** | API auth handshake; constant-time token checks. | Must | `tests/integration/test_api_auth.py`, `tests/integration/test_api_auth_failure.py`, `tests/behavior/features/api_auth.feature`. |
+| **F-25** | Provide an opt-in Textual dashboard (`autoresearch tui` and `search --tui`) that renders orchestration, metrics, and graph context when running in an interactive TTY; fallback preserves current Typer flow. | Should | Integration smoke tests for TTY/non-TTY launch; BDD dashboard scenarios. |
+| **F-26** | Enhance interactive CLI prompts with prompt-toolkit history, completions, and multi-line input in TTY contexts while defaulting to Typer prompts elsewhere. | Should | Unit tests for prompt selection; BDD enhanced prompt scenarios. |
+| **F-27** | Consolidate Rich-based layouts for monitor and metrics commands with deterministic plain-text fallbacks that match accessibility baselines in bare-mode or piped contexts. | Must | Unit tests for Rich helper fallbacks; BDD visualization scenarios. |
 
 ---
 
@@ -64,6 +68,7 @@ Must     | Unit tests for logging utilities.          |
 | **Accessibility** | Output is readable and actionable for humans by default; dialectical structure is visually distinct and accessible. |
 | **Testability**   | 90%+ code coverage, including error paths and output adaptation.             |
 | **Performance (Indexing)** | Indexing up to 10k files or commits completes within 2 min; queries from the index respond in under 1 s. |
+| **Terminal UX**   | Textual dashboard, prompt-toolkit prompts, and Rich layouts auto-detect TTY support and revert to plaintext without leaking control codes in bare mode. |
 
 ---
 
