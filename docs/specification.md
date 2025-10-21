@@ -97,19 +97,52 @@
 
 - Generate multiple queries per user question or agent prompt.
 - Execute queries in parallel (thread pool, rate-limited).
-- Truncate/summarize results to fit context window.
+- Truncate and summarize results to fit the context window.
 - Attach source metadata to every claim.
 - Backends include web APIs (Serper, Brave) and local options (`local_file`,
   `local_git`).
 - `local_file` recursively indexes directories specified in
   `[search.local_file]`; PDF files are parsed with **pdfminer**, DOCX with
   **python-docx**, and text files directly. Provide a `path` to the directory,
-  an optional list of allowed `file_types`, and an `index_strategy` (e.g.,
-  `embedding` or `bm25`).
+  an optional list of allowed `file_types`, and an `index_strategy` (for
+  example, `embedding` or `bm25`).
 - `local_git` scans repositories configured with `[search.local_git]` using
   `repo_path` to the repository, optional `branches`, `history_depth`, and
   `index_strategy` for incremental or full indexing. Commit messages, diffs, and
   file revisions are stored for search.
+
+### Semantic tree indexing
+
+The search pipeline materialises a hierarchical semantic tree built through
+offline clustering of retrieved passages, mirroring the offline clustering,
+top-down summarisation, and path relevance calibration pattern proposed in
+[arXiv:2510.13217](https://arxiv.org/abs/2510.13217). Tree construction runs as
+an asynchronous post-processing job: leaf clusters form the base layer, parent
+nodes collect centroid embeddings and citation sets, and each layer stores a
+synopsis produced by the summariser used for the scout pass. Calibrated path
+scores generated during the clustering refresh feed directly into scout-gate
+telemetry and session GraphRAG exports so the Orchestrator can chart expected
+coverage and contradiction risk before debate escalation. Configuration
+placeholders for this hierarchy live under
+[ContextAwareSearchConfig](specs/config.md#contextawaresearchconfig), and the
+rollout is tracked alongside the Phase 3 roadmap item in
+[Phase 3 – Graph-Augmented Retrieval](../ROADMAP.md#deep-research-enhancement-initiative-2025-2026).
+
+### LLM-guided traversal
+
+A traversal-specialised LLM consumes the semantic tree, following the highest
+calibrated paths first while opportunistically exploring sibling branches when
+uncertainty spikes. The traversal agent emits per-hop rationales, updated path
+scores, and incremental summaries that are streamed back to the Orchestrator as
+`scout_gate` signals and persisted in Storage for GraphRAG ingestion. These
+summaries annotate the knowledge graph with traversal intent so downstream
+agents can differentiate between scouted evidence and debate-confirmed facts.
+Traversal-specific knobs (`semantic_tree_enabled`,
+`semantic_traversal_profile`) will be added to
+[ContextAwareSearchConfig](specs/config.md#contextawaresearchconfig) and
+documented as future work in
+[Phase 3 – Graph-Augmented Retrieval](../ROADMAP.md#deep-research-enhancement-initiative-2025-2026),
+allowing deployments to toggle the hierarchical pipeline end to end.
 
 Example configuration enabling local sources:
 
