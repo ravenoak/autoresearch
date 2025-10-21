@@ -146,6 +146,10 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     assert display.search_results_model.rowCount() == 3
     assert display.search_results_view is not None
     assert display.search_results_view.isEnabled()
+    assert (
+        display.search_results_view.accessibleDescription()
+        == "Displays ranked search hits with titles and source locations."
+    )
     selected_rows = display.search_results_view.selectionModel().selectedRows()
     assert len(selected_rows) == 1
 

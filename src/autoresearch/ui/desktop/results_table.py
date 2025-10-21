@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt
 from PySide6.QtWidgets import QHeaderView, QTableView
 
 
@@ -34,7 +34,7 @@ class SearchResultsModel(QAbstractTableModel):
 
     _HEADERS: tuple[str, ...] = ("Rank", "Title", "Source")
 
-    def __init__(self, parent: QTableView | None = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._rows: list[SearchResultRow] = []
 
@@ -133,6 +133,9 @@ class SearchResultsTableView(QTableView):
         self.setTabKeyNavigation(True)
         self.setWordWrap(False)
         self.setAccessibleName("Structured search results")
+        self.setAccessibleDescription(
+            "Displays ranked search hits with titles and source locations."
+        )
 
         header = self.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)

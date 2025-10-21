@@ -70,8 +70,9 @@ status bar remains truthful even when cancellations or failures occur.
   The timer stops, metrics snapshots are flushed into ResultsDisplay and the
   status bar, controls are re-enabled, and the worker reference is cleared so a
   fresh worker is created for the next query.
-- **Running → Cancelling** — Entered after the user presses the cancel affordance
-  and confirms the modal prompt. The timer halts immediately, the status bar
+- **Running → Cancelling** — Entered after the user presses the cancel
+  affordance and confirms the modal prompt. The timer halts immediately,
+  the status bar
   shows “Cancelling…”, the busy overlay persists, and the worker receives a
   cooperative ``cancel`` request before teardown callbacks fire.
 - **Cancelling → Failed** — Reached when the worker surfaces an error during
