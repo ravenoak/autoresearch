@@ -1,8 +1,8 @@
 """
 Results display component for the PySide6 desktop interface.
 
-Displays query results in a tabbed interface with support for:
-- Markdown-formatted answers
+Presents query insights across coordinated views including:
+- A paired narrative answer and structured results presentation
 - Knowledge graph visualization
 - Agent reasoning traces
 - Performance metrics
@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSplitter,
     QTabWidget,
     QTextBrowser,
     QTextEdit,
@@ -57,11 +58,10 @@ except ImportError:
 
 
 class ResultsDisplay(QWidget):
-    """
-    Tabbed results display for query responses.
+    """Composite results display for query responses.
 
-    Provides multiple views of the same query result:
-    - Answer tab with formatted response
+    Provides multiple synchronized views of the same query result:
+    - Answer area with formatted response paired with structured hits
     - Knowledge Graph tab with interactive visualization
     - Trace tab with step-by-step reasoning
     - Metrics tab with performance data
@@ -100,7 +100,7 @@ class ResultsDisplay(QWidget):
         # Create tab widget
         self.tab_widget = QTabWidget()
 
-        # Answer tab
+        # Answer tab with paired structured results
         if self._web_engine_available and QWebEngineView is not None:
             self.answer_view = QWebEngineView()
         else:
@@ -119,22 +119,53 @@ class ResultsDisplay(QWidget):
             self.answer_view = fallback_browser
 
         answer_tab = QWidget()
-        answer_layout = QVBoxLayout(answer_tab)
-        if self.answer_fallback_label is not None:
-            answer_layout.addWidget(self.answer_fallback_label)
-        if self.answer_view is not None:
-            answer_layout.addWidget(self.answer_view)
-        self.tab_widget.addTab(answer_tab, "Answer")
+        answer_tab_layout = QVBoxLayout(answer_tab)
+        answer_tab_layout.setContentsMargins(0, 0, 0, 0)
+        answer_tab_layout.setSpacing(0)
 
-        # Structured results tab
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.setObjectName("results-display-answer-splitter")
+        splitter.setChildrenCollapsible(False)
+
+        answer_panel = QWidget()
+        answer_panel.setObjectName("results-display-answer-panel")
+        answer_panel_layout = QVBoxLayout(answer_panel)
+        answer_panel_layout.setContentsMargins(12, 12, 12, 12)
+        answer_panel_layout.setSpacing(8)
+
+        if self.answer_fallback_label is not None:
+            answer_panel_layout.addWidget(self.answer_fallback_label)
+        if self.answer_view is not None:
+            self.answer_view.setAccessibleName("Formatted answer display")
+            answer_panel_layout.addWidget(self.answer_view)
+
         self.search_results_model = SearchResultsModel()
         results_view = SearchResultsTableView()
         results_view.setModel(self.search_results_model)
-        results_tab = QWidget()
-        results_layout = QVBoxLayout(results_tab)
+        results_panel = QWidget()
+        results_panel.setObjectName("results-display-structured-panel")
+        results_layout = QVBoxLayout(results_panel)
+        results_layout.setContentsMargins(12, 12, 12, 12)
+        results_layout.setSpacing(6)
+
+        structured_header = QLabel("Structured Results")
+        structured_header.setObjectName("results-display-structured-header")
+        structured_header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        structured_header.setAccessibleName("Structured results heading")
+        structured_header.setAccessibleDescription(
+            "Summarizes the adjacent table of ranked research hits."
+        )
+        results_layout.addWidget(structured_header)
         results_layout.addWidget(results_view)
-        self.tab_widget.addTab(results_tab, "Structured Results")
         self.search_results_view = results_view
+
+        splitter.addWidget(answer_panel)
+        splitter.addWidget(results_panel)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+
+        answer_tab_layout.addWidget(splitter)
+        self.tab_widget.addTab(answer_tab, "Answer")
 
         # Citations tab
         citations_tab = QWidget()
@@ -194,6 +225,8 @@ class ResultsDisplay(QWidget):
 
         layout.addWidget(self.tab_widget)
 
+        if self.answer_view and self.search_results_view:
+            QWidget.setTabOrder(self.answer_view, self.search_results_view)
         if self.search_results_view and self.citations_list:
             QWidget.setTabOrder(self.search_results_view, self.citations_list)
         if self.citations_list and self.trace_view:
