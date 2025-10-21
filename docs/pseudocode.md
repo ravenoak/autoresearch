@@ -116,6 +116,139 @@ the parity assertions in `tests/unit/test_core_modules_additional.py`, which
 expect instance `add_calls` and lookup bindings to match across phases.
 【F:tests/unit/test_core_modules_additional.py†L363-L441】
 
+## 4a. Semantic Tree Helpers (search/context.py, trees/semantic.py)
+```
+function build_semantic_tree(corpus, config):
+    # Offline summarisation batches corpus slices and caches latent topics.
+    topic_chunks = search.context.segment_corpus(
+        corpus,
+        window=config.search.segment_window,
+    )
+    root = trees.semantic.SemanticTree.root(
+        name="root",
+        metadata={"source": corpus.handle},
+    )
+    for chunk in topic_chunks:
+        summary = Summariser.offline(chunk.text, config.summary)
+        centroid = Embedder.embed(summary, model=config.summary.embedding)
+        root.insert(
+            trees.semantic.Node(
+                text=summary,
+                embedding=centroid,
+                provenance=chunk.metadata,
+            )
+        )
+
+    cache_path = config.cache.semantic_tree_path
+    trees.semantic.persist(root, cache_path)
+    telemetry.emit(
+        "search.tree.persisted",
+        {
+            "path": cache_path,
+            "nodes": root.count_nodes(),
+            "offline_batches": len(topic_chunks),
+        },
+    )
+    return root
+```
+
+```
+function hierarchical_traversal(query, tree, config):
+    # Online traversal expands beams with calibration from the latest query.
+    beams = BeamTracker.start(
+        root=tree,
+        width=config.search.hierarchy.beam_width,
+    )
+    calibrator = BeamCalibrator(
+        scorer=ScoreModel.load(config.search.calibration_model),
+        temperature=config.search.hierarchy.temperature,
+    )
+
+    for depth in range(config.search.hierarchy.max_depth):
+        frontier = beams.frontier()
+        query_vec = Embedder.embed(query, model=config.search.query_encoder)
+        scored = calibrator.score(frontier, query_vec)
+        beams.expand(scored, limit=config.search.hierarchy.max_expansions)
+        telemetry.emit(
+            "search.tree.expansion",
+            {
+                "depth": depth,
+                "frontier": len(frontier),
+                "expanded": beams.expanded_count(depth),
+                "calibration_bias": calibrator.bias,
+            },
+        )
+        if beams.is_converged(config.search.hierarchy.convergence_threshold):
+            break
+
+    ranked_paths = beams.best_paths()
+    telemetry.emit(
+        "search.tree.paths",
+        {
+            "paths": len(ranked_paths),
+            "best_score": ranked_paths[0].score if ranked_paths else None,
+        },
+    )
+    return ranked_paths
+```
+
+## 4b. Scout Pass & Tree Refresh (search/passes.py)
+```
+function scout_pass(query, corpus, config):
+    cache = TreeCache.resolve(config.cache.semantic_tree_path)
+    if cache.is_stale(corpus.signature):
+        telemetry.emit(
+            "search.tree.cache_stale",
+            {"signature": corpus.signature},
+        )
+        tree = build_semantic_tree(corpus, config)
+    else:
+        tree = cache.load()
+
+    ranked_paths = hierarchical_traversal(query, tree, config)
+    path_scores = [path.score for path in ranked_paths]
+    telemetry.register_gate_history(
+        query=query,
+        scores=path_scores,
+        expansions=[p.expansions for p in ranked_paths],
+    )
+    return {
+        "paths": ranked_paths,
+        "tree_signature": tree.signature,
+        "stale_fallback": cache.is_stale(corpus.signature),
+    }
+```
+
+```
+function audit_claims(claims, scout_payload, config):
+    tree = TreeCache.resolve(config.cache.semantic_tree_path).load()
+    if scout_payload.tree_signature != tree.signature:
+        telemetry.emit(
+            "search.tree.signature_mismatch",
+            {
+                "expected": scout_payload.tree_signature,
+                "actual": tree.signature,
+            },
+        )
+        tree = build_semantic_tree(config.corpus, config)
+
+    traversal = hierarchical_traversal(
+        query=claims.parent_query,
+        tree=tree,
+        config=config,
+    )
+    calibrated = [path.score for path in traversal]
+    telemetry.update_reverification_stats(
+        path_scores=calibrated,
+        total_expansions=sum(path.expansions for path in traversal),
+    )
+    return ClaimAuditor.review(
+        claims,
+        support_paths=traversal,
+        calibration=calibrated,
+    )
+```
+
 ## 5. Graph Persistence & Eviction (storage.py)
 ```
 class StorageManager:
