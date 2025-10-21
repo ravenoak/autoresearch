@@ -1,0 +1,31 @@
+@startuml TerminalExperience
+skinparam monochrome true
+skinparam defaultFontName Courier
+
+package "CLI Entry" {
+  [Typer Commands]
+}
+
+package "Prompt Layer" {
+  [PromptService]
+}
+
+package "Dashboards" {
+  [TextualDashboard]
+}
+
+package "Rendering" {
+  [RichLayouts]
+  [PlainFallbacks]
+}
+
+[Typer Commands] --> [PromptService] : request input
+[PromptService] --> [Typer Commands] : plain response
+[PromptService] --> [TextualDashboard] : launch when TTY
+[TextualDashboard] --> [RichLayouts] : live updates
+[Typer Commands] --> [RichLayouts] : metrics + progress
+[RichLayouts] --> [PlainFallbacks] : bare mode triggers
+[PlainFallbacks] --> [Typer Commands] : ascii output
+[TextualDashboard] --> [Typer Commands] : exit restores tty
+
+@enduml

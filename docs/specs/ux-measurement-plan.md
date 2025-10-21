@@ -27,6 +27,12 @@ experience goals.
   `ui.legacy_gui.launch` with `port` and `browser` payloads when the legacy UI
   launches. Both rely on the shared analytics dispatcher and fail open when the
   module is unavailable.
+- **Terminal experience hooks**: The Textual dashboard emits
+  `cli.tui.launch`, `cli.tui.exit`, and `cli.tui.fallback` events with
+  `tty_detected`, `bare_mode`, and `session_duration_ms`. The prompt wrapper
+  emits `cli.prompt.enhanced` when prompt-toolkit is active and
+  `cli.prompt.basic` when Typer handles the input. Rich helper invocations log
+  `cli.render.rich` or `cli.render.plain` tagged with the calling command.
 - **Component hooks (future)**: Dock toggles and wizard instrumentation remain
   targeted for later phases as originally specified.
 - **Test observability**: CI captures Qt log categories and telemetry payloads
@@ -62,6 +68,16 @@ experience goals.
   - Target: ≥ 4/5 survey rating.
   - Collection: Quarterly persona-aligned survey.
   - Phases: Cross-phase.
+- **Terminal adoption**
+  - Target: ≥ 60% of TTY sessions opt into enhanced prompts and ≥ 30% launch
+    the Textual dashboard during a workflow.
+  - Collection: `cli.prompt.enhanced` and `cli.tui.launch` counters segmented
+    by TTY detection.
+  - Phases: Cross-phase after CLI enhancements ship.
+- **Bare-mode regression guard**
+  - Target: 0 Rich render invocations in bare-mode or piped contexts.
+  - Collection: `cli.render.rich` vs. `cli.render.plain` telemetry audits.
+  - Phases: Continuous monitoring.
 
 ## Research and Benchmark Cadence
 
@@ -75,7 +91,7 @@ experience goals.
   and P4 using screen readers (NVDA, VoiceOver) and high-contrast modes. Archive
   reports with release artifacts.
 - **Regression gates**: Configure CI to fail when telemetry coverage drops below
-  thresholds (e.g., missing `ui.query.submitted` events) by asserting presence in
+  thresholds (missing `ui.query.submitted` events) by asserting presence in
   log captures.
 
 ## Data Stewardship
