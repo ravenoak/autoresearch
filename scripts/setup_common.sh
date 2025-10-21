@@ -287,6 +287,58 @@ ensure_venv_bin_on_path() {
     persist_venv_path_snippet "$venv_bin"
 }
 
+# Compose extras for Codex-managed scripts, deduplicating and honoring
+# AR_SKIP_GPU when set.
+collect_codex_extras() {
+    local extras=(dev-minimal test)
+    if [ -n "${AR_EXTRAS:-}" ]; then
+        local extra
+        for extra in $AR_EXTRAS; do
+            [ -n "$extra" ] && extras+=("$extra")
+        done
+    fi
+
+    declare -A seen=()
+    local filtered=()
+    local entry
+    for entry in "${extras[@]}"; do
+        [ -n "$entry" ] || continue
+        if [ "${AR_SKIP_GPU:-1}" = "1" ] && [ "$entry" = "gpu" ]; then
+            continue
+        fi
+        if [ -n "${seen[$entry]:-}" ]; then
+            continue
+        fi
+        seen[$entry]=1
+        filtered+=("$entry")
+    done
+
+    printf '%s\n' "${filtered[@]}"
+}
+
+# Run uv sync with the resolved Codex extras, propagating additional flags
+# such as --frozen when provided.
+uv_sync_with_codex_extras() {
+    local extra_args=()
+    local extras=()
+    local extra
+    mapfile -t extras < <(collect_codex_extras)
+
+    if [ ${#extras[@]} -eq 0 ]; then
+        extras=(dev-minimal test)
+    fi
+
+    local find_links=()
+    for extra in "${extras[@]}"; do
+        extra_args+=(--extra "$extra")
+        if [ "$extra" = "gpu" ] && [ -d wheels/gpu ]; then
+            find_links=(--find-links wheels/gpu)
+        fi
+    done
+
+    uv sync "$@" "${find_links[@]}" "${extra_args[@]}"
+}
+
 record_vector_extension_path() {
     local path="$1"
     for env_file in .env .env.offline; do

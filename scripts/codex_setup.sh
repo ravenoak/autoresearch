@@ -27,6 +27,7 @@ trap finish EXIT
 LOG_FILE="codex_setup.log"
 : >"$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
+echo "Streaming codex setup logs to $LOG_FILE"
 set -x
 
 if [[ "$(uname -s)" != "Linux" ]]; then
@@ -45,6 +46,9 @@ ensure_task_with_uvx \
 VENV_BIN="$PWD/.venv/bin"
 ensure_venv_bin_on_path "$VENV_BIN"
 export PATH="$VENV_BIN:$PATH"
+
+mapfile -t codex_extras < <(collect_codex_extras)
+echo "uv sync will include extras: ${codex_extras[*]}"
 
 install_pyside6_system_deps
 
