@@ -48,6 +48,7 @@ confirm the UI stack is available.
 - `distributed`: Ray and Redis for multi-process orchestration
 - `git`: Git repository mining via GitPython
 - `gpu`: GPU-enabled embeddings and BERTopic pipelines
+- `prompt`: Enhanced CLI prompting via prompt-toolkit (history, completions)
 - `llm`: CPU-friendly LLM integrations such as `dspy-ai` and `fastembed`
 - `nlp`: spaCy models and text analysis utilities
 - `parsers`: PDF, DOCX, and HTML ingestion libraries

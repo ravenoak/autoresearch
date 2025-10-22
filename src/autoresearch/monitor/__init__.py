@@ -260,7 +260,11 @@ def run() -> None:
             usage_table.add_column("Used")
             usage_table.add_row(str(budget), str(usage))
             console.print(usage_table)
-        feedback = Prompt.ask("Feedback (q to stop)", default="")
+        feedback = Prompt.ask(
+            "Feedback (q to stop)",
+            default="",
+            validator=lambda value: value.strip(),
+        )
         if feedback.lower() == "q":
             state.error_count = getattr(config, "max_errors", 3)
             abort_flag["stop"] = True
@@ -268,7 +272,10 @@ def run() -> None:
             state.claims.append(normalize_reasoning_step({"type": "feedback", "text": feedback}))
 
     while True:
-        query = Prompt.ask("Enter query (q to quit)")
+        query = Prompt.ask(
+            "Enter query (q to quit)",
+            validator=lambda value: value.strip(),
+        )
         if not query or query.lower() == "q":
             break
 

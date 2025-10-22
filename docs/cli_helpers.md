@@ -83,6 +83,22 @@ autoresearch search "query" --bare-mode
 - Essential functionality preserved
 - Screen reader compatible
 
+### Prompt-toolkit Enhancements
+
+Install the `prompt` extra (`uv sync --extra prompt`) to enable rich
+interactive prompts backed by prompt-toolkit. When stdin and stdout are TTYs
+and bare mode is disabled, prompts gain:
+
+- Persistent per-session history navigated with the arrow keys
+- Optional multi-line editing using standard prompt-toolkit shortcuts
+- Tab completion seeded from registered agent names, CLI options, and prior
+  responses
+
+The wrapper falls back to the baseline `typer.prompt` implementation when
+prompt-toolkit is unavailable, the terminal is non-interactive, or bare mode is
+enabled. Validators registered via `Prompt.ask(..., validator=...)` run in both
+paths so automated scripts and accessibility tooling keep identical behaviour.
+
 ### Section-Level Control
 
 Fine-tune which sections appear in your output:

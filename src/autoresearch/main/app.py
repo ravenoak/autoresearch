@@ -642,6 +642,7 @@ def search(
                     refinement = Prompt.ask(
                         "Refine query or press Enter to continue (q to abort)",
                         default="",
+                        validator=lambda value: value.strip(),
                     )
                     if refinement.lower() == "q":
                         state.error_count = getattr(config, "max_errors", 3)
