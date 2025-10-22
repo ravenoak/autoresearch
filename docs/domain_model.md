@@ -37,6 +37,10 @@ adds semantic tree nodes, traversal summaries, and calibrated path scores as
 first-class artefacts. These records flow into Storage for GraphRAG ingestion
 and are consumed by agents that subscribe to scout-gate signals.
 
+See the [hierarchical retrieval overview](specs/search.md#hierarchical-traversal)
+diagram for an end-to-end view of offline construction, calibrated traversal,
+and the dynamic corpus fallback loop.
+
 - Spec: documented in `docs/specs/search.md`
 - Code: `src/autoresearch/search/core.py`
 - Configuration: `ContextAwareSearchConfig` in

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Hierarchical Retrieval Overview</title>
+  <desc id="desc">Diagram showing offline tree construction and online traversal with calibration and fallback loop.</desc>
+  <defs>
+    <style type="text/css">
+      text { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 16px; fill: #1b1f23; }
+      .caption { font-size: 14px; fill: #4a4f55; }
+      .title { font-size: 20px; font-weight: 600; }
+      .box { fill: #f7f9fb; stroke: #4a90e2; stroke-width: 2; rx: 8; ry: 8; }
+      .process { fill: #fff; stroke: #6b50ff; stroke-width: 2; rx: 8; ry: 8; }
+      .highlight { fill: #fff3cd; stroke: #f0ad4e; stroke-width: 2; rx: 8; ry: 8; }
+      .fallback { fill: #fef2f2; stroke: #e55353; stroke-width: 2; rx: 8; ry: 8; }
+      .arrow { stroke: #4a4f55; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #4a4f55; stroke-width: 2; fill: none; stroke-dasharray: 6 6; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4a4f55" />
+    </marker>
+  </defs>
+
+  <text x="480" y="40" text-anchor="middle" class="title">Hierarchical Retrieval Pipeline</text>
+
+  <rect class="box" x="60" y="70" width="360" height="140" />
+  <text x="240" y="100" text-anchor="middle" font-weight="600">Offline Tree Construction</text>
+  <text x="100" y="130" class="caption">Bottom-up clustering</text>
+  <text x="100" y="150" class="caption">(Gecko embeddings)</text>
+  <text x="340" y="130" class="caption" text-anchor="end">Top-down partitioning</text>
+  <text x="340" y="150" class="caption" text-anchor="end">(LLM 1–5 word summaries)</text>
+  <text x="240" y="190" class="caption" text-anchor="middle">Max branching 10–20 nodes</text>
+
+  <rect class="process" x="520" y="70" width="360" height="140" />
+  <text x="700" y="100" text-anchor="middle" font-weight="600">Offline Metadata</text>
+  <text x="700" y="130" class="caption" text-anchor="middle">Leaf embeddings, sibling priors</text>
+  <text x="700" y="150" class="caption" text-anchor="middle">Calibrated intercept a, edge weights bᵢ</text>
+  <text x="700" y="170" class="caption" text-anchor="middle">Traversal summaries per node</text>
+
+  <path class="arrow" d="M420 140 H512" />
+  <text x="470" y="130" class="caption" text-anchor="middle">Calibrated priors</text>
+
+  <rect class="process" x="120" y="250" width="720" height="120" />
+  <text x="480" y="280" text-anchor="middle" font-weight="600">Online Best-first Traversal</text>
+  <text x="210" y="310" class="caption">Beam size B = 2</text>
+  <text x="210" y="330" class="caption">Iterations N = 20</text>
+  <text x="480" y="310" class="caption" text-anchor="middle">Slate sampling ℓ ≈ 10</text>
+  <text x="480" y="330" class="caption" text-anchor="middle">Latent smoothing α = 0.5</text>
+  <text x="750" y="310" class="caption" text-anchor="end">Telemetry gates dynamic corpus filters</text>
+  <text x="750" y="330" class="caption" text-anchor="end">Sibling selection via calibrated priors</text>
+
+  <rect class="highlight" x="180" y="380" width="600" height="80" />
+  <text x="480" y="410" text-anchor="middle" font-weight="600">Slate Calibration Loop</text>
+  <text x="480" y="430" class="caption" text-anchor="middle">Estimate a, bᵢ, ŝᵥ → Update path EMA (α = 0.5)</text>
+  <text x="480" y="450" class="caption" text-anchor="middle">Inject top sibling + ℓ samples into beam frontier</text>
+
+  <rect class="fallback" x="720" y="420" width="180" height="80" />
+  <text x="810" y="450" text-anchor="middle" font-weight="600">Dynamic Corpus Fallback</text>
+  <text x="810" y="470" class="caption" text-anchor="middle">Excluded leaves &gt; 15% for 3 rounds → GraphRAG rebuild</text>
+
+  <path class="arrow" d="M360 190 C380 260, 380 260, 240 260" />
+  <text x="300" y="230" class="caption" text-anchor="middle">Tree limits constrain beam</text>
+
+  <path class="arrow" d="M480 370 V358" />
+  <text x="520" y="360" class="caption">Re-ranked frontier</text>
+
+  <path class="arrow" d="M810 420 V340" />
+  <text x="840" y="390" class="caption">Fallback trigger</text>
+
+  <path class="arrow-dashed" d="M720 460 H630" />
+  <text x="675" y="480" class="caption" text-anchor="middle">Fallback loop</text>
+
+  <path class="arrow-dashed" d="M630 460 L540 420" />
+  <text x="570" y="445" class="caption" text-anchor="middle">GraphRAG slate regeneration</text>
+
+  <path class="arrow-dashed" d="M540 420 L630 300" />
+  <text x="600" y="320" class="caption" text-anchor="middle">Inject regenerated summaries</text>
+</svg>
