@@ -10,7 +10,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, TypeVar, cast
+from typing import Any, Callable, List, Mapping, Optional, TypeVar, cast
 
 import click
 import typer
@@ -44,7 +44,7 @@ from ..cli_utils import (
 )
 from ..config.loader import ConfigLoader
 from ..error_utils import format_error_for_cli, get_error_info
-from ..errors import StorageError
+from ..errors import CitationError, StorageError
 from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
@@ -53,7 +53,7 @@ from ..orchestration.reverify import ReverifyOptions, run_reverification
 from ..output_format import OutputDepth
 
 # Import StorageManager early so it's available for tests
-from ..storage import StorageManager
+from ..storage import StorageManager, WorkspaceManifest
 
 # Make _config_loader available for tests (will be set after _config_loader is defined)
 
@@ -124,6 +124,12 @@ except Exception:  # pragma: no cover - fallback for environments without extras
     Orchestrator: Any | None = None
 else:
     Orchestrator = getattr(_orchestrator_module, "Orchestrator", None)
+try:
+    _workspace_module = importlib.import_module("autoresearch.orchestration.workspace")
+except Exception:  # pragma: no cover - fallback when extras missing
+    WorkspaceOrchestrator: Any | None = None
+else:
+    WorkspaceOrchestrator = getattr(_workspace_module, "WorkspaceOrchestrator", None)
 _config_loader: ConfigLoader = ConfigLoader()
 
 
@@ -140,6 +146,152 @@ app.add_typer(backup_app, name="backup")
 
 evaluation_app = _evaluation_app
 app.add_typer(evaluation_app, name="evaluate")
+
+
+workspace_app = cast(
+    typer.Typer,
+    cast(Any, typer).Typer(
+        help=(
+            "Manage workspace manifests and trigger debates scoped to curated resources."
+        ),
+        pretty_exceptions_enable=False,
+    ),
+)
+app.add_typer(workspace_app, name="workspace")
+
+
+def _parse_workspace_resource_option(entry: str) -> dict[str, Any]:
+    """Parse resource definitions encoded as ``kind:reference[?optional]``."""
+
+    if ":" not in entry:
+        raise typer.BadParameter("Resources must use the format KIND:REFERENCE")
+    kind, reference = entry.split(":", 1)
+    kind = kind.strip().lower()
+    reference_value, _, flag_token = reference.partition("?")
+    reference_value = reference_value.strip()
+    citation_required = True
+    if flag_token:
+        flag_normalized = flag_token.strip().lower()
+        if flag_normalized in {"optional", "opt"}:
+            citation_required = False
+        else:
+            raise typer.BadParameter(
+                "Unknown workspace resource flag. Use '?optional' to disable required citations."
+            )
+    if not kind or not reference_value:
+        raise typer.BadParameter("Resource kind and reference cannot be empty")
+    return {
+        "kind": kind,
+        "reference": reference_value,
+        "citation_required": citation_required,
+    }
+
+
+def _render_manifest_summary(manifest: WorkspaceManifest) -> None:
+    console = get_console()
+    console.print(format_success(f"Workspace '{manifest.name}' (v{manifest.version})"))
+    for resource in manifest.resources:
+        flag = "required" if resource.citation_required else "optional"
+        console.print(f"- [{flag}] {resource.kind}: {resource.reference}")
+
+
+def workspace_command(*args: Any, **kwargs: Any) -> Callable[[F], F]:
+    """Return a type-preserving decorator for workspace subcommands."""
+
+    return cast("Callable[[F], F]", workspace_app.command(*args, **kwargs))
+
+
+@workspace_command("create")
+def workspace_create(
+    name: str = typer.Argument(..., help="Human readable workspace name."),
+    resource: List[str] = typer.Option(
+        ...,  # noqa: B008
+        "--resource",
+        "-r",
+        help="Resource descriptor KIND:REFERENCE. Append '?optional' to allow missing citations.",
+    ),
+    slug: Optional[str] = typer.Option(
+        None,
+        "--slug",
+        help="Optional workspace identifier slug overriding the derived value.",
+    ),
+) -> None:
+    """Create or version a workspace manifest."""
+
+    StorageManager.setup()
+    if not resource:
+        raise typer.BadParameter("Provide at least one --resource entry", param_hint="--resource")
+    payload = [_parse_workspace_resource_option(entry) for entry in resource]
+    manifest_payload: dict[str, Any] = {"name": name, "resources": payload}
+    if slug:
+        manifest_payload["workspace_id"] = slug
+    manifest = StorageManager.save_workspace_manifest(manifest_payload, increment_version=True)
+    _render_manifest_summary(manifest)
+
+
+@workspace_command("select")
+def workspace_select(
+    workspace: str = typer.Argument(..., help="Workspace slug to inspect."),
+    version: Optional[int] = typer.Option(None, "--version", help="Manifest version number."),
+    manifest_id: Optional[str] = typer.Option(None, "--manifest-id", help="Specific manifest identifier."),
+) -> None:
+    """Display workspace manifest details."""
+
+    StorageManager.setup()
+    try:
+        manifest = StorageManager.get_workspace_manifest(workspace, version=version, manifest_id=manifest_id)
+    except Exception as exc:
+        print_error(f"Failed to load workspace '{workspace}': {exc}")
+        raise typer.Exit(1) from exc
+    _render_manifest_summary(manifest)
+
+
+@workspace_command("debate")
+def workspace_debate(
+    workspace: str = typer.Argument(..., help="Workspace slug to scope the debate."),
+    prompt: str = typer.Argument(..., help="Prompt to investigate."),
+    version: Optional[int] = typer.Option(None, "--version", help="Manifest version override."),
+    manifest_id: Optional[str] = typer.Option(None, "--manifest-id", help="Manifest identifier override."),
+) -> None:
+    """Run a dialectical debate constrained by workspace resources."""
+
+    StorageManager.setup()
+    config = _config_loader.config
+    orchestrator_instance: Any
+    if WorkspaceOrchestrator is not None:
+        orchestrator_instance = WorkspaceOrchestrator()
+        run_kwargs = {
+            "workspace_id": workspace,
+            "manifest_version": version,
+            "manifest_id": manifest_id,
+        }
+        try:
+            result = orchestrator_instance.run_query(
+                prompt,
+                config,
+                None,
+                **run_kwargs,
+            )
+        except CitationError as exc:
+            print_error(f"Citation requirements not met: {exc}")
+            raise typer.Exit(1) from exc
+    elif Orchestrator is not None:
+        orchestrator_instance = Orchestrator()
+        print_warning(
+            "WorkspaceOrchestrator unavailable; running debate without citation enforcement."
+        )
+        result = orchestrator_instance.run_query(prompt, config)
+    else:  # pragma: no cover - defensive fallback
+        print_error("No orchestrator available in this environment")
+        raise typer.Exit(1)
+
+    if not isinstance(result, QueryResponse):
+        print_info("Debate completed but returned unexpected payload")
+        return
+
+    console = get_console()
+    console.print(format_success("Debate completed"))
+    console.print(result.answer)
 
 
 @typed_callback(invoke_without_command=False)

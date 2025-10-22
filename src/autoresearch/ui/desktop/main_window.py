@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMessageBox,
+    QInputDialog,
 )
 
 # Import desktop components first to avoid Qt-related issues
@@ -38,12 +39,13 @@ from .telemetry import telemetry
 
 try:
     # Import core Autoresearch components
-    from ...orchestration import Orchestrator, ReasoningMode
+    from ...orchestration import Orchestrator, ReasoningMode, WorkspaceOrchestrator
     from ...config import ConfigLoader, ConfigModel
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
     from ...storage import StorageManager
     from ...orchestration.metrics import get_orchestration_metrics
+    from ...errors import CitationError
 except ImportError:
     # For standalone testing/development
     Orchestrator = None
@@ -55,6 +57,8 @@ except ImportError:
     OutputDepth = None
     StorageManager = None
     get_orchestration_metrics = None
+    WorkspaceOrchestrator = None
+    CitationError = None
 
 
 class AutoresearchMainWindow(QMainWindow):
@@ -70,6 +74,7 @@ class AutoresearchMainWindow(QMainWindow):
         super().__init__()
 
         self.orchestrator: Optional[Orchestrator] = None
+        self.workspace_orchestrator: Optional[Any] = None
         self.config_loader: Optional[ConfigLoader] = None
         self.config: Optional[ConfigModel] = None
 
@@ -100,6 +105,10 @@ class AutoresearchMainWindow(QMainWindow):
         self._cancelled_session_ids: set[str] = set()
         self._query_started_at: Optional[float] = None
         self._active_worker: Any = None
+        self._workspace_registry: dict[str, tuple[Optional[str], int]] = {}
+        self._active_workspace_id: Optional[str] = None
+        self._active_manifest_id: Optional[str] = None
+        self._active_manifest_version: Optional[int] = None
 
         self.setup_ui()
         self.setup_menu_bar()
@@ -242,6 +251,11 @@ class AutoresearchMainWindow(QMainWindow):
         if self.session_manager:
             self.session_manager.session_selected.connect(self.on_session_selected)
             self.session_manager.new_session_requested.connect(self.on_new_session_requested)
+            self.session_manager.workspace_selected.connect(self.on_workspace_selected)
+            self.session_manager.new_workspace_requested.connect(self.on_new_workspace_requested)
+            self.session_manager.workspace_debate_requested.connect(
+                self.on_workspace_debate_requested
+            )
         if self.export_manager:
             self.export_manager.export_requested.connect(self.on_export_requested)
 
@@ -350,8 +364,19 @@ class AutoresearchMainWindow(QMainWindow):
                 if self.config_editor:
                     self.config_editor.load_config(self.config)
 
-            if Orchestrator:
+            if WorkspaceOrchestrator:
+                self.workspace_orchestrator = WorkspaceOrchestrator()
+                self.orchestrator = self.workspace_orchestrator
+            elif Orchestrator:
                 self.orchestrator = Orchestrator()
+
+            if StorageManager and self.session_manager:
+                try:
+                    StorageManager.setup()
+                    self._load_workspace_manifests()
+                except Exception:
+                    # Non-fatal; workspace tooling remains optional in UI
+                    pass
 
             self._set_status_message("Configuration loaded - ready for queries")
         except Exception as e:
@@ -454,6 +479,123 @@ class AutoresearchMainWindow(QMainWindow):
         self._refresh_status_metrics()
         self._set_status_message("New session ready")
 
+    def on_workspace_selected(
+        self, workspace_id: str, manifest_id: object, version: int
+    ) -> None:
+        """Record workspace selection from the dock widget."""
+
+        manifest_token = str(manifest_id) if manifest_id else None
+        self._workspace_registry[workspace_id] = (manifest_token, version)
+        self._active_workspace_id = workspace_id
+        self._active_manifest_id = manifest_token
+        self._active_manifest_version = version if version > 0 else None
+        display_version = version if version > 0 else "latest"
+        self._set_status_message(f"Workspace selected: {workspace_id} (v{display_version})")
+
+    def on_new_workspace_requested(self) -> None:
+        """Prompt the user to create a new workspace manifest."""
+
+        if not StorageManager:
+            self._show_warning("Workspace", "Workspace features are unavailable in this build.")
+            return
+
+        name, ok = QInputDialog.getText(self, "Create Workspace", "Workspace name:")
+        if not ok or not name.strip():
+            return
+        resources_text, ok = QInputDialog.getMultiLineText(
+            self,
+            "Workspace Resources",
+            (
+                "Enter one resource per line using KIND:REFERENCE format."
+                " Append '?optional' to mark non-mandatory citations."
+            ),
+        )
+        if not ok:
+            return
+        entries = [line.strip() for line in resources_text.splitlines() if line.strip()]
+        if not entries:
+            self._show_warning("Workspace", "At least one resource is required.")
+            return
+
+        try:
+            resources = [self._parse_workspace_resource_entry(entry) for entry in entries]
+        except ValueError as exc:
+            self._show_warning("Workspace", str(exc))
+            return
+
+        try:
+            StorageManager.setup()
+            manifest = StorageManager.save_workspace_manifest(
+                {"name": name.strip(), "resources": resources},
+                increment_version=True,
+            )
+        except Exception as exc:
+            self._show_warning("Workspace", f"Failed to create workspace: {exc}")
+            return
+
+        if self.session_manager:
+            self.session_manager.add_workspace(
+                manifest.workspace_id,
+                manifest.name,
+                manifest.version,
+                manifest.manifest_id,
+            )
+        self._workspace_registry[manifest.workspace_id] = (
+            manifest.manifest_id,
+            manifest.version,
+        )
+        self._active_workspace_id = manifest.workspace_id
+        self._active_manifest_id = manifest.manifest_id
+        self._active_manifest_version = manifest.version
+        self._set_status_message(
+            f"Workspace created: {manifest.workspace_id} (v{manifest.version})"
+        )
+
+    def on_workspace_debate_requested(
+        self, workspace_id: str, manifest_id: object, version: int
+    ) -> None:
+        """Prompt for a debate query scoped to the selected workspace."""
+
+        self.on_workspace_selected(workspace_id, manifest_id, version)
+        initial_prompt = ""
+        if self.query_panel and getattr(self.query_panel, "query_input", None):
+            initial_prompt = self.query_panel.query_input.toPlainText()  # type: ignore[attr-defined]
+        prompt, ok = QInputDialog.getMultiLineText(
+            self,
+            "Start Workspace Debate",
+            "Enter the debate prompt:",
+            initial_prompt,
+        )
+        if not ok or not prompt.strip():
+            return
+        if self.query_panel:
+            self.query_panel.set_query_text(prompt)
+        self.on_query_submitted(prompt)
+
+    def _parse_workspace_resource_entry(self, entry: str) -> dict[str, Any]:
+        """Parse KIND:REFERENCE[?optional] tokens into manifest resources."""
+
+        if ":" not in entry:
+            raise ValueError("Resources must use the format KIND:REFERENCE")
+        kind, reference = entry.split(":", 1)
+        kind = kind.strip().lower()
+        reference_value, _, flag_token = reference.partition("?")
+        reference_value = reference_value.strip()
+        citation_required = True
+        if flag_token:
+            flag = flag_token.strip().lower()
+            if flag in {"optional", "opt"}:
+                citation_required = False
+            else:
+                raise ValueError(f"Unknown workspace resource flag '{flag}'")
+        if not kind or not reference_value:
+            raise ValueError("Resource kind and reference cannot be empty")
+        return {
+            "kind": kind,
+            "reference": reference_value,
+            "citation_required": citation_required,
+        }
+
     def on_export_requested(self, export_id: str) -> None:
         """Trigger an export action via the storage manager."""
 
@@ -510,7 +652,9 @@ class AutoresearchMainWindow(QMainWindow):
 
     def run_query(self) -> None:
         """Execute the current query."""
-        if not self.orchestrator or not self.config:
+        orchestrator = self.workspace_orchestrator or self.orchestrator
+
+        if not orchestrator or not self.config:
             self._show_critical(
                 "System Error",
                 "Autoresearch core components are not available. Please check your installation."
@@ -535,19 +679,45 @@ class AutoresearchMainWindow(QMainWindow):
         # Run query in separate thread to keep UI responsive
         from PySide6.QtCore import QThread, QThreadPool, QRunnable, QTimer
 
+        workspace_context: dict[str, Any] | None = None
+        if self.workspace_orchestrator and self._active_workspace_id:
+            workspace_context = {
+                "workspace_id": self._active_workspace_id,
+                "manifest_id": self._active_manifest_id,
+            }
+            if self._active_manifest_version:
+                workspace_context["manifest_version"] = self._active_manifest_version
+
         class QueryWorker(QRunnable):
-            def __init__(self, orchestrator, query, config, parent, session_id):
+            def __init__(
+                self,
+                orchestrator,
+                query,
+                config,
+                parent,
+                session_id,
+                workspace_params: dict[str, Any] | None,
+            ):
                 super().__init__()
                 self.orchestrator = orchestrator
                 self.query = query
                 self.config = config
                 self.parent = parent
                 self.session_id = session_id
+                self.workspace_params = workspace_params
 
             def run(self):
                 try:
                     # Execute the query
-                    result = self.orchestrator.run_query(self.query, self.config)
+                    if self.workspace_params:
+                        result = self.orchestrator.run_query(
+                            self.query,
+                            self.config,
+                            None,
+                            **self.workspace_params,
+                        )
+                    else:
+                        result = self.orchestrator.run_query(self.query, self.config)
 
                     # Update UI on main thread
                     QTimer.singleShot(
@@ -563,11 +733,12 @@ class AutoresearchMainWindow(QMainWindow):
 
         # Start the query worker
         worker = QueryWorker(
-            self.orchestrator,
+            orchestrator,
             self.current_query,
             self.config,
             self,
             self._active_session_id,
+            workspace_context,
         )
         QThreadPool.globalInstance().start(worker)
         self._active_worker = worker
@@ -638,6 +809,31 @@ class AutoresearchMainWindow(QMainWindow):
 
         self.export_manager.set_available_exports(exports)
 
+    def _load_workspace_manifests(self) -> None:
+        """Populate the workspace list from persisted manifests."""
+
+        if not self.session_manager or not StorageManager:
+            return
+
+        try:
+            manifests = StorageManager.list_workspace_manifests()
+        except Exception:
+            return
+
+        self._workspace_registry.clear()
+        self.session_manager.clear_workspaces()
+        for manifest in manifests:
+            self._workspace_registry[manifest.workspace_id] = (
+                manifest.manifest_id,
+                manifest.version,
+            )
+            self.session_manager.add_workspace(
+                manifest.workspace_id,
+                manifest.name,
+                manifest.version,
+                manifest.manifest_id,
+            )
+
     def display_error(self, error: Exception, session_id: Optional[str] = None) -> None:
         """Display query error to the user."""
         if session_id and session_id in self._cancelled_session_ids:
@@ -652,10 +848,19 @@ class AutoresearchMainWindow(QMainWindow):
             self.query_panel.clear_session_context()
 
         error_msg = str(error)
-        self._show_critical(
-            "Query Error",
-            f"An error occurred while running your query:\n\n{error_msg}"
-        )
+        if CitationError and isinstance(error, CitationError):
+            self._show_warning(
+                "Workspace Citation",
+                (
+                    "The debate could not complete because required workspace resources "
+                    f"were not cited.\n\n{error_msg}"
+                ),
+            )
+        else:
+            self._show_critical(
+                "Query Error",
+                f"An error occurred while running your query:\n\n{error_msg}"
+            )
 
         self._set_status_message("Query failed")
         self._refresh_status_metrics()

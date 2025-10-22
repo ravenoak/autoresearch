@@ -58,7 +58,12 @@ from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
-from .storage_utils import graph_add, graph_triples
+from .storage_utils import (
+    graph_add,
+    graph_triples,
+    normalise_workspace_slug,
+    serialise_workspace_resource,
+)
 from .storage_backends import DuckDBStorageBackend, init_rdf_store
 from .storage_typing import (
     DuckDBConnectionProtocol,
@@ -169,6 +174,25 @@ class StorageDelegateProtocol(Protocol):
 
     @staticmethod
     def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]: ...
+
+    @staticmethod
+    def save_workspace_manifest(
+        manifest: WorkspaceManifest | JSONMapping,
+        *,
+        increment_version: bool = True,
+    ) -> WorkspaceManifest: ...
+
+    @staticmethod
+    def get_workspace_manifest(
+        workspace_id: str,
+        version: int | None = None,
+        manifest_id: str | None = None,
+    ) -> WorkspaceManifest: ...
+
+    @staticmethod
+    def list_workspace_manifests(
+        workspace_id: str | None = None,
+    ) -> list[WorkspaceManifest]: ...
 
     @staticmethod
     def persist_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
@@ -490,6 +514,110 @@ class ClaimAuditRecord:
             instability_flag=instability,
             sample_size=sample_size,
             provenance=provenance_payload,
+        )
+
+
+@dataclass(slots=True)
+class WorkspaceResource:
+    """Describe a single resource tracked within a workspace manifest."""
+
+    resource_id: str
+    kind: str
+    reference: str
+    citation_required: bool = True
+    metadata: JSONDict = field(default_factory=dict)
+
+    def to_payload(self) -> JSONDict:
+        """Return a serialisable mapping for persistence layers."""
+
+        return {
+            "resource_id": self.resource_id,
+            "kind": self.kind,
+            "reference": self.reference,
+            "citation_required": self.citation_required,
+            "metadata": ensure_mutable_mapping(self.metadata),
+        }
+
+    @classmethod
+    def from_payload(cls, payload: JSONMapping) -> "WorkspaceResource":
+        """Construct a resource from persisted payload."""
+
+        data = serialise_workspace_resource(payload)
+        return cls(
+            resource_id=str(data["resource_id"]),
+            kind=str(data["kind"]),
+            reference=str(data["reference"]),
+            citation_required=bool(data.get("citation_required", True)),
+            metadata=ensure_mutable_mapping(data.get("metadata", {})),
+        )
+
+
+@dataclass(slots=True)
+class WorkspaceManifest:
+    """Versioned collection of resources associated with a workspace."""
+
+    workspace_id: str
+    name: str
+    version: int
+    resources: list[WorkspaceResource] = field(default_factory=list)
+    manifest_id: str = field(default_factory=lambda: str(uuid4()))
+    parent_manifest_id: str | None = None
+    created_at: float = field(default_factory=time.time)
+    annotations: JSONDict = field(default_factory=dict)
+
+    def to_payload(self) -> JSONDict:
+        """Serialise the manifest for persistence."""
+
+        return {
+            "workspace_id": self.workspace_id,
+            "name": self.name,
+            "version": int(self.version),
+            "manifest_id": self.manifest_id,
+            "parent_manifest_id": self.parent_manifest_id,
+            "created_at": float(self.created_at),
+            "resources": [resource.to_payload() for resource in self.resources],
+            "annotations": ensure_mutable_mapping(self.annotations),
+        }
+
+    @classmethod
+    def from_payload(cls, payload: JSONMapping) -> "WorkspaceManifest":
+        """Return a manifest constructed from storage payload."""
+
+        workspace_id_value = payload.get("workspace_id")
+        if not workspace_id_value:
+            raise StorageError("workspace_id is required for manifests")
+        name_value = payload.get("name")
+        if not name_value:
+            raise StorageError("manifest name is required")
+        version_value = payload.get("version")
+        if version_value is None:
+            raise StorageError("manifest version is required")
+        try:
+            version = int(version_value)
+        except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+            raise StorageError("manifest version must be an integer") from exc
+        manifest_id_value = payload.get("manifest_id") or str(uuid4())
+        parent_value = payload.get("parent_manifest_id")
+        created_raw = payload.get("created_at")
+        created_at = float(created_raw) if created_raw is not None else time.time()
+        annotations_raw = payload.get("annotations") or {}
+        if isinstance(annotations_raw, Mapping):
+            annotations = ensure_mutable_mapping(annotations_raw)
+        else:
+            raise StorageError("manifest annotations must be a mapping")
+        resources_raw = payload.get("resources") or []
+        if not isinstance(resources_raw, Sequence) or isinstance(resources_raw, (str, bytes)):
+            raise StorageError("manifest resources must be a sequence")
+        resources = [WorkspaceResource.from_payload(cast(JSONMapping, item)) for item in resources_raw]
+        return cls(
+            workspace_id=str(workspace_id_value),
+            name=str(name_value),
+            version=version,
+            resources=resources,
+            manifest_id=str(manifest_id_value),
+            parent_manifest_id=str(parent_value) if parent_value else None,
+            created_at=created_at,
+            annotations=annotations,
         )
 
 
@@ -921,6 +1049,63 @@ class StorageManager(metaclass=StorageManagerMeta):
         assert StorageManager.context.db_backend is not None
         payloads = StorageManager.context.db_backend.list_claim_audits(claim_id)
         return [ClaimAuditRecord.from_payload(p) for p in payloads]
+
+    @staticmethod
+    def save_workspace_manifest(
+        manifest: WorkspaceManifest | JSONMapping,
+        *,
+        increment_version: bool = True,
+    ) -> WorkspaceManifest:
+        """Persist a workspace manifest version and return the stored record."""
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.save_workspace_manifest(manifest, increment_version=increment_version)
+
+        payload = manifest.to_payload() if isinstance(manifest, WorkspaceManifest) else to_json_dict(manifest)
+        return StorageManager._persist_workspace_manifest_payload(
+            payload,
+            increment_version=increment_version,
+        )
+
+    @staticmethod
+    def get_workspace_manifest(
+        workspace_id: str,
+        version: int | None = None,
+        manifest_id: str | None = None,
+    ) -> WorkspaceManifest:
+        """Return a persisted manifest matching ``workspace_id`` and version."""
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.get_workspace_manifest(workspace_id, version=version, manifest_id=manifest_id)
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        payload = StorageManager.context.db_backend.get_workspace_manifest(
+            workspace_id,
+            version,
+            manifest_id,
+        )
+        if payload is None:
+            raise NotFoundError(
+                "Workspace manifest not found",
+                resource_type="workspace_manifest",
+                resource_id=workspace_id,
+            )
+        return WorkspaceManifest.from_payload(payload)
+
+    @staticmethod
+    def list_workspace_manifests(
+        workspace_id: str | None = None,
+    ) -> list[WorkspaceManifest]:
+        """List manifests optionally scoped to a specific workspace."""
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.list_workspace_manifests(workspace_id)
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        payloads = StorageManager.context.db_backend.list_workspace_manifests(workspace_id)
+        return [WorkspaceManifest.from_payload(item) for item in payloads]
 
     @staticmethod
     def _pop_lru() -> str | None:
@@ -1570,6 +1755,72 @@ class StorageManager(metaclass=StorageManagerMeta):
         if graph is not None and graph.has_node(record.claim_id):
             graph.nodes[record.claim_id]["audit"] = record.to_payload()
         return record
+
+    @staticmethod
+    def _persist_workspace_manifest_payload(
+        manifest_payload: JSONMapping,
+        *,
+        increment_version: bool,
+    ) -> WorkspaceManifest:
+        """Persist a workspace manifest and return the stored record."""
+
+        StorageManager._ensure_storage_initialized()
+        payload = to_json_dict(manifest_payload)
+
+        name_value = str(payload.get("name") or "").strip()
+        if not name_value:
+            raise StorageError("workspace manifest requires a name")
+        workspace_raw = str(payload.get("workspace_id") or "").strip()
+        workspace_id = normalise_workspace_slug(workspace_raw or name_value)
+        payload["workspace_id"] = workspace_id
+        payload["name"] = name_value
+
+        annotations_raw = payload.get("annotations") or {}
+        if isinstance(annotations_raw, Mapping):
+            payload["annotations"] = ensure_mutable_mapping(annotations_raw)
+        else:
+            raise StorageError("workspace manifest annotations must be a mapping")
+
+        resources_raw = payload.get("resources") or []
+        if not isinstance(resources_raw, Sequence) or isinstance(resources_raw, (str, bytes)):
+            raise StorageError("workspace manifest resources must be a sequence")
+        normalised_resources: list[JSONDict] = []
+        for item in resources_raw:
+            if isinstance(item, Mapping):
+                normalised_resources.append(serialise_workspace_resource(item))
+            else:
+                raise StorageError("workspace manifest resources must be mappings")
+        payload["resources"] = normalised_resources
+
+        manifest_id_value = str(payload.get("manifest_id") or "").strip()
+        if not manifest_id_value:
+            manifest_id_value = str(uuid4())
+        payload["manifest_id"] = manifest_id_value
+
+        parent_raw = payload.get("parent_manifest_id")
+        if parent_raw:
+            parent_value = str(parent_raw).strip()
+            payload["parent_manifest_id"] = parent_value or None
+        else:
+            payload["parent_manifest_id"] = None
+
+        created_raw = payload.get("created_at")
+        payload["created_at"] = float(created_raw) if created_raw is not None else time.time()
+
+        version_raw = payload.get("version")
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        if increment_version or version_raw is None:
+            next_version = StorageManager.context.db_backend.next_workspace_manifest_version(workspace_id)
+            payload["version"] = next_version
+        else:
+            try:
+                payload["version"] = int(version_raw)
+            except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+                raise StorageError("manifest version must be an integer") from exc
+
+        StorageManager.context.db_backend.persist_workspace_manifest(payload)
+        return WorkspaceManifest.from_payload(payload)
 
     @staticmethod
     def _persist_to_duckdb(claim: JSONDict) -> None:

@@ -82,6 +82,10 @@ class OrchestrationError(AutoresearchError):
     """Error related to orchestration operations."""
 
 
+class CitationError(OrchestrationError):
+    """Raised when workspace citation requirements are violated."""
+
+
 class ValidationError(AutoresearchError):
     """Error related to data validation."""
 

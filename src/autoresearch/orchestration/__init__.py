@@ -17,6 +17,7 @@ __all__ = [
     "TaskGraph",
     "TaskNode",
     "TaskStatus",
+    "WorkspaceOrchestrator",
 ]
 
 
@@ -33,6 +34,7 @@ def __getattr__(name: str) -> object:
         "TaskGraph": ".task_graph",
         "TaskNode": ".task_graph",
         "TaskStatus": ".coordinator",
+        "WorkspaceOrchestrator": ".workspace",
     }
 
     if name in module_map:
