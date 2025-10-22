@@ -110,6 +110,10 @@ ui = [
 tui = [
     "textual >=0.85.1",
 ]
+# Enhanced terminal prompting
+prompt = [
+    "prompt_toolkit >=3.0.48",
+]
 # Vector search extension for DuckDB
 vss = [
     "duckdb-extension-vss >=1.3.0; python_version < '3.13'"
