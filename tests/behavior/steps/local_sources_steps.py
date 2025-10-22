@@ -1,11 +1,14 @@
 # mypy: ignore-errors
 # flake8: noqa
+from contextlib import contextmanager
+
 from tests.behavior.context import BehaviorContext
 import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
-from autoresearch.config.models import ConfigModel
+from autoresearch.config.models import ConfigModel, RepositoryManifestEntry
 from autoresearch.search import Search
+from autoresearch.storage import StorageManager
 from docx import Document
 import pytest
 import importlib.util
@@ -20,6 +23,19 @@ except Exception:
 
 if not _git_available:
     pytest.skip("GitPython not installed", allow_module_level=True)
+
+
+@contextmanager
+def _noop_storage_connection():
+    class DummyConn:
+        def execute(self, *args, **kwargs):
+            class Cursor:
+                def fetchall(self_inner):
+                    return []
+
+            return Cursor()
+
+    yield DummyConn()
 
 
 @given("a directory with text files")
@@ -165,6 +181,74 @@ def check_diff_code_context(bdd_context: BehaviorContext):
             assert "\n" in r["snippet"]
             return
     assert False, "No diff result with context found"
+
+
+@given("a repository manifest with labelled Git repositories")
+def repository_manifest(tmp_path, bdd_context: BehaviorContext):
+    manifest: list[dict[str, str]] = []
+    query = "shared-term"
+    for slug, namespace in (("alpha", "workspace.alpha"), ("beta", "workspace.beta")):
+        repo_path = tmp_path / slug
+        repo_path.mkdir()
+        subprocess.run(["git", "init"], cwd=repo_path, check=True)
+        subprocess.run(["git", "config", "user.email", "you@example.com"], cwd=repo_path, check=True)
+        subprocess.run(["git", "config", "user.name", "Your Name"], cwd=repo_path, check=True)
+        readme = repo_path / "README.md"
+        readme.write_text(f"{slug} {query}\n", encoding="utf-8")
+        subprocess.run(["git", "add", "README.md"], cwd=repo_path, check=True)
+        subprocess.run(["git", "commit", "-m", f"Add {query}"], cwd=repo_path, check=True)
+        branch = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=repo_path,
+                text=True,
+            )
+            .strip()
+        )
+        manifest.append(
+            {
+                "slug": slug,
+                "path": str(repo_path),
+                "branches": [branch],
+                "namespace": namespace,
+            }
+        )
+    bdd_context["manifest"] = manifest
+    bdd_context["manifest_query"] = query
+
+
+@when(parsers.parse('I search the repository manifest for "{query}"'))
+def search_repository_manifest(query, monkeypatch, bdd_context: BehaviorContext):
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_git"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.local_git.manifest = [
+        RepositoryManifestEntry.model_validate(entry) for entry in bdd_context["manifest"]
+    ]
+    cfg.search.local_git.history_depth = 50
+    cfg.search.local_file.file_types = ["md", "txt"]
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(StorageManager, "connection", staticmethod(_noop_storage_connection))
+    bdd_context["search_results"] = Search.external_lookup(query, max_results=6)
+
+
+@then("I should see manifest results grouped by repository slug")
+def check_manifest_grouping(bdd_context: BehaviorContext):
+    results = bdd_context["search_results"]
+    manifest_slugs = {entry["slug"] for entry in bdd_context["manifest"]}
+    repositories = {result.get("repository") for result in results}
+    assert manifest_slugs.issubset(repositories)
+
+
+@then("each manifest result includes provenance metadata")
+def check_manifest_provenance(bdd_context: BehaviorContext):
+    results = bdd_context["search_results"]
+    assert results
+    for result in results:
+        provenance = result.get("provenance", {})
+        assert provenance.get("repository") == result.get("repository")
+        if "namespace" in provenance:
+            assert provenance["namespace"]
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for text files")
