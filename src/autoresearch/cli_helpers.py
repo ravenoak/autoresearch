@@ -19,6 +19,7 @@ from .output_format import (
     normalize_depth,
 )
 from .ui.provenance import depth_sequence
+from .resources.scholarly import PaperMetadata, SearchResult
 
 from .cli_utils import (
     print_error,
@@ -146,3 +147,33 @@ def depth_help_text() -> str:
         parts.append(f"{depth.label.lower()}: {desc}")
     aliases = sorted({k for k in get_depth_aliases().keys() if k.isalpha()})
     return " | ".join(parts) + f". Aliases: {', '.join(aliases)} or 0-3."
+
+
+def format_scholarly_metadata(metadata: PaperMetadata) -> str:
+    """Return a single-line description of scholarly metadata."""
+
+    authors = ", ".join(metadata.authors[:3])
+    if len(metadata.authors) > 3:
+        authors += ", et al."
+    published = metadata.published.isoformat() if metadata.published else "n/a"
+    identifier = metadata.primary_key()
+    return (
+        f"{metadata.title} [id={identifier}]\n"
+        f"  Authors: {authors or 'Unknown'} | Published: {published}\n"
+        f"  URL: {metadata.primary_url or 'n/a'}"
+    )
+
+
+def render_scholarly_results(results: Sequence[SearchResult]) -> None:
+    """Pretty-print search results grouped by provider."""
+
+    if not results:
+        print_info("No scholarly results found.")
+        return
+    for group in results:
+        print_info(f"Provider: {group.provider}")
+        if not group.results:
+            print_info("  (no matches)", symbol=False)
+            continue
+        for item in group.results:
+            print_info(format_scholarly_metadata(item), symbol=False)

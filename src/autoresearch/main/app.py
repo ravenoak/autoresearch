@@ -19,7 +19,9 @@ from ..cli_helpers import (
     depth_help_text,
     depth_option_callback,
     handle_command_not_found,
+    format_scholarly_metadata,
     parse_agent_groups,
+    render_scholarly_results,
 )
 from ..cli_utils import (
     Verbosity,
@@ -44,7 +46,7 @@ from ..cli_utils import (
 )
 from ..config.loader import ConfigLoader
 from ..error_utils import format_error_for_cli, get_error_info
-from ..errors import CitationError, StorageError
+from ..errors import CitationError, NotFoundError, StorageError
 from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
@@ -54,6 +56,7 @@ from ..output_format import OutputDepth
 
 # Import StorageManager early so it's available for tests
 from ..storage import StorageManager, WorkspaceManifest
+from ..resources.scholarly import ScholarlyService
 
 # Make _config_loader available for tests (will be set after _config_loader is defined)
 
@@ -74,6 +77,8 @@ app = cast(
         # Disable pretty exceptions to handle them ourselves
     ),
 )
+
+scholarly_service = ScholarlyService()
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -158,6 +163,15 @@ workspace_app = cast(
     ),
 )
 app.add_typer(workspace_app, name="workspace")
+
+workspace_papers_app = cast(
+    typer.Typer,
+    cast(Any, typer).Typer(
+        help="Search and cache scholarly papers for workspaces.",
+        pretty_exceptions_enable=False,
+    ),
+)
+workspace_app.add_typer(workspace_papers_app, name="papers")
 
 
 def _parse_workspace_resource_option(entry: str) -> dict[str, Any]:
@@ -292,6 +306,174 @@ def workspace_debate(
     console = get_console()
     console.print(format_success("Debate completed"))
     console.print(result.answer)
+
+
+@workspace_papers_app.command("search")
+def workspace_papers_search(
+    query: str = typer.Argument(..., help="Query string to search across scholarly providers."),
+    limit: int = typer.Option(5, "--limit", "-n", help="Maximum results per provider."),
+    provider: list[str] = typer.Option(
+        [],
+        "--provider",
+        "-p",
+        help="Restrict search to specific providers (e.g. arxiv, huggingface).",
+    ),
+) -> None:
+    """Search scholarly providers for papers."""
+
+    try:
+        results = scholarly_service.search(query, providers=provider or None, limit=limit)
+    except Exception as exc:  # pragma: no cover - defensive
+        print_error(f"Scholarly search failed: {exc}")
+        raise typer.Exit(1) from exc
+    render_scholarly_results(results)
+
+
+@workspace_papers_app.command("list")
+def workspace_papers_list(
+    workspace: Optional[str] = typer.Option(
+        None,
+        "--workspace",
+        "-w",
+        help="Workspace slug to infer namespace. Defaults to global namespace.",
+    ),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="Filter by provider."),
+) -> None:
+    """List cached scholarly papers."""
+
+    try:
+        cached = scholarly_service.list_cached(namespace=workspace, provider=provider)
+    except Exception as exc:  # pragma: no cover - defensive
+        print_error(f"Failed to list cached papers: {exc}")
+        raise typer.Exit(1) from exc
+    if not cached:
+        print_info("No cached papers found.")
+        return
+    for item in cached:
+        print_info(format_scholarly_metadata(item.metadata), symbol=False)
+        print_info(f"  Cache: {item.cache_path}", symbol=False)
+        print_info(f"  Namespace: {item.metadata.identifier.namespace}", symbol=False)
+
+
+@workspace_papers_app.command("ingest")
+def workspace_papers_ingest(
+    provider: str = typer.Argument(..., help="Provider identifier (arxiv, huggingface)."),
+    identifier: str = typer.Argument(..., help="Provider-specific paper identifier."),
+    workspace: Optional[str] = typer.Option(
+        None,
+        "--workspace",
+        "-w",
+        help="Workspace slug to attach the cache and default namespace.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        help="Explicit namespace override for caching.",
+    ),
+    attach: bool = typer.Option(
+        False,
+        "--attach/--no-attach",
+        help="Attach the cached paper to the workspace manifest after ingestion.",
+    ),
+) -> None:
+    """Fetch and cache a scholarly paper."""
+
+    StorageManager.setup()
+    default_namespace, _, _ = StorageManager._namespace_settings()
+    target_namespace = namespace or workspace or default_namespace
+    try:
+        cached = scholarly_service.ingest(
+            provider,
+            identifier,
+            namespace=target_namespace,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        print_error(f"Failed to ingest paper: {exc}")
+        raise typer.Exit(1) from exc
+    print_info("Cached paper:")
+    print_info(format_scholarly_metadata(cached.metadata), symbol=False)
+    print_info(f"Stored at {cached.cache_path}", symbol=False)
+    if attach and workspace:
+        _attach_cached_paper_to_workspace(workspace, cached)
+
+
+@workspace_papers_app.command("attach")
+def workspace_papers_attach(
+    workspace: str = typer.Argument(..., help="Workspace slug to update."),
+    provider: str = typer.Argument(..., help="Provider identifier for the cached paper."),
+    paper_id: str = typer.Argument(..., help="Paper identifier scoped to the provider."),
+    citation_required: bool = typer.Option(
+        True,
+        "--citation-required/--optional",
+        help="Mark citations from this resource as required.",
+    ),
+) -> None:
+    """Attach an existing cached paper to a workspace manifest."""
+
+    StorageManager.setup()
+    try:
+        payload = StorageManager.get_scholarly_paper(workspace, provider, paper_id)
+    except NotFoundError as exc:
+        print_error(f"Cached paper not found: {exc}")
+        raise typer.Exit(1) from exc
+    metadata = payload.get("metadata", {})
+    resource_payload = {
+        "kind": "paper",
+        "reference": f"{provider}:{paper_id}",
+        "citation_required": citation_required,
+        "metadata": {
+            "title": metadata.get("title"),
+            "cache_path": payload.get("cache_path"),
+            "primary_url": metadata.get("primary_url"),
+            "provenance": payload.get("provenance"),
+        },
+    }
+    try:
+        manifest = StorageManager.get_workspace_manifest(workspace)
+    except NotFoundError as exc:
+        print_error(f"Workspace '{workspace}' does not exist: {exc}")
+        raise typer.Exit(1) from exc
+    resources = [resource.to_payload() for resource in manifest.resources]
+    resources.append(resource_payload)
+    new_manifest = StorageManager.save_workspace_manifest(
+        {
+            "workspace_id": manifest.workspace_id,
+            "name": manifest.name,
+            "resources": resources,
+        }
+    )
+    print_info(f"Workspace '{workspace}' updated to version {new_manifest.version}.")
+
+
+def _attach_cached_paper_to_workspace(workspace: str, cached: Any) -> None:
+    """Append ``cached`` to ``workspace`` manifest."""
+
+    try:
+        manifest = StorageManager.get_workspace_manifest(workspace)
+    except NotFoundError as exc:
+        print_error(f"Workspace '{workspace}' does not exist: {exc}")
+        raise typer.Exit(1) from exc
+    resource_payload = {
+        "kind": "paper",
+        "reference": f"{cached.metadata.identifier.provider}:{cached.metadata.primary_key()}",
+        "citation_required": True,
+        "metadata": {
+            "title": cached.metadata.title,
+            "cache_path": str(cached.cache_path),
+            "primary_url": cached.metadata.primary_url,
+            "provenance": cached.provenance.to_payload(),
+        },
+    }
+    resources = [resource.to_payload() for resource in manifest.resources]
+    resources.append(resource_payload)
+    StorageManager.save_workspace_manifest(
+        {
+            "workspace_id": manifest.workspace_id,
+            "name": manifest.name,
+            "resources": resources,
+        }
+    )
+    print_info(f"Attached paper to workspace '{workspace}' (new version pending).")
 
 
 @typed_callback(invoke_without_command=False)

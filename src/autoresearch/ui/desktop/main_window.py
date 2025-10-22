@@ -43,6 +43,7 @@ try:
     from ...config import ConfigLoader, ConfigModel
     from ...models import QueryResponse
     from ...output_format import OutputFormatter, OutputDepth
+    from ...resources.scholarly import ScholarlyService
     from ...storage import StorageManager
     from ...orchestration.metrics import get_orchestration_metrics
     from ...errors import CitationError
@@ -56,6 +57,7 @@ except ImportError:
     OutputFormatter = None
     OutputDepth = None
     StorageManager = None
+    ScholarlyService = None
     get_orchestration_metrics = None
     WorkspaceOrchestrator = None
     CitationError = None
@@ -97,6 +99,9 @@ class AutoresearchMainWindow(QMainWindow):
         self._metric_labels: dict[str, QLabel] = {}
         self._menu_actions: list[QAction] = []
         self.metrics_timer: Optional[QTimer] = None
+        self._scholarly_service: Optional[ScholarlyService] = (
+            ScholarlyService() if ScholarlyService is not None else None
+        )
 
         # Query execution state
         self.current_query: str = ""
@@ -336,6 +341,22 @@ class AutoresearchMainWindow(QMainWindow):
             export_dock_action.setShortcut(QKeySequence("Ctrl+3"))
             view_menu.addAction(export_dock_action)
             self._register_action(export_dock_action)
+
+        resources_menu = menu_bar.addMenu("&Resources")
+        search_action = QAction("Search Scholarly Papers…", self)
+        search_action.triggered.connect(self._search_scholarly_papers)
+        resources_menu.addAction(search_action)
+        self._register_action(search_action)
+
+        ingest_action = QAction("Ingest Scholarly Paper…", self)
+        ingest_action.triggered.connect(self._ingest_scholarly_paper)
+        resources_menu.addAction(ingest_action)
+        self._register_action(ingest_action)
+
+        attach_action = QAction("Attach Cached Paper…", self)
+        attach_action.triggered.connect(self._attach_cached_paper)
+        resources_menu.addAction(attach_action)
+        self._register_action(attach_action)
 
         help_menu = menu_bar.addMenu("&Help")
         help_action = QAction("&View Documentation", self)
@@ -627,6 +648,168 @@ class AutoresearchMainWindow(QMainWindow):
         self._show_information(
             "Export Started",
             f"Export '{export_id}' triggered. Check the configured output directory.",
+        )
+
+    def _ensure_scholarly_service(self) -> ScholarlyService | None:
+        """Return the scholarly service if available."""
+
+        if self._scholarly_service is None or ScholarlyService is None or StorageManager is None:
+            self._show_warning(
+                "Scholarly",
+                "Scholarly connectors are unavailable in this environment.",
+            )
+            return None
+        try:
+            StorageManager.setup()
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Scholarly", f"Failed to initialize storage: {exc}")
+            return None
+        return self._scholarly_service
+
+    def _search_scholarly_papers(self) -> None:
+        """Prompt for a scholarly search and show results."""
+
+        service = self._ensure_scholarly_service()
+        if service is None:
+            return
+        query, ok = QInputDialog.getText(self, "Search Scholarly Papers", "Query:")
+        if not ok or not query.strip():
+            return
+        try:
+            results = service.search(query.strip(), limit=5)
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Scholarly Search", f"Search failed: {exc}")
+            return
+        lines: list[str] = []
+        for group in results:
+            lines.append(f"{group.provider}:")
+            if not group.results:
+                lines.append("  (no matches)")
+                continue
+            for item in group.results:
+                lines.append(f"  {item.title} [{item.primary_key()}]")
+        message = "\n".join(lines) if lines else "No results."
+        self._show_information("Scholarly Search", message)
+
+    def _ingest_scholarly_paper(self) -> None:
+        """Fetch and cache a scholarly paper."""
+
+        service = self._ensure_scholarly_service()
+        if service is None:
+            return
+        provider, ok = QInputDialog.getText(
+            self,
+            "Ingest Scholarly Paper",
+            "Provider (e.g. arxiv, huggingface):",
+        )
+        if not ok or not provider.strip():
+            return
+        identifier, ok = QInputDialog.getText(
+            self,
+            "Ingest Scholarly Paper",
+            "Identifier (e.g. DOI or arXiv ID):",
+        )
+        if not ok or not identifier.strip():
+            return
+        namespace = self._active_workspace_id
+        if not namespace:
+            default_namespace, _, _ = StorageManager._namespace_settings() if StorageManager else ("__default__", {}, {})
+            namespace = default_namespace
+        try:
+            cached = service.ingest(provider.strip(), identifier.strip(), namespace=namespace)
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Scholarly Ingest", f"Failed to ingest paper: {exc}")
+            return
+        summary = (
+            f"Title: {cached.metadata.title}\n"
+            f"Provider: {cached.metadata.identifier.provider}\n"
+            f"Namespace: {cached.metadata.identifier.namespace}\n"
+            f"Cache path: {cached.cache_path}"
+        )
+        self._show_information("Scholarly Ingest", summary)
+        if self._active_workspace_id:
+            decision = self._ask_question(
+                "Attach Cached Paper",
+                "Add this paper to the active workspace manifest?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            if decision == QMessageBox.Yes:
+                self._attach_paper_to_workspace(self._active_workspace_id, cached)
+
+    def _attach_cached_paper(self) -> None:
+        """Attach an existing cached paper to the active workspace."""
+
+        if not self._active_workspace_id:
+            self._show_warning("Scholarly", "Select a workspace before attaching cached papers.")
+            return
+        service = self._ensure_scholarly_service()
+        if service is None:
+            return
+        try:
+            cached = service.list_cached(namespace=self._active_workspace_id)
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Scholarly", f"Failed to enumerate cached papers: {exc}")
+            return
+        if not cached:
+            self._show_warning("Scholarly", "No cached papers available for this workspace.")
+            return
+        options = [
+            f"{item.metadata.title} ({item.metadata.identifier.provider}:{item.metadata.primary_key()})"
+            for item in cached
+        ]
+        selection, ok = QInputDialog.getItem(
+            self,
+            "Attach Cached Paper",
+            "Select paper:",
+            options,
+            0,
+            False,
+        )
+        if not ok or not selection:
+            return
+        index = options.index(selection)
+        self._attach_paper_to_workspace(self._active_workspace_id, cached[index])
+
+    def _attach_paper_to_workspace(self, workspace_id: str, cached: Any) -> None:
+        """Append ``cached`` to the workspace manifest."""
+
+        if StorageManager is None:
+            self._show_warning("Workspace", "Storage is unavailable.")
+            return
+        try:
+            manifest = StorageManager.get_workspace_manifest(workspace_id)
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Workspace", f"Failed to load workspace: {exc}")
+            return
+        resources = [resource.to_payload() for resource in manifest.resources]
+        resources.append(
+            {
+                "kind": "paper",
+                "reference": f"{cached.metadata.identifier.provider}:{cached.metadata.primary_key()}",
+                "citation_required": True,
+                "metadata": {
+                    "title": cached.metadata.title,
+                    "cache_path": str(cached.cache_path),
+                    "primary_url": cached.metadata.primary_url,
+                    "provenance": cached.provenance.to_payload(),
+                },
+            }
+        )
+        try:
+            updated = StorageManager.save_workspace_manifest(
+                {
+                    "workspace_id": manifest.workspace_id,
+                    "name": manifest.name,
+                    "resources": resources,
+                }
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            self._show_warning("Workspace", f"Failed to update workspace: {exc}")
+            return
+        self._show_information(
+            "Workspace Updated",
+            f"Workspace '{workspace_id}' updated to version {updated.version}.",
         )
 
     @Slot(str)

@@ -64,6 +64,7 @@ class NamespaceTableNames:
     claim_audits: str
     kg_entities: str
     kg_relations: str
+    scholarly_papers: str
 
 
 def init_rdf_store(backend: str, path: str) -> GraphProtocol:
@@ -344,6 +345,16 @@ class DuckDBStorageBackend:
                 "weight DOUBLE, provenance VARCHAR, ts TIMESTAMP)"
             )
 
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS scholarly_papers("
+                "provider VARCHAR, paper_id VARCHAR, metadata JSON, provenance JSON, "
+                "cache_path VARCHAR, references_json JSON, embedding FLOAT[])"
+            )
+            self._conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS scholarly_papers_pk "
+                "ON scholarly_papers(provider, paper_id)"
+            )
+
             # Create metadata table for schema versioning
             self._conn.execute("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)")
 
@@ -361,6 +372,7 @@ class DuckDBStorageBackend:
                 claim_audits="claim_audits",
                 kg_entities="kg_entities",
                 kg_relations="kg_relations",
+                scholarly_papers="scholarly_papers",
             )
 
         except DuckDBError as e:
@@ -393,6 +405,7 @@ class DuckDBStorageBackend:
                 claim_audits="claim_audits",
                 kg_entities="kg_entities",
                 kg_relations="kg_relations",
+                scholarly_papers="scholarly_papers",
             )
             self._namespace_tables[self._namespace_default] = default_tables
 
@@ -413,6 +426,7 @@ class DuckDBStorageBackend:
                 claim_audits=f"{default_tables.claim_audits}__{suffix}",
                 kg_entities=f"{default_tables.kg_entities}__{suffix}",
                 kg_relations=f"{default_tables.kg_relations}__{suffix}",
+                scholarly_papers=f"{default_tables.scholarly_papers}__{suffix}",
             )
 
             for source, target in (
@@ -422,10 +436,16 @@ class DuckDBStorageBackend:
                 (default_tables.claim_audits, tables.claim_audits),
                 (default_tables.kg_entities, tables.kg_entities),
                 (default_tables.kg_relations, tables.kg_relations),
+                (default_tables.scholarly_papers, tables.scholarly_papers),
             ):
                 self._conn.execute(
                     f"CREATE TABLE IF NOT EXISTS {target} AS SELECT * FROM {source} WHERE FALSE"
                 )
+
+            self._conn.execute(
+                f"CREATE UNIQUE INDEX IF NOT EXISTS {tables.scholarly_papers}_pk "
+                f"ON {tables.scholarly_papers}(provider, paper_id)"
+            )
 
             self._namespace_tables[ns_label] = tables
             return tables
@@ -1253,6 +1273,119 @@ class DuckDBStorageBackend:
             )
         return manifests
 
+    def persist_scholarly_paper(self, namespace: str, payload: Mapping[str, Any]) -> None:
+        """Persist scholarly paper metadata for ``namespace``."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+        tables = self._ensure_namespace_tables(namespace)
+        provider = str(payload.get("provider") or "").strip()
+        paper_id = str(payload.get("paper_id") or "").strip()
+        if not provider or not paper_id:
+            raise StorageError("scholarly paper payload missing identifiers")
+        metadata = payload.get("metadata") or {}
+        provenance = payload.get("provenance") or {}
+        cache_path = str(payload.get("cache_path") or "").strip()
+        references_payload = payload.get("references") or []
+        embedding_payload = payload.get("embedding")
+        embedding: list[float] | None = None
+        if embedding_payload is not None:
+            if not isinstance(embedding_payload, Sequence) or isinstance(embedding_payload, (str, bytes)):
+                raise StorageError("scholarly paper embedding must be a sequence of floats")
+            embedding = [float(value) for value in embedding_payload]
+        try:
+            self._conn.execute(
+                f"INSERT INTO {tables.scholarly_papers} "
+                "(provider, paper_id, metadata, provenance, cache_path, references_json, embedding) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(provider, paper_id) DO UPDATE SET "
+                "metadata=excluded.metadata, provenance=excluded.provenance, cache_path=excluded.cache_path, "
+                "references_json=excluded.references_json, embedding=excluded.embedding",
+                [
+                    provider,
+                    paper_id,
+                    json.dumps(metadata, sort_keys=True),
+                    json.dumps(provenance, sort_keys=True),
+                    cache_path,
+                    json.dumps(references_payload, sort_keys=True),
+                    embedding,
+                ],
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            raise StorageError("Failed to persist scholarly paper", cause=exc)
+
+    def list_scholarly_papers(
+        self,
+        namespace: str | None = None,
+        provider: str | None = None,
+    ) -> list[JSONDict]:
+        """Return persisted scholarly papers for ``namespace``."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+        tables = self._ensure_namespace_tables(namespace)
+        query = (
+            f"SELECT provider, paper_id, metadata, provenance, cache_path, references_json, embedding "
+            f"FROM {tables.scholarly_papers}"
+        )
+        params: list[Any] = []
+        if provider:
+            query += " WHERE provider=?"
+            params.append(provider)
+        query += " ORDER BY provider, paper_id"
+        try:
+            rows = self._conn.execute(query, params).fetchall()
+        except Exception as exc:  # pragma: no cover - defensive
+            raise StorageError("Failed to list scholarly papers", cause=exc)
+        ns_label = canonical_namespace(namespace, default=self._namespace_default)
+        results: list[JSONDict] = []
+        for row in rows:
+            results.append(
+                {
+                    "namespace": ns_label,
+                    "provider": row[0],
+                    "paper_id": row[1],
+                    "metadata": json.loads(row[2]) if row[2] else {},
+                    "provenance": json.loads(row[3]) if row[3] else {},
+                    "cache_path": row[4],
+                    "references": json.loads(row[5]) if row[5] else [],
+                    "embedding": list(row[6]) if row[6] is not None else None,
+                }
+            )
+        return results
+
+    def get_scholarly_paper(self, namespace: str, provider: str, paper_id: str) -> JSONDict:
+        """Return a single scholarly paper payload."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+        tables = self._ensure_namespace_tables(namespace)
+        query = (
+            f"SELECT provider, paper_id, metadata, provenance, cache_path, references_json, embedding "
+            f"FROM {tables.scholarly_papers} WHERE provider=? AND paper_id=?"
+        )
+        try:
+            row = self._conn.execute(query, [provider, paper_id]).fetchone()
+        except Exception as exc:  # pragma: no cover - defensive
+            raise StorageError("Failed to load scholarly paper", cause=exc)
+        if row is None:
+            raise NotFoundError(
+                "Scholarly paper not found",
+                resource_type="scholarly_paper",
+                resource_id=paper_id,
+            )
+        ns_label = canonical_namespace(namespace, default=self._namespace_default)
+        return {
+            "namespace": ns_label,
+            "provider": row[0],
+            "paper_id": row[1],
+            "metadata": json.loads(row[2]) if row[2] else {},
+            "provenance": json.loads(row[3]) if row[3] else {},
+            "cache_path": row[4],
+            "references": json.loads(row[5]) if row[5] else [],
+            "embedding": list(row[6]) if row[6] is not None else None,
+        }
+
     def get_workspace_manifest(
         self,
         workspace_id: str,
@@ -1659,6 +1792,7 @@ class DuckDBStorageBackend:
                     self._conn.execute(f"DELETE FROM {tables.embeddings}")
                     self._conn.execute(f"DELETE FROM {tables.kg_entities}")
                     self._conn.execute(f"DELETE FROM {tables.kg_relations}")
+                    self._conn.execute(f"DELETE FROM {tables.scholarly_papers}")
             except Exception as e:
                 raise StorageError("Failed to clear DuckDB data", cause=e)
 

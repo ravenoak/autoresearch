@@ -10,6 +10,9 @@ Reference issues by slugged filename (for example,
 - Added an opt-in guard for the legacy Streamlit GUI. The CLI now requires the
   `AUTORESEARCH_ENABLE_STREAMLIT` environment variable and emits migration
   guidance pointing teams to the PySide6 desktop interface.
+- Introduced scholarly connectors with shared caching: arXiv and Hugging Face
+  fetchers feed into `ScholarlyCache`, `StorageManager` persists metadata to
+  DuckDB, and new CLI/UI actions make cached papers available to workspaces.
 
 ## [0.1.0] - Unreleased (Target: 2025-11-15)
 

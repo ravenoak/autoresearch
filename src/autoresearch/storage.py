@@ -200,6 +200,22 @@ class StorageDelegateProtocol(Protocol):
     ) -> WorkspaceManifest: ...
 
     @staticmethod
+    def save_scholarly_paper(record: JSONMapping) -> JSONDict: ...
+
+    @staticmethod
+    def list_scholarly_papers(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+        provider: str | None = None,
+    ) -> list[JSONDict]: ...
+
+    @staticmethod
+    def get_scholarly_paper(
+        namespace: NamespaceTokens | Mapping[str, str] | str,
+        provider: str,
+        paper_id: str,
+    ) -> JSONDict: ...
+
+    @staticmethod
     def get_workspace_manifest(
         workspace_id: str,
         version: int | None = None,
@@ -1181,6 +1197,84 @@ class StorageManager(metaclass=StorageManagerMeta):
         assert StorageManager.context.db_backend is not None
         payloads = StorageManager.context.db_backend.list_workspace_manifests(workspace_id)
         return [WorkspaceManifest.from_payload(item) for item in payloads]
+
+    @staticmethod
+    def save_scholarly_paper(record: JSONMapping | Mapping[str, Any]) -> JSONDict:
+        """Persist scholarly paper metadata and return the stored payload."""
+
+        if _delegate and hasattr(_delegate, "save_scholarly_paper"):
+            return cast(JSONDict, getattr(_delegate, "save_scholarly_paper")(record))
+
+        payload = to_json_dict(record)
+        namespace_value = payload.get("namespace")
+        if not namespace_value:
+            metadata_raw = payload.get("metadata") or {}
+            if isinstance(metadata_raw, Mapping):
+                identifier_raw = metadata_raw.get("identifier") or {}
+                if isinstance(identifier_raw, Mapping):
+                    namespace_value = identifier_raw.get("namespace")
+        namespace_label = StorageManager._resolve_namespace_label(namespace_value)
+        payload["namespace"] = namespace_label
+        metadata_payload = payload.get("metadata")
+        if isinstance(metadata_payload, Mapping):
+            identifier_payload = metadata_payload.get("identifier")
+            if isinstance(identifier_payload, Mapping):
+                identifier_payload = dict(identifier_payload)
+                identifier_payload["namespace"] = namespace_label
+                metadata_payload = dict(metadata_payload)
+                metadata_payload["identifier"] = identifier_payload
+                payload["metadata"] = metadata_payload
+        provider_value = str(payload.get("provider") or "").strip()
+        paper_id_value = str(payload.get("paper_id") or "").strip()
+        if not provider_value or not paper_id_value:
+            raise StorageError("scholarly paper payload requires provider and paper_id")
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        StorageManager.context.db_backend.persist_scholarly_paper(namespace_label, payload)
+        return payload
+
+    @staticmethod
+    def list_scholarly_papers(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+        provider: str | None = None,
+    ) -> list[JSONDict]:
+        """Return cached scholarly papers optionally filtered by provider."""
+
+        if _delegate and hasattr(_delegate, "list_scholarly_papers"):
+            return cast(
+                list[JSONDict],
+                getattr(_delegate, "list_scholarly_papers")(namespace, provider),
+            )
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        namespace_label: str | None = None
+        if namespace is not None:
+            namespace_label = StorageManager._derive_namespace(namespace, None)
+        return StorageManager.context.db_backend.list_scholarly_papers(namespace_label, provider)
+
+    @staticmethod
+    def get_scholarly_paper(
+        namespace: NamespaceTokens | Mapping[str, str] | str,
+        provider: str,
+        paper_id: str,
+    ) -> JSONDict:
+        """Return a specific scholarly paper payload."""
+
+        if _delegate and hasattr(_delegate, "get_scholarly_paper"):
+            return cast(
+                JSONDict,
+                getattr(_delegate, "get_scholarly_paper")(namespace, provider, paper_id),
+            )
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        namespace_label = StorageManager._derive_namespace(namespace, None)
+        return StorageManager.context.db_backend.get_scholarly_paper(
+            namespace_label,
+            provider,
+            paper_id,
+        )
 
     @staticmethod
     def _pop_lru() -> str | None:
