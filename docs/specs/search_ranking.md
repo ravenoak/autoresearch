@@ -10,12 +10,17 @@ applied uniformly across search backends.
 
 - Weight cosine similarity and metadata freshness.
 - Normalize scores with min–max scaling before applying a deterministic sort.
-- When hierarchical traversal is active, multiply the normalized blend by the
-  path relevance score ``r_p``. The runtime computes ``r_p`` from the latent
-  edge estimates and an exponential moving average with decay ``\beta``.
-- Clamp ``r_p`` to ``[0.4, 1.4]`` so extreme path swings do not swamp BM25 or
+- When hierarchical traversal is active, multiply the normalized hybrid score
+  by the path relevance probability ``p_rel``. The runtime maintains
+  ``p_rel`` via ``\alpha``-weighted smoothing (default ``\alpha = 0.5``) of
+  the calibrated ``\hat{s}_v`` scores gathered from recent traversals.
+- Clamp ``p_rel`` to ``[0.4, 1.4]`` so extreme path swings do not swamp BM25 or
   semantic evidence. The clamp thresholds surface through telemetry as
   ``path_relevance_min`` and ``path_relevance_max`` knobs.
+- Calibrate ``\hat{s}_v`` with ``\ell``-sampling of the top leaf candidates
+  in each branch. Augment the calibration pool with sibling contexts so the
+  resulting ``p_rel`` stays comparable even when traversals briefly favor a
+  sub-branch with sparse observations.
 
 ## Example
 
@@ -35,11 +40,12 @@ normalization step keeps the results within the `0` to `1` range.
 
 - Scores stay within the 0 to 1 range after normalization.
 - Equal inputs yield the same ranked order.
-- If ``hierarchy_quality`` drops below ``0.62`` or the telemetry feed for
-  ``momentum_drift`` exceeds ``0.18`` for three successive slates, ``r_p``
-  resets to ``1.0`` and the system falls back to the baseline hybrid weighting.
+- When the dynamic-corpus guard flags stale summaries, reset ``p_rel`` to
+  ``1.0`` and fall back to the baseline hybrid weighting until fresh
+  calibrations arrive.
 - Path relevance composition preserves monotonicity with respect to BM25 and
-  semantic scores because ``r_p`` remains positive and clamps avoid sign flips.
+  semantic scores because ``p_rel`` remains positive and clamps avoid sign
+  flips.
 
 ## Proof Sketch
 
