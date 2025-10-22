@@ -93,6 +93,36 @@
 6. Validate usability and accessibility with real users.
 7. Release v1.0.
 
-> **Note:** The CLI is the primary entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).  
+> **Note:** The CLI is the primary entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).
 > **Human usability and dialectical transparency are paramount.**
+
+## 12. Deliverables and Subtasks
+
+- **Tree builders:** Implement both bottom-up and top-down tree construction
+  strategies with configurable branching-factor limits. Validate switching
+  logic so the orchestrator can choose the optimal builder per query depth and
+  latency budget.
+- **Slate constructor:** Add a slate assembly component that applies
+  sibling-based and \(\ell\)-neighbor sampling to diversify candidate
+  expansions while respecting downstream ranker constraints.
+- **Latent score solver:** Provide a solver that aligns latent traversal scores
+  with the paper's least-squares calibration objective, including reusable
+  utilities for regression design-matrix generation.
+- **Dynamic corpus handling:** Detect corpus mutations during long-running
+  sessions and trigger summary refresh workflows that rebuild affected nodes
+  and notify dependent consumers.
+
+## 13. Acceptance Criteria
+
+- Demonstrate reproducibility of the BRIGHT benchmark metrics using the
+  specified hyperparameter grid from the reference study, including audit logs
+  for parameter provenance.
+- Emit telemetry for calibration residuals and beam throughput at each solver
+  invocation, and confirm thresholds via automated checks in CI.
+
+## 14. Model Staging Requirements
+
+- Stage Gemini 2.5-flash or an equivalent-capability model for offline
+  summarisation batches and online traversal inference, ensuring deployment
+  parity across environments.
 
