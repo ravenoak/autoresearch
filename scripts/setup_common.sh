@@ -89,55 +89,80 @@ install_pyside6_system_deps() {
         return 0
     fi
 
-    local qt_packages=(
-        libegl1
-        libgl1
-        libglib2.0-0
-        libdbus-1-3
-        libnss3
-        libxkbcommon-x11-0
-        libxcb-cursor0
-        libxcomposite1
-        libxcursor1
-        libxdamage1
-        libxfixes3
-        libxi6
-        libxinerama1
-        libxkbfile1
-        libxrandr2
-        libxss1
-        libxtst6
-        libfontconfig1
-        libsm6
-        libice6
+    local package_groups=(
+        "libegl1"
+        "libgl1-mesa-glx|libgl1|libgl1-mesa-dri"
+        "libglib2.0-0"
+        "libdbus-1-3"
+        "libnss3"
+        "libxkbcommon-x11-0"
+        "libxcb-cursor0"
+        "libxcomposite1"
+        "libxcursor1"
+        "libxdamage1"
+        "libxfixes3"
+        "libxi6"
+        "libxinerama1"
+        "libxkbfile1"
+        "libxrandr2"
+        "libxss1"
+        "libxtst6"
+        "libfontconfig1"
+        "libsm6"
+        "libice6"
     )
 
-    local audio_pkg=""
-    if apt-cache show libasound2t64 >/dev/null 2>&1; then
-        audio_pkg="libasound2t64"
-    elif apt-cache show libasound2 >/dev/null 2>&1; then
-        audio_pkg="libasound2"
-    fi
-    if [ -n "$audio_pkg" ]; then
-        qt_packages+=("$audio_pkg")
-    fi
+    package_groups+=("libasound2t64|libasound2")
 
-    local missing_packages=()
-    local pkg
-    for pkg in "${qt_packages[@]}"; do
-        if ! dpkg -s "$pkg" >/dev/null 2>&1; then
-            missing_packages+=("$pkg")
+    local missing_groups=()
+    local group
+    for group in "${package_groups[@]}"; do
+        IFS='|' read -r -a options <<<"$group"
+        local installed_option=""
+        local option
+        for option in "${options[@]}"; do
+            if dpkg -s "$option" >/dev/null 2>&1; then
+                installed_option="$option"
+                break
+            fi
+        done
+        if [ -z "$installed_option" ]; then
+            missing_groups+=("$group")
         fi
     done
 
-    if ((${#missing_packages[@]} == 0)); then
+    if ((${#missing_groups[@]} == 0)); then
         echo "PySide6 runtime dependencies already installed; skipping apt-get." >&2
         return 0
     fi
 
     export DEBIAN_FRONTEND=noninteractive
     retry 3 apt-get update
-    retry 3 apt-get install -y "${missing_packages[@]}"
+
+    local install_queue=()
+    for group in "${missing_groups[@]}"; do
+        IFS='|' read -r -a options <<<"$group"
+        local candidate=""
+        local option
+        for option in "${options[@]}"; do
+            if apt-cache show "$option" >/dev/null 2>&1; then
+                candidate="$option"
+                break
+            fi
+        done
+        if [ -z "$candidate" ]; then
+            echo "Warning: unable to resolve package options: $group" >&2
+            continue
+        fi
+        install_queue+=("$candidate")
+    done
+
+    if ((${#install_queue[@]} == 0)); then
+        echo "Warning: no installable PySide6 packages detected after update." >&2
+        return 0
+    fi
+
+    retry 3 apt-get install -y "${install_queue[@]}"
     retry 3 apt-get clean
     rm -rf /var/lib/apt/lists/*
 }
