@@ -11,36 +11,37 @@ normalized again to keep scores comparable across backends.
 
 ## Latent score estimation
 
-Hierarchical traversal introduces latent edge scores \(\theta_{ij}\) that
-capture how a parent node \(i\) routes toward child \(j\). Observed traversal
-clicks or acceptance events provide counts \(n_{ij}\) with successes
-\(k_{ij}\). The runtime estimates \(\theta_{ij}\) with a constrained maximum
-likelihood objective:
+Hierarchical traversal observes slate-level path scores \(s_{i, v}\) for slate
+\(i\) and vertex \(v\). The latent formulation calibrates these observations to
+global structure by minimizing the squared error between measured scores and a
+shared linear model with per-slate offsets. Let \(a\) be a global scale,
+\(b_i\) the bias for slate \(i\), and \(\hat{s}_v\) the latent canonical score
+assigned to vertex \(v\). The estimator solves
 
 \[
-\hat{\theta}_{ij} = \arg\max_{\theta \ge 0,\ \sum_j \theta_{ij} = 1} \sum_j
-\Bigl[k_{ij} \log \theta_{ij} + (n_{ij} - k_{ij}) \log (1 - \theta_{ij})\Bigr]
+\min_{a,\,\{b_i\},\,\{\hat{s}_v\}} \sum_{i, v}\Bigl(s_{i, v} -
+\bigl(a\,\hat{s}_v + b_i\bigr)\Bigr)^2.
 \]
 
-The projection step enforces the simplex constraint and maintains non-negative
-branch priors. Telemetry exposes the ``latent_score_prior`` pseudo-counts so
-operators can tune the smoothing term applied before optimization.
+This least-squares program jointly recovers the global calibration factor, the
+slate-specific offsets, and the latent vertex scores that are later consumed by
+the traversal logic.
 
 ## Exponential moving-average path relevance
 
-Path relevance combines the latent edge estimates along a traversal with an
-exponential moving average (EMA) to temper volatility. For a path score
-\(r_t\) at iteration \(t\) and instantaneous score \(s_t\):
+Path relevance combines the calibrated latent scores along a traversal with an
+exponential moving average (EMA) that damps volatility while keeping recent
+signals responsive. For path score \(r_t\) at iteration \(t\) and instantaneous
+score \(s_t\), the recurrence is
 
 \[
-r_t = (1 - \beta) s_t + \beta r_{t-1}
+r_t = \alpha s_t + (1 - \alpha) r_{t-1},
 \]
 
-where \(\beta \in [0, 1)\) arrives from telemetry as ``momentum_beta``. The
-EMA resets to \(1.0\) when hierarchy diagnostics signal low quality. The path
-multiplier forwarded to the hybrid ranker is \(r_t\) clamped to
-``[0.4, 1.4]``; the clamp endpoints remain configurable via
-``path_relevance_min`` and ``path_relevance_max``.
+with smoothing parameter \(\alpha = 0.5\) by default. The EMA seeds with the
+current \(\hat{s}_v\) of the entry vertex so calibrated scores immediately
+inform the path multiplier. The aggregated value is clamped to ``[0.4, 1.4]`` to
+preserve stability before forwarding to the hybrid ranker.
 
 ## Proof of convex bounds
 
@@ -60,16 +61,15 @@ consistent relevance estimator.
 
 ## Proof sketch for latent calibration
 
-The constrained maximum-likelihood estimator minimizes the empirical negative
-log-likelihood, which upper bounds mean squared error when the gradients are
-Lipschitz. The LATTICE calibration report shows that projecting onto the
-probability simplex after each update yields MSE within \(\epsilon\) of the
-oracle estimate under misspecification noise. Because the EMA multiplier keeps
-\(r_t\) within bounded variation and clamp thresholds prevent divergence, the
-composed score preserves the LATTICE guarantee: expected calibration error and
-MSE remain within the documented tolerances when ``hierarchy_quality`` stays
-above ``0.62`` and ``momentum_drift`` below ``0.18``. These thresholds must be
-surfaced as telemetry parameters for operational overrides.
+The least-squares calibration yields bounded mean-squared error because the
+objective is strongly convex in \(a\), \(\{b_i\}\), and \(\{\hat{s}_v\}\) when
+the design matrix has full rank, providing a closed-form solution with
+well-characterized residuals. The resulting \(\hat{s}_v\) remain within a
+bounded affine transformation of the observed \(s_{i, v}\), and the EMA keeps
+path scores in a compact interval. LATTICE ablations report that removing
+either the path smoothing or the calibration layer degrades normalized
+discounted cumulative gain (nDCG), establishing that the combined procedure
+controls error while sustaining ranking quality.
 
 ## Simulation across datasets
 
