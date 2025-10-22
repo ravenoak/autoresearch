@@ -50,8 +50,10 @@ telemetry.
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [hierarchical-retrieval-lattice-integration](hierarchical-retrieval-lattice-integration.md)
-- [summary-refresh-automation](summary-refresh-automation.md)
-- [calibration-telemetry-dashboards](calibration-telemetry-dashboards.md)
+- [summary-refresh-automation](summary-refresh-automation.md) – captures the
+  calibration-driven summary refresh pipeline.
+- [calibration-telemetry-dashboards](calibration-telemetry-dashboards.md) –
+  tracks dashboards derived from the calibration outputs.
 
 ## Phase 6 tasks
 - Land the prototype semantic tree builder and calibration harness tracked in
@@ -65,12 +67,20 @@ telemetry.
 - Schedule evaluation checkpoints that reproduce the ≈9 % Recall@100 and ≈5 %
   nDCG@10 BRIGHT uplift reported for LATTICE before enabling the feature by
   default.
-- Extend the Phase 6 checklist to cover staging verification of beam/ℓ/α
-  defaults, calibration residual monitoring thresholds, and dynamic-corpus
-  fallback exercises ahead of the production cutover.
-- Schedule cross-team reviews that confirm Gemini 2.5-flash access readiness
-  and compare BRIGHT replication runs against the ±1 % tolerance band before
-  sign-off.
+- Maintain the Phase 6 checklist below, ensuring staging verification of
+  beam/ℓ/α defaults, calibration residual monitoring thresholds, and
+  dynamic-corpus fallback exercises complete ahead of the production cutover.
+- Schedule cross-team reviews with platform, evaluation, and infra leads to
+  confirm Gemini 2.5-flash access readiness and to compare BRIGHT replication
+  runs against the ±1 % tolerance band before sign-off.
+
+### Phase 6 checklist
+- [ ] Verify beam/ℓ/α defaults in staging, including telemetry snapshots before
+      and after the cutover rehearsal.
+- [ ] Monitor calibration residual thresholds continuously in staging and
+      document alerting hooks for dashboard consumers.
+- [ ] Exercise dynamic-corpus fallback drills that validate GraphRAG downgrade
+      triggers and operator playbooks.
 
 ## Acceptance Criteria
 - Phased work items (issues, docs, roadmap) exist for each enhancement area.
