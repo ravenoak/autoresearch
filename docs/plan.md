@@ -98,31 +98,55 @@
 
 ## 12. Deliverables and Subtasks
 
-- **Tree builders:** Implement both bottom-up and top-down tree construction
-  strategies with configurable branching-factor limits. Validate switching
-  logic so the orchestrator can choose the optimal builder per query depth and
-  latency budget.
-- **Slate constructor:** Add a slate assembly component that applies
-  sibling-based and \(\ell\)-neighbor sampling to diversify candidate
-  expansions while respecting downstream ranker constraints.
-- **Latent score solver:** Provide a solver that aligns latent traversal scores
-  with the paper's least-squares calibration objective, including reusable
-  utilities for regression design-matrix generation.
-- **Dynamic corpus handling:** Detect corpus mutations during long-running
-  sessions and trigger summary refresh workflows that rebuild affected nodes
-  and notify dependent consumers.
+- **Tree builders (branching-factor aware):**
+  - Implement a bottom-up tree constructor that aggregates child hypotheses
+    before promoting summaries, enforcing per-level branching-factor limits.
+  - Implement a top-down constructor that expands frontier nodes with
+    branching-factor capping and progressive depth pruning.
+  - Expose configuration toggles so the orchestrator can swap builders at
+    runtime based on query depth, latency budget, and recall goals.
+  - Add evaluation harnesses that compare builder throughput and quality on
+    staged BRIGHT workloads.
+- **Slate constructor (sibling and ℓ-neighbor sampling):**
+  - Create a slate assembly module that collects candidate expansions from
+    sibling nodes and ℓ-distance neighbors.
+  - Implement sampling policies that balance diversity against downstream
+    ranker quotas, including deterministic seeds for reproducibility.
+  - Validate slate quality with ablations covering sibling-only, ℓ-only, and
+    hybrid sampling regimes.
+  - Document integration hooks so traversal heuristics can request custom
+    sampling weights.
+- **Latent score solver (least-squares calibration):**
+  - Port the paper's least-squares objective, including regularisation and
+    trust-region controls for ill-conditioned batches.
+  - Provide utilities that build regression design matrices from traversal
+    traces, with hooks for feature normalisation.
+  - Add solver diagnostics that surface residual norms and condition numbers to
+    telemetry.
+  - Cover solver behaviour with unit tests that assert convergence on the
+    reference calibration fixtures.
+- **Dynamic corpus handling and summary refresh:**
+  - Detect corpus mutations via watchers or checkpoints that flag added,
+    updated, or deleted artifacts during long-running sessions.
+  - Trigger summary rebuild workflows that recompute impacted nodes and update
+    derived embeddings.
+  - Notify dependent consumers (agents, caches, subscribers) when refreshed
+    summaries become available.
+  - Record refresh provenance in audit logs, including timestamps and content
+    hashes for compliance reviews.
 
 ## 13. Acceptance Criteria
 
-- Demonstrate reproducibility of the BRIGHT benchmark metrics using the
-  specified hyperparameter grid from the reference study, including audit logs
-  for parameter provenance.
+- Reproduce the BRIGHT benchmark metrics within a ±1% tolerance using the
+  specified hyperparameter grid from the reference study, capturing audit logs
+  for every sweep and seed.
 - Emit telemetry for calibration residuals and beam throughput at each solver
-  invocation, and confirm thresholds via automated checks in CI.
+  invocation, persisting distributions for CI-gated regression checks and
+  runbooks.
 
 ## 14. Model Staging Requirements
 
-- Stage Gemini 2.5-flash or an equivalent-capability model for offline
-  summarisation batches and online traversal inference, ensuring deployment
-  parity across environments.
+- Stage Gemini 2.5-flash, or an equivalent-capability model, for both offline
+  summarisation batches and online traversal inference, preserving deployment
+  parity across environments and fallbacks.
 
