@@ -26,8 +26,17 @@ current coverage is **71.94%** across 21,943 lines (measured October 17, 2025).
 - Prototype semantic tree builder, calibration validation harness, and
   dynamic-corpus safeguards must land before enabling hierarchical retrieval by
   default.
+- Log the planned traversal budget at ≈250 nodes per query (branching factor
+  `B=2`, depth `N=20`) and note the ℓ = 10 resampling cadence applied during the
+  calibration sweeps so reviewers can trace the tuning evidence.
 - Telemetry will track traversal depth, path scoring, calibration residuals, and
   fallback triggers to GraphRAG when confidence drops below validated bands.
+- Action items include dynamic-corpus monitoring plus on-demand summary rebuilds
+  because the LATTICE paper observed static summaries can misguide traversal
+  decisions.
+- Establish a pre-flight checkpoint to validate Gemini 2.5-flash (or an
+  equivalent frontier model) availability since all offline and online LATTICE
+  stages depend on that capability.
 - Evaluation goals follow the ≈9 % Recall@100 and ≈5 % nDCG@10 BRIGHT gains
   reported for LATTICE.
   Target release window remains **0.1.1** once the prototype tree builder,
