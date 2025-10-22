@@ -81,6 +81,40 @@ confidence band or when dynamic updates outpace the rebuild cadence. Benchmark
 targets follow [LATTICE hierarchical retrieval findings]
 (docs/external_research_papers/arxiv.org/2510.13217v1.md).
 
+### Release rehearsal controls
+
+Release rehearsals must mirror the hierarchical traversal experiments to keep
+validation comparable across dry runs:
+
+- Traverse with Gemini-2.5-flash acting as the tree builder and search LLM.
+  【F:docs/specs/search.md†L41-L70】
+- Hold the beam expansion budget at `B = 2`.
+  【F:docs/specs/search.md†L41-L70】
+- Sample `ℓ = 10` sibling leaves into each slate.
+  【F:docs/specs/search.md†L41-L70】
+- Apply the path smoothing coefficient `α = 0.5` for the EMA update.
+  【F:docs/specs/search.md†L41-L70】
+
+Schedule rehearsal validation on the BRIGHT subsets already instrumented for
+the Phase 6 harness so release engineering can stage matching corpora:
+
+- Economics, Psychology, and Robotics StackExchange domains cover the static
+  corpus runs where LATTICE recorded the largest recall gains.
+  【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L709-L756】
+- Biology confirms the bottom-up clustering path used in static StackExchange
+  evaluations.
+  【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L848-L865】
+- LeetCode, AoPS, and TheoremQ represent the dynamic-corpus coding and theorem
+  tasks that stress exclusion pruning.
+  【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L709-L718】
+
+- [ ] Confirm calibration residual telemetry stays within the bounded affine
+  window and EMA clamp (`[0.4, 1.4]`) recorded in the ranking formulation.
+  【F:docs/algorithms/ranking_formula.md†L21-L71】
+- [ ] Force a dynamic-corpus dry run that prunes more than 15 percent of leaves
+  for three iterations and verify the GraphRAG fallback engages.
+  【F:docs/specs/search.md†L63-L75】
+
 ## Announcement draft
 
 Autoresearch 0.1.0a1 is in final preparation with core functionality working and
