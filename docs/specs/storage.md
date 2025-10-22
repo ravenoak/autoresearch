@@ -85,6 +85,13 @@ the safety margin.
 - Merge behaviour is configured via `storage.namespaces.merge_policies`. The
   `union` strategy deduplicates claims while collecting provenance, whereas
   `confidence_weight` averages scores using per-namespace weights.
+- `autoresearch config storage namespaces` provides interactive prompts that
+  validate routing targets with `validate_namespace_routes` before persisting
+  updates to TOML.
+- `autoresearch search --namespace` accepts scoped tokens (for example,
+  `workspace:regulation`) so cache namespaces align with workspace routes. See
+  the [namespace routing flow](../diagrams/storage_namespace_flow.md) for the
+  resolution pipeline.
 
 ## Complexity
 

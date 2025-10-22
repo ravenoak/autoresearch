@@ -89,6 +89,10 @@ Must     | Unit tests for logging utilities.          |
 *Namespace policies*: `storage.namespaces.merge_policies` declares named merge
   strategies. The `default` policy can be `union` (combine unique claims) or
   `confidence_weight` (weight scores per namespace).
+*Runtime overrides*: CLI flag `--namespace` on `autoresearch search` applies
+  scoped namespace tokens (for example, `workspace:regulation`). Persist and
+  validate routing rules interactively with `autoresearch config storage
+  namespaces`.
 
 ---
 

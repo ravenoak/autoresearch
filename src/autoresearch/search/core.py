@@ -88,7 +88,7 @@ from ..config.models import RepositoryManifestEntry
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
-from ..storage_utils import DEFAULT_NAMESPACE_LABEL
+from ..storage_utils import DEFAULT_NAMESPACE_LABEL, NamespaceTokens
 from ..orchestration.workspace_context import get_active_workspace_hints
 from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from . import storage as search_storage
@@ -585,6 +585,8 @@ class _SearchConfig(SearchConfigProtocol):
     adaptive_k: AdaptiveKConfigProtocol
     local_file: LocalFileConfigProtocol
     local_git: LocalGitConfigProtocol
+    shared_cache: bool
+    cache_namespace: Any | None
 
     @classmethod
     def from_object(cls, obj: Any) -> "_SearchConfig":
@@ -627,6 +629,8 @@ class _SearchConfig(SearchConfigProtocol):
             adaptive_k=_AdaptiveKConfig.from_object(adaptive_obj),
             local_file=_LocalFileConfig.from_object(local_file_obj),
             local_git=_LocalGitConfig.from_object(local_git_obj),
+            shared_cache=_coerce_bool(getattr(obj, "shared_cache", None), default=True),
+            cache_namespace=getattr(obj, "cache_namespace", None),
         )
 
 
@@ -843,14 +847,20 @@ class Search:
         self._sentence_transformer: Optional[EmbeddingModelProtocol] = None
         namespace: str | None = None
         provided_namespace: str | None = None
+        runtime_cfg: Any | None = None
         shared_cache = True
         try:
             runtime_cfg = _get_runtime_config()
-            namespace = getattr(runtime_cfg.search, "cache_namespace", None)
-            shared_cache = getattr(runtime_cfg.search, "shared_cache", True)
         except ConfigError:
-            namespace = None
-            shared_cache = True
+            runtime_cfg = None
+        if runtime_cfg is not None:
+            shared_cache = getattr(runtime_cfg.search, "shared_cache", True)
+        namespace = self._resolve_cache_namespace_setting(
+            getattr(runtime_cfg.search, "cache_namespace", None)
+            if runtime_cfg is not None
+            else None,
+            runtime_cfg,
+        )
 
         if isinstance(cache, _SearchCacheView):
             base_cache = cache.base
@@ -992,6 +1002,76 @@ class Search:
                         for ns in _normalise_spec_sequence(spec.get("namespaces")):
                             namespaces.add(ns)
         return tuple(sorted(ns for ns in namespaces if ns))
+
+    @staticmethod
+    def _context_namespace_tokens(config: Any | None) -> NamespaceTokens | str | None:
+        """Return namespace tokens inferred from runtime workspace context."""
+
+        tokens: dict[str, str] = {}
+        workspace_id = getattr(config, "workspace_id", None) if config is not None else None
+        if isinstance(workspace_id, str) and workspace_id.strip():
+            tokens["workspace"] = workspace_id.strip()
+
+        hints: Mapping[str, Any] | None = None
+        if config is not None:
+            hints = getattr(config, "workspace_hints", None)
+        if hints is None:
+            hints = get_active_workspace_hints()
+
+        if isinstance(hints, Mapping):
+            storage_section = hints.get("storage")
+            if isinstance(storage_section, Mapping):
+                namespace_tokens = storage_section.get("namespace_tokens")
+                if isinstance(namespace_tokens, Mapping):
+                    for scope, value in namespace_tokens.items():
+                        if isinstance(scope, str) and isinstance(value, str):
+                            scope_key = scope.strip().lower()
+                            value_token = value.strip()
+                            if scope_key and value_token:
+                                tokens.setdefault(scope_key, value_token)
+                if not tokens:
+                    declared = storage_section.get("namespaces")
+                    if isinstance(declared, Sequence) and not isinstance(declared, (str, bytes)):
+                        for candidate in declared:
+                            text = str(candidate).strip()
+                            if text:
+                                return text
+            hint_tokens = hints.get("namespace_tokens")
+            if isinstance(hint_tokens, Mapping):
+                for scope, value in hint_tokens.items():
+                    if isinstance(scope, str) and isinstance(value, str):
+                        scope_key = scope.strip().lower()
+                        value_token = value.strip()
+                        if scope_key and value_token:
+                            tokens.setdefault(scope_key, value_token)
+
+        if tokens:
+            return NamespaceTokens.from_any(tokens)
+        return None
+
+    @staticmethod
+    def _resolve_cache_namespace_setting(
+        namespace_setting: Any | None,
+        config: Any | None,
+    ) -> str | None:
+        """Resolve the configured or contextual namespace into a canonical label."""
+
+        candidate = namespace_setting
+        if isinstance(candidate, str):
+            candidate = candidate.strip() or None
+        if candidate is not None:
+            try:
+                return StorageManager._resolve_namespace_label(candidate)
+            except StorageError as exc:  # pragma: no cover - defensive guard
+                log.warning("Failed to resolve configured search namespace: %s", exc)
+        context_candidate = Search._context_namespace_tokens(config)
+        if context_candidate is None:
+            return None
+        try:
+            return StorageManager._resolve_namespace_label(context_candidate)
+        except StorageError as exc:  # pragma: no cover - defensive guard
+            log.warning("Failed to resolve contextual search namespace: %s", exc)
+            return None
 
     @staticmethod
     def _embedding_storage_hints(

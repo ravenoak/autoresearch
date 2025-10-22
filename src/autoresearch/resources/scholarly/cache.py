@@ -6,10 +6,11 @@ import hashlib
 import json
 import time
 from pathlib import Path
+from typing import Mapping
 
 from ...config.loader import ConfigLoader
 from ...storage import StorageManager
-from ...storage_utils import canonical_namespace
+from ...storage_utils import NamespaceTokens
 from .models import (
     CachedPaper,
     PaperDocument,
@@ -47,13 +48,13 @@ class ScholarlyCache:
         self,
         document: PaperDocument,
         *,
-        namespace: str,
+        namespace: NamespaceTokens | Mapping[str, str] | str,
         content_type: str = "text/plain",
     ) -> CachedPaper:
         """Persist *document* within ``namespace`` and record provenance."""
 
         StorageManager.setup()
-        resolved_namespace = canonical_namespace(namespace)
+        resolved_namespace = StorageManager._resolve_namespace_label(namespace)
         metadata = document.metadata.with_namespace(resolved_namespace)
         checksum = document.checksum()
         cache_path = self._resolve_path(metadata)
@@ -88,7 +89,7 @@ class ScholarlyCache:
     def list_cached(
         self,
         *,
-        namespace: str | None = None,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
         provider: str | None = None,
     ) -> list[CachedPaper]:
         """Return cached papers optionally filtered by namespace/provider."""
@@ -97,7 +98,12 @@ class ScholarlyCache:
         payloads = StorageManager.list_scholarly_papers(namespace=namespace, provider=provider)
         return [CachedPaper.from_payload(item) for item in payloads]
 
-    def get_cached(self, namespace: str, provider: str, paper_id: str) -> CachedPaper:
+    def get_cached(
+        self,
+        namespace: NamespaceTokens | Mapping[str, str] | str,
+        provider: str,
+        paper_id: str,
+    ) -> CachedPaper:
         """Return a cached paper, raising if it is absent."""
 
         StorageManager.setup()

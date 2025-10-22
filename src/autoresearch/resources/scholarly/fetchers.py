@@ -34,7 +34,13 @@ class ScholarlyFetcher(ABC):
     provider: str
 
     @abstractmethod
-    def search(self, query: str, limit: int = 10) -> Sequence[PaperMetadata]:
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+        *,
+        namespace: str | None = None,
+    ) -> Sequence[PaperMetadata]:
         """Return lightweight metadata for papers matching ``query``."""
 
     @abstractmethod
@@ -48,7 +54,7 @@ class ArxivFetcher(ScholarlyFetcher):
     provider = "arxiv"
     _SEARCH_URL = "https://export.arxiv.org/api/query"
 
-    def _metadata_from_entry(self, entry: ET.Element) -> PaperMetadata:
+    def _metadata_from_entry(self, entry: ET.Element, namespace: str) -> PaperMetadata:
         id_text = entry.findtext("atom:id", namespaces=_ATOM_NS) or ""
         title = (entry.findtext("atom:title", namespaces=_ATOM_NS) or "").strip()
         summary = (entry.findtext("atom:summary", namespaces=_ATOM_NS) or "").strip()
@@ -58,7 +64,7 @@ class ArxivFetcher(ScholarlyFetcher):
         identifier = PaperIdentifier(
             provider=self.provider,
             value=arxiv_id,
-            namespace=_DEFAULT_NAMESPACE,
+            namespace=namespace,
         )
         authors = [
             (author.findtext("atom:name", namespaces=_ATOM_NS) or "").strip()
@@ -82,14 +88,21 @@ class ArxivFetcher(ScholarlyFetcher):
             tags=tuple(tag for tag in tags if tag),
         )
 
-    def search(self, query: str, limit: int = 10) -> Sequence[PaperMetadata]:
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+        *,
+        namespace: str | None = None,
+    ) -> Sequence[PaperMetadata]:
         client = get_http_client()
         params = {"search_query": f"all:{query}", "max_results": str(limit), "start": "0"}
         response = client.get(self._SEARCH_URL, params=params)
         response.raise_for_status()
         tree = ET.fromstring(response.text)
         entries = tree.findall("atom:entry", namespaces=_ATOM_NS)
-        return [self._metadata_from_entry(entry) for entry in entries]
+        target_namespace = namespace or _DEFAULT_NAMESPACE
+        return [self._metadata_from_entry(entry, target_namespace) for entry in entries]
 
     def fetch(self, identifier: str) -> PaperDocument:
         client = get_http_client()
@@ -100,7 +113,7 @@ class ArxivFetcher(ScholarlyFetcher):
         entry = tree.find("atom:entry", namespaces=_ATOM_NS)
         if entry is None:
             raise ValueError(f"arXiv identifier '{identifier}' not found")
-        metadata = self._metadata_from_entry(entry)
+        metadata = self._metadata_from_entry(entry, _DEFAULT_NAMESPACE)
         links = [
             link.attrib.get("href")
             for link in entry.findall("atom:link", namespaces=_ATOM_NS)
@@ -117,12 +130,12 @@ class HuggingFacePapersFetcher(ScholarlyFetcher):
     provider = "huggingface"
     _BASE_URL = "https://huggingface.co/api/papers"
 
-    def _metadata_from_payload(self, payload: dict[str, object]) -> PaperMetadata:
+    def _metadata_from_payload(self, payload: dict[str, object], namespace: str) -> PaperMetadata:
         identifier_value = str(payload.get("paperId") or payload.get("id") or payload.get("slug") or "")
         identifier = PaperIdentifier(
             provider=self.provider,
             value=identifier_value,
-            namespace=_DEFAULT_NAMESPACE,
+            namespace=namespace,
         )
         abstract = str(payload.get("abstract") or payload.get("summary") or "").strip()
         title = str(payload.get("title") or identifier_value).strip()
@@ -155,7 +168,13 @@ class HuggingFacePapersFetcher(ScholarlyFetcher):
             tags=tuple(tag for tag in tags if tag),
         )
 
-    def search(self, query: str, limit: int = 10) -> Sequence[PaperMetadata]:
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+        *,
+        namespace: str | None = None,
+    ) -> Sequence[PaperMetadata]:
         client = get_http_client()
         params = {"q": query, "limit": limit}
         response = client.get(f"{self._BASE_URL}/search", params=params)
@@ -167,7 +186,8 @@ class HuggingFacePapersFetcher(ScholarlyFetcher):
                 results = payload
             else:
                 results = []
-        return [self._metadata_from_payload(item) for item in results]
+        target_namespace = namespace or _DEFAULT_NAMESPACE
+        return [self._metadata_from_payload(item, target_namespace) for item in results]
 
     def fetch(self, identifier: str) -> PaperDocument:
         client = get_http_client()
@@ -176,7 +196,7 @@ class HuggingFacePapersFetcher(ScholarlyFetcher):
         payload = response.json()
         if not isinstance(payload, dict):
             raise ValueError("Unexpected payload from Hugging Face Papers API")
-        metadata = self._metadata_from_payload(payload)
+        metadata = self._metadata_from_payload(payload, _DEFAULT_NAMESPACE)
         references_payload = payload.get("references") or []
         references: list[str] = []
         if isinstance(references_payload, Iterable):

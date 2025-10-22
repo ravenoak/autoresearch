@@ -10,7 +10,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, List, Mapping, Optional, TypeVar, cast
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import tomli_w
 import tomllib
@@ -238,6 +238,55 @@ def _persist_manifest_entries(manifest: List[RepositoryManifestEntry]) -> Path:
     except Exception as exc:  # pragma: no cover - observers are optional
         print_warning(f"Config observer notification failed: {exc}")
     return target
+
+
+def _parse_namespace_override(values: Sequence[str]) -> dict[str, str] | str | None:
+    """Return a namespace payload derived from CLI tokens."""
+
+    if not values:
+        return None
+
+    tokens: dict[str, str] = {}
+    direct_label: str | None = None
+    valid_scopes = {"session", "workspace", "org", "project"}
+
+    for raw in values:
+        text = str(raw or "").strip()
+        if not text:
+            continue
+        if ":" not in text:
+            if tokens:
+                raise typer.BadParameter(
+                    "Provide either scoped namespace tokens or a single explicit label.",
+                    param_hint="--namespace",
+                )
+            direct_label = text
+            continue
+        scope, value = text.split(":", 1)
+        scope_key = scope.strip().lower()
+        if scope_key not in valid_scopes:
+            raise typer.BadParameter(
+                f"Unknown namespace scope '{scope_key}'. Valid scopes: "
+                "session, workspace, org, project.",
+                param_hint="--namespace",
+            )
+        value_token = value.strip()
+        if not value_token:
+            raise typer.BadParameter(
+                "Namespace tokens require a non-empty value.",
+                param_hint="--namespace",
+            )
+        tokens[scope_key] = value_token
+
+    if tokens and direct_label:
+        raise typer.BadParameter(
+            "Cannot combine scoped namespace tokens with a standalone namespace label.",
+            param_hint="--namespace",
+        )
+
+    if tokens:
+        return tokens
+    return direct_label
 
 
 def _format_manifest_entry(entry: RepositoryManifestEntry) -> str:
@@ -798,6 +847,16 @@ def start_watcher(
         "--reset-sections",
         help="Reset all section customizations to depth defaults.",
     ),
+    namespace: Tuple[str, ...] = typer.Option(
+        (),
+        "--namespace",
+        "-n",
+        help=(
+            "Override the cache namespace. Accepts scope:value tokens for session, "
+            "workspace, org, or project, or a literal namespace label."
+        ),
+        show_default=False,
+    ),
 ) -> None:
     """Start configuration watcher before executing commands."""
     # Set verbosity level based on command line options
@@ -956,6 +1015,7 @@ def search(
     include_sections: Optional[str] = None,
     exclude_sections: Optional[str] = None,
     reset_sections: bool = False,
+    namespace: str | dict[str, str] | None = None,
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -999,6 +1059,9 @@ def search(
 
         # Options overview (for reference)
         # --interactive, --loops, --ontology, --ontology-reasoner, --infer-relations, --visualize
+
+        # Override the cache namespace using scoped tokens
+        autoresearch search --namespace workspace:regulation "AI regulation in EU"
     """
     config = _config_loader.load_config()
 
@@ -1061,11 +1124,16 @@ def search(
         updates["primus_start"] = primus_start
     if agents is not None:
         updates["agents"] = [a.strip() for a in agents.split(",") if a.strip()]
+    search_updates: dict[str, Any] = {}
+    if namespace is not None:
+        search_updates["cache_namespace"] = namespace
     storage_updates: dict[str, Any] = {}
     if ontology_reasoner is not None:
         storage_updates["ontology_reasoner"] = ontology_reasoner
     if storage_updates:
         updates["storage"] = config.storage.model_copy(update=storage_updates)
+    if search_updates:
+        updates["search"] = config.search.model_copy(update=search_updates)
     if updates:
         config = config.model_copy(update=updates)
 
@@ -1631,6 +1699,10 @@ def search_callback(
         typer.echo(ctx.get_help())
         raise typer.Exit(code=0)
 
+    namespace_override: str | dict[str, str] | None = None
+    if namespace:
+        namespace_override = _parse_namespace_override(namespace)
+
     search(
         query=query,
         output=output,
@@ -1663,6 +1735,7 @@ def search_callback(
         include_sections=include_sections,
         exclude_sections=exclude_sections,
         reset_sections=reset_sections,
+        namespace=namespace_override,
     )
 
 
