@@ -29,4 +29,8 @@
 | F-25 | Textual dashboard entrypoint with graceful fallback | `main/app.py`, `cli_utils.py`, `monitor/`, `ui/tui/` | `tests/behavior/features/terminal_dashboard.feature`, integration smoke tests (planned) |
 | F-26 | Enhanced interactive prompts with prompt-toolkit | `main/app.py`, `prompting/prompt_service.py` | `tests/behavior/features/enhanced_prompting.feature`, targeted unit tests (planned) |
 | F-27 | Rich layouts with deterministic bare-mode fallbacks | `cli_utils.py`, `monitor/visualization.py` | `tests/behavior/features/rich_monitor_layout.feature`, `tests/behavior/features/visualize_metrics_cli.feature` |
+| F-28 | Multi-repository federation with provenance labels | `search/`, `storage/`, `orchestration/` | `tests/behavior/features/research_federation.feature` |
+| F-29 | Cross-examination workspaces and debate manifests | `orchestration/workspaces.py` (planned), `ui/desktop/` | `tests/behavior/features/research_federation.feature` |
+| F-30 | Namespace-aware storage policies | `storage/`, `config.py`, `api.py` | `tests/behavior/features/research_federation.feature`, namespace unit tests (planned) |
+| F-31 | Scholarly connector ingestion and caching | `resources/scholarly/`, `search/` | `tests/behavior/features/research_federation.feature`, connector unit tests (planned) |
 
