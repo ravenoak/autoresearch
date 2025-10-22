@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import pytest
 
@@ -150,3 +149,90 @@ def test_local_git_backend_manifest_provenance(
 
     commit_results = _local_git_backend("commit", max_results=4)
     assert any(r.get("commit_hash") for r in commit_results)
+
+
+@pytest.mark.requires_git
+def test_local_git_backend_workspace_filters(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_components: GitComponentTypes,
+) -> None:
+    """Workspace hints restrict local git search to matching resources."""
+
+    _, Repo, _ = git_components
+    repo_path = tmp_path / "alpha"
+    repo = Repo.init(repo_path)
+    include_file = repo_path / "include.md"
+    include_file.write_text("workspace scoped term", encoding="utf-8")
+    exclude_file = repo_path / "skip.txt"
+    exclude_file.write_text("workspace scoped term", encoding="utf-8")
+    repo.index.add(["include.md", "skip.txt"])
+    repo.index.commit("add files")
+
+    cfg = ConfigModel.model_validate(
+        {
+            "search": {
+                "backends": ["local_git"],
+                "local_git": {
+                    "manifest": [
+                        {
+                            "slug": "alpha",
+                            "path": str(repo_path),
+                            "branches": [repo.active_branch.name],
+                            "namespace": "audit.alpha",
+                        }
+                    ],
+                    "history_depth": 5,
+                },
+                "local_file": {"file_types": ["md", "txt"]},
+            }
+        }
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.Repo", Repo)
+    monkeypatch.setattr(StorageManager, "connection", staticmethod(_dummy_connection))
+
+    workspace_hints = {
+        "workspace_id": "workspace-alpha",
+        "manifest_id": "manifest-1",
+        "manifest_version": 1,
+        "resources": {
+            "wsres-alpha": {
+                "resource_id": "wsres-alpha",
+                "kind": "repo",
+                "reference": "alpha@HEAD",
+                "citation_required": True,
+            }
+        },
+        "search": {
+            "repositories": {
+                "alpha": {
+                    "slug": "alpha",
+                    "resource_ids": ("wsres-alpha",),
+                    "resource_specs": (
+                        {
+                            "resource_id": "wsres-alpha",
+                            "file_globs": ("**/*.md",),
+                            "path_prefixes": (),
+                            "file_types": ("md",),
+                            "namespaces": ("audit.alpha",),
+                        },
+                    ),
+                    "namespace": "audit.alpha",
+                }
+            }
+        },
+        "storage": {"namespaces": ("audit.alpha",)},
+    }
+
+    results = _local_git_backend(
+        "workspace scoped term",
+        max_results=5,
+        workspace_hints=workspace_hints,
+        workspace_filters={"resource_ids": ["wsres-alpha"]},
+    )
+    assert results
+    urls = {result.get("url") for result in results}
+    assert str(include_file) in urls
+    assert str(exclude_file) not in urls
+    assert all(result.get("workspace_resource_id") == "wsres-alpha" for result in results)

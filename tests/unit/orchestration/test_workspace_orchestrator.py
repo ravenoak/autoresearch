@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
+from typing import Any, ClassVar, Mapping
+
 import pytest
 
 from autoresearch.config.models import ConfigModel
@@ -50,6 +52,7 @@ class _StubOrchestrator:
                 "workspace_manifest": getattr(config, "workspace_manifest", None),
                 "workspace_id": getattr(config, "workspace_id", None),
                 "workspace_manifest_version": getattr(config, "workspace_manifest_version", None),
+                "workspace_hints": getattr(config, "workspace_hints", None),
             }
         )
         if not _StubOrchestrator.responses:
@@ -120,6 +123,10 @@ def test_workspace_orchestrator_adds_metrics_and_restores_config() -> None:
     assert stub.calls[0]["workspace_manifest"] == _StubStorageManager.manifest.to_payload()
     assert stub.calls[0]["workspace_id"] == "workspace-alpha"
     assert stub.calls[0]["workspace_manifest_version"] == 1
+    hints = stub.calls[0]["workspace_hints"]
+    assert isinstance(hints, Mapping)
+    assert hints["workspace_id"] == "workspace-alpha"
+    assert "resources" in hints
 
 
 def test_workspace_orchestrator_raises_when_resources_missing() -> None:
