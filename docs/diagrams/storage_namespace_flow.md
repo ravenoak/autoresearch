@@ -1,7 +1,8 @@
 # Storage Namespace Flow
 
 The diagram highlights how scoped namespace tokens propagate from CLI inputs and
-workspace context into the search cache and scholarly storage layers.
+workspace context into the search cache and scholarly storage layers, including
+the new multi-format scholarly cache pipeline.
 
 ```mermaid
 flowchart TD
@@ -12,5 +13,9 @@ flowchart TD
     resolver --> cacheView["Namespaced search cache"]
     resolver --> scholarly["Scholarly cache persistence"]
     cacheView --> reuse["Consistent cache slots"]
-    scholarly --> storage["DuckDB / RDF namespaces"]
+    scholarly --> variants["Content variants (PDF/HTML/Markdown)"]
+    scholarly --> provenance["Provenance (version + latency)"]
+    variants --> storage["DuckDB / RDF namespaces"]
+    provenance --> storage
+    storage --> manifests["Workspace manifests auto-attach cached papers"]
 ```

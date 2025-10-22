@@ -70,7 +70,7 @@ class ScholarlyService:
         *,
         namespace: NamespaceTokens | dict[str, str] | str,
         embedding: Sequence[float] | None = None,
-        content_type: str = "text/plain",
+        content_type: str = "text/markdown",
     ) -> CachedPaper:
         """Fetch and cache a scholarly paper."""
 

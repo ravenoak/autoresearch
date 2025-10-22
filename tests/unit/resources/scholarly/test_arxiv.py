@@ -27,8 +27,9 @@ def test_arxiv_search_parses_metadata(httpx_mock) -> None:
           <summary>This is an abstract.</summary>
           <published>2024-01-01T00:00:00Z</published>
           <author><name>A. Researcher</name></author>
-          <link href="http://arxiv.org/abs/2401.01234v1" rel="alternate"/>
+          <link href="http://arxiv.org/abs/2401.01234v1" rel="alternate" type="text/html"/>
           <link href="http://arxiv.org/pdf/2401.01234v1" rel="related" type="application/pdf"/>
+          <category term="cs.LG"/>
           <arxiv:doi>10.1234/example</arxiv:doi>
         </entry>
         """
@@ -55,6 +56,8 @@ def test_arxiv_search_parses_metadata(httpx_mock) -> None:
     assert metadata.arxiv_id == "2401.01234v1"
     assert metadata.doi == "10.1234/example"
     assert metadata.authors == ("A. Researcher",)
+    assert metadata.primary_url == "http://arxiv.org/abs/2401.01234v1"
+    assert metadata.subjects == ("cs.lg",)
 
 
 def test_arxiv_fetch_returns_document(httpx_mock) -> None:
@@ -66,8 +69,9 @@ def test_arxiv_fetch_returns_document(httpx_mock) -> None:
           <summary>More details here.</summary>
           <published>2024-02-02T12:00:00Z</published>
           <author><name>B. Analyst</name></author>
-          <link href="http://arxiv.org/abs/2401.09999v2" rel="alternate"/>
+          <link href="http://arxiv.org/abs/2401.09999v2" rel="alternate" type="text/html"/>
           <link href="http://arxiv.org/pdf/2401.09999v2" rel="related" type="application/pdf"/>
+          <category term="stat.ML"/>
         </entry>
         """
     )
@@ -80,8 +84,23 @@ def test_arxiv_fetch_returns_document(httpx_mock) -> None:
             )
         ),
     )
+    httpx_mock.add_response(
+        url="http://arxiv.org/abs/2401.09999v2",
+        text="<html><body>Paper</body></html>",
+        headers={"Content-Type": "text/html"},
+    )
+    httpx_mock.add_response(
+        url="http://arxiv.org/pdf/2401.09999v2",
+        content=b"%PDF-1.4",
+        headers={"Content-Type": "application/pdf"},
+    )
     fetcher = ArxivFetcher()
     document = fetcher.fetch("2401.09999v2")
     assert document.metadata.title == "Another Paper"
     assert document.body == "More details here."
-    assert "http://arxiv.org/pdf/2401.09999v2" in document.references
+    assert document.metadata.subjects == ("stat.ml",)
+    content_types = {variant.content_type for variant in document.contents}
+    assert "application/pdf" in content_types
+    assert "text/html" in content_types
+    assert document.provider_version == fetcher.provider_version
+    assert document.retrieval_latency_ms is not None and document.retrieval_latency_ms >= 0
