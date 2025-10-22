@@ -67,20 +67,26 @@ federation workflow.
 
 - `autoresearch.resources.scholarly` introduces fetchers for arXiv and
   Hugging Face Papers. The fetchers normalise metadata into
-  `PaperMetadata`/`PaperDocument` structures with consistent identifiers,
-  author lists, and publication timestamps.
-- `ScholarlyCache` persists paper content to deterministic cache paths using
-  the combination of namespace and provider identifier. Sidecar metadata
-  records provenance (source URL, checksum, content type, retrieval time) and
+- `PaperMetadata`/`PaperDocument` structures with consistent identifiers,
+  author lists, publication timestamps, and subject vocabularies. PDF, HTML,
+  and Markdown assets are downloaded with retry-aware HTTP clients and stored
+  as `PaperContentVariant` records that preserve checksums and source URLs.
+- `ScholarlyCache` persists each content variant to deterministic cache paths
+  using the namespace and provider identifier. Sidecar metadata records
+  provenance (source URL, checksum, provider version, retrieval latency) and
   optional embeddings for future search operations.
 - DuckDB stores cached papers in a `scholarly_papers` table managed through
   `StorageManager.save_scholarly_paper`, enabling offline replay without
-  re-fetching content.
+  re-fetching content. The table now includes namespace-aware provenance,
+  content variant paths, and supplemental asset references for UI surfacing.
 - The CLI exposes `autoresearch workspace papers` commands for searching,
-  ingesting, listing, and attaching cached papers to manifests. Desktop users
-  gain equivalent menu actions under “Resources”.
+  ingesting, listing, and attaching cached papers to manifests. When a
+  workspace slug is provided the ingest command auto-attaches the cached paper
+  unless `--no-attach` is passed. Desktop users gain equivalent menu actions
+  under “Resources”.
 - Behaviour tests cover the offline replay scenario by seeding cached papers
-  and asserting provenance survives disconnect events.
+  and asserting provenance survives disconnect events. Additional assertions
+  confirm cached content variants are available when the network is disabled.
 
 ## Behavioural Scenarios
 

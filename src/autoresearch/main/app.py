@@ -664,6 +664,28 @@ def workspace_papers_list(
         print_info(format_scholarly_metadata(item.metadata), symbol=False)
         print_info(f"  Cache: {item.cache_path}", symbol=False)
         print_info(f"  Namespace: {item.metadata.identifier.namespace}", symbol=False)
+        if item.provenance.provider_version:
+            print_info(
+                f"  Provider version: {item.provenance.provider_version}",
+                symbol=False,
+            )
+        if item.provenance.latency_ms is not None:
+            print_info(
+                f"  Retrieval latency: {item.provenance.latency_ms:.1f} ms",
+                symbol=False,
+            )
+        for variant in item.contents:
+            print_info(
+                f"  {variant.content_type}: {variant.path}",
+                symbol=False,
+            )
+        if item.assets:
+            print_info("  Assets:", symbol=False)
+            for asset in item.assets:
+                print_info(
+                    f"    - {asset.kind}: {asset.url}",
+                    symbol=False,
+                )
 
 
 @workspace_papers_app.command("ingest")
@@ -682,7 +704,7 @@ def workspace_papers_ingest(
         help="Explicit namespace override for caching.",
     ),
     attach: bool = typer.Option(
-        False,
+        True,
         "--attach/--no-attach",
         help="Attach the cached paper to the workspace manifest after ingestion.",
     ),
@@ -704,6 +726,21 @@ def workspace_papers_ingest(
     print_info("Cached paper:")
     print_info(format_scholarly_metadata(cached.metadata), symbol=False)
     print_info(f"Stored at {cached.cache_path}", symbol=False)
+    for variant in cached.contents:
+        print_info(
+            f"  {variant.content_type}: {variant.path}",
+            symbol=False,
+        )
+    if cached.provenance.provider_version:
+        print_info(
+            f"  Provider version: {cached.provenance.provider_version}",
+            symbol=False,
+        )
+    if cached.provenance.latency_ms is not None:
+        print_info(
+            f"  Retrieval latency: {cached.provenance.latency_ms:.1f} ms",
+            symbol=False,
+        )
     if attach and workspace:
         _attach_cached_paper_to_workspace(workspace, cached)
 
@@ -736,7 +773,10 @@ def workspace_papers_attach(
             "title": metadata.get("title"),
             "cache_path": payload.get("cache_path"),
             "primary_url": metadata.get("primary_url"),
+            "namespace": payload.get("namespace"),
             "provenance": payload.get("provenance"),
+            "contents": payload.get("contents", []),
+            "assets": payload.get("assets", []),
         },
     }
     try:
@@ -772,7 +812,17 @@ def _attach_cached_paper_to_workspace(workspace: str, cached: Any) -> None:
             "title": cached.metadata.title,
             "cache_path": str(cached.cache_path),
             "primary_url": cached.metadata.primary_url,
+            "namespace": cached.metadata.identifier.namespace,
             "provenance": cached.provenance.to_payload(),
+            "contents": [item.to_payload() for item in cached.contents],
+            "assets": [
+                {
+                    "url": asset.url,
+                    "kind": asset.kind,
+                    "content_type": asset.content_type,
+                }
+                for asset in cached.assets
+            ],
         },
     }
     resources = [resource.to_payload() for resource in manifest.resources]

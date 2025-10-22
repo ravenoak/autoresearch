@@ -25,15 +25,16 @@ CLI and desktop UI.
    The CLI prints the top matches grouped by provider with the normalised
    identifier that can be used during ingestion.
 
-2. Ingest a paper and cache its metadata and body:
+2. Ingest a paper and cache each content variant:
 
    ```bash
    autoresearch workspace papers ingest arxiv 2401.01234v1 --workspace audit-notes
    ```
 
-   The command downloads the abstract, stores it under a deterministic path in
-   `scholarly_cache/`, and persists provenance (source URL, checksum, content
-   type, retrieval timestamp) to DuckDB.
+   The command downloads the abstract, HTML, and PDF assets, stores them under
+   deterministic paths in `scholarly_cache/`, and records provenance metadata
+   (source URL, checksum, provider version, and retrieval latency) in DuckDB.
+   Use `--no-attach` to skip manifest updates when scripting batch imports.
 
 3. Attach a cached paper to the active workspace manifest:
 
@@ -41,8 +42,9 @@ CLI and desktop UI.
    autoresearch workspace papers attach audit-notes arxiv 2401.01234v1
    ```
 
-   Each attached resource carries the cache path and provenance data so debates
-   can cite the content while offline.
+   Each attached resource now carries namespace-aware provenance, a list of
+   cached content variants, and supplemental asset links so debates cite the
+   correct version while offline.
 
 ## Desktop Workflow
 
@@ -58,4 +60,5 @@ CLI and desktop UI.
 Once a paper has been cached the metadata lives in the `scholarly_papers`
 DuckDB table. Behaviour tests verify that disconnecting from the network still
 allows the agent to surface cached content and cite the preserved provenance.
-Check the `provenance.retrieved_at` timestamp to confirm the last sync time.
+Check the `provenance.retrieved_at` timestamp and `contents` payload to confirm
+the last sync time and available formats.

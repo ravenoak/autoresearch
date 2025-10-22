@@ -6,6 +6,8 @@ import pytest
 
 from autoresearch.resources.scholarly.cache import ScholarlyCache
 from autoresearch.resources.scholarly.models import (
+    PaperAsset,
+    PaperContentVariant,
     PaperDocument,
     PaperIdentifier,
     PaperMetadata,
@@ -33,7 +35,31 @@ def _make_document() -> PaperDocument:
         abstract="Body text",
         authors=("Analyst",),
     )
-    return PaperDocument(metadata=metadata, body="Body text")
+    text_variant = PaperContentVariant.from_text(
+        "Body text",
+        content_type="text/markdown",
+        filename="1234.5678.md",
+    )
+    pdf_variant = PaperContentVariant(
+        content_type="application/pdf",
+        data=b"%PDF-1.7",
+        filename="1234.5678.pdf",
+        source_url="https://arxiv.org/pdf/1234.5678.pdf",
+    )
+    return PaperDocument(
+        metadata=metadata,
+        body="Body text",
+        contents=(text_variant, pdf_variant),
+        assets=(
+            PaperAsset(
+                url="https://arxiv.org/src/1234.5678v1/extra.zip",
+                kind="supplement",
+                content_type="application/zip",
+            ),
+        ),
+        provider_version="test-suite",
+        retrieval_latency_ms=5.5,
+    )
 
 
 def test_cache_persists_metadata(tmp_path: Path, storage_state) -> None:
@@ -44,6 +70,11 @@ def test_cache_persists_metadata(tmp_path: Path, storage_state) -> None:
     payloads = StorageManager.list_scholarly_papers(namespace="workspace-alpha")
     assert len(payloads) == 1
     assert payloads[0]["paper_id"] == document.metadata.primary_key()
+    assert cached.provenance.provider_version == "test-suite"
+    assert cached.provenance.latency_ms == 5.5
+    content_types = {item.content_type for item in cached.contents}
+    assert content_types == {"text/markdown", "application/pdf"}
+    assert cached.assets
 
     cached_again = cache.cache_document(document, namespace="workspace-alpha")
     assert cached_again.cache_path == cached.cache_path

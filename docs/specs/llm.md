@@ -77,6 +77,13 @@ within bounds.
 
 - Preserve documented state across operations.
 
+## Scholarly pipeline integration
+
+- Scholarly ingestion now normalises embeddings on `PaperDocument` before they
+  reach adapters, guaranteeing float tuples when summarising cached papers.
+- Workspace-aware provenance is surfaced alongside cached variants so prompt
+  builders can cite offline resources without recomputing embeddings.
+
 ## Proof Sketch
 
 Core routines enforce invariants by validating inputs and state.
