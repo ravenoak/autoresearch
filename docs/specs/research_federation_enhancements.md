@@ -21,11 +21,36 @@ federation workflow.
 - `WorkspaceOrchestrator` wraps the existing orchestrator.
 - Manifest context is injected onto the configuration model before the
   underlying orchestration run and removed afterwards.
+- Each invocation derives workspace hints summarising manifest resources,
+  repository filters, and preferred storage namespaces. The hints travel
+  through the orchestrator, providing deterministic cache isolation and
+  downstream retrieval constraints.
 - Post-execution processing gathers citations from the response payload,
   ensures contrarian and fact-checker steps cite every required resource, and
   records metrics about coverage.
 - Citation gaps raise a `CitationError`, making failed coverage visible to the
   CLI and desktop UI.
+
+## Search and Storage Constraints
+
+- `Search.external_lookup` accepts workspace hints and resource filters,
+  annotating cache entries with workspace-specific tokens to prevent
+  cross-manifest bleed-through.
+- `_local_git_backend` and `_search_manifest_repository` honour manifest
+  filters, producing results tagged with `workspace_resource_id` and skipping
+  files outside declared globs or path prefixes.
+- `storage_hybrid_lookup` restricts vector, graph, and ontology queries to the
+  manifest namespaces, falling back to the default namespace only when the
+  manifest does not specify an override.
+
+## Dialectical Evidence Hooks
+
+- Contrarian and fact-checker agents query workspace resources directly,
+  storing `workspace_resource_id` and namespace metadata alongside their
+  sources before citation checks execute.
+- Agent metadata now tracks workspace evidence per resource, enabling
+  diagnostics to confirm that resource-scoped evidence exists before coverage
+  enforcement.
 
 ## CLI and Desktop Updates
 

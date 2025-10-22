@@ -279,6 +279,13 @@ def _execute_agent(
             result = _execute_agent_with_token_counting(agent, agent_name, state, config, metrics)
             duration = time.time() - start_time
             _handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop)
+            if isinstance(result, Mapping):
+                metadata = result.get("metadata")
+                if isinstance(metadata, Mapping):
+                    if "agent" not in metadata:
+                        result["metadata"] = {**metadata, "agent": agent_name}
+                else:
+                    result["metadata"] = {"agent": agent_name}
             state.update(result)
             _log_sources(agent_name, result)
             _persist_claims(agent_name, result, storage_manager)

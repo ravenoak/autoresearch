@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import ast
 import csv
+import fnmatch
 import functools
 import hashlib
 import importlib
@@ -55,6 +56,7 @@ from typing import (
     Mapping,
     Generic,
     Iterator,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -86,6 +88,8 @@ from ..config.models import RepositoryManifestEntry
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
+from ..storage_utils import DEFAULT_NAMESPACE_LABEL
+from ..orchestration.workspace_context import get_active_workspace_hints
 from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from . import storage as search_storage
 from .context import SearchContext
@@ -662,6 +666,8 @@ class ExternalLookupResult:
     cache_base: SearchCache
     cache_view: SearchCache | _SearchCacheView | None
     storage: type[StorageManager]
+    workspace: Mapping[str, Any] | None = None
+    workspace_filters: Mapping[str, Any] | None = None
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
         return iter(self.results)
@@ -921,6 +927,71 @@ class Search:
             if hint not in seen:
                 seen.append(hint)
         return tuple(sorted(seen))
+
+    @staticmethod
+    def _workspace_cache_tokens(
+        hints: Mapping[str, Any] | None,
+        filters: Mapping[str, Any] | None,
+    ) -> Tuple[str, ...]:
+        """Return cache hint tokens derived from workspace context."""
+
+        tokens: list[str] = []
+        if hints:
+            workspace_id = hints.get("workspace_id")
+            manifest_id = hints.get("manifest_id")
+            version = hints.get("manifest_version")
+            if workspace_id:
+                tokens.append(f"ws:{workspace_id}")
+            if manifest_id:
+                tokens.append(f"manifest:{manifest_id}")
+            if version is not None:
+                tokens.append(f"ver:{version}")
+        if filters:
+            resource_ids = filters.get("resource_ids")
+            if resource_ids:
+                tokens.extend(f"res:{rid}" for rid in sorted(str(rid) for rid in resource_ids))
+        return tuple(tokens)
+
+    @staticmethod
+    def _resolve_workspace_namespaces(
+        hints: Mapping[str, Any] | None,
+        filters: Mapping[str, Any] | None,
+    ) -> Tuple[str, ...]:
+        """Return namespaces permitted by the active workspace filters."""
+
+        if not hints:
+            return ()
+        namespaces: set[str] = set()
+        storage_section = hints.get("storage", {})
+        if isinstance(storage_section, Mapping):
+            declared = storage_section.get("namespaces")
+            if isinstance(declared, Sequence) and not isinstance(declared, (str, bytes)):
+                namespaces.update(str(ns) for ns in declared if str(ns))
+        resource_filter_ids: set[str] = set()
+        if filters:
+            ids = filters.get("resource_ids")
+            if ids:
+                resource_filter_ids = {str(identifier) for identifier in ids}
+        search_section = hints.get("search", {})
+        repo_specs = search_section.get("repositories") if isinstance(search_section, Mapping) else None
+        if isinstance(repo_specs, Mapping):
+            for payload in repo_specs.values():
+                if not isinstance(payload, Mapping):
+                    continue
+                repo_ns = payload.get("namespace")
+                if isinstance(repo_ns, str) and repo_ns:
+                    namespaces.add(repo_ns)
+                specs = payload.get("resource_specs")
+                if isinstance(specs, Sequence):
+                    for spec in specs:
+                        if not isinstance(spec, Mapping):
+                            continue
+                        resource_id = str(spec.get("resource_id") or "")
+                        if resource_filter_ids and resource_id not in resource_filter_ids:
+                            continue
+                        for ns in _normalise_spec_sequence(spec.get("namespaces")):
+                            namespaces.add(ns)
+        return tuple(sorted(ns for ns in namespaces if ns))
 
     @staticmethod
     def _embedding_storage_hints(
@@ -2055,11 +2126,24 @@ class Search:
         query_embedding: Optional[np.ndarray],
         backend_results: Dict[str, List[Dict[str, Any]]],
         max_results: int,
+        *,
+        workspace_hints: Mapping[str, Any] | None = None,
+        workspace_filters: Mapping[str, Any] | None = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Combine storage-backed lexical, semantic, and ontology lookups."""
 
         aggregated: Dict[str, Dict[str, Any]] = {}
         source_map: Dict[str, set[str]] = {}
+
+        allowed_namespaces = set(
+            self._resolve_workspace_namespaces(workspace_hints, workspace_filters)
+        )
+
+        def _namespace_allowed(namespace: str | None) -> bool:
+            if not allowed_namespaces:
+                return True
+            candidate = namespace or DEFAULT_NAMESPACE_LABEL
+            return candidate in allowed_namespaces
 
         def _claim_id(value: Any) -> str:
             text = str(value or "")
@@ -2132,27 +2216,44 @@ class Search:
 
         vector_docs = list(backend_results.get("duckdb", []))
         if not vector_docs and query_embedding is not None:
-            try:
-                vector_hits = StorageManager.vector_search(query_embedding.tolist(), k=max_results)
-            except (StorageError, NotFoundError, Exception) as exc:
-                log.debug("Storage vector search unavailable: %s", exc)
-                vector_hits = []
-            for hit in vector_hits:
-                claim_id = _claim_id(hit.get("node_id") or hit.get("id"))
-                if not claim_id:
-                    continue
-                doc = {
-                    "url": claim_id,
-                    "title": hit.get("title") or hit.get("name"),
-                    "snippet": hit.get("content") or hit.get("snippet"),
-                    "embedding": hit.get("embedding"),
-                    "similarity": hit.get("similarity"),
-                }
-                _ensure_snippet(doc, claim_id)
-                vector_docs.append(doc)
+            namespace_targets: Tuple[str | None, ...]
+            if allowed_namespaces:
+                namespace_targets = tuple(
+                    None if ns == DEFAULT_NAMESPACE_LABEL else ns for ns in allowed_namespaces
+                )
+            else:
+                namespace_targets = (None,)
+            for namespace in namespace_targets:
+                try:
+                    vector_hits = StorageManager.vector_search(
+                        query_embedding.tolist(),
+                        k=max_results,
+                        namespace=namespace,
+                    )
+                except (StorageError, NotFoundError, Exception) as exc:
+                    log.debug("Storage vector search unavailable: %s", exc)
+                    vector_hits = []
+                for hit in vector_hits:
+                    claim_id = _claim_id(hit.get("node_id") or hit.get("id"))
+                    if not claim_id:
+                        continue
+                    namespace_label = str(hit.get("namespace") or namespace or DEFAULT_NAMESPACE_LABEL)
+                    if not _namespace_allowed(namespace_label):
+                        continue
+                    doc = {
+                        "url": claim_id,
+                        "title": hit.get("title") or hit.get("name"),
+                        "snippet": hit.get("content") or hit.get("snippet"),
+                        "embedding": hit.get("embedding"),
+                        "similarity": hit.get("similarity"),
+                        "workspace_namespace": namespace_label,
+                    }
+                    _ensure_snippet(doc, claim_id)
+                    vector_docs.append(doc)
         for doc in vector_docs:
             _ensure_snippet(doc, _claim_id(doc.get("url") or doc.get("node_id")))
-            _ingest(doc, "vector")
+            if _namespace_allowed(doc.get("workspace_namespace") or doc.get("namespace")):
+                _ingest(doc, "vector")
 
         try:
             graph = StorageManager.get_graph()
@@ -2168,10 +2269,14 @@ class Search:
                 content = data.get("content") or data.get("text") or data.get("snippet")
                 if not content:
                     continue
+                node_namespace = str(data.get("namespace") or DEFAULT_NAMESPACE_LABEL)
+                if not _namespace_allowed(node_namespace):
+                    continue
                 doc = {
                     "url": _claim_id(node_id),
                     "title": data.get("title") or data.get("name"),
                     "snippet": content,
+                    "workspace_namespace": node_namespace,
                 }
                 _ingest(doc, "bm25")
 
@@ -2193,6 +2298,11 @@ class Search:
                     except Exception:  # pragma: no cover - rdflib row interface
                         continue
                     claim_id = _claim_id(subj)
+                    namespace_label = DEFAULT_NAMESPACE_LABEL
+                    if "::" in claim_id:
+                        namespace_label = claim_id.split("::", 1)[0]
+                    if not _namespace_allowed(namespace_label):
+                        continue
                     value = str(obj)
                     matches.append((claim_id, str(pred), value))
                 matches.sort()
@@ -2201,6 +2311,9 @@ class Search:
                         "url": claim_id,
                         "snippet": value,
                         "ontology_matches": [{"predicate": predicate, "value": value}],
+                        "workspace_namespace": claim_id.split("::", 1)[0]
+                        if "::" in claim_id
+                        else DEFAULT_NAMESPACE_LABEL,
                     }
                     _ingest(doc, "ontology")
 
@@ -2429,6 +2542,8 @@ class Search:
         max_results: int = 5,
         *,
         return_handles: bool = False,
+        workspace_hints: Mapping[str, Any] | None = None,
+        workspace_filters: Mapping[str, Any] | None = None,
     ) -> List[Dict[str, Any]] | ExternalLookupResult:
         """Perform an external search using configured backends."""
 
@@ -2436,6 +2551,11 @@ class Search:
         self._active_namespace = namespace_label
         self._cache_events = []
         cfg = _get_runtime_config()
+        active_hints = workspace_hints if workspace_hints is not None else get_active_workspace_hints()
+        filter_payload: dict[str, Any] = {}
+        if workspace_filters is not None and isinstance(workspace_filters, Mapping):
+            filter_payload = {str(key): value for key, value in workspace_filters.items()}
+        cache_tokens = self._workspace_cache_tokens(active_hints, filter_payload)
 
         provided_executed_query: str | None = None
         provided_canonical_query: str | None = None
@@ -2742,7 +2862,16 @@ class Search:
                     )
 
                 try:
-                    backend_results = backend(current_query, max_results)
+                    call_kwargs: dict[str, Any] = {}
+                    if active_hints is not None or filter_payload:
+                        call_kwargs = {
+                            "workspace_hints": active_hints,
+                            "workspace_filters": dict(filter_payload),
+                        }
+                    try:
+                        backend_results = backend(current_query, max_results, **call_kwargs)
+                    except TypeError:
+                        backend_results = backend(current_query, max_results)
                 except requests.exceptions.Timeout as exc:
                     log.warning(f"{name} search timed out: {exc}")
                     from ..errors import TimeoutError
@@ -2854,7 +2983,12 @@ class Search:
                             pending_embedding_backends.discard(name)
 
             storage_results = self.storage_hybrid_lookup(
-                current_query, np_query_embedding, results_by_backend, max_results
+                current_query,
+                np_query_embedding,
+                results_by_backend,
+                max_results,
+                workspace_hints=active_hints,
+                workspace_filters=filter_payload,
             )
             for name, docs in list(storage_results.items()):
                 if not docs:
@@ -3174,6 +3308,8 @@ class Search:
                     cache_base=self._cache_base,
                     cache_view=self.cache,
                     storage=StorageManager,
+                    workspace=active_hints,
+                    workspace_filters=dict(filter_payload),
                 )
                 self._last_cache_trace = CacheTrace(
                     namespace=self._active_namespace or (self._cache_namespace or "__default__"),
@@ -3269,6 +3405,8 @@ class Search:
                 cache_base=self._cache_base,
                 cache_view=self.cache,
                 storage=StorageManager,
+                workspace=active_hints,
+                workspace_filters=dict(filter_payload),
             )
 
             context.record_scout_observation(
@@ -3529,16 +3667,127 @@ def _compose_commit_identifier(slug: str, commit_hash: str | None) -> str:
     return f"{slug}@{commit_hash or 'working-tree'}"
 
 
+def _normalise_spec_sequence(values: Any) -> tuple[str, ...]:
+    """Return unique, non-empty tokens extracted from ``values``."""
+
+    if values is None:
+        return ()
+    if isinstance(values, (str, Path)):
+        token = str(values).strip()
+        return (token,) if token else ()
+    tokens: list[str] = []
+    if isinstance(values, Iterable):
+        for value in values:
+            token = str(value).strip()
+            if token and token not in tokens:
+                tokens.append(token)
+    return tuple(tokens)
+
+
+def _normalise_resource_specs(
+    specs: Sequence[Mapping[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    """Return repository resource specs with normalised fields."""
+
+    normalised: list[dict[str, Any]] = []
+    if not specs:
+        return normalised
+    for spec in specs:
+        if not isinstance(spec, Mapping):
+            continue
+        resource_id = str(spec.get("resource_id") or "").strip()
+        if not resource_id:
+            continue
+        normalised.append(
+            {
+                "resource_id": resource_id,
+                "file_globs": _normalise_spec_sequence(spec.get("file_globs")),
+                "path_prefixes": _normalise_spec_sequence(spec.get("path_prefixes")),
+                "file_types": _normalise_spec_sequence(spec.get("file_types")),
+                "namespaces": _normalise_spec_sequence(spec.get("namespaces")),
+            }
+        )
+    return normalised
+
+
+def _select_resource_spec(
+    specs: Sequence[Mapping[str, Any]],
+    rel_path: str | None,
+) -> Mapping[str, Any] | None:
+    """Return the first spec matching ``rel_path`` according to glob rules."""
+
+    if not specs:
+        return None
+    if rel_path is None:
+        return specs[0] if len(specs) == 1 else None
+    candidate = rel_path.replace(os.sep, "/")
+    for spec in specs:
+        globs = spec.get("file_globs") or ()
+        prefixes = spec.get("path_prefixes") or ()
+        glob_match = True
+        prefix_match = True
+        if globs:
+            glob_match = any(fnmatch.fnmatch(candidate, pattern) for pattern in globs)
+        if prefixes:
+            prefix_match = any(candidate.startswith(prefix) for prefix in prefixes)
+        if glob_match and prefix_match:
+            return spec
+    return None
+
+
+def _resolve_workspace_repo_filters(
+    hints: Mapping[str, Any] | None,
+    filters: Mapping[str, Any] | None,
+) -> dict[str, Sequence[Mapping[str, Any]]]:
+    """Return repository filters derived from workspace hints and overrides."""
+
+    if not hints:
+        return {}
+    repo_section = hints.get("search", {})
+    if not isinstance(repo_section, Mapping):
+        return {}
+    repo_specs = repo_section.get("repositories", {})
+    if not isinstance(repo_specs, Mapping):
+        return {}
+    resource_filter_ids: set[str] = set()
+    slug_filter: set[str] = set()
+    if filters:
+        ids = filters.get("resource_ids")
+        if ids:
+            resource_filter_ids = {str(identifier) for identifier in ids}
+        slugs = filters.get("repository_slugs")
+        if slugs:
+            slug_filter = {str(slug).strip().lower() for slug in slugs}
+    resolved: dict[str, Sequence[Mapping[str, Any]]] = {}
+    for slug, payload in repo_specs.items():
+        if slug_filter and str(slug).lower() not in slug_filter:
+            continue
+        resource_specs = payload.get("resource_specs") if isinstance(payload, Mapping) else None
+        normalised = _normalise_resource_specs(cast(Sequence[Mapping[str, Any]] | None, resource_specs))
+        if resource_filter_ids:
+            normalised = [
+                spec for spec in normalised if spec.get("resource_id") in resource_filter_ids
+            ]
+        if not normalised:
+            continue
+        resolved[str(slug)] = tuple(normalised)
+    return resolved
+
+
 def _attach_repository_metadata(
     entry: RepositoryManifestEntry,
     payload: Dict[str, Any],
     provenance: Mapping[str, str] | None = None,
+    workspace_resource_id: str | None = None,
 ) -> Dict[str, Any]:
     """Attach provenance metadata for manifest-driven results."""
 
     enriched = dict(payload)
     enriched["repository"] = entry.slug
     base_provenance = dict(provenance or entry.provenance())
+    if workspace_resource_id:
+        enriched["workspace_resource_id"] = workspace_resource_id
+        base_provenance.setdefault("workspace_resource_id", workspace_resource_id)
     enriched["provenance"] = base_provenance
     return enriched
 
@@ -3550,6 +3799,7 @@ def _search_manifest_repository(
     max_results: int,
     file_types: Sequence[str],
     history_depth: int,
+    resource_specs: Sequence[Mapping[str, Any]] | None = None,
 ) -> List[Dict[str, Any]]:
     """Execute manifest-aware Git search for a single repository entry."""
 
@@ -3575,9 +3825,18 @@ def _search_manifest_repository(
     rg_path = shutil.which("rg")
     lower_query = query.lower()
     provenance = entry.provenance()
+    specs = _normalise_resource_specs(resource_specs)
+    spec_file_types: set[str] = set()
+    for spec in specs:
+        spec_file_types.update(spec.get("file_types", ()))
+    effective_file_types: Sequence[str]
+    if spec_file_types:
+        effective_file_types = tuple(spec_file_types)
+    else:
+        effective_file_types = file_types
 
-    if rg_path and file_types:
-        for ext in file_types:
+    if rg_path and effective_file_types:
+        for ext in effective_file_types:
             remaining = max_results - len(results)
             if remaining <= 0:
                 break
@@ -3615,6 +3874,13 @@ def _search_manifest_repository(
                     snippet = "\n".join(context_lines)
                 except Exception:
                     snippet = _snippet.strip()
+                try:
+                    rel_path = Path(file_path).resolve().relative_to(repo_root).as_posix()
+                except Exception:
+                    rel_path = os.path.relpath(file_path, repo_root).replace(os.sep, "/")
+                matched_spec = _select_resource_spec(specs, rel_path)
+                if specs and matched_spec is None:
+                    continue
                 payload: Dict[str, Any] = {
                     "title": Path(file_path).name,
                     "url": file_path,
@@ -3623,7 +3889,14 @@ def _search_manifest_repository(
                 }
                 if head_hash:
                     payload["commit_hash"] = head_hash
-                results.append(_attach_repository_metadata(entry, payload, provenance))
+                results.append(
+                    _attach_repository_metadata(
+                        entry,
+                        payload,
+                        provenance,
+                        matched_spec.get("resource_id") if matched_spec else None,
+                    )
+                )
     else:
         for file in repo_root.rglob("*"):
             if len(results) >= max_results:
@@ -3641,6 +3914,13 @@ def _search_manifest_repository(
                     start = max(0, idx - 2)
                     end = min(len(lines), idx + 3)
                     snippet = "\n".join(lines[start:end])
+                    try:
+                        rel_path = file.relative_to(repo_root).as_posix()
+                    except Exception:
+                        rel_path = str(file)
+                    matched_spec = _select_resource_spec(specs, rel_path)
+                    if specs and matched_spec is None:
+                        continue
                     payload = {
                         "title": file.name,
                         "url": str(file),
@@ -3649,7 +3929,14 @@ def _search_manifest_repository(
                     }
                     if head_hash:
                         payload["commit_hash"] = head_hash
-                    results.append(_attach_repository_metadata(entry, payload, provenance))
+                    results.append(
+                        _attach_repository_metadata(
+                            entry,
+                            payload,
+                            provenance,
+                            matched_spec.get("resource_id") if matched_spec else None,
+                        )
+                    )
                     break
 
     if len(results) >= max_results:
@@ -3663,6 +3950,13 @@ def _search_manifest_repository(
             source = py_file.read_text(encoding="utf-8")
             tree = ast.parse(source)
         except Exception:  # pragma: no cover - parse errors
+            continue
+        try:
+            rel_py = py_file.relative_to(repo_root).as_posix()
+        except Exception:
+            rel_py = str(py_file)
+        matched_spec = _select_resource_spec(specs, rel_py)
+        if specs and matched_spec is None:
             continue
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -3680,7 +3974,14 @@ def _search_manifest_repository(
                     }
                     if head_hash:
                         payload["commit_hash"] = head_hash
-                    results.append(_attach_repository_metadata(entry, payload, provenance))
+                    results.append(
+                        _attach_repository_metadata(
+                            entry,
+                            payload,
+                            provenance,
+                            matched_spec.get("resource_id") if matched_spec else None,
+                        )
+                    )
                     break
 
     if len(results) >= max_results:
@@ -3725,6 +4026,10 @@ def _search_manifest_repository(
                                 re.IGNORECASE,
                             )
                             snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
+                            rel_diff = (d.b_path or d.a_path or None)
+                            matched_spec = _select_resource_spec(specs, rel_diff)
+                            if specs and matched_spec is None:
+                                continue
                             payload = {
                                 "title": d.b_path or d.a_path or "diff",
                                 "url": composite_id,
@@ -3735,7 +4040,14 @@ def _search_manifest_repository(
                                 "diff": part[:2000],
                                 "commit_hash": commit_hash,
                             }
-                            results.append(_attach_repository_metadata(entry, payload, provenance))
+                            results.append(
+                                _attach_repository_metadata(
+                                    entry,
+                                    payload,
+                                    provenance,
+                                    matched_spec.get("resource_id") if matched_spec else None,
+                                )
+                            )
                             if len(results) >= max_results:
                                 break
                     if len(results) >= max_results:
@@ -3763,6 +4075,9 @@ def _search_manifest_repository(
                     if isinstance(msg, bytes):
                         msg = msg.decode("utf-8", "ignore")
                     snippet = msg.strip()[:200]
+                    matched_spec = specs[0] if len(specs) == 1 else None
+                    if specs and matched_spec is None:
+                        continue
                     payload = {
                         "title": "commit message",
                         "url": composite_id,
@@ -3773,7 +4088,14 @@ def _search_manifest_repository(
                         "diff": diff_text[:2000],
                         "commit_hash": commit_hash,
                     }
-                    results.append(_attach_repository_metadata(entry, payload, provenance))
+                    results.append(
+                        _attach_repository_metadata(
+                            entry,
+                            payload,
+                            provenance,
+                            matched_spec.get("resource_id") if matched_spec else None,
+                        )
+                    )
     except Exception as exc:  # pragma: no cover - storage unavailable
         log.debug(f"Skipping git_index persistence due to unavailable storage: {exc}")
 
@@ -3781,7 +4103,13 @@ def _search_manifest_repository(
 
 
 @Search.register_backend("local_git")
-def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+def _local_git_backend(
+    query: str,
+    max_results: int = 5,
+    *,
+    workspace_hints: Mapping[str, Any] | None = None,
+    workspace_filters: Mapping[str, Any] | None = None,
+) -> List[Dict[str, Any]]:
     """Search local Git repositories declared via configuration manifest."""
 
     cfg = _get_runtime_config()
@@ -3798,17 +4126,34 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
     results: List[Dict[str, Any]] = []
     file_types = cfg.search.local_file.file_types
 
+    repo_specs = _resolve_workspace_repo_filters(workspace_hints, workspace_filters)
+    resource_filter_ids: set[str] = set()
+    if workspace_filters is not None:
+        ids = workspace_filters.get("resource_ids")
+        if ids:
+            resource_filter_ids = {str(identifier) for identifier in ids}
+
     for entry in manifest:
         remaining = max_results - len(results)
         if remaining <= 0:
             break
+        entry_specs = repo_specs.get(entry.slug)
+        if repo_specs and entry_specs is None:
+            continue
         repo_results = _search_manifest_repository(
             entry,
             query,
             max_results=remaining,
             file_types=file_types,
             history_depth=local_cfg.history_depth,
+            resource_specs=entry_specs,
         )
+        if resource_filter_ids:
+            repo_results = [
+                result
+                for result in repo_results
+                if str(result.get("workspace_resource_id")) in resource_filter_ids
+            ]
         results.extend(repo_results)
 
     return results

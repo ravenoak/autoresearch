@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence, cast
+from pathlib import Path
+from typing import Any, Iterable, Mapping, MutableMapping, Sequence, cast
+
+from ..config.models import ConfigModel, RepositoryManifestEntry
 
 from ..agents.registry import AgentFactory
-from ..config.models import ConfigModel
 from ..errors import CitationError
 from ..logging_utils import get_logger
 from ..models import QueryResponse
-from ..storage import StorageManager, WorkspaceManifest
+from ..storage import StorageManager, WorkspaceManifest, WorkspaceResource
+from .workspace_context import use_workspace_hints
 from .orchestrator import Orchestrator
 from .types import CallbackMap
 
@@ -62,20 +65,26 @@ class WorkspaceOrchestrator:
         previous_workspace_payload = getattr(config, "workspace_manifest", None)
         previous_workspace_id = getattr(config, "workspace_id", None)
         previous_manifest_version = getattr(config, "workspace_manifest_version", None)
+        hints: Mapping[str, Any] | None = None
+        if manifest is not None:
+            hints = self._derive_manifest_hints(manifest, config)
+
         try:
             if manifest_payload is not None:
                 setattr(config, "workspace_manifest", manifest_payload)
                 setattr(config, "workspace_id", manifest.workspace_id)
                 setattr(config, "workspace_manifest_version", manifest.version)
+                setattr(config, "workspace_hints", hints)
 
-            response = self._delegate.run_query(
-                query,
-                config,
-                callbacks,
-                agent_factory=agent_factory if agent_factory is not None else AgentFactory,
-                storage_manager=storage_manager or self._storage_manager,
-                visualize=visualize,
-            )
+            with use_workspace_hints(hints):
+                response = self._delegate.run_query(
+                    query,
+                    config,
+                    callbacks,
+                    agent_factory=agent_factory if agent_factory is not None else AgentFactory,
+                    storage_manager=storage_manager or self._storage_manager,
+                    visualize=visualize,
+                )
         finally:
             if manifest_payload is not None:
                 if previous_workspace_payload is not None:
@@ -91,6 +100,8 @@ class WorkspaceOrchestrator:
                     setattr(config, "workspace_manifest_version", previous_manifest_version)
                 elif hasattr(config, "workspace_manifest_version"):
                     delattr(config, "workspace_manifest_version")
+                if hasattr(config, "workspace_hints"):
+                    delattr(config, "workspace_hints")
 
         if manifest is None:
             return response
@@ -110,9 +121,162 @@ class WorkspaceOrchestrator:
                 workspace_id=manifest.workspace_id,
                 manifest_id=manifest.manifest_id,
                 missing_resources=missing_resources,
-            )
+        )
 
         return response
+
+    def _derive_manifest_hints(
+        self,
+        manifest: WorkspaceManifest,
+        config: ConfigModel,
+    ) -> Mapping[str, Any]:
+        """Return workspace search/storage hints derived from *manifest*."""
+
+        repo_index = self._index_manifest_repositories(config)
+        storage_namespaces: set[str] = set()
+        resources: dict[str, dict[str, Any]] = {}
+        repo_filters: dict[str, dict[str, Any]] = {}
+
+        for resource in manifest.resources:
+            metadata = self._normalise_metadata(resource.metadata)
+            resource_payload: dict[str, Any] = {
+                "resource_id": resource.resource_id,
+                "kind": resource.kind,
+                "reference": resource.reference,
+                "citation_required": resource.citation_required,
+                "metadata": metadata,
+            }
+            resources[resource.resource_id] = resource_payload
+
+            namespace_hint = metadata.get("namespace")
+            if isinstance(namespace_hint, str) and namespace_hint.strip():
+                storage_namespaces.add(namespace_hint.strip())
+
+            if resource.kind.lower() in {"repo", "repository"}:
+                repo_slug = self._resolve_repository_slug(resource.reference, metadata)
+                repo_entry = repo_index.get(repo_slug)
+                repo_record = repo_filters.setdefault(
+                    repo_slug,
+                    {
+                        "slug": repo_slug,
+                        "resource_ids": [],
+                        "resource_specs": [],
+                    },
+                )
+                if repo_entry is not None:
+                    repo_record.setdefault("path", str(repo_entry.root_path()))
+                    if repo_entry.namespace:
+                        repo_record.setdefault("namespace", repo_entry.namespace)
+                        storage_namespaces.add(repo_entry.namespace)
+                spec = self._build_repository_spec(resource, metadata)
+                repo_record["resource_ids"].append(resource.resource_id)
+                repo_record["resource_specs"].append(spec)
+                namespaces = spec.get("namespaces")
+                if isinstance(namespaces, Sequence):
+                    storage_namespaces.update(namespace for namespace in namespaces if namespace)
+
+        search_hints = {
+            "repositories": {
+                slug: {
+                    **record,
+                    "resource_ids": tuple(record["resource_ids"]),
+                    "resource_specs": tuple(record["resource_specs"]),
+                }
+                for slug, record in repo_filters.items()
+            }
+        }
+
+        hints: dict[str, Any] = {
+            "workspace_id": manifest.workspace_id,
+            "manifest_id": manifest.manifest_id,
+            "manifest_version": manifest.version,
+            "resources": resources,
+            "search": search_hints,
+            "storage": {"namespaces": tuple(sorted(storage_namespaces))},
+        }
+        return hints
+
+    def _index_manifest_repositories(
+        self, config: ConfigModel
+    ) -> Mapping[str, RepositoryManifestEntry]:
+        """Return lookup of manifest entries by slug."""
+
+        try:
+            entries = config.search.local_git.iter_manifest()
+        except Exception:
+            return {}
+        indexed: dict[str, RepositoryManifestEntry] = {}
+        for entry in entries:
+            indexed[entry.slug] = entry
+        return indexed
+
+    def _normalise_metadata(
+        self, metadata: Mapping[str, Any] | None
+    ) -> MutableMapping[str, Any]:
+        """Return metadata mapping with string keys and immutable sequences."""
+
+        if metadata is None:
+            return {}
+        normalised: dict[str, Any] = {}
+        for key, value in metadata.items():
+            key_str = str(key)
+            if isinstance(value, (list, tuple, set, frozenset)):
+                normalised[key_str] = [str(item) for item in value]
+            else:
+                normalised[key_str] = value
+        return normalised
+
+    def _resolve_repository_slug(
+        self,
+        reference: str,
+        metadata: Mapping[str, Any],
+    ) -> str:
+        """Infer the manifest slug associated with *reference*."""
+
+        slug = str(metadata.get("slug") or "").strip().lower()
+        if slug:
+            return slug
+        raw = reference.split("@", 1)[0]
+        return raw.strip().lower()
+
+    def _build_repository_spec(
+        self,
+        resource: WorkspaceResource,
+        metadata: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        """Return repository-specific filters for *resource*."""
+
+        include_globs = self._normalise_sequence(metadata.get("file_globs") or metadata.get("include"))
+        path_prefixes = self._normalise_sequence(
+            metadata.get("path_prefixes") or metadata.get("paths")
+        )
+        file_types = self._normalise_sequence(metadata.get("file_types"))
+        namespaces = self._normalise_sequence(metadata.get("namespaces") or metadata.get("namespace"))
+        return {
+            "resource_id": resource.resource_id,
+            "reference": resource.reference,
+            "citation_required": resource.citation_required,
+            "file_globs": include_globs,
+            "path_prefixes": path_prefixes,
+            "file_types": file_types,
+            "namespaces": namespaces,
+        }
+
+    def _normalise_sequence(self, values: Any) -> tuple[str, ...]:
+        """Return a tuple of unique, non-empty string tokens from *values*."""
+
+        if values is None:
+            return ()
+        tokens: list[str] = []
+        if isinstance(values, (str, Path)):
+            candidate = str(values).strip()
+            return (candidate,) if candidate else ()
+        if isinstance(values, Iterable):
+            for value in values:
+                token = str(value).strip()
+                if token and token not in tokens:
+                    tokens.append(token)
+        return tuple(tokens)
 
     def _resolve_manifest(
         self,

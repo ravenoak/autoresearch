@@ -17,6 +17,7 @@ from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
+from ...orchestration.workspace_context import get_active_workspace_hints
 from ...storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
 from ...errors import LLMError
 
@@ -95,6 +96,7 @@ class FactChecker(Agent):
             by_backend = getattr(lookup_bundle, "by_backend", None)
 
         sources: list[Dict[str, Any]] = []
+        resource_sources: dict[str, list[Dict[str, Any]]] = {}
         seen_sources: set[tuple[str | None, str | None, str | None]] = set()
         retrieval_log: list[dict[str, Any]] = []
         claim_retry_stats: dict[str, dict[str, Any]] = {}
@@ -146,6 +148,12 @@ class FactChecker(Agent):
                 seen_sources.add(key)
                 sources.append(enriched)
                 registered.append(enriched)
+                resource_id = enriched.get("workspace_resource_id")
+                if resource_id:
+                    resource_key = str(resource_id)
+                    bucket = resource_sources.setdefault(resource_key, [])
+                    if enriched not in bucket:
+                        bucket.append(enriched)
             return registered
 
         if by_backend:
@@ -162,6 +170,66 @@ class FactChecker(Agent):
                 query_text=state.query,
                 variant_label="base",
             )
+
+        hints = get_active_workspace_hints()
+        targeted_resource_ids: set[str] = set()
+        if isinstance(hints, Mapping):
+            repo_section = hints.get("search", {}).get("repositories", {})
+            if isinstance(repo_section, Mapping):
+                for payload in repo_section.values():
+                    specs = payload.get("resource_specs") if isinstance(payload, Mapping) else None
+                    if isinstance(specs, Sequence):
+                        for spec in specs:
+                            if isinstance(spec, Mapping) and spec.get("resource_id"):
+                                targeted_resource_ids.add(str(spec.get("resource_id")))
+        used_resource_ids: set[str] = set()
+        workspace_meta = state.metadata.get("workspace")
+        if isinstance(workspace_meta, Mapping):
+            agent_map = workspace_meta.get("agent_resource_ids")
+            if isinstance(agent_map, Mapping):
+                for agent_label, resources in agent_map.items():
+                    if str(agent_label).lower() == str(self.name).lower():
+                        continue
+                    if isinstance(resources, Sequence):
+                        used_resource_ids.update(str(resource) for resource in resources)
+        available_resource_ids = [
+            resource_id for resource_id in sorted(targeted_resource_ids) if resource_id not in used_resource_ids
+        ]
+        for resource_id in available_resource_ids:
+            if resource_id in resource_sources:
+                continue
+            try:
+                workspace_results = Search.external_lookup(
+                    state.query,
+                    max_results=max(1, min(max_results, 3)),
+                    workspace_hints=hints if isinstance(hints, Mapping) else None,
+                    workspace_filters={"resource_ids": [resource_id]},
+                )
+            except Exception as exc:  # pragma: no cover - defensive logging
+                log.debug(
+                    "FactChecker workspace lookup failed",  # pragma: no cover - debug logging
+                    extra={"resource_id": resource_id, "error": str(exc)},
+                )
+                continue
+            documents = (
+                list(getattr(workspace_results, "results", workspace_results))
+                if workspace_results is not None
+                else []
+            )
+            if not documents:
+                continue
+            for document in documents[:1]:
+                enriched = dict(document)
+                enriched.setdefault("workspace_resource_id", resource_id)
+                enriched.setdefault("retrieval_query", state.query)
+                enriched.setdefault("agent", self.name)
+                ensured = ensure_source_id(enriched)
+                key = _source_key(ensured)
+                if key in seen_sources:
+                    continue
+                seen_sources.add(key)
+                sources.append(ensured)
+                resource_sources.setdefault(resource_id, []).append(ensured)
 
         query_variations: list[str] = []
         for claim in state.claims:
@@ -428,6 +496,16 @@ class FactChecker(Agent):
             "query_variations": query_variations,
             "audit_provenance_fact_checker": aggregate_provenance,
         }
+        if resource_sources:
+            resource_index = {
+                resource_id: [
+                    src.get("source_id") for src in entries if src.get("source_id")
+                ]
+                for resource_id, entries in resource_sources.items()
+            }
+            metadata_payload.setdefault("workspace_evidence", {}).update(
+                {"resources": resource_index}
+            )
         if planner_snapshot:
             metadata_payload["planner_provenance"] = dict(planner_snapshot)
 

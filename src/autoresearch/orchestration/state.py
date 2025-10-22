@@ -678,6 +678,19 @@ class QueryState(BaseModel):
     def update(self, result: Mapping[str, object]) -> None:
         """Update state with agent result."""
         with self._lock:
+            metadata_obj_raw = result.get("metadata")
+            metadata_obj: Mapping[str, Any] | None
+            agent_label: str | None = None
+            if metadata_obj_raw is not None:
+                if not isinstance(metadata_obj_raw, Mapping):
+                    raise TypeError("metadata must be a mapping")
+                metadata_obj = metadata_obj_raw
+                agent_token = metadata_obj.get("agent")
+                if agent_token:
+                    agent_label = str(agent_token)
+            else:
+                metadata_obj = None
+
             claims_obj = result.get("claims")
             if claims_obj is not None:
                 if not isinstance(claims_obj, Sequence) or isinstance(claims_obj, (str, bytes)):
@@ -698,11 +711,10 @@ class QueryState(BaseModel):
                     if not isinstance(source, Mapping):
                         raise TypeError("each source must be a mapping")
                     self.sources.append(dict(source))
+                    if agent_label:
+                        self._register_workspace_source(agent_label, source)
 
-            metadata_obj = result.get("metadata")
             if metadata_obj is not None:
-                if not isinstance(metadata_obj, Mapping):
-                    raise TypeError("metadata must be a mapping")
                 for key, value in metadata_obj.items():
                     self.metadata[key] = value
             # Update results with agent-specific outputs
@@ -741,6 +753,33 @@ class QueryState(BaseModel):
         """Store a message exchanged between agents."""
         with self._lock:
             self.messages.append(message)
+
+    def _register_workspace_source(
+        self,
+        agent_label: str,
+        source: Mapping[str, Any],
+    ) -> None:
+        """Record workspace-scoped evidence prior to citation checks."""
+
+        resource_token = source.get("workspace_resource_id") or source.get("resource_id")
+        if not resource_token:
+            return
+        resource_id = str(resource_token).strip()
+        if not resource_id:
+            return
+        workspace_meta = cast(dict[str, Any], self.metadata.setdefault("workspace", {}))
+        agent_map = cast(dict[str, list[str]], workspace_meta.setdefault("agent_resource_ids", {}))
+        tracked = agent_map.setdefault(agent_label, [])
+        if resource_id not in tracked:
+            tracked.append(resource_id)
+        evidence_bucket = cast(dict[str, list[dict[str, Any]]], workspace_meta.setdefault("resource_evidence", {}))
+        entry = {
+            "agent": agent_label,
+            "source_id": str(source.get("source_id") or source.get("url") or ""),
+        }
+        evidence = evidence_bucket.setdefault(resource_id, [])
+        if entry not in evidence:
+            evidence.append(entry)
 
     def add_feedback_event(self, event: "FeedbackEvent") -> None:
         """Store a feedback event exchanged between agents."""
