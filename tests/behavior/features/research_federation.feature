@@ -28,6 +28,13 @@ Feature: Research federation workspace
     And counterclaims reference a different resource than the challenged claim
     And the debate transcript stores the workspace version identifier
 
+  @pending
+  Scenario: Contrarian and fact-checker cite each workspace resource
+    Given the workspace "alignment-audit" exists
+    When I inspect the latest workspace debate
+    Then the contrarian response cites each workspace resource
+    And the fact-checker response cites each workspace resource
+
   Scenario: Cached scholarly papers support offline follow-up questions
     Given I fetch the paper "Self-Query Retrieval" from Hugging Face Papers
     And the fetch is cached locally with checksum metadata

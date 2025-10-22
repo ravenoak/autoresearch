@@ -304,6 +304,13 @@ class DuckDBStorageBackend:
             )
 
             self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS workspace_manifests("  # noqa: ISC003
+                "workspace_id VARCHAR, manifest_id VARCHAR, version INTEGER, "
+                "name VARCHAR, parent_manifest_id VARCHAR, created_at TIMESTAMP, "
+                "resources VARCHAR, annotations VARCHAR)"
+            )
+
+            self._conn.execute(
                 "CREATE TABLE IF NOT EXISTS kg_entities("
                 "id VARCHAR, label VARCHAR, type VARCHAR, source VARCHAR, "
                 "attributes VARCHAR, ts TIMESTAMP)"
@@ -410,7 +417,7 @@ class DuckDBStorageBackend:
 
         try:
             current_version = self.get_schema_version()
-            latest_version = 4  # Update this when adding new migrations
+            latest_version = 5  # Update this when adding new migrations
 
             log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
 
@@ -429,6 +436,10 @@ class DuckDBStorageBackend:
                 if current_version < 4:
                     self._migrate_to_v4()
                     current_version = 4
+
+                if current_version < 5:
+                    self._migrate_to_v5()
+                    current_version = 5
 
                 # Update schema version to latest
                 self.update_schema_version(latest_version)
@@ -484,6 +495,23 @@ class DuckDBStorageBackend:
         except DuckDBError as exc:
             cause = exc if isinstance(exc, Exception) else Exception(str(exc))
             raise StorageError("Failed to migrate provenance column", cause=cause)
+
+    def _migrate_to_v5(self) -> None:
+        """Ensure workspace manifest table exists for versioned resources."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        try:
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS workspace_manifests("  # noqa: ISC003
+                "workspace_id VARCHAR, manifest_id VARCHAR, version INTEGER, "
+                "name VARCHAR, parent_manifest_id VARCHAR, created_at TIMESTAMP, "
+                "resources VARCHAR, annotations VARCHAR)"
+            )
+        except DuckDBError as exc:
+            cause = exc if isinstance(exc, Exception) else Exception(str(exc))
+            raise StorageError("Failed to migrate workspace manifests table", cause=cause)
 
     def create_hnsw_index(self) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index.
@@ -988,6 +1016,190 @@ class DuckDBStorageBackend:
             )
 
         return audits
+
+    def persist_workspace_manifest(self, manifest: Mapping[str, Any]) -> None:
+        """Persist a workspace manifest version."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        payload = to_json_dict(manifest)
+        workspace_id = str(payload.get("workspace_id") or "").strip()
+        manifest_id = str(payload.get("manifest_id") or "").strip()
+        name_value = str(payload.get("name") or "").strip()
+        version_value = payload.get("version")
+        if not workspace_id or not manifest_id or not name_value or version_value is None:
+            raise StorageError("workspace manifest payload missing identifiers")
+
+        try:
+            version_serialised = int(version_value)
+        except (TypeError, ValueError) as exc:
+            raise StorageError("workspace manifest version must be integer", cause=exc)
+
+        parent_id = payload.get("parent_manifest_id")
+        parent_value = str(parent_id).strip() if parent_id else None
+        created_raw = payload.get("created_at", time.time())
+        created_at = (
+            created_raw
+            if isinstance(created_raw, datetime)
+            else datetime.fromtimestamp(float(created_raw))
+        )
+        resources_json = json.dumps(payload.get("resources", []), ensure_ascii=False)
+        annotations_json = json.dumps(payload.get("annotations", {}), ensure_ascii=False)
+
+        with self.connection() as conn, self._lock:
+            try:
+                conn.execute(
+                    "DELETE FROM workspace_manifests WHERE workspace_id=? AND version=?",
+                    [workspace_id, version_serialised],
+                )
+                conn.execute(
+                    (
+                        "INSERT INTO workspace_manifests "
+                        "(workspace_id, manifest_id, version, name, parent_manifest_id, created_at, resources, annotations) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    ),
+                    [
+                        workspace_id,
+                        manifest_id,
+                        version_serialised,
+                        name_value,
+                        parent_value,
+                        created_at,
+                        resources_json,
+                        annotations_json,
+                    ],
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to persist workspace manifest", cause=exc)
+
+    def list_workspace_manifests(self, workspace_id: str | None = None) -> list[JSONDict]:
+        """Return manifests ordered by version descending."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        query = (
+            "SELECT workspace_id, manifest_id, version, name, parent_manifest_id, created_at, resources, annotations "
+            "FROM workspace_manifests"
+        )
+        params: list[Any] = []
+        if workspace_id:
+            query += " WHERE workspace_id=?"
+            params.append(workspace_id)
+        query += " ORDER BY workspace_id, version DESC"
+
+        with self.connection() as conn, self._lock:
+            try:
+                rows = conn.execute(query, params).fetchall()
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to list workspace manifests", cause=exc)
+
+        manifests: list[JSONDict] = []
+        for row in rows:
+            created_value = row[5]
+            created_ts = (
+                created_value.timestamp()
+                if isinstance(created_value, datetime)
+                else float(created_value)
+            )
+            try:
+                resources_payload = json.loads(row[6]) if row[6] else []
+            except json.JSONDecodeError:
+                resources_payload = []
+            try:
+                annotations_payload = json.loads(row[7]) if row[7] else {}
+            except json.JSONDecodeError:
+                annotations_payload = {}
+            manifests.append(
+                {
+                    "workspace_id": row[0],
+                    "manifest_id": row[1],
+                    "version": int(row[2]),
+                    "name": row[3],
+                    "parent_manifest_id": row[4],
+                    "created_at": created_ts,
+                    "resources": resources_payload,
+                    "annotations": annotations_payload,
+                }
+            )
+        return manifests
+
+    def get_workspace_manifest(
+        self,
+        workspace_id: str,
+        version: int | None = None,
+        manifest_id: str | None = None,
+    ) -> JSONDict | None:
+        """Return a single manifest matching the provided identifiers."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        query = (
+            "SELECT workspace_id, manifest_id, version, name, parent_manifest_id, created_at, resources, annotations "
+            "FROM workspace_manifests WHERE workspace_id=?"
+        )
+        params: list[Any] = [workspace_id]
+        if manifest_id:
+            query += " AND manifest_id=?"
+            params.append(manifest_id)
+        if version is not None:
+            query += " AND version=?"
+            params.append(version)
+        query += " ORDER BY version DESC LIMIT 1"
+
+        with self.connection() as conn, self._lock:
+            try:
+                row = conn.execute(query, params).fetchone()
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to load workspace manifest", cause=exc)
+
+        if row is None:
+            return None
+
+        created_value = row[5]
+        created_ts = (
+            created_value.timestamp()
+            if isinstance(created_value, datetime)
+            else float(created_value)
+        )
+        try:
+            resources_payload = json.loads(row[6]) if row[6] else []
+        except json.JSONDecodeError:
+            resources_payload = []
+        try:
+            annotations_payload = json.loads(row[7]) if row[7] else {}
+        except json.JSONDecodeError:
+            annotations_payload = {}
+        return {
+            "workspace_id": row[0],
+            "manifest_id": row[1],
+            "version": int(row[2]),
+            "name": row[3],
+            "parent_manifest_id": row[4],
+            "created_at": created_ts,
+            "resources": resources_payload,
+            "annotations": annotations_payload,
+        }
+
+    def next_workspace_manifest_version(self, workspace_id: str) -> int:
+        """Return the next manifest version number for ``workspace_id``."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        with self.connection() as conn, self._lock:
+            try:
+                row = conn.execute(
+                    "SELECT COALESCE(MAX(version), 0) FROM workspace_manifests WHERE workspace_id=?",
+                    [workspace_id],
+                ).fetchone()
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to determine manifest version", cause=exc)
+
+        max_version = int(row[0]) if row and row[0] is not None else 0
+        return max_version + 1
 
     def get_claim(self, claim_id: str) -> JSONDict:
         """Return a persisted claim by ID."""
