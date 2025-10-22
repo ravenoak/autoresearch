@@ -37,6 +37,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/setup_common.sh"
+source "$SCRIPT_DIR/codex_web_common.sh"
 
 echo "Starting Codex bootstrap at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
