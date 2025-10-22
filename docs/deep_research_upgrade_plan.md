@@ -176,26 +176,42 @@ coverage rerun showing the FastEmbed fallback failure after the registry fix.
    - **Prerequisite:** Defer until strict typing debt and evaluation coverage
      regressions clear so routing instrumentation layers onto a stable baseline.
 6. **Phase 6 – Hierarchical Retrieval Integration**
-   - Stand up a prototype tree builder that clusters corpus shards by intent
-     and summary depth so hierarchical traversals stay logarithmic in corpus
-     size, mirroring the LATTICE semantic tree approach.
+   - Stand up dual traversal paths: a bottom-up Gecko-style embedding cluster
+     builder that grows leaf shards from centroid merges, and a top-down LLM
+     partitioner that recursively drafts topical splits. Compare both flows on
+     cold-start queries so the system can choose the lower-latency option while
+     keeping logarithmic traversal guarantees.
+   - Carve the corpus into three summary tiers—flash (≤120 tokens), briefing
+     (≤260 tokens), and dossier (≤520 tokens)—and persist the tier metadata on
+     every shard so traversal policies can request the shortest viable
+     abstraction before expanding to deeper evidence.
+   - **Traversal parameters:** Lock an online beam width of 6, a maximum path
+     length ℓ = 4, and an EMA weight α = 0.5. The beam size and depth limit
+     come from BRIGHT sweep ablations that balanced recall against latency,
+     while the EMA weight follows the LATTICE residual-minimizing curve
+     documented in the ranking calibration memo.[^ranking-ema]
    - **Evaluation goals:** Calibrate traversal scoring against the BRIGHT
-     benchmark uplift (≈9 % Recall@100, ≈5 % nDCG@10 over zero-shot baselines)
-     before broader rollout so AUTO’s hierarchical routing matches the paper’s
-     performance envelope.
+     benchmark uplift (≈9 % Recall@100, ≈5 % nDCG@10 over zero-shot baselines),
+     and record domain-level deltas across Business, Research, Infrastructure,
+     Government, and Health so regressions surface before rollout.
    - **Telemetry requirements:** Emit `hierarchical_retrieval.traversal_depth`,
-     `hierarchical_retrieval.path_score`, calibration residuals, and latency
-     aggregates so dashboards capture depth, error bounds, and compute
-     profiles per query.
+     `hierarchical_retrieval.path_score`, summary tier selections, calibration
+     residuals, and latency aggregates so dashboards capture depth, error
+     bounds, and compute profiles per query.
+   - **Dynamic corpus tasks:** Implement a summary refresh queue that enforces
+     tier-specific rebuild SLAs, monitor feed-level freshness signals, and fire
+     GraphRAG fallbacks whenever new shards arrive without calibrated tiers or
+     when traversal residuals exceed the ablation envelope.
    - **Fallback strategy:** Detect out-of-tree corpus updates, trigger
      incremental rebuilds, and fall back to the Phase 3 GraphRAG search path
      whenever calibration confidence drops below the validated threshold.
    - Document operator workflows for enabling the hierarchical retriever,
      including rebuild cadence, calibration replays, dynamic ingestion, and
      dashboard expectations.
-   - **Acceptance criteria:** Ship the prototype tree builder, calibration
-     validation harness, telemetry stream, and GraphRAG fallback policy backed
-     by regression coverage and BRIGHT benchmark comparisons.
+   - **Acceptance criteria:** Ship the dual-path prototype, summary tiering,
+     calibration validation harness, telemetry stream, nDCG/Recall delta
+     capture, and GraphRAG fallback policy backed by regression coverage and
+     BRIGHT benchmark comparisons.
    - **Prerequisite:** Requires the prototype tree builder, calibration
      validation, and dynamic-corpus safeguards to reach feature complete status
      before release.
@@ -293,3 +309,8 @@ accuracy.
   `orchestration/coordinator.py` to ensure every scheduled node includes a
   `react_log` reference. Audit results quarterly and publish deltas in
   `TASK_PROGRESS.md`.
+
+[^ranking-ema]: See
+    [algorithms/ranking_formula.md#exponential-moving-average-path-relevance]
+    (algorithms/ranking_formula.md#exponential-moving-average-path-relevance)
+    for the residual analysis that sets α.
