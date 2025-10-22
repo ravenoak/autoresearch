@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, MutableMapping, Sequence
 
+from ...storage import StorageManager
+from ...storage_utils import NamespaceTokens
 from .cache import ScholarlyCache
 from .fetchers import ArxivFetcher, HuggingFacePapersFetcher, ScholarlyFetcher
 from .models import CachedPaper, PaperDocument, PaperMetadata
@@ -42,14 +44,22 @@ class ScholarlyService:
         *,
         providers: Iterable[str] | None = None,
         limit: int = 10,
+        namespace: NamespaceTokens | dict[str, str] | str | None = None,
     ) -> tuple[SearchResult, ...]:
         """Return results from each provider for ``query``."""
 
         provider_list = list(providers or ["arxiv", "huggingface"])
         results: list[SearchResult] = []
+        resolved_namespace: str | None = None
+        if namespace is not None:
+            resolved_namespace = StorageManager._resolve_namespace_label(namespace)
         for provider in provider_list:
             fetcher = self._get_fetcher(provider)
-            metadata = tuple(fetcher.search(query, limit=limit))
+            metadata = tuple(
+                fetcher.search(query, limit=limit, namespace=resolved_namespace)
+            )
+            if resolved_namespace is not None:
+                metadata = tuple(item.with_namespace(resolved_namespace) for item in metadata)
             results.append(SearchResult(provider=fetcher.provider, results=metadata))
         return tuple(results)
 
@@ -58,7 +68,7 @@ class ScholarlyService:
         provider: str,
         identifier: str,
         *,
-        namespace: str,
+        namespace: NamespaceTokens | dict[str, str] | str,
         embedding: Sequence[float] | None = None,
         content_type: str = "text/plain",
     ) -> CachedPaper:

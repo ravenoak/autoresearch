@@ -12,7 +12,11 @@ from pydantic.functional_validators import model_validator
 from pydantic_settings import SettingsConfigDict
 
 from ..orchestration.reasoning import ReasoningMode
-from ..storage_utils import DEFAULT_NAMESPACE_LABEL, validate_namespace_routes
+from ..storage_utils import (
+    DEFAULT_NAMESPACE_LABEL,
+    NamespaceTokens,
+    validate_namespace_routes,
+)
 from .validators import (
     normalize_ranking_weights,
     validate_eviction_policy,
@@ -481,9 +485,12 @@ class SearchConfig(BaseModel):
         default=True,
         description="Reuse the process-wide search cache when true",
     )
-    cache_namespace: Optional[str] = Field(
+    cache_namespace: NamespaceTokens | Dict[str, str] | str | None = Field(
         default=None,
-        description="Optional namespace isolating cached search results",
+        description=(
+            "Optional namespace isolating cached search results. Accepts a literal"
+            " label or scoped tokens (session/workspace/org/project)."
+        ),
     )
     parallel_enabled: bool = Field(
         default=True,

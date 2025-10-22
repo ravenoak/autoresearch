@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import importlib.resources as importlib_resources
 import json
@@ -12,10 +12,47 @@ import typer
 from ..cli_backup import backup_app
 from ..config.loader import ConfigLoader
 from ..config_utils import validate_config
-from ..errors import ConfigError
+from ..errors import ConfigError, StorageError
+from ..storage_utils import DEFAULT_NAMESPACE_LABEL, validate_namespace_routes
 from .app import _config_loader
 
 config_app = typer.Typer(help="Configuration management commands")
+
+
+def _parse_route_entries(entries: List[str]) -> dict[str, str]:
+    """Return normalized namespace routes from CLI inputs."""
+
+    routes: dict[str, str] = {}
+    if not entries:
+        return routes
+    valid_scopes = {"session", "workspace", "org", "project"}
+    allowed_targets = valid_scopes | {"self"}
+    for raw in entries:
+        text = str(raw or "").strip()
+        if not text:
+            continue
+        if "=" not in text:
+            raise typer.BadParameter(
+                "Route definitions must use scope=target format.", param_hint="--route"
+            )
+        scope, target = text.split("=", 1)
+        scope_key = scope.strip().lower()
+        target_key = target.strip().lower()
+        if scope_key not in valid_scopes:
+            raise typer.BadParameter(
+                f"Unknown namespace scope '{scope_key}'. Valid scopes: session, workspace, org, project.",
+                param_hint="--route",
+            )
+        if target_key not in allowed_targets:
+            raise typer.BadParameter(
+                f"Invalid route target '{target_key}'. Use session, workspace, org, project, or self.",
+                param_hint="--route",
+            )
+        routes[scope_key] = target_key
+    return routes
+
+
+storage_app = typer.Typer(help="Manage storage configuration options")
 
 
 @config_app.callback(invoke_without_command=True)
@@ -27,6 +64,124 @@ def config_callback(ctx: typer.Context) -> None:
         payload = config.model_dump(mode="python")
         typer.echo(json.dumps(payload, indent=2))
 
+
+@storage_app.command("namespaces")
+def storage_namespaces(
+    default: Optional[str] = typer.Option(
+        None,
+        "--default",
+        help="Set the default storage namespace label.",
+        show_default=False,
+    ),
+    route: List[str] = typer.Option(
+        [],
+        "--route",
+        "-r",
+        help="Routing rule in scope=target form. Repeat to update multiple scopes.",
+        show_default=False,
+    ),
+    reset: bool = typer.Option(
+        False,
+        "--reset",
+        help="Restore the default namespace routing policy.",
+    ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Prompt for namespace defaults and route targets.",
+    ),
+    show: bool = typer.Option(
+        False,
+        "--show",
+        help="Display the current namespace configuration without modifying it.",
+    ),
+) -> None:
+    """Inspect or update storage namespace routing."""
+
+    cfg = _config_loader.load_config()
+    namespaces_cfg = cfg.storage.namespaces
+
+    if show and not (default or route or reset or interactive):
+        typer.echo("Current storage namespace configuration:")
+        typer.echo(f"  default_namespace = {namespaces_cfg.default_namespace}")
+        for scope, target in namespaces_cfg.routes.items():
+            typer.echo(f"  route[{scope}] = {target}")
+        if namespaces_cfg.merge_policies:
+            typer.echo("  merge_policies:")
+            for name, policy in namespaces_cfg.merge_policies.items():
+                typer.echo(f"    {name}: {policy.model_dump(mode='python')}")
+        return
+
+    default_namespace = (default or namespaces_cfg.default_namespace or DEFAULT_NAMESPACE_LABEL).strip()
+    if not default_namespace:
+        default_namespace = DEFAULT_NAMESPACE_LABEL
+
+    routes = dict(namespaces_cfg.routes)
+    allowed_targets = {"session", "workspace", "org", "project", "self"}
+
+    if reset:
+        default_namespace = DEFAULT_NAMESPACE_LABEL
+        routes = {"session": "workspace", "workspace": "project", "org": "project"}
+
+    if route:
+        routes.update(_parse_route_entries(route))
+
+    if interactive or (not route and default is None and not reset and not show):
+        default_namespace = (
+            typer.prompt("Default namespace label", default=default_namespace)
+            .strip()
+            or DEFAULT_NAMESPACE_LABEL
+        )
+        fallback_targets = {"session": "workspace", "workspace": "project", "org": "project"}
+        for scope in ("session", "workspace", "org"):
+            current_target = routes.get(scope, fallback_targets[scope])
+            while True:
+                candidate = (
+                    typer.prompt(f"Route target for {scope}", default=current_target)
+                    .strip()
+                    .lower()
+                    or current_target
+                )
+                if candidate not in allowed_targets:
+                    typer.echo(
+                        "Invalid target. Choose from session, workspace, org, project, or self."
+                    )
+                    continue
+                routes[scope] = candidate
+                break
+
+    try:
+        validate_namespace_routes(routes)
+    except StorageError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--route") from exc
+
+    updated_namespaces = namespaces_cfg.model_copy(
+        update={
+            "default_namespace": default_namespace,
+            "routes": routes,
+        }
+    )
+    new_storage = cfg.storage.model_copy(update={"namespaces": updated_namespaces})
+    new_cfg = cfg.model_copy(update={"storage": new_storage})
+
+    path = next(
+        (p for p in _config_loader.search_paths if p.exists()),
+        _config_loader.search_paths[0],
+    )
+    try:
+        existing = tomllib.loads(path.read_text()) if path.exists() else {}
+    except Exception as exc:  # pragma: no cover - unexpected format
+        raise ConfigError("Error reading config", file=str(path), cause=exc) from exc
+
+    storage_section = existing.setdefault("storage", {})
+    storage_section["namespaces"] = updated_namespaces.model_dump(mode="python")
+
+    with open(path, "wb") as handle:
+        tomli_w.dump(existing, handle)
+
+    _config_loader._config = new_cfg
+    typer.echo(f"Updated storage namespaces in {path}")
 
 @config_app.command("init")
 def config_init(
@@ -227,4 +382,5 @@ def config_reasoning(
     typer.echo(f"Updated {path}")
 
 
+config_app.add_typer(storage_app, name="storage")
 config_app.add_typer(backup_app, name="backup")
