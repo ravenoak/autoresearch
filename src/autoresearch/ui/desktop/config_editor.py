@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
@@ -67,6 +67,57 @@ class ConfigEditor(QWidget):
             return json.dumps(data, indent=2, sort_keys=True)
         except TypeError:
             return json.dumps({}, indent=2)
+
+    def apply_repository_manifest(
+        self, manifest: Sequence[Mapping[str, Any]]
+    ) -> None:
+        """Replace the repository manifest section within the editor."""
+
+        manifest_payload = [dict(entry) for entry in manifest]
+        content = self._editor.toPlainText().strip()
+        try:
+            parsed = json.loads(content) if content else {}
+        except json.JSONDecodeError:
+            parsed = {}
+        if not isinstance(parsed, dict):
+            parsed = {}
+        search_cfg = parsed.setdefault("search", {})
+        if not isinstance(search_cfg, dict):
+            search_cfg = {}
+            parsed["search"] = search_cfg
+        local_git = search_cfg.setdefault("local_git", {})
+        if not isinstance(local_git, dict):
+            local_git = {}
+            search_cfg["local_git"] = local_git
+        local_git["manifest"] = manifest_payload
+        serialised = json.dumps(parsed, indent=2, sort_keys=True)
+        self._editor.setPlainText(serialised)
+
+    def extract_repository_manifest(self) -> list[dict[str, Any]]:
+        """Return the manifest currently encoded in the editor content."""
+
+        text = self._editor.toPlainText().strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return []
+        if not isinstance(parsed, dict):
+            return []
+        search_cfg = parsed.get("search", {})
+        if not isinstance(search_cfg, Mapping):
+            return []
+        local_git = search_cfg.get("local_git", {})
+        if not isinstance(local_git, Mapping):
+            return []
+        manifest = local_git.get("manifest", [])
+        results: list[dict[str, Any]] = []
+        if isinstance(manifest, list):
+            for entry in manifest:
+                if isinstance(entry, Mapping):
+                    results.append(dict(entry))
+        return results
 
     def _emit_configuration(self) -> None:
         text = self._editor.toPlainText().strip()

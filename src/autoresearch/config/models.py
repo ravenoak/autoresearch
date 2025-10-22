@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import re
 from enum import Enum
+from pathlib import Path
 from threading import RLock
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Protocol, Self, TypeVar
 
@@ -203,12 +205,132 @@ class LocalFileConfig(BaseModel):
     file_types: List[str] = Field(default_factory=lambda: ["txt"])
 
 
+_MANIFEST_NAMESPACE_PATTERN = re.compile(r"^[A-Za-z0-9_.:-]+$")
+_MANIFEST_SLUG_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
+
+
+class RepositoryManifestEntry(BaseModel):
+    """Describe a Git repository participating in manifest-driven search."""
+
+    path: str = Field(
+        ...,
+        description="Filesystem path to the repository root.",
+    )
+    slug: str = Field(
+        default="",
+        description="Unique identifier applied to provenance labels and cache keys.",
+    )
+    branches: List[str] = Field(
+        default_factory=lambda: ["main"],
+        description="Branches scanned when iterating commit history.",
+    )
+    namespace: str | None = Field(
+        default=None,
+        description="Optional cache namespace dedicated to this repository.",
+    )
+
+    @field_validator("path")
+    def _validate_path(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("manifest entries require a repository path")
+        if "\x00" in trimmed:
+            raise ValueError("manifest paths may not contain null characters")
+        return trimmed
+
+    @field_validator("branches")
+    def _validate_branches(cls, value: List[str]) -> List[str]:
+        cleaned: list[str] = []
+        for branch in value or []:
+            branch_name = branch.strip()
+            if branch_name and branch_name not in cleaned:
+                cleaned.append(branch_name)
+        if not cleaned:
+            cleaned.append("HEAD")
+        return cleaned
+
+    @field_validator("namespace")
+    def _validate_namespace(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            return None
+        if not _MANIFEST_NAMESPACE_PATTERN.fullmatch(trimmed):
+            raise ValueError(
+                "manifest namespace must contain alphanumerics, dots, colons, or hyphens",
+            )
+        return trimmed
+
+    @field_validator("slug")
+    def _normalize_slug(cls, value: str) -> str:
+        return value.strip()
+
+    @model_validator(mode="after")
+    def _finalize_slug(self) -> "RepositoryManifestEntry":
+        slug = self.slug.strip()
+        if not slug:
+            slug = self._derive_slug()
+        slug = slug.lower()
+        if not _MANIFEST_SLUG_PATTERN.fullmatch(slug):
+            raise ValueError(
+                "manifest slug must begin and end with an alphanumeric character and may "
+                "contain dots, underscores, or hyphens",
+            )
+        self.slug = slug
+        return self
+
+    def _derive_slug(self) -> str:
+        candidate = Path(self.path).name or "repo"
+        sanitized = re.sub(r"[^A-Za-z0-9_.-]", "-", candidate).strip("-_.")
+        return sanitized or "repo"
+
+    def provenance(self) -> Dict[str, str]:
+        """Return provenance metadata for the repository."""
+
+        payload: Dict[str, str] = {"repository": self.slug}
+        if self.namespace:
+            payload["namespace"] = self.namespace
+        return payload
+
+    def root_path(self) -> Path:
+        """Return the repository root as a :class:`~pathlib.Path`."""
+
+        return Path(self.path).expanduser()
+
+
+RepositoryManifest = List[RepositoryManifestEntry]
+
+
 class LocalGitConfig(BaseModel):
-    """Configuration for the local_git search backend."""
+    """Configuration for the ``local_git`` search backend."""
 
     repo_path: str = ""
     branches: List[str] = Field(default_factory=lambda: ["main"])
     history_depth: int = Field(default=50, ge=1)
+    manifest: RepositoryManifest = Field(
+        default_factory=list,
+        description="Ordered set of repositories included in manifest fan-out.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_manifest(self) -> "LocalGitConfig":
+        seen: set[str] = set()
+        for entry in self.manifest:
+            if entry.slug in seen:
+                raise ValueError(f"duplicate repository slug '{entry.slug}' in manifest")
+            seen.add(entry.slug)
+        return self
+
+    def iter_manifest(self) -> List[RepositoryManifestEntry]:
+        """Return effective manifest entries, including the legacy fallback."""
+
+        if self.manifest:
+            return list(self.manifest)
+        if not self.repo_path:
+            return []
+        fallback = RepositoryManifestEntry(path=self.repo_path, branches=self.branches)
+        return [fallback]
 
 
 class ModelRouteProfile(BaseModel):

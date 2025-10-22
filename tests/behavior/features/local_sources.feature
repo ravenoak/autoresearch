@@ -32,3 +32,10 @@ Feature: Search Local Sources
     Given a local Git repository with diffs containing "CONTEXT"
     When I search the repository for "CONTEXT"
     Then the diff results should include surrounding code context
+
+  # Spec: docs/specs/research_federation_enhancements.md#enhancement-a
+  Scenario: Searching across a repository manifest yields provenance labels
+    Given a repository manifest with labelled Git repositories
+    When I search the repository manifest for "shared-term"
+    Then I should see manifest results grouped by repository slug
+    And each manifest result includes provenance metadata

@@ -49,11 +49,14 @@ repositories per session.
 **Functional requirements:**
 
 1. Analysts can declare repositories through configuration, CLI, or UI forms
-   with fields for path/URL, branch, and namespace label.
+   with fields for path/URL, branch, namespace label, and a unique slug used
+   across provenance payloads.
 2. Search orchestration fans out queries across registered repositories while
    preserving repository-level provenance in results and knowledge graph nodes.
 3. Sync policies (e.g., `on_query`, `manual`, `scheduled`) govern background
    fetch behavior and surface status via metrics and UI badges.
+4. Repository manifests enforce validation for paths, branch lists, and
+   namespace tokens before repositories become active.
 
 **Non-functional requirements:**
 
@@ -82,9 +85,27 @@ flowchart TD
 **Test strategy:**
 
 - Extend behavior tests with scenarios that register two repositories and verify
-  per-repository hits and provenance labels.
-- Add unit tests for manifest parsing, sync state machines, and storage key
-  generation.
+  per-repository hits and provenance labels. `tests/behavior/features/
+  local_sources.feature` exercises manifest fan-out and provenance guards.
+- Add targeted tests for manifest parsing, slug normalization, and storage key
+  generation to ensure regression coverage outside the full behavior suite.
+
+### Manifest workflow and validation
+
+1. Configuration authors define a `local_git.manifest` array in
+   `autoresearch.toml` (or the desktop editor) with entries of the form:
+   `{"slug": "alpha", "path": "~/repos/alpha", "branches": ["main"],
+   "namespace": "workspace.alpha"}`. Validation rejects blank paths, duplicate
+   slugs, and namespaces containing whitespace.
+2. CLI utilities expose `render_repository_manifest` so users can inspect the
+   active manifest in either Rich or bare mode output, ensuring slugs and
+   namespaces render consistently across TTY contexts.
+3. The desktop config editor provides helper methods to inject or extract the
+   manifest while preserving surrounding configuration, enabling UI-driven
+   updates without manual JSON surgery.
+4. During search fan-out each manifest entry contributes provenance metadata
+   (`repository`, `namespace`) and a composite commit identifier
+   (`{slug}@{commit}`) that is persisted to storage for cache reuse.
 
 ## Enhancement B – Cross-examination workspaces
 

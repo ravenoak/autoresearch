@@ -52,6 +52,7 @@ from typing import (
     ClassVar,
     Concatenate,
     Dict,
+    Mapping,
     Generic,
     Iterator,
     List,
@@ -81,6 +82,7 @@ from ..cache import cache_results as _cache_results
 from ..cache import get_cache
 from ..cache import get_cached_results as _get_cached_results
 from ..config.loader import get_config
+from ..config.models import RepositoryManifestEntry
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
@@ -3521,45 +3523,70 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
     return results
 
 
-@Search.register_backend("local_git")
-def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-    """Search a local Git repository's files and commit messages."""
+def _compose_commit_identifier(slug: str, commit_hash: str | None) -> str:
+    """Return a composite identifier combining repository slug and commit hash."""
 
-    cfg = _get_runtime_config()
-    repo_path = cfg.search.local_git.repo_path
-    branches = cfg.search.local_git.branches
-    depth = cfg.search.local_git.history_depth
+    return f"{slug}@{commit_hash or 'working-tree'}"
 
-    if not repo_path:
-        log.warning("local_git backend repo_path not configured")
-        return []
 
-    repo_root = Path(repo_path)
+def _attach_repository_metadata(
+    entry: RepositoryManifestEntry,
+    payload: Dict[str, Any],
+    provenance: Mapping[str, str] | None = None,
+) -> Dict[str, Any]:
+    """Attach provenance metadata for manifest-driven results."""
+
+    enriched = dict(payload)
+    enriched["repository"] = entry.slug
+    base_provenance = dict(provenance or entry.provenance())
+    enriched["provenance"] = base_provenance
+    return enriched
+
+
+def _search_manifest_repository(
+    entry: RepositoryManifestEntry,
+    query: str,
+    *,
+    max_results: int,
+    file_types: Sequence[str],
+    history_depth: int,
+) -> List[Dict[str, Any]]:
+    """Execute manifest-aware Git search for a single repository entry."""
+
+    results: List[Dict[str, Any]] = []
+    if max_results <= 0:
+        return results
+
+    repo_root = entry.root_path()
     if not repo_root.exists():
-        log.warning("local_git repo_path does not exist: %s", repo_path)
-        return []
+        log.warning("local_git repo_path does not exist: %s", repo_root)
+        return results
 
     if Repo is None:
         raise SearchError("local_git backend requires gitpython")
 
-    repo = Repo(repo_path)
-    head_hash = repo.head.commit.hexsha
+    repo = Repo(str(repo_root))
+    try:
+        head_hash = repo.head.commit.hexsha  # type: ignore[assignment]
+    except Exception:
+        head_hash = ""
+    head_identifier = _compose_commit_identifier(entry.slug, head_hash or None)
 
-    results: List[Dict[str, Any]] = []
-
-    # Search working tree files using ripgrep/Python scanning
     rg_path = shutil.which("rg")
-    file_types = cfg.search.local_file.file_types
-    if rg_path:
+    lower_query = query.lower()
+    provenance = entry.provenance()
+
+    if rg_path and file_types:
         for ext in file_types:
-            if len(results) >= max_results:
+            remaining = max_results - len(results)
+            if remaining <= 0:
                 break
             cmd = [
                 rg_path,
                 "-n",
                 "--no-heading",
                 "-i",
-                f"-m{max_results - len(results)}",
+                f"-m{remaining}",
                 "-g",
                 f"*.{ext}",
                 query,
@@ -3570,6 +3597,8 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
                 output = exc.output or ""
             for line in output.splitlines():
+                if len(results) >= max_results:
+                    break
                 parts = line.split(":", 2)
                 if len(parts) < 3:
                     continue
@@ -3578,27 +3607,27 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     line_no = int(line_no_str)
                 except ValueError:
                     line_no = 0
-                context_lines = []
                 try:
                     file_lines = Path(file_path).read_text(errors="ignore").splitlines()
                     start = max(0, line_no - 3)
                     end = min(len(file_lines), line_no + 2)
                     context_lines = file_lines[start:end]
+                    snippet = "\n".join(context_lines)
                 except Exception:
-                    context_lines = [_snippet.strip()]
-                snippet = "\n".join(context_lines)
-                results.append(
-                    {
-                        "title": Path(file_path).name,
-                        "url": file_path,
-                        "snippet": snippet,
-                        "commit": head_hash,
-                    }
-                )
-                if len(results) >= max_results:
-                    break
+                    snippet = _snippet.strip()
+                payload: Dict[str, Any] = {
+                    "title": Path(file_path).name,
+                    "url": file_path,
+                    "snippet": snippet,
+                    "commit": head_identifier,
+                }
+                if head_hash:
+                    payload["commit_hash"] = head_hash
+                results.append(_attach_repository_metadata(entry, payload, provenance))
     else:
         for file in repo_root.rglob("*"):
+            if len(results) >= max_results:
+                break
             if not file.is_file():
                 continue
             try:
@@ -3606,24 +3635,27 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             except Exception:  # pragma: no cover - unexpected
                 continue
             for idx, line in enumerate(lines):
-                if query.lower() in line.lower():
+                if len(results) >= max_results:
+                    break
+                if lower_query in line.lower():
                     start = max(0, idx - 2)
                     end = min(len(lines), idx + 3)
                     snippet = "\n".join(lines[start:end])
-                    results.append(
-                        {
-                            "title": file.name,
-                            "url": str(file),
-                            "snippet": snippet,
-                            "commit": head_hash,
-                        }
-                    )
+                    payload = {
+                        "title": file.name,
+                        "url": str(file),
+                        "snippet": snippet,
+                        "commit": head_identifier,
+                    }
+                    if head_hash:
+                        payload["commit_hash"] = head_hash
+                    results.append(_attach_repository_metadata(entry, payload, provenance))
                     break
-            if len(results) >= max_results:
-                return results
 
-    # AST-based search for Python code structure
-    normalized_query = query.lower().replace("_", "")
+    if len(results) >= max_results:
+        return results
+
+    normalized_query = lower_query.replace("_", "")
     for py_file in repo_root.rglob("*.py"):
         if len(results) >= max_results:
             break
@@ -3640,22 +3672,21 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     end_line = getattr(node, "end_lineno", start_line + 1)
                     lines = source.splitlines()
                     snippet = "\n".join(lines[start_line:end_line])
-                    results.append(
-                        {
-                            "title": py_file.name,
-                            "url": str(py_file),
-                            "snippet": snippet,
-                            "commit": head_hash,
-                        }
-                    )
+                    payload = {
+                        "title": py_file.name,
+                        "url": str(py_file),
+                        "snippet": snippet,
+                        "commit": head_identifier,
+                    }
+                    if head_hash:
+                        payload["commit_hash"] = head_hash
+                    results.append(_attach_repository_metadata(entry, payload, provenance))
                     break
+
     if len(results) >= max_results:
         return results
 
     indexed: set[str] = set()
-    # Persist a lightweight git index when storage is available. If storage
-    # is unavailable (e.g., RDF backend missing in minimal test envs), skip
-    # persistence gracefully to avoid coupling local git search to storage.
     try:
         with StorageManager.connection() as conn:
             try:
@@ -3668,81 +3699,117 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             except Exception as exc:  # pragma: no cover - db errors
                 log.warning(f"Failed to prepare git_index table: {exc}")
 
-            for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
-                commit_hash = commit.hexsha
+            for commit in repo.iter_commits(
+                cast(Any, entry.branches or None),
+                max_count=history_depth,
+            ):
+                if len(results) >= max_results:
+                    break
+                commit_hash = getattr(commit, "hexsha", "")
+                composite_id = _compose_commit_identifier(entry.slug, commit_hash or None)
                 diff_text = ""
                 try:
-                    parent = commit.parents[0] if commit.parents else None
+                    parent = commit.parents[0] if getattr(commit, "parents", None) else None
                     diffs = commit.diff(parent, create_patch=True)
                     for d in diffs:
-                        raw_diff = d.diff
+                        raw_diff = getattr(d, "diff", "")
                         if isinstance(raw_diff, bytes):
                             part = raw_diff.decode("utf-8", "ignore")
                         else:
                             part = str(raw_diff)
                         diff_text += part
-                        if query.lower() in part.lower():
+                        if lower_query in part.lower():
                             snippet_match = re.search(
                                 rf".{{0,80}}{re.escape(query)}.{{0,80}}",
                                 part,
                                 re.IGNORECASE,
                             )
-                            snippet = (
-                                snippet_match.group(0).strip() if snippet_match else part[:200]
-                            )
-                            results.append(
-                                {
-                                    "title": d.b_path or d.a_path or "diff",
-                                    "url": commit_hash,
-                                    "snippet": snippet,
-                                    "commit": commit_hash,
-                                    "author": commit.author.name or "",
-                                    "date": commit.committed_datetime.isoformat(),
-                                    "diff": part[:2000],
-                                }
-                            )
+                            snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
+                            payload = {
+                                "title": d.b_path or d.a_path or "diff",
+                                "url": composite_id,
+                                "snippet": snippet,
+                                "commit": composite_id,
+                                "author": getattr(commit.author, "name", ""),
+                                "date": commit.committed_datetime.isoformat(),
+                                "diff": part[:2000],
+                                "commit_hash": commit_hash,
+                            }
+                            results.append(_attach_repository_metadata(entry, payload, provenance))
                             if len(results) >= max_results:
                                 break
                     if len(results) >= max_results:
                         break
                 except Exception as exc:  # pragma: no cover - git issues
                     log.warning(f"Failed to get diff for {commit_hash}: {exc}")
-                if commit_hash not in indexed:
+                if composite_id not in indexed:
                     try:
                         conn.execute(
                             "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
                             [
-                                commit_hash,
-                                commit.author.name or "",
+                                composite_id,
+                                getattr(commit.author, "name", ""),
                                 commit.committed_datetime.isoformat(),
-                                commit.message,
+                                getattr(commit, "message", ""),
                                 diff_text,
                             ],
                         )
-                        indexed.add(commit_hash)
+                        indexed.add(composite_id)
                     except Exception as exc:  # pragma: no cover - db insert issues
-                        log.warning(f"Failed to index commit {commit_hash}: {exc}")
+                        log.warning(f"Failed to index commit {composite_id}: {exc}")
 
-                if query.lower() in commit.message.lower() and len(results) < max_results:
-                    msg = commit.message
+                if lower_query in getattr(commit, "message", "").lower() and len(results) < max_results:
+                    msg = getattr(commit, "message", "")
                     if isinstance(msg, bytes):
                         msg = msg.decode("utf-8", "ignore")
                     snippet = msg.strip()[:200]
-                    results.append(
-                        {
-                            "title": "commit message",
-                            "url": commit_hash,
-                            "snippet": snippet,
-                            "commit": commit_hash,
-                            "author": commit.author.name or "",
-                            "date": commit.committed_datetime.isoformat(),
-                            "diff": diff_text[:2000],
-                        }
-                    )
-                    if len(results) >= max_results:
-                        break
+                    payload = {
+                        "title": "commit message",
+                        "url": composite_id,
+                        "snippet": snippet,
+                        "commit": composite_id,
+                        "author": getattr(commit.author, "name", ""),
+                        "date": commit.committed_datetime.isoformat(),
+                        "diff": diff_text[:2000],
+                        "commit_hash": commit_hash,
+                    }
+                    results.append(_attach_repository_metadata(entry, payload, provenance))
     except Exception as exc:  # pragma: no cover - storage unavailable
         log.debug(f"Skipping git_index persistence due to unavailable storage: {exc}")
+
+    return results
+
+
+@Search.register_backend("local_git")
+def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """Search local Git repositories declared via configuration manifest."""
+
+    cfg = _get_runtime_config()
+    local_cfg = cfg.search.local_git
+    manifest = local_cfg.iter_manifest()
+
+    if not manifest:
+        if not local_cfg.repo_path:
+            log.warning("local_git backend repo_path not configured")
+        else:
+            log.warning("local_git backend repo manifest is empty")
+        return []
+
+    results: List[Dict[str, Any]] = []
+    file_types = cfg.search.local_file.file_types
+
+    for entry in manifest:
+        remaining = max_results - len(results)
+        if remaining <= 0:
+            break
+        repo_results = _search_manifest_repository(
+            entry,
+            query,
+            max_results=remaining,
+            file_types=file_types,
+            history_depth=local_cfg.history_depth,
+        )
+        results.extend(repo_results)
 
     return results
 

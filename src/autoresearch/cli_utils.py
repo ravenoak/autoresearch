@@ -33,6 +33,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from .config.models import RepositoryManifestEntry
+
 
 # Verbosity levels
 class Verbosity(str, Enum):
@@ -757,6 +759,64 @@ def render_status_panel(
     body = Align.left(Text(message, style=style["text"]))
     panel_title = title or status.title()
     return Panel(body, title=panel_title, border_style=style["border"], padding=(1, 2))
+
+
+def render_repository_manifest(
+    manifest: Sequence[RepositoryManifestEntry | Mapping[str, Any]],
+    *,
+    title: str = "Repository Manifest",
+) -> RenderableType | str:
+    """Render repository manifest entries for CLI and automation output.
+
+    Args:
+        manifest: Manifest entries or dictionaries describing repositories.
+        title: Optional heading used when Rich rendering is available.
+
+    Returns:
+        A Rich renderable or plain-text string summarising the manifest.
+    """
+
+    if not manifest:
+        message = "No repositories registered."
+        if _is_bare_mode():
+            heading = title or "Repository Manifest"
+            return f"{heading}: {message}"
+        return render_status_panel(title, message, status="warning")
+
+    entries: list[RepositoryManifestEntry] = []
+    for item in manifest:
+        if isinstance(item, RepositoryManifestEntry):
+            entries.append(item)
+        elif isinstance(item, Mapping):
+            entries.append(RepositoryManifestEntry.model_validate(dict(item)))
+        else:
+            raise TypeError(
+                "Manifest entries must be RepositoryManifestEntry instances or mappings.",
+            )
+
+    if _is_bare_mode():
+        heading = title or "Repository Manifest"
+        lines = [f"{heading}:"]
+        for entry in entries:
+            branches = ", ".join(entry.branches)
+            namespace = entry.namespace or "—"
+            lines.append(
+                f"  - {entry.slug}: {entry.path} "
+                f"(branches: {branches}; namespace: {namespace})"
+            )
+        return "\n".join(lines)
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Slug", style="bold")
+    table.add_column("Path")
+    table.add_column("Branches")
+    table.add_column("Namespace")
+    for entry in entries:
+        branches = ", ".join(entry.branches)
+        namespace = entry.namespace or "—"
+        table.add_row(entry.slug, entry.path, branches, namespace)
+
+    return Panel(table, title=title, border_style="magenta", padding=(1, 2))
 
 
 def render_artifacts_panel(
