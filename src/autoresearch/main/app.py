@@ -14,7 +14,6 @@ from typing import Any, Callable, Mapping, Optional, TypeVar, cast
 
 import click
 import typer
-from rich.console import Console
 
 from ..cli_helpers import (
     depth_help_text,
@@ -26,8 +25,8 @@ from ..cli_utils import (
     Verbosity,
     VisualizationHooks,
     attach_cli_hooks,
-    console,
     format_success,
+    get_console,
     get_verbosity,
     print_command_example,
     print_error,
@@ -35,6 +34,8 @@ from ..cli_utils import (
     print_success,
     print_verbose,
     print_warning,
+    render_status_panel,
+    set_bare_mode,
     set_verbosity,
     sparql_query_cli as _cli_sparql,
     visualize_metrics_cli,
@@ -235,6 +236,8 @@ def start_watcher(
         os.environ["COLUMNS"] = "200"
         return
 
+    console = get_console()
+
     # Check if this is the first run by looking for config files
     is_first_run = True
     for path in _config_loader.search_paths:
@@ -295,8 +298,8 @@ def start_watcher(
         config.level = logging.WARNING  # Show only warnings and errors
 
     # Set bare mode environment variable for CLI utilities
-    if bare_mode:
-        os.environ["AUTORESEARCH_BARE_MODE"] = "true"
+    set_bare_mode(bare_mode)
+    console = get_console()
 
     configure_logging(config)
 
@@ -1099,20 +1102,27 @@ def serve(
         # Start the MCP server on a specific host and port
         autoresearch serve --host 0.0.0.0 --port 8888
     """
-    console = Console()
+    console = get_console()
 
     # Create an MCP server using the dedicated interface module
     server = create_server(host=host, port=port)
 
-    console.print(f"[bold green]Starting MCP server on {host}:{port}[/bold green]")
+    console.print(
+        render_status_panel(
+            "MCP Server",
+            f"Starting on {host}:{port}",
+            status="success",
+        )
+    )
     console.print("Available tools:")
     console.print("  - research: Run a research query through Autoresearch")
-    console.print("\nPress Ctrl+C to stop the server")
+    console.print()
+    console.print(render_status_panel("", "Press Ctrl+C to stop the server"))
 
     try:
         server.run()
     except KeyboardInterrupt:
-        console.print("[bold yellow]Server stopped[/bold yellow]")
+        console.print(render_status_panel("MCP Server", "Server stopped", status="warning"))
         raise typer.Exit(0)
 
 
@@ -1140,45 +1150,65 @@ def serve_a2a(
     try:
         from ..a2a_interface import A2AInterface
     except ImportError:
-        console = Console()
+        console = get_console()
         console.print(
-            "[bold red]Error:[/bold red] The a2a-sdk package is required for A2A integration."
+            render_status_panel(
+                "A2A Server",
+                "The a2a-sdk package is required for A2A integration.",
+                status="error",
+            )
         )
-        console.print("Install it with: [bold]pip install a2a-sdk[/bold]")
+        console.print(render_status_panel("", "Install it with: pip install a2a-sdk"))
         return
 
-    console = Console()
+    console = get_console()
     a2a_interface = None
 
     try:
         a2a_interface = A2AInterface(host=host, port=port)
 
-        console.print(f"[bold green]Starting A2A server on {host}:{port}[/bold green]")
+        console.print(
+            render_status_panel(
+                "A2A Server",
+                f"Starting on {host}:{port}",
+                status="success",
+            )
+        )
         console.print("Available capabilities:")
         console.print("  - Query processing: Process natural language queries")
         console.print("  - Configuration management: Get and set configuration")
         console.print("  - Capability discovery: Discover LLM capabilities")
-        console.print("\nPress Ctrl+C to stop the server")
+        console.print()
+        console.print(render_status_panel("", "Press Ctrl+C to stop the server"))
 
-        # Start the server
         try:
             a2a_interface.start()
         except KeyboardInterrupt:
             if a2a_interface is not None:
                 a2a_interface.stop()
-            console.print("[bold yellow]Server stopped[/bold yellow]")
+            console.print(
+                render_status_panel("A2A Server", "Server stopped", status="warning")
+            )
             return
 
-        # Keep the main thread running until interrupted
         while True:
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         if a2a_interface is not None:
             a2a_interface.stop()
-        console.print("[bold yellow]Server stopped[/bold yellow]")
+        console.print(render_status_panel("A2A Server", "Server stopped", status="warning"))
         raise typer.Exit(code=0)
-    except Exception as e:
-        console.print(f"[bold red]Error starting A2A server:[/bold red] {str(e)}")
+    except Exception as exc:
+        console.print(
+            render_status_panel(
+                "A2A Server",
+                f"Error starting server: {exc}",
+                status="error",
+            )
+        )
+        if a2a_interface is not None:
+            a2a_interface.stop()
+        raise typer.Exit(1)
 
 
 @typed_command("completion")

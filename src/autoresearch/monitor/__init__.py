@@ -4,16 +4,24 @@ from __future__ import annotations
 
 import sys
 import time
+from statistics import mean
 from typing import Any, Dict, List, Union
 
-from rich.console import Console
+from rich.console import Group, RenderableType
 from rich.live import Live
+from rich.panel import Panel
 from rich.progress import Progress
 from rich.table import Table
 from rich.tree import Tree
 import typer
 
 
+from ..cli_utils import (
+    get_console,
+    is_bare_mode,
+    render_metrics_panel,
+    render_status_panel,
+)
 from ..config.loader import ConfigLoader
 from ..logging_utils import get_logger
 from ..orchestration import metrics as orch_metrics
@@ -123,6 +131,81 @@ def _render_metrics(data: Dict[str, Any]) -> Table:
     return table
 
 
+def _summarize_resource_usage(records: List[Dict[str, Any]]) -> Dict[str, float]:
+    summary: Dict[str, float] = {"samples": float(len(records))}
+    if not records:
+        return summary
+
+    def _values(key: str) -> List[float]:
+        return [float(entry.get(key, 0.0)) for entry in records]
+
+    cpu_values = _values("cpu_percent")
+    mem_values = _values("memory_mb")
+    gpu_values = _values("gpu_percent")
+    gpu_mem_values = _values("gpu_memory_mb")
+
+    if cpu_values:
+        summary["avg_cpu_percent"] = mean(cpu_values)
+        summary["peak_cpu_percent"] = max(cpu_values)
+    if mem_values:
+        summary["avg_memory_mb"] = mean(mem_values)
+        summary["peak_memory_mb"] = max(mem_values)
+    if gpu_values:
+        summary["avg_gpu_percent"] = mean(gpu_values)
+    if gpu_mem_values:
+        summary["avg_gpu_memory_mb"] = mean(gpu_mem_values)
+    return summary
+
+
+def _render_resource_usage(records: List[Dict[str, Any]]) -> RenderableType | str:
+    if not records:
+        return render_status_panel(
+            "Resource Usage",
+            "No samples collected yet.",
+            status="warning",
+        )
+
+    summary = _summarize_resource_usage(records)
+    summary_view = render_metrics_panel(summary)
+
+    if is_bare_mode():
+        lines: List[str] = []
+        if isinstance(summary_view, str):
+            lines.append(summary_view)
+        else:  # Defensive; render_metrics_panel returns str in bare mode
+            lines.append(str(summary_view))
+        lines.append("Timeline:")
+        for rec in records:
+            timestamp = time.strftime("%H:%M:%S", time.localtime(rec["timestamp"]))
+            lines.append(
+                "  - "
+                f"{timestamp} | CPU {rec.get('cpu_percent', 0.0):.2f}% | "
+                f"Memory {rec.get('memory_mb', 0.0):.2f} MB | "
+                f"GPU {rec.get('gpu_percent', 0.0):.2f}% | "
+                f"GPU Mem {rec.get('gpu_memory_mb', 0.0):.2f} MB"
+            )
+        return "\n".join(lines)
+
+    timeline = Table(title="Resource Timeline")
+    timeline.add_column("Time")
+    timeline.add_column("CPU %", justify="right")
+    timeline.add_column("Memory MB", justify="right")
+    timeline.add_column("GPU %", justify="right")
+    timeline.add_column("GPU MB", justify="right")
+
+    for rec in records:
+        timestamp = time.strftime("%H:%M:%S", time.localtime(rec["timestamp"]))
+        timeline.add_row(
+            timestamp,
+            f"{rec.get('cpu_percent', 0.0):.2f}",
+            f"{rec.get('memory_mb', 0.0):.2f}",
+            f"{rec.get('gpu_percent', 0.0):.2f}",
+            f"{rec.get('gpu_memory_mb', 0.0):.2f}",
+        )
+
+    return Group(summary_view, Panel(timeline, border_style="magenta", padding=(1, 2)))
+
+
 def _collect_graph_data() -> Dict[str, List[str]]:
     """Collect a snapshot of the in-memory knowledge graph."""
     try:
@@ -164,10 +247,10 @@ def metrics(
     watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously")
 ) -> None:
     """Display system metrics in real time."""
-    console = Console()
+    console = get_console()
 
-    def refresh() -> Table:
-        return _render_metrics(_collect_system_metrics())
+    def refresh() -> RenderableType | str:
+        return render_metrics_panel(_collect_system_metrics())
 
     if watch:
         with Live(refresh(), console=console, refresh_per_second=1) as live:
@@ -186,7 +269,7 @@ def resources(
     duration: int = typer.Option(5, "--duration", "-d", help="Seconds to monitor")
 ) -> None:
     """Record CPU, memory and GPU usage over time."""
-    console = Console()
+    console = get_console()
     tracker = orch_metrics.OrchestrationMetrics()
     end_time = time.time() + duration
     with Progress() as progress:
@@ -196,22 +279,8 @@ def resources(
             time.sleep(1)
             progress.update(task, advance=1)
 
-    table = Table(title="Resource Usage")
-    table.add_column("Time")
-    table.add_column("CPU %")
-    table.add_column("Memory MB")
-    table.add_column("GPU %")
-    table.add_column("GPU MB")
-    for rec in tracker.get_summary()["resource_usage"]:
-        t = time.strftime("%H:%M:%S", time.localtime(rec["timestamp"]))
-        table.add_row(
-            t,
-            f"{rec['cpu_percent']:.2f}",
-            f"{rec['memory_mb']:.2f}",
-            f"{rec.get('gpu_percent', 0.0):.2f}",
-            f"{rec.get('gpu_memory_mb', 0.0):.2f}",
-        )
-    console.print(table)
+    records = tracker.get_summary().get("resource_usage", [])
+    console.print(_render_resource_usage(records))
 
 
 @monitor_app.command("graph")
@@ -220,7 +289,7 @@ def graph(
     tui: bool = typer.Option(False, "--tui", help="Display graph in TUI panel"),
 ) -> None:
     """Display a simple textual view of the knowledge graph."""
-    console = Console()
+    console = get_console()
     data = _collect_graph_data()
     if tui:
         from rich.panel import Panel
@@ -235,7 +304,7 @@ def run() -> None:
     """Start the interactive monitor."""
     from ..main import Prompt  # Local import to avoid circular dependency
 
-    console = Console()
+    console = get_console()
     config = _loader.load_config()
 
     abort_flag = {"stop": False}

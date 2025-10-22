@@ -16,6 +16,7 @@ import time
 from .storage_backup import BackupManager, BackupConfig
 from .errors import BackupError
 from .cli_helpers import report_missing_tables
+from .cli_utils import get_console, render_artifacts_panel, render_status_panel
 
 backup_app = typer.Typer(
     help="Backup and restore operations",
@@ -24,10 +25,10 @@ backup_app = typer.Typer(
 
 def _render_backup_error(console: Console, prefix: str, error: BackupError) -> None:
     """Render a backup-related error with context information."""
-    console.print(f"[bold red]{prefix}:[/bold red] {error}")
+    console.print(render_status_panel(prefix, str(error), status="error"))
     ctx = getattr(error, "context", {}) or {}
     if "suggestion" in ctx:
-        console.print(f"[yellow]Suggestion:[/yellow] {ctx['suggestion']}")
+        console.print(render_status_panel("", ctx["suggestion"], status="warning"))
     if "missing_tables" in ctx:
         report_missing_tables(ctx["missing_tables"], console)
 
@@ -37,10 +38,22 @@ def _validate_dir(path: Optional[str], console: Console) -> str:
     try:
         p = Path(path or "backups")
     except OSError as e:
-        console.print(f"[bold red]Invalid backup directory:[/bold red] {path} ({e})")
+        console.print(
+            render_status_panel(
+                "Invalid backup directory",
+                f"{path} ({e})",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
     if p.exists() and not p.is_dir():
-        console.print(f"[bold red]Invalid backup directory:[/bold red] {p} is not a directory")
+        console.print(
+            render_status_panel(
+                "Invalid backup directory",
+                f"{p} is not a directory",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
     return str(p)
 
@@ -50,10 +63,22 @@ def _validate_file(path: str, console: Console) -> str:
     try:
         p = Path(path)
     except OSError as e:
-        console.print(f"[bold red]Invalid backup path:[/bold red] {path} ({e})")
+        console.print(
+            render_status_panel(
+                "Invalid backup path",
+                f"{path} ({e})",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
     if not p.exists() or not p.is_file():
-        console.print(f"[bold red]Invalid backup path:[/bold red] {p} does not exist")
+        console.print(
+            render_status_panel(
+                "Invalid backup path",
+                f"{p} does not exist",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
     return str(p)
 
@@ -85,7 +110,7 @@ def backup_create(
     ),
 ) -> None:
     """Create a backup of the storage system."""
-    console = Console()
+    console = get_console()
 
     try:
         dir_path = _validate_dir(backup_dir, console)
@@ -102,22 +127,43 @@ def backup_create(
             )
             progress.update(task, completed=1)
 
-        console.print("[bold green]Backup created successfully:[/bold green]")
-        console.print(f"  Path: {backup_info.path}")
-        console.print(f"  Timestamp: {backup_info.timestamp}")
-        console.print(f"  Size: {_format_size(backup_info.size)}")
-        console.print(f"  Compressed: {'Yes' if backup_info.compressed else 'No'}")
+        console.print(
+            render_status_panel(
+                "Backup",
+                "Backup created successfully.",
+                status="success",
+            )
+        )
+        console.print(
+            render_artifacts_panel(
+                [
+                    ("Path", backup_info.path),
+                    ("Timestamp", backup_info.timestamp),
+                    ("Size", _format_size(backup_info.size)),
+                    ("Compressed", "Yes" if backup_info.compressed else "No"),
+                ],
+                title="Backup Details",
+            )
+        )
 
     except BackupError as e:
         _render_backup_error(console, "Error creating backup", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        console.print("[bold yellow]Backup creation cancelled.[/bold yellow]")
+        console.print(
+            render_status_panel("Backup", "Backup creation cancelled.", status="warning")
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:  # pragma: no cover - defensive
-        console.print(f"[bold red]Unexpected error creating backup:[/bold red] {e}")
+        console.print(
+            render_status_panel(
+                "Backup",
+                f"Unexpected error creating backup: {e}",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
 
 
@@ -141,23 +187,35 @@ def backup_restore(
     ),
 ) -> None:
     """Restore a backup of the storage system."""
-    console = Console()
+    console = get_console()
 
     try:
         if not force:
             console.print(
-                "[bold yellow]Warning:[/bold yellow] "
-                "Restoring a backup will create new database files."
+                render_status_panel(
+                    "Restore",
+                    "Restoring a backup will create new database files.",
+                    status="warning",
+                )
             )
-            console.print("The original files will not be modified, but you will need to configure")
-            console.print("the application to use the restored files if you want to use them.")
+            console.print(
+                render_status_panel(
+                    "", "Update your configuration to use the restored files if needed.",
+                )
+            )
             confirm = Prompt.ask(
                 "Are you sure you want to restore this backup?",
                 choices=["y", "n"],
                 default="n",
             )
             if confirm.lower() != "y":
-                console.print("Restore cancelled.")
+                console.print(
+                    render_status_panel(
+                        "Restore",
+                        "Restore cancelled.",
+                        status="warning",
+                    )
+                )
                 return
 
         with Progress() as progress:
@@ -167,27 +225,60 @@ def backup_restore(
             )
             progress.update(task, completed=1)
 
-        console.print("[bold green]Backup restored successfully:[/bold green]")
-        console.print(f"  DuckDB database: {restored_paths['db_path']}")
-        console.print(f"  RDF store: {restored_paths['rdf_path']}")
         console.print(
-            "\nTo use the restored files, update your configuration to point to these paths."
+            render_status_panel(
+                "Restore",
+                "Backup restored successfully.",
+                status="success",
+            )
+        )
+        console.print(
+            render_artifacts_panel(
+                [
+                    ("DuckDB database", restored_paths["db_path"]),
+                    ("RDF store", restored_paths["rdf_path"]),
+                ],
+                title="Restored Files",
+            )
+        )
+        console.print(
+            render_status_panel(
+                "", "Update your configuration to use these restored paths.",
+            )
         )
 
     except BackupError as e:
         message = str(e).lower()
         if "not found" in message:
-            console.print(f"[bold red]Invalid backup path:[/bold red] {backup_path} does not exist")
+            console.print(
+                render_status_panel(
+                    "Restore",
+                    f"Invalid backup path: {backup_path} does not exist",
+                    status="error",
+                )
+            )
         else:
             _render_backup_error(console, "Error restoring backup", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        console.print("[bold yellow]Restore cancelled by user.[/bold yellow]")
+        console.print(
+            render_status_panel(
+                "Restore",
+                "Restore cancelled by user.",
+                status="warning",
+            )
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:  # pragma: no cover - defensive
-        console.print(f"[bold red]Unexpected error restoring backup:[/bold red] {e}")
+        console.print(
+            render_status_panel(
+                "Restore",
+                f"Unexpected error restoring backup: {e}",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
 
 
@@ -207,13 +298,19 @@ def backup_list(
     ),
 ) -> None:
     """List available backups."""
-    console = Console()
+    console = get_console()
 
     try:
         dir_path = _validate_dir(backup_dir, console)
         backups = BackupManager.list_backups(dir_path)
         if not backups:
-            console.print(f"No backups found in {dir_path}")
+            console.print(
+                render_status_panel(
+                    "Backups",
+                    f"No backups found in {dir_path}",
+                    status="warning",
+                )
+            )
             return
 
         table = Table(title=f"Backups in {dir_path}")
@@ -233,18 +330,31 @@ def backup_list(
         console.print(table)
 
         if len(backups) > limit:
-            console.print(f"Showing {limit} of {len(backups)} backups. Use --limit to show more.")
+            console.print(
+                render_status_panel(
+                    "Backups",
+                    f"Showing {limit} of {len(backups)} backups. Use --limit to show more.",
+                )
+            )
 
     except BackupError as e:
         _render_backup_error(console, "Error listing backups", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        console.print("[bold yellow]Listing cancelled by user.[/bold yellow]")
+        console.print(
+            render_status_panel("Backups", "Listing cancelled by user.", status="warning")
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:  # pragma: no cover - defensive
-        console.print(f"[bold red]Unexpected error listing backups:[/bold red] {e}")
+        console.print(
+            render_status_panel(
+                "Backups",
+                f"Unexpected error listing backups: {e}",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
 
 
@@ -276,7 +386,7 @@ def backup_schedule(
     ),
 ) -> None:
     """Schedule automatic backups."""
-    console = Console()
+    console = get_console()
 
     try:
         dir_path = _validate_dir(backup_dir, console)
@@ -286,26 +396,52 @@ def backup_schedule(
             max_backups=max_backups,
             retention_days=retention_days,
         )
-        console.print("[bold green]Scheduled automatic backups.[/bold green]")
-        console.print("Press Ctrl+C to stop...")
+        console.print(
+            render_status_panel(
+                "Schedule",
+                "Scheduled automatic backups.",
+                status="success",
+            )
+        )
+        console.print(render_status_panel("", "Press Ctrl+C to stop..."))
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            console.print("[bold yellow]Stopping scheduled backups...[/bold yellow]")
+            console.print(
+                render_status_panel(
+                    "Schedule",
+                    "Stopping scheduled backups...",
+                    status="warning",
+                )
+            )
             BackupManager.stop_scheduled_backups()
-            console.print("[bold green]Scheduled backups stopped.[/bold green]")
+            console.print(
+                render_status_panel(
+                    "Schedule",
+                    "Scheduled backups stopped.",
+                    status="success",
+                )
+            )
 
     except BackupError as e:
         _render_backup_error(console, "Error scheduling backups", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        console.print("[bold yellow]Scheduling cancelled by user.[/bold yellow]")
+        console.print(
+            render_status_panel("Schedule", "Scheduling cancelled by user.", status="warning")
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:  # pragma: no cover - defensive
-        console.print(f"[bold red]Unexpected error scheduling backups:[/bold red] {e}")
+        console.print(
+            render_status_panel(
+                "Schedule",
+                f"Unexpected error scheduling backups: {e}",
+                status="error",
+            )
+        )
         raise typer.Exit(code=1)
 
 
@@ -335,31 +471,44 @@ def backup_recover(
     ),
 ) -> None:
     """Perform point-in-time recovery."""
-    console = Console()
+    console = get_console()
 
     try:
         try:
             target_time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
         except ValueError:
             console.print(
-                "[bold red]Error:[/bold red] Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS."
+                render_status_panel(
+                    "Recovery",
+                    "Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS.",
+                    status="error",
+                )
             )
             raise typer.Exit(code=1)
 
         if not force:
             console.print(
-                "[bold yellow]Warning:[/bold yellow] "
-                "Point-in-time recovery will create new database files."
+                render_status_panel(
+                    "Recovery",
+                    "Point-in-time recovery will create new database files.",
+                    status="warning",
+                )
             )
-            console.print("The original files will not be modified, but you will need to configure")
-            console.print("the application to use the recovered files if you want to use them.")
+            console.print(
+                render_status_panel(
+                    "",
+                    "Update your configuration to use the recovered files if desired.",
+                )
+            )
             confirm = Prompt.ask(
                 "Are you sure you want to perform point-in-time recovery?",
                 choices=["y", "n"],
                 default="n",
             )
             if confirm.lower() != "y":
-                console.print("Recovery cancelled.")
+                console.print(
+                    render_status_panel("Recovery", "Recovery cancelled.", status="warning")
+                )
                 return
 
         with Progress() as progress:
@@ -372,12 +521,27 @@ def backup_recover(
             )
             progress.update(task, completed=1)
 
-        console.print("[bold green]Point-in-time recovery completed successfully:[/bold green]")
-        console.print(f"  Target time: {target_time}")
-        console.print(f"  DuckDB database: {restored_paths['db_path']}")
-        console.print(f"  RDF store: {restored_paths['rdf_path']}")
         console.print(
-            "\nTo use the recovered files, update your configuration to point to these paths."
+            render_status_panel(
+                "Recovery",
+                "Point-in-time recovery completed successfully.",
+                status="success",
+            )
+        )
+        console.print(
+            render_artifacts_panel(
+                [
+                    ("Target time", target_time),
+                    ("DuckDB database", restored_paths["db_path"]),
+                    ("RDF store", restored_paths["rdf_path"]),
+                ],
+                title="Recovered Files",
+            )
+        )
+        console.print(
+            render_status_panel(
+                "", "Update your configuration to use these recovered paths.",
+            )
         )
 
     except BackupError as e:
@@ -385,12 +549,18 @@ def backup_recover(
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        console.print("[bold yellow]Recovery cancelled by user.[/bold yellow]")
+        console.print(
+            render_status_panel("Recovery", "Recovery cancelled by user.", status="warning")
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:  # pragma: no cover - defensive
         console.print(
-            f"[bold red]Unexpected error performing point-in-time recovery:[/bold red] {e}"
+            render_status_panel(
+                "Recovery",
+                f"Unexpected error performing point-in-time recovery: {e}",
+                status="error",
+            )
         )
         raise typer.Exit(code=1)
 
