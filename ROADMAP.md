@@ -32,7 +32,16 @@ repository:
    – integrates a prototype LATTICE-style semantic tree and calibration harness.
    – Prerequisites: prototype tree builder, calibration validation, dynamic-
      corpus safeguards.
+   – Default experiment settings: Gemini 2.5-flash, beam width `B=2`,
+     `N=20` leaf expansions, depth limit `ℓ=10`, branching factor 10–20,
+     approximating 250 explored nodes per query.
+   – Risk note: dynamic, query-dependent corpora demand rapid summary refreshes
+     or GraphRAG fallback, as highlighted by the BRIGHT coding subsets
+     regression outcome.
    – Targets the **0.1.1** release window with telemetry and fallback guardrails.
+   – Milestone acceptance requires reproducing ≥9 % Recall@100 and ≥5 %
+     nDCG@10 uplift, with telemetry capturing cross-branch calibration
+     residuals.
    – **🚧 IN PROGRESS - Pending prototype tree builder, calibration validation, and
      dynamic-corpus safeguards**
 
