@@ -83,6 +83,15 @@ autoresearch search "query" --bare-mode
 - Essential functionality preserved
 - Screen reader compatible
 
+### Rich Metrics Dashboards
+
+Metrics commands now render Rich panels that combine summary tables with
+sparkline-style bars. The `visualize-metrics` helpers and `monitor resources`
+command share the same layout utilities, so success states highlight key
+figures and timelines uniformly. When you enable `--bare-mode` or set the
+`AUTORESEARCH_BARE_MODE` environment variable, the CLI reverts to an ASCII
+representation of the same information for accessibility tools.
+
 ### Prompt-toolkit Enhancements
 
 Install the `prompt` extra (`uv sync --extra prompt`) to enable rich

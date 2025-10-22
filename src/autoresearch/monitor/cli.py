@@ -6,12 +6,12 @@ import time
 from typing import Optional
 
 import typer
-from rich.console import Console
 
+from ..cli_utils import get_console, render_status_panel
 from . import monitor_app
 from .node_health import NodeHealthMonitor
 
-console = Console()
+console = get_console()
 
 
 @monitor_app.command("serve")
@@ -33,19 +33,26 @@ def serve(
         port: Port for the Prometheus server.
         interval: Health check interval in seconds.
     """
+    console = get_console()
     monitor = NodeHealthMonitor(
         redis_url=redis_url, ray_address=ray_address, port=port, interval=interval
     )
 
-    console.print(f"[bold green]Starting node health server on {port}[/bold green]")
-    console.print("Press Ctrl+C to stop the server")
+    console.print(
+        render_status_panel(
+            "Node Health",
+            f"Starting Prometheus exporter on port {port}",
+            status="success",
+        )
+    )
+    console.print(render_status_panel("", "Press Ctrl+C to stop the server"))
 
     try:
         monitor.start()
         while True:
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
-        console.print("[bold yellow]Server stopped[/bold yellow]")
+        console.print(render_status_panel("Node Health", "Server stopped", status="warning"))
     finally:
         monitor.stop()
 

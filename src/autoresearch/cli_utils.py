@@ -15,6 +15,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Literal,
     Mapping,
     Optional,
     Protocol,
@@ -22,9 +23,15 @@ from typing import (
     TYPE_CHECKING,
     cast,
 )
-from rich.console import Console
-from rich.table import Table
+
 import rdflib
+from rich.align import Align
+from rich.bar import Bar
+from rich.columns import Columns
+from rich.console import Console, Group, RenderableType
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 
 # Verbosity levels
@@ -58,17 +65,59 @@ def _is_bare_mode() -> bool:
     return os.getenv("AUTORESEARCH_BARE_MODE", "false").lower() in ("true", "1", "yes", "on")
 
 
+_CONSOLE: Console | None = None
+_CONSOLE_BARE: Optional[bool] = None
+
+
 def _get_console() -> Console:
-    """Get console instance with appropriate configuration for current mode."""
+    """Instantiate a console configured for the current rendering mode."""
+
     if _is_bare_mode():
         # In bare mode, disable colors and styling
         return Console(color_system=None, force_terminal=False)
+    return Console()
+
+
+def get_console(force_refresh: bool = False) -> Console:
+    """Return a cached console, refreshing when the mode changes."""
+
+    global _CONSOLE, _CONSOLE_BARE
+    bare_mode = _is_bare_mode()
+    if force_refresh or _CONSOLE is None or _CONSOLE_BARE != bare_mode:
+        _CONSOLE = _get_console()
+        _CONSOLE_BARE = bare_mode
+    return _CONSOLE
+
+
+def set_bare_mode(enabled: bool) -> None:
+    """Enable or disable bare mode and refresh the shared console."""
+
+    if enabled:
+        os.environ["AUTORESEARCH_BARE_MODE"] = "true"
     else:
-        return Console()
+        os.environ.pop("AUTORESEARCH_BARE_MODE", None)
+    global console
+    console = get_console(force_refresh=True)
+
+
+def is_bare_mode() -> bool:
+    """Expose bare-mode state for callers that need conditional rendering."""
+
+    return _is_bare_mode()
 
 
 # Global console instance - initialized with bare mode consideration
-console = _get_console()
+console = get_console()
+
+
+StatusLevel = Literal["info", "success", "warning", "error"]
+
+_STATUS_STYLES: Mapping[StatusLevel, dict[str, str]] = {
+    "info": {"border": "cyan", "text": "white"},
+    "success": {"border": "green", "text": "green"},
+    "warning": {"border": "yellow", "text": "yellow"},
+    "error": {"border": "red", "text": "red"},
+}
 
 
 if TYPE_CHECKING:
@@ -602,35 +651,147 @@ def visualize_graph_cli() -> None:
     console.print(_render_graph(data))
 
 
-def ascii_bar_graph(data: Mapping[str, float], width: int = 30) -> str:
-    """Render a simple ASCII bar chart for numeric data."""
-    if not data:
-        return "(no data)"
-
-    max_val = max(abs(v) for v in data.values()) or 1
-    lines: list[str] = []
-    for k, v in data.items():
-        bar_len = int(abs(v) / max_val * width)
-        bar = "#" * bar_len
-        lines.append(f"{k:>10} | {bar} {v}")
-    return "\n".join(lines)
+def _format_metric_value(value: Any) -> str:
+    if isinstance(value, float):
+        return f"{value:.2f}"
+    return str(value)
 
 
 def summary_table(data: Mapping[str, Any]) -> Table:
-    """Create a table summarizing key/value pairs."""
+    """Create a legacy-compatible summary table."""
+
     table = Table(title="Metrics Summary")
     table.add_column("Metric")
     table.add_column("Value")
-    for k, v in data.items():
-        table.add_row(str(k), str(v))
+    for key, value in data.items():
+        table.add_row(str(key), _format_metric_value(value))
     if not data:
         table.add_row("(empty)", "")
     return table
 
 
-def visualize_metrics_cli(metrics: Mapping[str, Any]) -> None:
-    """Display metrics using a table and ASCII chart."""
-    console.print(summary_table(metrics))
-    numeric = {k: float(v) for k, v in metrics.items() if isinstance(v, (int, float))}
+def _render_numeric_columns(numeric: Mapping[str, float]) -> Columns:
+    max_value = max(abs(v) for v in numeric.values()) or 1.0
+    panels = []
+    for name, value in numeric.items():
+        magnitude = abs(value)
+        bar = Bar(size=24, begin=0.0, end=max_value, value=magnitude, color="cyan")
+        panels.append(
+            Panel(
+                Group(
+                    Align.center(Text(name, style="bold")),
+                    Align.center(bar),
+                    Align.center(Text(_format_metric_value(value), style="cyan")),
+                ),
+                border_style="cyan",
+                padding=(1, 2),
+            )
+        )
+    return Columns(panels, equal=True, expand=True)
+
+
+def render_metrics_panel(metrics: Mapping[str, Any]) -> RenderableType | str:
+    """Render metrics as a styled Rich panel or plain text fallback."""
+
+    numeric = {
+        key: float(value)
+        for key, value in metrics.items()
+        if isinstance(value, (int, float))
+    }
+
+    if _is_bare_mode():
+        if not metrics:
+            return "Metrics:\n  (empty)"
+        lines = ["Metrics:"]
+        for key, value in metrics.items():
+            lines.append(f"  - {key}: {_format_metric_value(value)}")
+        if numeric:
+            max_value = max(abs(v) for v in numeric.values()) or 1.0
+            lines.append("  Bars:")
+            for key, value in numeric.items():
+                width = 30
+                filled = int(abs(value) / max_value * width)
+                bars = "#" * filled
+                lines.append(f"    {key:>10} | {bars} {_format_metric_value(value)}")
+        return "\n".join(lines)
+
+    table = Table(box=None, show_header=False, pad_edge=False)
+    table.add_column("Metric", style="bold", justify="left", ratio=2)
+    table.add_column("Value", justify="right", ratio=1)
+    if metrics:
+        for key, value in metrics.items():
+            table.add_row(str(key), _format_metric_value(value))
+    else:
+        table.add_row("(empty)", "")
+
+    panels: list[RenderableType] = [
+        Panel(
+            table,
+            title="Metrics",
+            border_style="green",
+            padding=(1, 2),
+        )
+    ]
     if numeric:
-        console.print(ascii_bar_graph(numeric))
+        panels.append(_render_numeric_columns(numeric))
+
+    return Group(*panels)
+
+
+def render_status_panel(
+    title: str,
+    message: str,
+    *,
+    status: StatusLevel = "info",
+) -> RenderableType | str:
+    """Render a status message with consistent styling across commands."""
+
+    style = _STATUS_STYLES.get(status, _STATUS_STYLES["info"])
+    if _is_bare_mode():
+        prefix = status.upper()
+        lines = [f"{prefix}: {title}" if title else f"{prefix}: {message}"]
+        if title:
+            lines.append(f"  {message}")
+        return "\n".join(lines)
+
+    body = Align.left(Text(message, style=style["text"]))
+    panel_title = title or status.title()
+    return Panel(body, title=panel_title, border_style=style["border"], padding=(1, 2))
+
+
+def render_artifacts_panel(
+    artifacts: Mapping[str, str] | Sequence[tuple[str, str]],
+    *,
+    title: str = "Artifacts",
+) -> RenderableType | str:
+    """Render a reusable artifacts panel with fallback plain text output."""
+
+    if isinstance(artifacts, Mapping):
+        items = list(artifacts.items())
+    else:
+        items = list(artifacts)
+
+    if _is_bare_mode():
+        if not items:
+            return f"{title}:\n  (none)"
+        lines = [f"{title}:"]
+        for name, path in items:
+            lines.append(f"  - {name}: {path}")
+        return "\n".join(lines)
+
+    table = Table(box=None, show_header=False, pad_edge=False)
+    table.add_column("Name", style="bold")
+    table.add_column("Location")
+    if not items:
+        table.add_row("(none)", "")
+    else:
+        for name, path in items:
+            table.add_row(str(name), str(path))
+    return Panel(table, title=title, border_style="blue", padding=(1, 2))
+
+
+def visualize_metrics_cli(metrics: Mapping[str, Any]) -> None:
+    """Display metrics using Rich layouts with bare-mode fallback."""
+
+    console = get_console()
+    console.print(render_metrics_panel(metrics))

@@ -10,7 +10,8 @@ from autoresearch.cli_utils import (
     get_verbosity,
     print_verbose,
     Verbosity,
-    ascii_bar_graph,
+    render_metrics_panel,
+    set_bare_mode,
     summary_table,
 )
 from rich.console import Console
@@ -109,8 +110,17 @@ def test_print_warning_respects_minimum(level, expected, monkeypatch):
     assert bool(records) is expected
 
 
-def test_ascii_and_table_empty():
-    assert ascii_bar_graph({}) == "(no data)"
+def test_metrics_panel_and_table_empty(monkeypatch):
+    monkeypatch.setenv("AUTORESEARCH_BARE_MODE", "1")
+    set_bare_mode(True)
+    try:
+        metrics_view = render_metrics_panel({})
+        assert isinstance(metrics_view, str)
+        assert "(empty)" in metrics_view
+    finally:
+        monkeypatch.delenv("AUTORESEARCH_BARE_MODE", raising=False)
+        set_bare_mode(False)
+
     table = summary_table({})
     console = Console(record=True, color_system=None)
     console.print(table)

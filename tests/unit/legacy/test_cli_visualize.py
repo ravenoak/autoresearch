@@ -4,7 +4,12 @@ from unittest.mock import MagicMock
 
 from typer.testing import CliRunner
 
-from autoresearch.cli_utils import ascii_bar_graph, summary_table
+from autoresearch.cli_utils import (
+    get_console,
+    render_metrics_panel,
+    set_bare_mode,
+    summary_table,
+)
 from autoresearch.models import QueryResponse
 import pytest
 
@@ -12,20 +17,25 @@ import pytest
 pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
-def test_ascii_bar_graph_basic():
-    graph = ascii_bar_graph({"a": 1, "b": 2}, width=10)
-    lines = graph.splitlines()
-    assert len(lines) == 2
-    assert lines[0].count("#") < lines[1].count("#")
+def test_render_metrics_panel_bare_mode(monkeypatch):
+    monkeypatch.setenv("AUTORESEARCH_BARE_MODE", "1")
+    set_bare_mode(True)
+    try:
+        renderable = render_metrics_panel({"a": 1, "b": 2})
+        assert isinstance(renderable, str)
+        assert "a" in renderable
+        assert "#" in renderable
+    finally:
+        monkeypatch.delenv("AUTORESEARCH_BARE_MODE", raising=False)
+        set_bare_mode(False)
 
 
 def test_summary_table_render():
     table = summary_table({"x": 1})
-    from rich.console import Console
-
-    console = Console(record=True, color_system=None)
-    console.print(table)
-    output = console.export_text()
+    console = get_console(force_refresh=True)
+    with console.capture() as capture:
+        console.print(table)
+    output = capture.get()
     assert "x" in output
     assert "1" in output
 
