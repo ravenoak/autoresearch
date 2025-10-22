@@ -16,6 +16,26 @@ Feature: Research federation workspace
     Then each result includes a repository label
     And the knowledge graph stores nodes scoped by repository namespace
 
+  Scenario: Manage local Git manifests through the search CLI
+    Given a temporary manifest-aware configuration
+    And the following repositories are available for manifest CLI management:
+      | slug  | namespace   |
+      | alpha | audit.alpha |
+      | beta  | audit.beta  |
+      | gamma | audit.gamma |
+    When I add the repositories to the manifest via the CLI
+    And I update manifest slug "beta" to namespace "audit.beta" via the CLI
+    And I remove manifest slug "gamma" via the CLI
+    And I list the manifest via the CLI
+    Then the manifest CLI output lists:
+      | slug  | namespace   |
+      | alpha | audit.alpha |
+      | beta  | audit.beta  |
+    And a manifest-backed search for "shared-term" returns provenance from:
+      | slug  | namespace   |
+      | alpha | audit.alpha |
+      | beta  | audit.beta  |
+
   Scenario: Cross-examination workspace debates curated resources
     Given I create a workspace named "alignment-audit" with:
       | type   | reference                     |

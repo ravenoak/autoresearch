@@ -59,6 +59,20 @@ branches = [
     "main",
 ]
 history_depth = 50
+manifest = [
+    {
+        path = "/path/to/core-engine",
+        slug = "core-engine",
+        branches = ["main"],
+        namespace = "audit.core",
+    },
+    {
+        path = "/path/to/toolkit",
+        slug = "toolkit",
+        branches = ["develop"],
+        namespace = "audit.tools",
+    },
+]
 
 [storage.duckdb]
 path = "data/research.duckdb"

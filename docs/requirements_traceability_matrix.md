@@ -31,6 +31,6 @@
 | F-27 | Rich layouts with deterministic bare-mode fallbacks | `cli_utils.py`, `monitor/visualization.py` | `tests/behavior/features/rich_monitor_layout.feature`, `tests/behavior/features/visualize_metrics_cli.feature` |
 | F-28 | Workspace manifests version curated resources and citation requirements | `storage.py`, `storage_backends.py` | `tests/unit/storage/test_workspace_manifest.py`, `tests/behavior/features/research_federation.feature` |
 | F-29 | Workspace-aware orchestration enforces citation coverage | `orchestration/workspace.py`, `main/app.py` | `tests/unit/orchestration/test_workspace_orchestrator.py`, `tests/behavior/features/research_federation.feature` |
-| F-30 | Workspace tooling across CLI and desktop surfaces manifest context | `main/app.py`, `ui/desktop/main_window.py` | `tests/ui/desktop/test_desktop_integration.py`, `tests/behavior/features/research_federation.feature` |
+| F-30 | Workspace tooling across CLI and desktop surfaces manifest context; `search manifest` CLI covers repository curation | `main/app.py`, `ui/desktop/main_window.py` | `tests/ui/desktop/test_desktop_integration.py`, `tests/behavior/features/research_federation.feature` |
 | F-31 | Scholarly connectors cache papers with provenance for offline replay | `resources/scholarly/`, `storage.py` | `tests/behavior/features/research_federation.feature`, connector unit tests (planned) |
 

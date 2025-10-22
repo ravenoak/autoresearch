@@ -4,7 +4,15 @@
 
 The Git search module indexes repository content and commit history to support
 simple substring queries. It crawls the working tree, captures text from tracked
-files, and records commit messages for later lookup.
+files, and records commit messages for later lookup. When the
+`search.local_git.manifest` table is populated, the backend fans out across the
+listed repositories, tagging each hit with the configured manifest slug and
+optional namespace.
+
+Manifest entries are persisted through `autoresearch search manifest` CLI
+subcommands, which validate user input with `RepositoryManifestEntry` before
+writing updates back to `autoresearch.toml`. Ordering is preserved so that
+provenance labels appear predictably in multi-repository audits.
 
 ## Repository Crawling
 
@@ -25,6 +33,8 @@ files, and records commit messages for later lookup.
 - Indexing reads only the working tree; bare repositories are unsupported.
 - Binary files remain unindexed and cannot surface in results.
 - Duplicate queries yield stable output given an unchanged repository.
+- Manifest slugs must be unique; CLI updates reject collisions and enforce
+  schema validation before persisting changes.
 
 ## Algorithms
 
@@ -44,9 +54,21 @@ files, and records commit messages for later lookup.
 - Re-running the indexer on unchanged data yields identical search results.
 - Query latency scales linearly with repository size.
 
+## Manifest management
+
+- `autoresearch search manifest list` – render the active manifest entries in
+  CLI output using the repository slug, path, branches, and namespace.
+- `autoresearch search manifest add` – append or insert a validated entry.
+- `autoresearch search manifest update` – mutate path, slug, branches, or
+  namespace fields without duplicating slugs.
+- `autoresearch search manifest remove` – delete an entry and persist the
+  reduced manifest.
+
 ## Traceability
 
 - Modules
+  - [src/autoresearch/main/app.py](../../src/autoresearch/main/app.py)
   - [src/git/search.py](../../src/git/search.py)
 - Tests
+  - [tests/behavior/features/research_federation.feature](../../tests/behavior/features/research_federation.feature)
   - [tests/targeted/test_git_search.py](../../tests/targeted/test_git_search.py)
