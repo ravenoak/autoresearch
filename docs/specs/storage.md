@@ -77,6 +77,14 @@ the safety margin.
 - `storage.deterministic_node_budget` limits the in-memory graph to a fixed
   size. Absent this override, deterministic caps derive from `ram_budget_mb`
   only when `U > B`, maintaining the "no eviction when `U ≤ B`" invariant.
+- `storage.namespaces.tokens` accepts namespace hints at `session`,
+  `workspace`, `organisation`, and `project` granularity. These tokens resolve
+  to canonical labels that suffix DuckDB tables and RDF graphs.
+- Namespace routing is acyclic: configuration validation rejects cycles across
+  namespace parents, ensuring a finite resolution path for any token.
+- Merge behaviour is configured via `storage.namespaces.merge_policies`. The
+  `union` strategy deduplicates claims while collecting provenance, whereas
+  `confidence_weight` averages scores using per-namespace weights.
 
 ## Complexity
 

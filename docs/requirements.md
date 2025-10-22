@@ -74,9 +74,17 @@ Must     | Unit tests for logging utilities.          |
 
 ## 4  Configuration & Hot Reload
 
-*Central file*: `autoresearch.toml` (validated, hot-reloadable)  
-*Secrets*: Only in `.env` or environment variables, never in logs or output.  
-*Output*: CLI auto-detects context (TTY vs. pipe) and adapts output format; user can override with `--output json|markdown|plain`.
+*Central file*: `autoresearch.toml` (validated, hot-reloadable)
+*Secrets*: Only in `.env` or environment variables, never in logs or output.
+*Output*: CLI auto-detects context (TTY vs. pipe) and adapts output format; user
+  can override with `--output json|markdown|plain`.
+*Storage namespaces*: `storage.namespaces` defines routing tokens for
+  `session`, `workspace`, `organisation`, and `project` scopes. The resolver
+  normalises these tokens into table suffixes for DuckDB and RDF stores,
+  validates that mappings are acyclic, and exposes merge policies.
+*Namespace policies*: `storage.namespaces.merge_policies` declares named merge
+  strategies. The `default` policy can be `union` (combine unique claims) or
+  `confidence_weight` (weight scores per namespace).
 
 ---
 

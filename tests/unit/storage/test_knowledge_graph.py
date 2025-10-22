@@ -23,13 +23,17 @@ class _StubStorageManager:
         entities: Sequence[dict[str, Any]],
         relations: Sequence[dict[str, Any]],
         triples: Sequence[tuple[str, str, str]],
+        namespace: str | None = None,
     ) -> None:
         for entity in entities:
-            self.graph.add_node(entity["id"], label=entity.get("label"))
+            node_id = f"{namespace or '__default__'}::{entity['id']}"
+            self.graph.add_node(node_id, label=entity.get("label"))
         for relation in relations:
+            src = f"{namespace or '__default__'}::{relation['subject_id']}"
+            dst = f"{namespace or '__default__'}::{relation['object_id']}"
             self.graph.add_edge(
-                relation["subject_id"],
-                relation["object_id"],
+                src,
+                dst,
                 key=relation.get("predicate", "related_to"),
                 predicate=relation.get("predicate", "related_to"),
             )
@@ -45,8 +49,16 @@ class _StubStorageManager:
     def export_knowledge_graph_json() -> str:
         return '{"nodes": []}'
 
-    def persist_claim(self, claim: dict[str, Any], partial_update: bool = False) -> None:
-        self.persisted_claims.append((dict(claim), partial_update))
+    def persist_claim(
+        self,
+        claim: dict[str, Any],
+        partial_update: bool = False,
+        namespace: str | None = None,
+    ) -> None:
+        enriched = dict(claim)
+        if namespace is not None:
+            enriched.setdefault("namespace", namespace)
+        self.persisted_claims.append((enriched, partial_update))
 
 
 def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -72,7 +84,11 @@ def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyP
         }
     ]
 
-    summary = pipeline.ingest("Where is Autoresearch located?", snippets)
+    summary = pipeline.ingest(
+        "Where is Autoresearch located?",
+        snippets,
+        namespace="project-alpha",
+    )
 
     assert stub_manager.persisted_claims, "Knowledge graph exports should persist as claims"
     claim_payload, partial_update = stub_manager.persisted_claims[0]
@@ -80,6 +96,7 @@ def test_ingest_persists_exports_and_updates_summary(monkeypatch: pytest.MonkeyP
     assert claim_payload["type"] == "knowledge_graph_export"
     assert claim_payload["attributes"]["graphml"] == "<graphml/>"
     assert claim_payload["attributes"]["graph_json"].startswith('{"nodes"')
+    assert claim_payload["namespace"] == "project-alpha"
 
     assert summary.exports == {"graphml": True, "graph_json": True}
     provenance_entry = summary.provenance[-1]

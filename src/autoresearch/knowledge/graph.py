@@ -22,6 +22,11 @@ from uuid import uuid4
 import networkx as nx
 
 from ..config import ConfigLoader
+from ..storage_utils import (
+    DEFAULT_NAMESPACE_LABEL,
+    NamespaceTokens,
+    resolve_namespace,
+)
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +83,7 @@ class GraphEntity:
     type: str = "entity"
     source: str | None = None
     attributes: dict[str, Any] = field(default_factory=dict)
+    namespace: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
         """Return a serialisable payload suitable for persistence."""
@@ -90,6 +96,8 @@ class GraphEntity:
         }
         if self.source:
             payload["source"] = self.source
+        if self.namespace:
+            payload["namespace"] = self.namespace
         return payload
 
 
@@ -102,6 +110,7 @@ class GraphRelation:
     object_id: str
     weight: float = 1.0
     provenance: dict[str, Any] = field(default_factory=dict)
+    namespace: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
         """Return a serialisable payload suitable for persistence."""
@@ -112,6 +121,7 @@ class GraphRelation:
             "object_id": self.object_id,
             "weight": self.weight,
             "provenance": dict(self.provenance),
+            "namespace": self.namespace,
         }
 
 
@@ -190,7 +200,7 @@ class SessionGraphPipeline:
     """Extract and persist knowledge graph fragments for a user session."""
 
     def __init__(self) -> None:
-        self._entity_cache: dict[str, GraphEntity] = {}
+        self._entity_cache: dict[tuple[str, str], GraphEntity] = {}
         self._entity_lock = threading.Lock()
         self._summary_lock = threading.Lock()
         self._latest_summary: dict[str, Any] = {}
@@ -203,6 +213,7 @@ class SessionGraphPipeline:
         self,
         query: str,
         snippets: Sequence[Mapping[str, Any]],
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
     ) -> GraphExtractionSummary:
         """Extract graph data from retrieved snippets and persist it.
 
@@ -210,6 +221,7 @@ class SessionGraphPipeline:
             query: Original retrieval query that produced ``snippets``.
             snippets: Iterable of snippet payloads with title, snippet, and
                 optional URL metadata.
+            namespace: Optional namespace tokens used to route persistence.
 
         Returns:
             A :class:`GraphExtractionSummary` describing how many entities and
@@ -229,10 +241,22 @@ class SessionGraphPipeline:
         max_entities = int(getattr(context_cfg, "graph_max_entities", 256))
         max_relations = int(getattr(context_cfg, "graph_max_edges", 512))
 
-        entities: dict[str, GraphEntity] = {}
+        storage_cfg = getattr(cfg, "storage", None)
+        namespaces_cfg = getattr(storage_cfg, "namespaces", None) if storage_cfg else None
+        default_namespace = (
+            getattr(namespaces_cfg, "default_namespace", DEFAULT_NAMESPACE_LABEL)
+            if namespaces_cfg
+            else DEFAULT_NAMESPACE_LABEL
+        )
+        routes = dict(getattr(namespaces_cfg, "routes", {})) if namespaces_cfg else {}
+        namespace_label = resolve_namespace(
+            NamespaceTokens.from_any(namespace), routes, default_namespace
+        )
+
+        entities: dict[tuple[str, str], GraphEntity] = {}
         relations: list[GraphRelation] = []
         triples: list[tuple[str, str, str]] = []
-        relation_keys: set[tuple[str, str, str]] = set()
+        relation_keys: set[tuple[str, str, str, str]] = set()
         provenance_records: list[dict[str, Any]] = []
 
         for snippet in snippets:
@@ -253,16 +277,22 @@ class SessionGraphPipeline:
                     for subj_label, predicate, obj_label in extracted:
                         if not subj_label or not obj_label:
                             continue
-                        subject = self._ensure_entity(subj_label, snippet.get("url"))
-                        obj = self._ensure_entity(obj_label, snippet.get("url"))
-                        if subject.id not in entities and len(entities) >= max_entities:
+                        subject = self._ensure_entity(
+                            subj_label, snippet.get("url"), namespace_label
+                        )
+                        obj = self._ensure_entity(
+                            obj_label, snippet.get("url"), namespace_label
+                        )
+                        subject_key = (namespace_label, subject.id)
+                        object_key = (namespace_label, obj.id)
+                        if subject_key not in entities and len(entities) >= max_entities:
                             continue
-                        if obj.id not in entities and len(entities) >= max_entities:
+                        if object_key not in entities and len(entities) >= max_entities:
                             continue
-                        entities[subject.id] = subject
-                        entities[obj.id] = obj
+                        entities[subject_key] = subject
+                        entities[object_key] = obj
 
-                        relation_key = (subject.id, predicate, obj.id)
+                        relation_key = (namespace_label, subject.id, predicate, obj.id)
                         if relation_key in relation_keys:
                             continue
                         relation_keys.add(relation_key)
@@ -276,6 +306,7 @@ class SessionGraphPipeline:
                             predicate=predicate,
                             object_id=obj.id,
                             provenance=provenance,
+                            namespace=namespace_label,
                         )
                         relations.append(relation)
                         triples.append((subject.id, predicate, obj.id))
@@ -319,6 +350,7 @@ class SessionGraphPipeline:
             entities=entity_payloads,
             relations=relation_payloads,
             triples=triples,
+            namespace=namespace_label,
         )
 
         try:
@@ -333,7 +365,13 @@ class SessionGraphPipeline:
             "graphml": bool((artifacts.get("graphml") or "").strip()),
             "graph_json": bool((artifacts.get("graph_json") or "").strip()),
         }
-        self._persist_exports(manager, query=query, summary=summary, artifacts=artifacts)
+        self._persist_exports(
+            manager,
+            query=query,
+            summary=summary,
+            artifacts=artifacts,
+            namespace=namespace_label,
+        )
         summary.highlights = self._build_highlights(summary)
 
         self._store_summary(summary)
@@ -513,8 +551,8 @@ class SessionGraphPipeline:
         with self._summary_lock:
             self._latest_summary = summary.to_dict()
 
-    def _ensure_entity(self, label: str, source: str | None) -> GraphEntity:
-        key = label.strip().lower()
+    def _ensure_entity(self, label: str, source: str | None, namespace: str) -> GraphEntity:
+        key = (namespace, label.strip().lower())
         with self._entity_lock:
             entity = self._entity_cache.get(key)
             if entity is None:
@@ -522,10 +560,13 @@ class SessionGraphPipeline:
                     id=_make_entity_id(label),
                     label=label,
                     source=source,
+                    namespace=namespace,
                 )
                 self._entity_cache[key] = entity
             elif source and not entity.source:
                 entity.source = source
+            if entity.namespace is None:
+                entity.namespace = namespace
         return entity
 
     def _extract_relations(self, sentence: str) -> list[tuple[str, str, str]]:
@@ -713,8 +754,20 @@ class SessionGraphPipeline:
         entities: Sequence[Mapping[str, Any]],
         relations: Sequence[Mapping[str, Any]],
         triples: Sequence[tuple[str, str, str]],
+        namespace: str,
     ) -> dict[str, float]:
-        """Persist the batch via :class:`StorageManager` and record latency."""
+        """Persist the batch via :class:`StorageManager` and record latency.
+
+        Args:
+            manager: Storage manager instance.
+            entities: Sequence of entity payloads to persist.
+            relations: Sequence of relation payloads to persist.
+            triples: RDF triple list mirroring ``relations``.
+            namespace: Canonical namespace routed for persistence.
+
+        Returns:
+            Mapping containing latency metrics for the DuckDB and RDF stores.
+        """
 
         duckdb_latency = 0.0
         rdf_latency = 0.0
@@ -734,24 +787,26 @@ class SessionGraphPipeline:
                 def timed_entities(
                     self: Any,
                     payload: Sequence[Mapping[str, Any]],
-                    _original: Callable[[Sequence[Mapping[str, Any]]], Any] = original_entities,
+                    namespace_arg: str | None = None,
+                    _original: Callable[[Sequence[Mapping[str, Any]], str | None], Any] = original_entities,
                 ) -> Any:
                     nonlocal duckdb_latency
                     start = time.monotonic()
                     try:
-                        return _original(payload)
+                        return _original(payload, namespace_arg)
                     finally:
                         duckdb_latency += time.monotonic() - start
 
                 def timed_relations(
                     self: Any,
                     payload: Sequence[Mapping[str, Any]],
-                    _original: Callable[[Sequence[Mapping[str, Any]]], Any] = original_relations,
+                    namespace_arg: str | None = None,
+                    _original: Callable[[Sequence[Mapping[str, Any]], str | None], Any] = original_relations,
                 ) -> Any:
                     nonlocal duckdb_latency
                     start = time.monotonic()
                     try:
-                        return _original(payload)
+                        return _original(payload, namespace_arg)
                     finally:
                         duckdb_latency += time.monotonic() - start
 
@@ -784,6 +839,7 @@ class SessionGraphPipeline:
                 entities=entities,
                 relations=relations,
                 triples=triples,
+                namespace=namespace,
             )
         except Exception:  # pragma: no cover - propagation handled elsewhere
             log.debug("Knowledge graph persistence failed", exc_info=True)
@@ -806,6 +862,7 @@ class SessionGraphPipeline:
         query: str,
         summary: GraphExtractionSummary,
         artifacts: Mapping[str, Any],
+        namespace: str,
     ) -> None:
         """Persist GraphML and JSON exports as claims for provenance."""
 
@@ -833,9 +890,10 @@ class SessionGraphPipeline:
                 "query": query,
                 "timestamp": summary.timestamp,
             },
+            "namespace": namespace,
         }
         try:
-            manager.persist_claim(payload, partial_update=False)
+            manager.persist_claim(payload, partial_update=False, namespace=namespace)
         except Exception:  # pragma: no cover - storage failures logged upstream
             log.debug("Failed to persist knowledge graph export claim", exc_info=True)
             return
