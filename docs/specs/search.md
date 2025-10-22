@@ -40,20 +40,44 @@ and hybrid queries and exposes a CLI entry point. See the
 
 ### Hierarchical traversal
 
-- Builds a navigation tree that alternates between bottom-up clustering and
-  top-down summaries so dense neighborhoods cluster first, then curator nodes
-  emit distilled topic guides.
-- Augments traversal slates with calibrated sibling or leaf exemplars. Each
-  batch reserves 20 percent of the slots for contrasting samples that anchor
-  latent score estimation to observed edges.
-- Fits latent edge scores with a constrained maximum-likelihood estimator that
-  enforces non-negative weights and keeps branch priors normalized.
-- Applies path relevance momentum where the running score for a node path uses
-  an exponential moving average with decay ``\beta`` sourced from telemetry.
-- Records telemetry for tree height, branching factor, slate acceptance rate,
-  and a ``hierarchy_quality`` diagnostic. The traversal aborts to flat hybrid
-  ranking when ``hierarchy_quality`` drops below the ``0.62`` threshold or when
-  ``momentum_drift`` exceeds ``0.18`` for three consecutive iterations.
+1. **Initialization.** Seed traversal with the query context, attach telemetry
+   counters, and clamp the branching factor to the offline tree limits so the
+   live walk respects pre-computed structure.
+2. **Beam expansion.** Expand the active beam with default parameters ``B = 2``
+   and ``N = 20`` iterations, enqueueing children according to their calibrated
+   priors while respecting dynamic corpus filters.
+   【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+3. **Slate construction.** Build ``Aug(v)`` for each frontier node by
+   prioritizing the highest scoring sibling and sampling approximately ten leaf
+   candidates (``ℓ ≈ 10``) to maintain topic diversity.
+   【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+4. **Latent score calibration.** Fit the latent traversal model with
+   maximum-likelihood estimates over the intercept ``a``, per-edge coefficients
+   ``b_i``, and the provisional node score ``\hat{s}_v`` subject to non-negative
+   constraints.
+5. **Path relevance update.** Refresh the running relevance with an
+   exponential-moving average using ``α = 0.5`` so exploration momentum tracks
+   the latest judgments.
+   【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+
+Offline trees support two builder modes: bottom-up Gecko clustering for dense
+StackExchange-style corpora and top-down LLM partitioning that emits 1–5 word
+summaries per branch, each capped at a maximum branching factor of roughly
+10–20 nodes.
+【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+Adopt the BRIGHT defaults from Section 4.1—Gemini-2.5-flash as the traversal
+LLM, ``B = 2``, ``N = 20``, ``ℓ = 10``, and ``α = 0.5``—to ground initial
+implementations before tuning for project-specific corpora.
+【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+
+When a query operates on a dynamic corpus that excludes large document sets at
+runtime, stale parent summaries can misdirect traversal and suppress
+downstream recall.
+【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L696-L708】
+Detect this failure mode by tracking excluded-leaf ratios; if more than 15
+percent of the candidate leaves are masked for three consecutive iterations,
+abort the hierarchical search and fall back to the GraphRAG pipeline so the
+system can regenerate query-focused summaries on demand.
 
 ## Invariants
 
