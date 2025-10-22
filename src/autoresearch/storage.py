@@ -31,7 +31,7 @@ import importlib.util
 import json
 import os
 import time
-from collections import OrderedDict, deque
+from collections import OrderedDict, defaultdict, deque
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -54,14 +54,20 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import rdflib
 from .config import ConfigLoader, StorageConfig
+from .config.models import NamespaceMergeConfig, NamespaceMergeStrategy
 from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_utils import (
+    DEFAULT_NAMESPACE_LABEL,
+    NamespaceTokens,
+    canonical_namespace,
     graph_add,
     graph_triples,
+    namespace_table_suffix,
     normalise_workspace_slug,
+    resolve_namespace,
     serialise_workspace_resource,
 )
 from .storage_backends import DuckDBStorageBackend, init_rdf_store
@@ -110,6 +116,7 @@ class StorageContext:
     db_backend: Optional[DuckDBStorageBackend] = None
     rdf_store: Optional[GraphProtocol] = None
     config_fingerprint: Optional[str] = None
+    rdf_namespaces: dict[str, GraphProtocol] = field(default_factory=dict)
 
 
 # Container for stateful components
@@ -140,7 +147,9 @@ log = get_logger(__name__)
 # Reusable typing helpers -------------------------------------------------
 
 
-def _persist_claim_message(claim: JSONDict, partial_update: bool) -> "PersistClaimMessage":
+def _persist_claim_message(
+    claim: JSONDict, partial_update: bool, namespace: str | None
+) -> "PersistClaimMessage":
     """Return a broker-compatible payload for claim persistence."""
 
     payload: "PersistClaimMessage" = {
@@ -148,6 +157,8 @@ def _persist_claim_message(claim: JSONDict, partial_update: bool) -> "PersistCla
         "claim": claim,
         "partial_update": partial_update,
     }
+    if namespace is not None:
+        payload["namespace"] = namespace
     return payload
 
 
@@ -170,10 +181,16 @@ class StorageDelegateProtocol(Protocol):
     def teardown(remove_db: bool, context: StorageContext, state: "StorageState") -> None: ...
 
     @staticmethod
-    def record_claim_audit(audit: ClaimAuditRecord | JSONMapping) -> ClaimAuditRecord: ...
+    def record_claim_audit(
+        audit: ClaimAuditRecord | JSONMapping,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> ClaimAuditRecord: ...
 
     @staticmethod
-    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]: ...
+    def list_claim_audits(
+        claim_id: str | None = None,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> list[ClaimAuditRecord]: ...
 
     @staticmethod
     def save_workspace_manifest(
@@ -195,49 +212,10 @@ class StorageDelegateProtocol(Protocol):
     ) -> list[WorkspaceManifest]: ...
 
     @staticmethod
-    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
-
-    @staticmethod
-    def update_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
-
-    @staticmethod
-    def get_claim(claim_id: str) -> JSONDict: ...
-
-    @staticmethod
-    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
-
-    @staticmethod
-    def create_hnsw_index() -> None: ...
-
-    @staticmethod
-    def refresh_vector_index() -> None: ...
-
-    @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList: ...
-
-    @staticmethod
-    def get_graph() -> nx.DiGraph[Any]: ...
-
-    @staticmethod
-    def get_knowledge_graph(create: bool = True) -> nx.MultiDiGraph[Any] | None: ...
-
-    @staticmethod
-    def touch_node(node_id: str) -> None: ...
-
-    @staticmethod
-    def get_duckdb_conn() -> DuckDBConnection: ...
-
-    @staticmethod
-    def connection() -> AbstractContextManager[DuckDBConnection]: ...
-
-    @staticmethod
-    def get_rdf_store() -> rdflib.Graph: ...
-
-    @staticmethod
-    def has_vss() -> bool: ...
-
-    @staticmethod
-    def clear_all() -> None: ...
+    def merge_claim_groups(
+        claims_by_namespace: Mapping[str, Sequence[JSONMapping]],
+        policy: str | NamespaceMergeConfig | None = None,
+    ) -> list[JSONDict]: ...
 
 
 _delegate: StorageDelegateProtocol | None = None
@@ -331,6 +309,7 @@ class ClaimAuditRecord:
     provenance: JSONDict = field(default_factory=dict)
     audit_id: str = field(default_factory=lambda: str(uuid4()))
     created_at: float = field(default_factory=time.time)
+    namespace: str | None = None
 
     def to_payload(self) -> JSONDict:
         """Serialise the record into a JSON-compatible payload.
@@ -353,6 +332,7 @@ class ClaimAuditRecord:
             "provenance": ensure_mutable_mapping(self.provenance),
             "notes": self.notes,
             "created_at": self.created_at,
+            "namespace": self.namespace,
         }
 
     @classmethod
@@ -448,6 +428,9 @@ class ClaimAuditRecord:
         else:
             score = None
 
+        namespace_value = payload.get("namespace")
+        namespace = str(namespace_value) if namespace_value not in (None, "") else None
+
         return cls(
             claim_id=claim_id,
             status=status,
@@ -460,6 +443,7 @@ class ClaimAuditRecord:
             provenance=provenance,
             audit_id=audit_id,
             created_at=created_at,
+            namespace=namespace,
         )
 
     @classmethod
@@ -703,6 +687,7 @@ def _reset_context(ctx: StorageContext) -> None:
         except Exception as exc:  # pragma: no cover - defensive cleanup
             log.warning("Failed to close RDF store during reinit: %s", exc)
         ctx.rdf_store = None
+    ctx.rdf_namespaces.clear()
 
     if _kuzu_backend is not None:
         try:
@@ -969,6 +954,81 @@ class StorageManager(metaclass=StorageManagerMeta):
     _last_adaptive_policy: ClassVar[str] = "lru"
 
     @staticmethod
+    def _namespace_settings() -> tuple[str, Mapping[str, str], Mapping[str, Any]]:
+        cfg = ConfigLoader().config.storage
+        namespaces_cfg = getattr(cfg, "namespaces", None)
+        if namespaces_cfg is None:
+            return DEFAULT_NAMESPACE_LABEL, {}, {}
+        default_namespace = getattr(
+            namespaces_cfg,
+            "default_namespace",
+            DEFAULT_NAMESPACE_LABEL,
+        )
+        routes = dict(getattr(namespaces_cfg, "routes", {}))
+        merge_policies = dict(getattr(namespaces_cfg, "merge_policies", {}))
+        return default_namespace, routes, merge_policies
+
+    @staticmethod
+    def _resolve_namespace_label(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None,
+    ) -> str:
+        default_namespace, routes, _ = StorageManager._namespace_settings()
+        if isinstance(namespace, str):
+            return canonical_namespace(namespace, default=default_namespace)
+        tokens = NamespaceTokens.from_any(namespace)
+        resolved = resolve_namespace(tokens, routes, default_namespace)
+        return canonical_namespace(resolved, default=default_namespace)
+
+    @staticmethod
+    def _graph_node_id(namespace: str, claim_id: str) -> str:
+        default_namespace, _, _ = StorageManager._namespace_settings()
+        if namespace == default_namespace:
+            return claim_id
+        return f"{namespace}::{claim_id}"
+
+    @staticmethod
+    def _kg_node_id(namespace: str, entity_id: str) -> str:
+        """Return a stable knowledge-graph node identifier scoped by namespace."""
+
+        default_namespace, _, _ = StorageManager._namespace_settings()
+        if namespace == default_namespace:
+            return entity_id
+        return f"{namespace}::{entity_id}"
+
+    @staticmethod
+    def _derive_namespace(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None,
+        claim: JSONDict | None = None,
+    ) -> str:
+        candidate: NamespaceTokens | Mapping[str, str] | str | None = namespace
+        if candidate is None and claim is not None:
+            candidate = claim.get("namespace")
+        return StorageManager._resolve_namespace_label(candidate)
+
+    @staticmethod
+    def _rdf_graph_for_namespace(namespace: str) -> GraphProtocol:
+        StorageManager._ensure_storage_initialized()
+        ctx = StorageManager.context
+        if ctx.rdf_store is None:
+            raise StorageError("RDF store not initialized")
+        default_namespace, _, _ = StorageManager._namespace_settings()
+        if namespace == default_namespace:
+            return cast(GraphProtocol, ctx.rdf_store)
+        existing = ctx.rdf_namespaces.get(namespace)
+        if existing is not None:
+            return existing
+        cfg = ConfigLoader().config.storage
+        base_path = cfg.rdf_path
+        suffix = namespace_table_suffix(namespace)
+        if os.path.isdir(base_path):
+            ns_path = os.path.join(base_path, suffix)
+        else:
+            ns_path = f"{base_path}_{suffix}"
+        graph = init_rdf_store(cfg.rdf_backend, ns_path)
+        ctx.rdf_namespaces[namespace] = graph
+        return graph
+
+    @staticmethod
     def setup(
         db_path: Optional[str] = None,
         context: StorageContext | None = None,
@@ -1029,25 +1089,40 @@ class StorageManager(metaclass=StorageManagerMeta):
         return max(0.0, process_mb - StorageManager.state.baseline_mb)
 
     @staticmethod
-    def record_claim_audit(audit: ClaimAuditRecord | JSONMapping) -> ClaimAuditRecord:
+    def record_claim_audit(
+        audit: ClaimAuditRecord | JSONMapping,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> ClaimAuditRecord:
         """Persist a claim audit entry across storage backends."""
 
         if _delegate and _delegate is not StorageManager:
-            return _delegate.record_claim_audit(audit)
+            return _delegate.record_claim_audit(audit, namespace)
 
-        payload = audit.to_payload() if isinstance(audit, ClaimAuditRecord) else to_json_dict(audit)
-        return StorageManager._persist_claim_audit_payload(payload)
+        payload = (
+            audit.to_payload() if isinstance(audit, ClaimAuditRecord) else to_json_dict(audit)
+        )
+        namespace_label = StorageManager._derive_namespace(namespace, payload)
+        payload.setdefault("namespace", namespace_label)
+        return StorageManager._persist_claim_audit_payload(payload, namespace_label)
 
     @staticmethod
-    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]:
+    def list_claim_audits(
+        claim_id: str | None = None,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> list[ClaimAuditRecord]:
         """Return persisted claim audits, optionally filtered by claim id."""
 
         if _delegate and _delegate is not StorageManager:
-            return _delegate.list_claim_audits(claim_id)
+            return _delegate.list_claim_audits(claim_id, namespace)
 
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
-        payloads = StorageManager.context.db_backend.list_claim_audits(claim_id)
+        namespace_label = None
+        if namespace is not None:
+            namespace_label = StorageManager._derive_namespace(namespace, None)
+        payloads = StorageManager.context.db_backend.list_claim_audits(
+            claim_id, namespace_label
+        )
         return [ClaimAuditRecord.from_payload(p) for p in payloads]
 
     @staticmethod
@@ -1699,7 +1774,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             )
 
     @staticmethod
-    def _persist_to_networkx(claim: JSONDict) -> None:
+    def _persist_to_networkx(claim: JSONDict, namespace: str) -> None:
         """Persist a claim to the in-memory NetworkX graph.
 
         This method adds the claim as a node in the NetworkX graph, with its attributes
@@ -1727,33 +1802,43 @@ class StorageManager(metaclass=StorageManagerMeta):
                 attrs["confidence"] = claim["confidence"]
             if "audit" in claim:
                 attrs["audit"] = claim["audit"]
+            attrs["namespace"] = namespace
+            attrs["id"] = claim.get("id")
+            node_key = StorageManager._graph_node_id(namespace, str(claim.get("id", "")))
             assert StorageManager.context.graph is not None
-            StorageManager.context.graph.add_node(claim["id"], **attrs)
+            StorageManager.context.graph.add_node(node_key, **attrs)
             # Increment the counter and store it to maintain deterministic
             # ordering.  A re-entrant lock ensures concurrent writers cannot
             # race on the counter or LRU structure.
             state.lru_counter += 1
-            state.lru[claim["id"]] = state.lru_counter
+            state.lru[node_key] = state.lru_counter
             for rel in claim.get("relations", []):
                 assert StorageManager.context.graph is not None
+                src = StorageManager._graph_node_id(namespace, str(rel.get("src", "")))
+                dst = StorageManager._graph_node_id(namespace, str(rel.get("dst", "")))
                 StorageManager.context.graph.add_edge(
-                    rel["src"],
-                    rel["dst"],
+                    src,
+                    dst,
                     **rel.get("attributes", {}),
                 )
 
     @staticmethod
-    def _persist_claim_audit_payload(audit_payload: JSONMapping) -> ClaimAuditRecord:
+    def _persist_claim_audit_payload(
+        audit_payload: JSONMapping, namespace: str
+    ) -> ClaimAuditRecord:
         """Persist verification metadata across storage backends."""
 
         record = ClaimAuditRecord.from_payload(to_json_dict(audit_payload))
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
-        StorageManager.context.db_backend.persist_claim_audit(record.to_payload())
+        payload = record.to_payload()
+        payload["namespace"] = namespace
+        StorageManager.context.db_backend.persist_claim_audit(payload, namespace)
 
         graph = StorageManager.context.graph
-        if graph is not None and graph.has_node(record.claim_id):
-            graph.nodes[record.claim_id]["audit"] = record.to_payload()
+        node_key = StorageManager._graph_node_id(namespace, record.claim_id)
+        if graph is not None and graph.has_node(node_key):
+            graph.nodes[node_key]["audit"] = payload
         return record
 
     @staticmethod
@@ -1857,7 +1942,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         _kuzu_backend.persist_claim(claim)
 
     @staticmethod
-    def _persist_to_rdf(claim: JSONDict) -> None:
+    def _persist_to_rdf(claim: JSONDict, namespace: str) -> None:
         """Persist a claim to the RDFLib semantic graph store.
 
         This method adds the claim's attributes as triples in the RDF store,
@@ -1881,8 +1966,8 @@ class StorageManager(metaclass=StorageManagerMeta):
         if StorageManager.context.rdf_store is None:
             # RDF backend not available; skip semantic persistence.
             return
-        rdf_store = cast(rdflib.Graph, StorageManager.context.rdf_store)
-        subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
+        rdf_store = cast(rdflib.Graph, StorageManager._rdf_graph_for_namespace(namespace))
+        subj = rdflib.URIRef(f"urn:claim:{namespace}:{claim['id']}")
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
@@ -1897,6 +1982,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         entities: Sequence[JSONMapping] | None = None,
         relations: Sequence[JSONMapping] | None = None,
         triples: Sequence[tuple[str, str, str]] | None = None,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
     ) -> None:
         """Persist knowledge graph entities and relations across backends.
 
@@ -1907,102 +1993,299 @@ class StorageManager(metaclass=StorageManagerMeta):
                 predicates.
             triples: Optional list of ``(subject, predicate, object)`` tuples
                 used for RDF and analytics synchronisation.
+            namespace: Optional namespace tokens controlling routing when
+                payloads omit explicit namespace metadata.
         """
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.update_knowledge_graph(
+                entities=entities,
+                relations=relations,
+                triples=triples,
+                namespace=namespace,
+            )
 
         if not entities and not relations and not triples:
             return
 
         StorageManager._ensure_storage_initialized()
 
-        with StorageManager.state.lock:
-            StorageManager._ensure_storage_initialized()
+        fallback_namespace = StorageManager._resolve_namespace_label(namespace)
+        entity_list: list[JSONDict] = [to_json_dict(item) for item in entities or []]
+        relation_list: list[JSONDict] = [to_json_dict(item) for item in relations or []]
+
+        grouped_entities: dict[str, list[JSONDict]] = defaultdict(list)
+        grouped_relations: dict[str, list[JSONDict]] = defaultdict(list)
+        entity_namespace_index: dict[str, str] = {}
+
+        for entity in entity_list:
+            ns_value = entity.get("namespace", fallback_namespace)
+            entity_namespace = StorageManager._resolve_namespace_label(ns_value)
+            entity_id = str(entity.get("id") or "")
+            if not entity_id:
+                continue
+            attributes_raw = entity.get("attributes")
+            attributes = (
+                ensure_mutable_mapping(attributes_raw)
+                if isinstance(attributes_raw, Mapping)
+                else {}
+            )
+            entity["attributes"] = attributes
+            entity["namespace"] = entity_namespace
+            grouped_entities[entity_namespace].append(entity)
+            entity_namespace_index[entity_id] = entity_namespace
+
+        for relation in relation_list:
+            ns_value = relation.get("namespace", fallback_namespace)
+            relation_namespace = StorageManager._resolve_namespace_label(ns_value)
+            subject_id = str(relation.get("subject_id") or "")
+            object_id = str(relation.get("object_id") or "")
+            if not subject_id or not object_id:
+                continue
+            predicate_raw = relation.get("predicate")
+            predicate = str(predicate_raw) if predicate_raw else "related_to"
+            provenance_raw = relation.get("provenance")
+            provenance = (
+                ensure_mutable_mapping(provenance_raw)
+                if isinstance(provenance_raw, Mapping)
+                else {}
+            )
+            try:
+                weight = float(relation.get("weight", 1.0))
+            except (TypeError, ValueError):
+                weight = 1.0
+
+            relation["subject_id"] = subject_id
+            relation["object_id"] = object_id
+            relation["predicate"] = predicate
+            relation["provenance"] = provenance
+            relation["weight"] = weight
+            relation["namespace"] = relation_namespace
+
+            grouped_relations[relation_namespace].append(relation)
+            entity_namespace_index.setdefault(subject_id, relation_namespace)
+            entity_namespace_index.setdefault(object_id, relation_namespace)
+
+        triples_by_namespace: dict[str, list[RDFTriple]] = defaultdict(list)
+        if triples:
+            for subj_raw, pred_raw, obj_raw in triples:
+                subject_id = str(subj_raw)
+                object_id = str(obj_raw)
+                predicate = str(pred_raw) if pred_raw else "related_to"
+                ns_candidate = (
+                    entity_namespace_index.get(subject_id)
+                    or entity_namespace_index.get(object_id)
+                    or fallback_namespace
+                )
+                namespace_label = StorageManager._resolve_namespace_label(ns_candidate)
+                slug = namespace_table_suffix(namespace_label)
+                triples_by_namespace[namespace_label].append(
+                    _as_rdf_triple(
+                        rdflib.URIRef(f"urn:kg:{slug}:{subject_id}"),
+                        rdflib.URIRef(f"urn:kgp:{predicate}"),
+                        rdflib.URIRef(f"urn:kg:{slug}:{object_id}"),
+                    )
+                )
+        else:
+            for namespace_label, ns_relations in grouped_relations.items():
+                slug = namespace_table_suffix(namespace_label)
+                for relation in ns_relations:
+                    triples_by_namespace[namespace_label].append(
+                        _as_rdf_triple(
+                            rdflib.URIRef(f"urn:kg:{slug}:{relation['subject_id']}"),
+                            rdflib.URIRef(f"urn:kgp:{relation['predicate']}"),
+                            rdflib.URIRef(f"urn:kg:{slug}:{relation['object_id']}"),
+                        )
+                    )
+
+        with StorageManager.state.lock():
             backend = StorageManager.context.db_backend
             kg_graph = StorageManager.context.kg_graph
             rdf_store = StorageManager.context.rdf_store
 
-            entity_list = list(entities or [])
-            relation_list = list(relations or [])
-
             if kg_graph is not None:
-                for entity in entity_list:
-                    node_id = str(entity.get("id"))
-                    if not node_id:
-                        continue
-                    attributes_raw = entity.get("attributes")
-                    attributes = (
-                        to_json_dict(attributes_raw) if isinstance(attributes_raw, Mapping) else {}
-                    )
-                    attributes.setdefault("label", entity.get("label", node_id))
-                    attributes.setdefault("type", entity.get("type", "entity"))
-                    source_value = entity.get("source")
-                    if source_value is not None:
-                        attributes.setdefault("source", source_value)
-                    kg_graph.add_node(node_id, **attributes)
+                for namespace_label, ns_entities in grouped_entities.items():
+                    for entity in ns_entities:
+                        entity_id = str(entity.get("id") or "")
+                        if not entity_id:
+                            continue
+                        node_id = StorageManager._kg_node_id(namespace_label, entity_id)
+                        attributes = dict(entity.get("attributes", {}))
+                        attributes.setdefault("label", entity.get("label", entity_id))
+                        attributes.setdefault("type", entity.get("type", "entity"))
+                        if entity.get("source"):
+                            attributes.setdefault("source", entity.get("source"))
+                        attributes.setdefault("entity_id", entity_id)
+                        attributes["namespace"] = namespace_label
+                        kg_graph.add_node(node_id, **attributes)
 
-                for relation in relation_list:
-                    subj = str(relation.get("subject_id", ""))
-                    obj = str(relation.get("object_id", ""))
-                    if not subj or not obj:
-                        continue
-                    predicate = str(relation.get("predicate", "")) or "related_to"
-                    weight = float(relation.get("weight", 1.0))
-                    provenance_raw = relation.get("provenance")
-                    provenance = (
-                        to_json_dict(provenance_raw) if isinstance(provenance_raw, Mapping) else {}
-                    )
-                    kg_graph.add_edge(
-                        subj,
-                        obj,
-                        key=predicate,
-                        predicate=predicate,
-                        weight=weight,
-                        **provenance,
-                    )
+                for namespace_label, ns_relations in grouped_relations.items():
+                    for relation in ns_relations:
+                        src_id = StorageManager._kg_node_id(
+                            namespace_label, relation["subject_id"]
+                        )
+                        dst_id = StorageManager._kg_node_id(
+                            namespace_label, relation["object_id"]
+                        )
+                        provenance_attrs = dict(relation.get("provenance", {}))
+                        provenance_attrs["namespace"] = namespace_label
+                        kg_graph.add_edge(
+                            src_id,
+                            dst_id,
+                            key=relation["predicate"],
+                            predicate=relation["predicate"],
+                            weight=relation["weight"],
+                            namespace=namespace_label,
+                            **provenance_attrs,
+                        )
 
             if backend is not None:
-                backend.persist_graph_entities(entity_list)
-                backend.persist_graph_relations(relation_list)
+                for namespace_label, ns_entities in grouped_entities.items():
+                    backend.persist_graph_entities(ns_entities, namespace_label)
+                for namespace_label, ns_relations in grouped_relations.items():
+                    backend.persist_graph_relations(ns_relations, namespace_label)
 
             if rdf_store is not None:
-                rdf_graph = cast(rdflib.Graph, rdf_store)
-                rdf_triples: list[RDFTriple] = []
-                if triples:
-                    for subj_id, pred, obj_id in triples:
-                        subj_ref = rdflib.URIRef(f"urn:kg:{subj_id}")
-                        pred_ref = rdflib.URIRef(f"urn:kgp:{pred}")
-                        obj_ref = rdflib.URIRef(f"urn:kg:{obj_id}")
-                        rdf_triples.append(_as_rdf_triple(subj_ref, pred_ref, obj_ref))
-                else:
-                    for relation in relation_list:
-                        subj_id_raw = relation.get("subject_id")
-                        obj_id_raw = relation.get("object_id")
-                        if not subj_id_raw or not obj_id_raw:
-                            continue
-                        subj_id = str(subj_id_raw)
-                        obj_id = str(obj_id_raw)
-                        predicate_raw = relation.get("predicate", "related_to")
-                        predicate = (
-                            str(predicate_raw) if predicate_raw is not None else "related_to"
-                        )
-                        rdf_triples.append(
-                            _as_rdf_triple(
-                                rdflib.URIRef(f"urn:kg:{subj_id}"),
-                                rdflib.URIRef(f"urn:kgp:{predicate}"),
-                                rdflib.URIRef(f"urn:kg:{obj_id}"),
-                            )
-                        )
-                for triple in rdf_triples:
-                    graph_add(rdf_graph, triple)
-
-                try:
-                    run_ontology_reasoner(rdf_graph)
-                except StorageError:
-                    log.debug(
-                        "Ontology reasoning skipped for knowledge graph update", exc_info=True
+                for namespace_label, ns_triples in triples_by_namespace.items():
+                    if not ns_triples:
+                        continue
+                    rdf_graph = cast(
+                        rdflib.Graph, StorageManager._rdf_graph_for_namespace(namespace_label)
                     )
+                    for triple in ns_triples:
+                        graph_add(rdf_graph, triple)
+
+                    try:
+                        run_ontology_reasoner(rdf_graph)
+                    except StorageError:
+                        log.debug(
+                            "Ontology reasoning skipped for knowledge graph update", exc_info=True
+                        )
 
     @staticmethod
-    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None:
+    def merge_claim_groups(
+        claims_by_namespace: Mapping[str, Sequence[JSONMapping]],
+        policy: str | NamespaceMergeConfig | None = None,
+    ) -> list[JSONDict]:
+        """Merge claim collections across namespaces using configured policies."""
+
+        if not claims_by_namespace:
+            return []
+
+        if _delegate and _delegate is not StorageManager:
+            merger = getattr(_delegate, "merge_claim_groups", None)
+            if merger is not None:
+                return merger(claims_by_namespace, policy)
+
+        merge_config = StorageManager._resolve_merge_policy(policy)
+        grouped = StorageManager._normalise_claim_groups(claims_by_namespace)
+        if not grouped:
+            return []
+
+        if merge_config.strategy == NamespaceMergeStrategy.CONFIDENCE_WEIGHT:
+            return StorageManager._merge_claims_confidence(grouped, merge_config.weights)
+        return StorageManager._merge_claims_union(grouped)
+
+    @staticmethod
+    def _resolve_merge_policy(
+        policy: str | NamespaceMergeConfig | None,
+    ) -> NamespaceMergeConfig:
+        if isinstance(policy, NamespaceMergeConfig):
+            return policy
+        _, _, merge_policies = StorageManager._namespace_settings()
+        if isinstance(policy, str):
+            config = merge_policies.get(policy)
+            if isinstance(config, NamespaceMergeConfig):
+                return config
+            raise StorageError(f"Unknown namespace merge policy: {policy}")
+        default_policy = merge_policies.get("default")
+        if isinstance(default_policy, NamespaceMergeConfig):
+            return default_policy
+        return NamespaceMergeConfig()
+
+    @staticmethod
+    def _normalise_claim_groups(
+        claims_by_namespace: Mapping[str, Sequence[JSONMapping]],
+    ) -> dict[str, list[JSONDict]]:
+        grouped: dict[str, list[JSONDict]] = {}
+        for namespace, claims in claims_by_namespace.items():
+            namespace_label = StorageManager._resolve_namespace_label(namespace)
+            bucket = grouped.setdefault(namespace_label, [])
+            for claim in claims:
+                payload = to_json_dict(claim)
+                payload.setdefault("namespace", namespace_label)
+                bucket.append(payload)
+        return grouped
+
+    @staticmethod
+    def _merge_claims_union(
+        grouped: Mapping[str, Sequence[JSONDict]],
+    ) -> list[JSONDict]:
+        merged: dict[str, JSONDict] = {}
+        provenance: dict[str, set[str]] = defaultdict(set)
+        for namespace_label, claims in grouped.items():
+            for claim in claims:
+                claim_id = str(claim.get("id") or "")
+                if not claim_id:
+                    continue
+                confidence = float(claim.get("confidence", 0.0) or 0.0)
+                existing = merged.get(claim_id)
+                if existing is None or confidence > float(existing.get("confidence", 0.0) or 0.0):
+                    merged[claim_id] = dict(claim)
+                provenance[claim_id].add(namespace_label)
+        results: list[JSONDict] = []
+        for claim_id, payload in merged.items():
+            entry = dict(payload)
+            namespaces = provenance.get(claim_id) or {entry.get("namespace", DEFAULT_NAMESPACE_LABEL)}
+            entry["namespaces"] = sorted(namespaces)
+            results.append(entry)
+        return results
+
+    @staticmethod
+    def _merge_claims_confidence(
+        grouped: Mapping[str, Sequence[JSONDict]],
+        weights: Mapping[str, float],
+    ) -> list[JSONDict]:
+        normalised_weights = {
+            StorageManager._resolve_namespace_label(key): float(value)
+            for key, value in weights.items()
+        }
+        totals: dict[str, float] = defaultdict(float)
+        weight_totals: dict[str, float] = defaultdict(float)
+        provenance: dict[str, set[str]] = defaultdict(set)
+        best_sources: dict[str, JSONDict] = {}
+        best_weight: dict[str, float] = defaultdict(float)
+        for namespace_label, claims in grouped.items():
+            weight = normalised_weights.get(namespace_label, 1.0)
+            if weight <= 0:
+                continue
+            for claim in claims:
+                claim_id = str(claim.get("id") or "")
+                if not claim_id:
+                    continue
+                provenance[claim_id].add(namespace_label)
+                confidence = float(claim.get("confidence", 0.0) or 0.0)
+                totals[claim_id] += confidence * weight
+                weight_totals[claim_id] += weight
+                if weight >= best_weight.get(claim_id, float("-inf")):
+                    best_weight[claim_id] = weight
+                    best_sources[claim_id] = dict(claim)
+        results: list[JSONDict] = []
+        for claim_id, payload in best_sources.items():
+            entry = dict(payload)
+            total_weight = weight_totals.get(claim_id, 0.0)
+            if total_weight > 0:
+                confidence = totals[claim_id] / total_weight
+                entry["confidence"] = max(0.0, min(1.0, confidence))
+            entry["namespaces"] = sorted(provenance.get(claim_id, set()))
+            results.append(entry)
+        return results
+
+    def persist_claim(
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None:
         """Persist a claim to all storage backends with support for incremental updates.
 
         This method validates the claim, ensures storage is initialized, and then
@@ -2030,8 +2313,12 @@ class StorageManager(metaclass=StorageManagerMeta):
         if _delegate and _delegate is not StorageManager:
             return _delegate.persist_claim(claim, partial_update)
 
+        namespace_label = StorageManager._derive_namespace(namespace, claim)
+
         if _message_queue is not None:
-            _message_queue.put(_persist_claim_message(claim, partial_update))
+            _message_queue.put(
+                _persist_claim_message(claim, partial_update, namespace_label)
+            )
             return
 
         # Validate claim
@@ -2043,6 +2330,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
             # Check if this is an update to an existing claim
             claim_id = claim["id"]
+            node_key = StorageManager._graph_node_id(namespace_label, claim_id)
             existing_claim = None
             is_update = False
 
@@ -2053,11 +2341,11 @@ class StorageManager(metaclass=StorageManagerMeta):
 
             # Check if the claim already exists in the graph
             assert StorageManager.context.graph is not None
-            if StorageManager.context.graph.has_node(claim_id):
+            if StorageManager.context.graph.has_node(node_key):
                 is_update = True
                 if partial_update:
                     # Get the existing claim data
-                    existing_claim = dict(StorageManager.context.graph.nodes[claim_id])
+                    existing_claim = dict(StorageManager.context.graph.nodes[node_key])
 
                     # Merge the new claim data with the existing data
                     # Note: We're careful not to modify the input claim
@@ -2115,7 +2403,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                 claim_to_persist["metadata"]["updated_at"] = current_time
 
             # Persist to all backends with appropriate update mode
-            StorageManager._persist_to_networkx(claim_to_persist)
+            claim_to_persist["namespace"] = namespace_label
+            StorageManager._persist_to_networkx(claim_to_persist, namespace_label)
 
             audit_payload = claim_to_persist.get("audit")
             if audit_payload:
@@ -2127,19 +2416,25 @@ class StorageManager(metaclass=StorageManagerMeta):
                     payload = None
                 if payload is not None:
                     payload.setdefault("claim_id", claim_id)
-                    StorageManager._persist_claim_audit_payload(payload)
+                    StorageManager._persist_claim_audit_payload(payload, namespace_label)
 
             # For database backends, use different methods for updates vs. new claims
             assert StorageManager.context.db_backend is not None
             if is_update:
                 # Update existing records
-                StorageManager.context.db_backend.update_claim(claim_to_persist, partial_update)
-                StorageManager._update_rdf_claim(claim_to_persist, partial_update)
+                StorageManager.context.db_backend.update_claim(
+                    claim_to_persist, partial_update, namespace_label
+                )
+                StorageManager._update_rdf_claim(
+                    claim_to_persist, namespace_label, partial_update
+                )
                 StorageManager._persist_to_kuzu(claim_to_persist)
             else:
                 # Insert new records
-                StorageManager.context.db_backend.persist_claim(claim_to_persist)
-                StorageManager._persist_to_rdf(claim_to_persist)
+                StorageManager.context.db_backend.persist_claim(
+                    claim_to_persist, namespace_label
+                )
+                StorageManager._persist_to_rdf(claim_to_persist, namespace_label)
                 StorageManager._persist_to_kuzu(claim_to_persist)
 
             # Refresh vector index if embeddings were provided
@@ -2150,7 +2445,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     log.warning(f"Failed to refresh vector index: {e}")
 
             # Update LRU cache to mark this claim as recently used
-            StorageManager.touch_node(claim_id)
+            StorageManager.touch_node(claim_id, namespace_label)
 
             # Log performance metrics
             persistence_time = time.time() - start_time
@@ -2164,7 +2459,11 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageManager._enforce_ram_budget(budget)
 
     @staticmethod
-    def update_claim(claim: JSONDict, partial_update: bool = False) -> None:
+    def update_claim(
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None:
         """Update an existing claim across storage backends.
 
         This method delegates to the configured database backend. When a message
@@ -2182,13 +2481,19 @@ class StorageManager(metaclass=StorageManagerMeta):
         if _delegate and _delegate is not StorageManager:
             return _delegate.update_claim(claim, partial_update)
 
+        namespace_label = StorageManager._derive_namespace(namespace, claim)
+
         if _message_queue is not None:
-            _message_queue.put(_persist_claim_message(claim, partial_update))
+            _message_queue.put(
+                _persist_claim_message(claim, partial_update, namespace_label)
+            )
             return
 
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
-        StorageManager.context.db_backend.update_claim(claim, partial_update)
+        StorageManager.context.db_backend.update_claim(
+            claim, partial_update, namespace_label
+        )
 
         audit_payload = claim.get("audit")
         if audit_payload:
@@ -2201,20 +2506,30 @@ class StorageManager(metaclass=StorageManagerMeta):
             if payload is not None:
                 payload.setdefault("claim_id", claim.get("id", ""))
                 if payload.get("claim_id"):
-                    StorageManager._persist_claim_audit_payload(payload)
+                    StorageManager._persist_claim_audit_payload(payload, namespace_label)
 
     @staticmethod
-    def get_claim(claim_id: str) -> JSONDict:
+    def get_claim(
+        claim_id: str,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> JSONDict:
         """Retrieve a persisted claim from DuckDB."""
         if _delegate and _delegate is not StorageManager:
-            return _delegate.get_claim(claim_id)
+            return _delegate.get_claim(claim_id, namespace)
 
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
-        return StorageManager.context.db_backend.get_claim(claim_id)
+        namespace_label = StorageManager._derive_namespace(namespace, None)
+        claim = StorageManager.context.db_backend.get_claim(
+            claim_id, namespace_label
+        )
+        claim.setdefault("namespace", namespace_label)
+        return claim
 
     @staticmethod
-    def _update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
+    def _update_rdf_claim(
+        claim: JSONDict, namespace: str, partial_update: bool = False
+    ) -> None:
         """Update an existing claim in the RDF store.
 
         This method updates an existing claim in the RDF store, either by completely
@@ -2225,9 +2540,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             partial_update: If True, merge with existing data rather than replacing
         """
         assert StorageManager.context.rdf_store is not None
-        subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
+        subj = rdflib.URIRef(f"urn:claim:{namespace}:{claim['id']}")
 
-        rdf_store = cast(rdflib.Graph, StorageManager.context.rdf_store)
+        rdf_store = cast(rdflib.Graph, StorageManager._rdf_graph_for_namespace(namespace))
 
         if not partial_update:
             # Remove all existing triples for this subject
@@ -2244,16 +2559,23 @@ class StorageManager(metaclass=StorageManagerMeta):
         run_ontology_reasoner(rdf_store)
 
     @staticmethod
-    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
+    def update_rdf_claim(
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None:
         """Public wrapper around :func:`_update_rdf_claim`."""
         if _delegate and _delegate is not StorageManager:
-            return _delegate.update_rdf_claim(claim, partial_update)
+            return _delegate.update_rdf_claim(claim, partial_update, namespace)
 
         StorageManager._ensure_storage_initialized()
-        StorageManager._update_rdf_claim(claim, partial_update)
+        namespace_label = StorageManager._derive_namespace(namespace, claim)
+        StorageManager._update_rdf_claim(claim, namespace_label, partial_update)
 
     @staticmethod
-    def create_hnsw_index() -> None:
+    def create_hnsw_index(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index on the embeddings table.
 
         This method creates an HNSW index on the embeddings table to enable efficient
@@ -2267,7 +2589,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageError: If the index creation fails.
         """
         if _delegate and _delegate is not StorageManager:
-            return _delegate.create_hnsw_index()
+            return _delegate.create_hnsw_index(namespace)
 
         # Ensure storage is initialized
         if StorageManager.context.db_backend is None:
@@ -2276,20 +2598,24 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Use the DuckDBStorageBackend to create the HNSW index
         try:
-            StorageManager.context.db_backend.create_hnsw_index()
+            namespace_label = StorageManager._derive_namespace(namespace, None)
+            StorageManager.context.db_backend.create_hnsw_index(namespace_label)
         except Exception as e:
             raise StorageError("Failed to create HNSW index", cause=e)
 
     @staticmethod
-    def refresh_vector_index() -> None:
+    def refresh_vector_index(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None:
         """Rebuild the vector index to include new embeddings."""
         if _delegate and _delegate is not StorageManager:
-            return _delegate.refresh_vector_index()
+            return _delegate.refresh_vector_index(namespace)
 
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
         try:
-            StorageManager.context.db_backend.refresh_hnsw_index()
+            namespace_label = StorageManager._derive_namespace(namespace, None)
+            StorageManager.context.db_backend.refresh_hnsw_index(namespace_label)
         except Exception as e:
             raise StorageError("Failed to refresh HNSW index", cause=e)
 
@@ -2358,7 +2684,11 @@ class StorageManager(metaclass=StorageManagerMeta):
         return f"[{', '.join(str(x) for x in query_embedding)}]"
 
     @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList:
+    def vector_search(
+        query_embedding: list[float],
+        k: int = 5,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> JSONDictList:
         """Search for claims by vector similarity.
 
         This method performs a vector similarity search using the provided query
@@ -2389,7 +2719,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             NotFoundError: If no embeddings are found in the database.
         """
         if _delegate and _delegate is not StorageManager:
-            return _delegate.vector_search(query_embedding, k)
+            return _delegate.vector_search(query_embedding, k, namespace)
 
         # Validate parameters
         StorageManager._validate_vector_search_params(query_embedding, k)
@@ -2409,7 +2739,11 @@ class StorageManager(metaclass=StorageManagerMeta):
                 suggestion="Call StorageManager.setup() before vector_search",
             )
         try:
-            return db_backend.vector_search(query_embedding, k)
+            namespace_label = StorageManager._derive_namespace(namespace, None)
+            results = db_backend.vector_search(query_embedding, k, namespace_label)
+            for item in results:
+                item.setdefault("namespace", namespace_label)
+            return results
         except Exception as e:
             raise StorageError(
                 "Vector search failed",
@@ -2517,7 +2851,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         return json.dumps(payload, ensure_ascii=False)
 
     @staticmethod
-    def touch_node(node_id: str) -> None:
+    def touch_node(node_id: str, namespace: str | None = None) -> None:
         """Update access time for a node in the LRU cache.
 
         This method updates the access timestamp for a node in the LRU (Least
@@ -2535,16 +2869,23 @@ class StorageManager(metaclass=StorageManagerMeta):
             node_id: The ID of the node to update.
         """
         if _delegate and _delegate is not StorageManager:
-            return _delegate.touch_node(node_id)
+            return _delegate.touch_node(node_id, namespace)
         state = StorageManager.state
         lru = state.lru
+        if namespace is not None:
+            graph_key = StorageManager._graph_node_id(namespace, node_id)
+        elif "::" in node_id:
+            graph_key = node_id
+        else:
+            default_namespace, _, _ = StorageManager._namespace_settings()
+            graph_key = StorageManager._graph_node_id(default_namespace, node_id)
         with state.lock:
             state.lru_counter += 1
-            lru[node_id] = state.lru_counter
+            lru[graph_key] = state.lru_counter
             # ``move_to_end`` maintains the deque order for faster popping
-            lru.move_to_end(node_id)
-            StorageManager._access_frequency[node_id] = (
-                StorageManager._access_frequency.get(node_id, 0) + 1
+            lru.move_to_end(graph_key)
+            StorageManager._access_frequency[graph_key] = (
+                StorageManager._access_frequency.get(graph_key, 0) + 1
             )
 
     @staticmethod

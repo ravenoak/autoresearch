@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import re
-from enum import Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 from threading import RLock
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Protocol, Self, TypeVar
@@ -12,6 +12,7 @@ from pydantic.functional_validators import model_validator
 from pydantic_settings import SettingsConfigDict
 
 from ..orchestration.reasoning import ReasoningMode
+from ..storage_utils import DEFAULT_NAMESPACE_LABEL, validate_namespace_routes
 from .validators import (
     normalize_ranking_weights,
     validate_eviction_policy,
@@ -497,6 +498,79 @@ class SearchConfig(BaseModel):
     _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
 
 
+class NamespaceMergeStrategy(StrEnum):
+    """Strategies available when consolidating claims across namespaces."""
+
+    UNION = "union"
+    CONFIDENCE_WEIGHT = "confidence_weight"
+
+
+class NamespaceMergeConfig(BaseModel):
+    """Merge policy describing how claims are combined across namespaces."""
+
+    strategy: NamespaceMergeStrategy = Field(
+        default=NamespaceMergeStrategy.UNION,
+        description="Merge strategy applied when consolidating claims",
+    )
+    weights: Dict[str, float] = Field(
+        default_factory=dict,
+        description=(
+            "Optional weights keyed by namespace when the strategy is "
+            "'confidence_weight'."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_weights(self) -> "NamespaceMergeConfig":
+        if self.strategy == NamespaceMergeStrategy.CONFIDENCE_WEIGHT and not self.weights:
+            raise ValueError("confidence_weight strategy requires namespace weights")
+        for key, weight in self.weights.items():
+            if weight < 0:
+                raise ValueError("namespace weights must be non-negative")
+            if not key or not key.strip():
+                raise ValueError("namespace weight keys cannot be empty")
+        return self
+
+
+class StorageNamespaceConfig(BaseModel):
+    """Routing and merge policies for storage namespaces."""
+
+    default_namespace: str = Field(
+        default=DEFAULT_NAMESPACE_LABEL,
+        description="Fallback namespace applied when tokens resolve to none",
+    )
+    routes: Dict[str, str] = Field(
+        default_factory=lambda: {
+            "session": "workspace",
+            "workspace": "project",
+            "org": "project",
+        },
+        description="Routing policies mapping scopes to parent namespaces",
+    )
+    merge_policies: Dict[str, NamespaceMergeConfig] = Field(
+        default_factory=dict,
+        description="Named merge strategies referenced by orchestration layers",
+    )
+
+    @field_validator("default_namespace")
+    def _canonical_default(cls, value: str) -> str:
+        return value or DEFAULT_NAMESPACE_LABEL
+
+    @field_validator("routes")
+    def _validate_routes(cls, value: Mapping[str, str]) -> Mapping[str, str]:
+        validate_namespace_routes(value)
+        return dict(value)
+
+    @field_validator("merge_policies")
+    def _validate_merge_keys(
+        cls, value: Mapping[str, NamespaceMergeConfig]
+    ) -> Mapping[str, NamespaceMergeConfig]:
+        for key in value:
+            if not key or not key.strip():
+                raise ValueError("merge policy names cannot be empty")
+        return dict(value)
+
+
 class StorageConfig(SupportsModelCopyMixin):
     """Storage configuration for DuckDB, RDF, and more.
 
@@ -533,6 +607,10 @@ class StorageConfig(SupportsModelCopyMixin):
     max_connections: int = Field(default=1, ge=1)
     use_kuzu: bool = Field(default=False)
     kuzu_path: str = Field(default="kuzu.db")
+    namespaces: StorageNamespaceConfig = Field(
+        default_factory=StorageNamespaceConfig,
+        description="Namespace routing defaults and merge policies",
+    )
     deterministic_node_budget: int | None = Field(
         default=None,
         ge=0,

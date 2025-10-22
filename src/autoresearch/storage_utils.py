@@ -1,11 +1,12 @@
-"""Utility helpers for storage routines."""
+"""Storage helper utilities shared across DuckDB and RDF backends."""
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 import hashlib
 import re
-from typing import Any, Mapping, cast
+from collections.abc import Iterator, Mapping, MutableMapping
+from dataclasses import dataclass
+from typing import Any, cast
 
 from rdflib import Graph
 from rdflib.term import Node as RDFNode
@@ -16,24 +17,142 @@ from .storage_typing import JSONDict, RDFTriple, RDFTriplePattern, to_json_dict
 
 log = get_logger(__name__)
 
+DEFAULT_NAMESPACE_LABEL = "__default__"
+_SCOPE_ORDER = ("session", "workspace", "org", "project")
+
+
+@dataclass(frozen=True)
+class NamespaceTokens:
+    """Structured namespace tokens resolved from runtime context."""
+
+    session: str | None = None
+    workspace: str | None = None
+    org: str | None = None
+    project: str | None = None
+
+    @classmethod
+    def from_any(
+        cls, value: "NamespaceTokens | str | Mapping[str, str] | None"
+    ) -> "NamespaceTokens":
+        """Return canonical tokens from ``value``.
+
+        Strings are treated as explicit project-level namespaces, bypassing
+        policy routing. Mappings are normalised by lowercasing recognised keys
+        and discarding unknown scopes.
+        """
+
+        if isinstance(value, NamespaceTokens):
+            return value
+        if value is None:
+            return cls()
+        if isinstance(value, str):
+            return cls(project=value)
+        scopes: MutableMapping[str, str | None] = {scope: None for scope in _SCOPE_ORDER}
+        for key, raw in value.items():
+            lowered = str(key).strip().lower()
+            if lowered in scopes and isinstance(raw, str):
+                scopes[lowered] = raw
+        return cls(
+            session=scopes["session"],
+            workspace=scopes["workspace"],
+            org=scopes["org"],
+            project=scopes["project"],
+        )
+
+    def get(self, scope: str) -> str | None:
+        """Return the token associated with ``scope`` if present."""
+
+        return getattr(self, scope, None)
+
+    def as_dict(self) -> dict[str, str]:
+        """Return a dictionary excluding empty scopes."""
+
+        return {scope: value for scope in _SCOPE_ORDER if (value := self.get(scope))}
+
+
+def canonical_namespace(namespace: str | None, *, default: str = DEFAULT_NAMESPACE_LABEL) -> str:
+    """Return a canonical namespace label enforcing non-empty fallbacks."""
+
+    candidate = (namespace or "").strip()
+    return candidate or default
+
+
+def namespace_table_suffix(namespace: str) -> str:
+    """Return a DuckDB-safe suffix for ``namespace`` table derivations."""
+
+    slug = re.sub(r"[^a-z0-9]+", "_", namespace.lower()).strip("_")
+    if not slug:
+        slug = "default"
+    return slug[:48]
+
+
+def validate_namespace_routes(routes: Mapping[str, str]) -> Mapping[str, str]:
+    """Validate namespace routing policies, raising on cycles or unknown scopes."""
+
+    allowed = set(_SCOPE_ORDER) | {"self"}
+    for source, target in routes.items():
+        if source not in _SCOPE_ORDER:
+            raise StorageError(f"Unknown namespace scope: {source}")
+        if target not in allowed:
+            raise StorageError(f"Invalid namespace target {target!r} for scope {source!r}")
+    for scope in _SCOPE_ORDER:
+        seen: set[str] = set()
+        current = scope
+        while True:
+            if current in seen:
+                raise StorageError("Namespace routing contains a cycle")
+            seen.add(current)
+            target = routes.get(current)
+            if target is None or target == "self" or target == "project":
+                break
+            current = target
+    return routes
+
+
+def _follow_route(scope: str, routes: Mapping[str, str]) -> list[str]:
+    path = [scope]
+    current = scope
+    while True:
+        target = routes.get(current)
+        if target is None or target == "self":
+            break
+        path.append(target)
+        if target == "project":
+            break
+        current = target
+    return path
+
+
+def resolve_namespace(
+    tokens: NamespaceTokens,
+    routes: Mapping[str, str],
+    default_namespace: str = DEFAULT_NAMESPACE_LABEL,
+) -> str:
+    """Resolve the storage namespace using ``routes`` and ``tokens``."""
+
+    validated = validate_namespace_routes(routes)
+    for scope in _SCOPE_ORDER:
+        token = tokens.get(scope)
+        if not token:
+            continue
+        path = _follow_route(scope, validated)
+        for candidate_scope in reversed(path):
+            candidate = tokens.get(candidate_scope)
+            if candidate:
+                return candidate
+        return token
+    return canonical_namespace(tokens.project, default=default_namespace)
+
 
 def initialize_schema_version_without_fetchone(conn: Any) -> None:
-    """Ensure the schema version exists in the metadata table.
+    """Ensure the schema version exists in the metadata table."""
 
-    DuckDB cursors may lack :meth:`fetchone`, so this helper relies on
-    :meth:`fetchall` to read existing values. If no version is present, it
-    inserts ``1``.
-
-    Args:
-        conn: Active DuckDB connection.
-
-    Raises:
-        StorageError: If the schema version cannot be initialised.
-    """
     try:
         execute_cls = getattr(conn.__class__, "execute", None)
         if execute_cls is not None:
-            cursor = execute_cls(conn, "SELECT value FROM metadata WHERE key = 'schema_version'")
+            cursor = execute_cls(
+                conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
+            )
         else:
             cursor = conn.execute(
                 "SELECT value FROM metadata WHERE key = 'schema_version'",
@@ -91,20 +210,12 @@ def graph_subject_objects(
 
 
 def normalise_workspace_slug(name: str) -> str:
-    """Return a deterministic slug for workspace identifiers.
-
-    Args:
-        name: Human readable workspace name.
-
-    Returns:
-        Lowercase slug composed of alphanumerics and hyphens.
-    """
+    """Return a deterministic slug for workspace identifiers."""
 
     if not name:
         raise StorageError("workspace name cannot be empty")
 
-    slug = re.sub(r"[^a-z0-9]+", "-", name.strip().lower())
-    slug = slug.strip("-")
+    slug = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
     if not slug:
         raise StorageError("workspace name must contain alphanumeric characters")
     return slug

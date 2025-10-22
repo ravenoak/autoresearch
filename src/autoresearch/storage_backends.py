@@ -23,6 +23,8 @@ import rdflib
 from dotenv import dotenv_values
 from rdflib.plugin import Store, register
 
+from dataclasses import dataclass
+
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
 from .extensions import VSSExtensionLoader
@@ -36,7 +38,12 @@ from .storage_typing import (
     as_graph_protocol,
     to_json_dict,
 )
-from .storage_utils import initialize_schema_version_without_fetchone
+from .storage_utils import (
+    DEFAULT_NAMESPACE_LABEL,
+    canonical_namespace,
+    initialize_schema_version_without_fetchone,
+    namespace_table_suffix,
+)
 
 DuckDBConnection = DuckDBConnectionProtocol
 
@@ -45,6 +52,18 @@ if TYPE_CHECKING:  # pragma: no cover - type hints only
 
 log = get_logger(__name__)
 DuckDBError = cast(type[BaseException], getattr(duckdb, "Error", Exception))
+
+
+@dataclass(frozen=True)
+class NamespaceTableNames:
+    """Resolved DuckDB tables used by a specific storage namespace."""
+
+    nodes: str
+    edges: str
+    embeddings: str
+    claim_audits: str
+    kg_entities: str
+    kg_relations: str
 
 
 def init_rdf_store(backend: str, path: str) -> GraphProtocol:
@@ -148,6 +167,8 @@ class DuckDBStorageBackend:
         self._has_vss: bool = False
         self._pool: Optional[Queue[DuckDBConnectionProtocol]] = None
         self._max_connections: int = 1
+        self._namespace_tables: dict[str, NamespaceTableNames] = {}
+        self._namespace_default: str = DEFAULT_NAMESPACE_LABEL
 
     def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
         """Initialize the DuckDB connection and create required tables.
@@ -278,6 +299,8 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
+        self._namespace_tables.clear()
+
         try:
             # Create core tables
             self._conn.execute(
@@ -331,12 +354,81 @@ class DuckDBStorageBackend:
             if not skip_migrations:
                 self._run_migrations()
 
+            self._namespace_tables[self._namespace_default] = NamespaceTableNames(
+                nodes="nodes",
+                edges="edges",
+                embeddings="embeddings",
+                claim_audits="claim_audits",
+                kg_entities="kg_entities",
+                kg_relations="kg_relations",
+            )
+
         except DuckDBError as e:
             raise StorageError(f"DuckDB error while creating tables: {e}") from e
         except StorageError:
             raise
         except Exception as e:  # pragma: no cover - unexpected error path
             raise StorageError("Failed to create tables", cause=e)
+
+    def _namespaced_table_name(self, base: str, namespace: str) -> str:
+        if namespace == self._namespace_default:
+            return base
+        return f"{base}__{namespace_table_suffix(namespace)}"
+
+    def _ensure_namespace_tables(self, namespace: str | None) -> NamespaceTableNames:
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        ns_label = canonical_namespace(namespace, default=self._namespace_default)
+        cached = self._namespace_tables.get(ns_label)
+        if cached is not None:
+            return cached
+
+        default_tables = self._namespace_tables.get(self._namespace_default)
+        if default_tables is None:
+            default_tables = NamespaceTableNames(
+                nodes="nodes",
+                edges="edges",
+                embeddings="embeddings",
+                claim_audits="claim_audits",
+                kg_entities="kg_entities",
+                kg_relations="kg_relations",
+            )
+            self._namespace_tables[self._namespace_default] = default_tables
+
+        with self._lock:
+            cached = self._namespace_tables.get(ns_label)
+            if cached is not None:
+                return cached
+
+            if ns_label == self._namespace_default:
+                self._namespace_tables[ns_label] = default_tables
+                return default_tables
+
+            suffix = namespace_table_suffix(ns_label)
+            tables = NamespaceTableNames(
+                nodes=f"{default_tables.nodes}__{suffix}",
+                edges=f"{default_tables.edges}__{suffix}",
+                embeddings=f"{default_tables.embeddings}__{suffix}",
+                claim_audits=f"{default_tables.claim_audits}__{suffix}",
+                kg_entities=f"{default_tables.kg_entities}__{suffix}",
+                kg_relations=f"{default_tables.kg_relations}__{suffix}",
+            )
+
+            for source, target in (
+                (default_tables.nodes, tables.nodes),
+                (default_tables.edges, tables.edges),
+                (default_tables.embeddings, tables.embeddings),
+                (default_tables.claim_audits, tables.claim_audits),
+                (default_tables.kg_entities, tables.kg_entities),
+                (default_tables.kg_relations, tables.kg_relations),
+            ):
+                self._conn.execute(
+                    f"CREATE TABLE IF NOT EXISTS {target} AS SELECT * FROM {source} WHERE FALSE"
+                )
+
+            self._namespace_tables[ns_label] = tables
+            return tables
 
     def _initialize_schema_version(self) -> None:
         """Ensure a default schema version exists in the metadata table."""
@@ -513,7 +605,7 @@ class DuckDBStorageBackend:
             cause = exc if isinstance(exc, Exception) else Exception(str(exc))
             raise StorageError("Failed to migrate workspace manifests table", cause=cause)
 
-    def create_hnsw_index(self) -> None:
+    def create_hnsw_index(self, namespace: str | None = None) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index.
 
         This method creates an HNSW index on the embeddings table to enable efficient
@@ -528,6 +620,8 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         cfg = ConfigLoader().config.storage
+        tables = self._ensure_namespace_tables(namespace)
+        index_name = f"{tables.embeddings}_hnsw"
 
         # Check if the VSS extension is loaded and load it if needed
         try:
@@ -559,7 +653,9 @@ class DuckDBStorageBackend:
                 metric = "l2sq"
 
             # Check if the embeddings table is empty
-            rows = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchall()
+            rows = self._conn.execute(
+                f"SELECT COUNT(*) FROM {tables.embeddings}"
+            ).fetchall()
             count = rows[0][0] if rows else 0
 
             if count == 0:
@@ -570,7 +666,7 @@ class DuckDBStorageBackend:
                 try:
                     # Insert the dummy embedding
                     self._conn.execute(
-                        "INSERT INTO embeddings VALUES (?, ?)",
+                        f"INSERT INTO {tables.embeddings} VALUES (?, ?)",
                         [dummy_id, dummy_embedding],
                     )
                     log.debug("Inserted dummy embedding for HNSW index creation")
@@ -580,8 +676,8 @@ class DuckDBStorageBackend:
             try:
                 # Create the HNSW index
                 self._conn.execute(
-                    "CREATE INDEX IF NOT EXISTS embeddings_hnsw "
-                    "ON embeddings USING hnsw (embedding) "
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {tables.embeddings} USING hnsw (embedding) "
                     f"WITH (m={cfg.hnsw_m}, "
                     f"ef_construction={cfg.hnsw_ef_construction}, "
                     f"metric='{metric}')"
@@ -602,7 +698,10 @@ class DuckDBStorageBackend:
                 # If we inserted a dummy embedding, remove it now
                 if count == 0:
                     try:
-                        self._conn.execute("DELETE FROM embeddings WHERE node_id = ?", [dummy_id])
+                        self._conn.execute(
+                            f"DELETE FROM {tables.embeddings} WHERE node_id = ?",
+                            [dummy_id],
+                        )
                         log.debug("Removed dummy embedding after HNSW index creation")
                     except Exception as e:
                         log.warning(f"Failed to remove dummy embedding: {e}")
@@ -613,7 +712,8 @@ class DuckDBStorageBackend:
 
             # Verify the index was created
             indexes = self._conn.execute(
-                "SELECT index_name FROM duckdb_indexes() WHERE table_name='embeddings'"
+                "SELECT index_name FROM duckdb_indexes() WHERE table_name=?",
+                [tables.embeddings],
             ).fetchall()
             if not indexes:
                 log.warning("HNSW index creation appeared to succeed, but no index was found")
@@ -627,19 +727,22 @@ class DuckDBStorageBackend:
             if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
                 raise StorageError("Failed to create HNSW index", cause=e)
 
-    def refresh_hnsw_index(self) -> None:
+    def refresh_hnsw_index(self, namespace: str | None = None) -> None:
         """Rebuild the HNSW index to include new embeddings."""
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
+        tables = self._ensure_namespace_tables(namespace)
+        index_name = f"{tables.embeddings}_hnsw"
+
         with self._lock:
             try:
-                self._conn.execute("DROP INDEX IF EXISTS embeddings_hnsw")
-                self.create_hnsw_index()
+                self._conn.execute(f"DROP INDEX IF EXISTS {index_name}")
+                self.create_hnsw_index(namespace)
             except Exception as e:  # pragma: no cover - unexpected DB failure
                 raise StorageError("Failed to refresh HNSW index", cause=e)
 
-    def persist_claim(self, claim: JSONDict) -> None:
+    def persist_claim(self, claim: JSONDict, namespace: str | None = None) -> None:
         """Persist a claim to the DuckDB database.
 
         This method inserts the claim into three tables in DuckDB:
@@ -658,10 +761,12 @@ class DuckDBStorageBackend:
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             try:
                 conn.execute(
-                    "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                    f"INSERT INTO {tables.nodes} VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
                     [
                         claim["id"],
                         claim.get("type", ""),
@@ -672,7 +777,7 @@ class DuckDBStorageBackend:
 
                 for rel in claim.get("relations", []):
                     conn.execute(
-                        "INSERT INTO edges VALUES (?, ?, ?, ?)",
+                        f"INSERT INTO {tables.edges} VALUES (?, ?, ?, ?)",
                         [
                             rel["src"],
                             rel["dst"],
@@ -684,13 +789,15 @@ class DuckDBStorageBackend:
                 embedding = claim.get("embedding")
                 if embedding is not None:
                     conn.execute(
-                        "INSERT INTO embeddings VALUES (?, ?)",
+                        f"INSERT INTO {tables.embeddings} VALUES (?, ?)",
                         [claim["id"], embedding],
                     )
             except Exception as e:
                 raise StorageError("Failed to persist claim to DuckDB", cause=e)
 
-    def persist_graph_entities(self, entities: Sequence[Mapping[str, Any]]) -> None:
+    def persist_graph_entities(
+        self, entities: Sequence[Mapping[str, Any]], namespace: str | None = None
+    ) -> None:
         """Persist knowledge graph entities into DuckDB.
 
         Args:
@@ -714,19 +821,23 @@ class DuckDBStorageBackend:
             for entity in entities
         ]
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             try:
                 for row in payloads:
-                    conn.execute("DELETE FROM kg_entities WHERE id=?", [row[0]])
+                    conn.execute(f"DELETE FROM {tables.kg_entities} WHERE id=?", [row[0]])
                 for row in payloads:
                     conn.execute(
-                        "INSERT INTO kg_entities VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                        f"INSERT INTO {tables.kg_entities} VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
                         row,
                     )
             except Exception as exc:
                 raise StorageError("Failed to persist knowledge graph entities", cause=exc)
 
-    def persist_graph_relations(self, relations: Sequence[Mapping[str, Any]]) -> None:
+    def persist_graph_relations(
+        self, relations: Sequence[Mapping[str, Any]], namespace: str | None = None
+    ) -> None:
         """Persist knowledge graph relations into DuckDB.
 
         Args:
@@ -750,22 +861,27 @@ class DuckDBStorageBackend:
             for rel in relations
         ]
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             try:
                 for row in payloads:
                     conn.execute(
-                        "DELETE FROM kg_relations WHERE subject_id=? AND predicate=? AND object_id=?",
+                        f"DELETE FROM {tables.kg_relations} "
+                        "WHERE subject_id=? AND predicate=? AND object_id=?",
                         [row[0], row[1], row[2]],
                     )
                 for row in payloads:
                     conn.execute(
-                        "INSERT INTO kg_relations VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                        f"INSERT INTO {tables.kg_relations} VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
                         row,
                     )
             except Exception as exc:
                 raise StorageError("Failed to persist knowledge graph relations", cause=exc)
 
-    def update_claim(self, claim: JSONDict, partial_update: bool = False) -> None:
+    def update_claim(
+        self, claim: JSONDict, partial_update: bool = False, namespace: str | None = None
+    ) -> None:
         """Update an existing claim in the DuckDB database.
 
         Args:
@@ -781,11 +897,14 @@ class DuckDBStorageBackend:
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             try:
                 if not partial_update:
                     conn.execute(
-                        "UPDATE nodes SET type=?, content=?, conf=?, ts=CURRENT_TIMESTAMP WHERE id=?",
+                        f"UPDATE {tables.nodes} SET type=?, content=?, conf=?, "
+                        "ts=CURRENT_TIMESTAMP WHERE id=?",
                         [
                             claim.get("type", ""),
                             claim.get("content", ""),
@@ -796,28 +915,28 @@ class DuckDBStorageBackend:
                 else:
                     if "type" in claim:
                         conn.execute(
-                            "UPDATE nodes SET type=? WHERE id=?",
+                            f"UPDATE {tables.nodes} SET type=? WHERE id=?",
                             [claim["type"], claim["id"]],
                         )
                     if "content" in claim:
                         conn.execute(
-                            "UPDATE nodes SET content=? WHERE id=?",
+                            f"UPDATE {tables.nodes} SET content=? WHERE id=?",
                             [claim["content"], claim["id"]],
                         )
                     if "confidence" in claim:
                         conn.execute(
-                            "UPDATE nodes SET conf=? WHERE id=?",
+                            f"UPDATE {tables.nodes} SET conf=? WHERE id=?",
                             [claim["confidence"], claim["id"]],
                         )
 
                 if "relations" in claim:
                     conn.execute(
-                        "DELETE FROM edges WHERE src=? OR dst=?",
+                        f"DELETE FROM {tables.edges} WHERE src=? OR dst=?",
                         [claim["id"], claim["id"]],
                     )
                     for rel in claim.get("relations", []):
                         conn.execute(
-                            "INSERT INTO edges VALUES (?, ?, ?, ?)",
+                            f"INSERT INTO {tables.edges} VALUES (?, ?, ?, ?)",
                             [
                                 rel["src"],
                                 rel["dst"],
@@ -828,19 +947,21 @@ class DuckDBStorageBackend:
 
                 if "embedding" in claim:
                     conn.execute(
-                        "DELETE FROM embeddings WHERE node_id=?",
+                        f"DELETE FROM {tables.embeddings} WHERE node_id=?",
                         [claim["id"]],
                     )
                     embedding = claim.get("embedding")
                     if embedding is not None:
                         conn.execute(
-                            "INSERT INTO embeddings VALUES (?, ?)",
+                            f"INSERT INTO {tables.embeddings} VALUES (?, ?)",
                             [claim["id"], embedding],
                         )
             except Exception as e:  # pragma: no cover - unexpected DB failure
                 raise StorageError("Failed to update claim in DuckDB", cause=e)
 
-    def persist_claim_audit(self, audit: Mapping[str, Any]) -> None:
+    def persist_claim_audit(
+        self, audit: Mapping[str, Any], namespace: str | None = None
+    ) -> None:
         """Persist verification metadata for a claim."""
 
         if self._conn is None and self._pool is None:
@@ -911,15 +1032,17 @@ class DuckDBStorageBackend:
             created_at,
         ]
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             try:
                 conn.execute(
-                    "DELETE FROM claim_audits WHERE audit_id=?",
+                    f"DELETE FROM {tables.claim_audits} WHERE audit_id=?",
                     [str(audit_id)],
                 )
                 conn.execute(
                     (
-                        "INSERT INTO claim_audits "
+                        f"INSERT INTO {tables.claim_audits} "
                         "(audit_id, claim_id, status, entailment, variance, instability, sample_size, "
                         "sources, notes, provenance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     ),
@@ -928,15 +1051,20 @@ class DuckDBStorageBackend:
             except Exception as exc:  # pragma: no cover - defensive
                 raise StorageError("Failed to persist claim audit", cause=exc)
 
-    def list_claim_audits(self, claim_id: str | None = None) -> list[JSONDict]:
+    def list_claim_audits(
+        self, claim_id: str | None = None, namespace: str | None = None
+    ) -> list[JSONDict]:
         """Return stored claim audits ordered by recency."""
 
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
+        tables = self._ensure_namespace_tables(namespace)
+
         query = (
             "SELECT audit_id, claim_id, status, entailment, variance, instability, sample_size, "
-            "sources, notes, provenance, created_at FROM claim_audits"
+            "sources, notes, provenance, created_at FROM "
+            f"{tables.claim_audits}"
         )
         params: list[Any] = []
         if claim_id:
@@ -1201,14 +1329,16 @@ class DuckDBStorageBackend:
         max_version = int(row[0]) if row and row[0] is not None else 0
         return max_version + 1
 
-    def get_claim(self, claim_id: str) -> JSONDict:
+    def get_claim(self, claim_id: str, namespace: str | None = None) -> JSONDict:
         """Return a persisted claim by ID."""
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
+        tables = self._ensure_namespace_tables(namespace)
+
         with self.connection() as conn, self._lock:
             row = conn.execute(
-                "SELECT id, type, content, conf FROM nodes WHERE id=?",
+                f"SELECT id, type, content, conf FROM {tables.nodes} WHERE id=?",
                 [claim_id],
             ).fetchone()
             if row is None:
@@ -1220,12 +1350,12 @@ class DuckDBStorageBackend:
                 "confidence": row[3],
             }
             emb = conn.execute(
-                "SELECT embedding FROM embeddings WHERE node_id=?",
+                f"SELECT embedding FROM {tables.embeddings} WHERE node_id=?",
                 [claim_id],
             ).fetchone()
             if emb is not None:
                 result["embedding"] = emb[0]
-        audits = self.list_claim_audits(claim_id)
+        audits = self.list_claim_audits(claim_id, namespace=namespace)
         if audits:
             result["audits"] = audits
         return result
@@ -1237,6 +1367,7 @@ class DuckDBStorageBackend:
         similarity_threshold: float = 0.0,
         include_metadata: bool = False,
         filter_types: Sequence[str] | None = None,
+        namespace: str | None = None,
     ) -> list[JSONDict]:
         """Search for claims by vector similarity with advanced options.
 
@@ -1270,6 +1401,8 @@ class DuckDBStorageBackend:
                 "Vector search not available: VSS extension not loaded",
                 suggestion="Ensure the VSS extension is properly installed and enabled in the configuration",
             )
+
+        tables = self._ensure_namespace_tables(namespace)
 
         cfg = ConfigLoader().config
 
@@ -1322,7 +1455,9 @@ class DuckDBStorageBackend:
                     ),
                 )
 
-                from_clause = "FROM embeddings e JOIN nodes n ON e.node_id = n.id"
+                from_clause = (
+                    f"FROM {tables.embeddings} e JOIN {tables.nodes} n ON e.node_id = n.id"
+                )
 
                 # Add type filtering if specified
                 where_clause = ""
@@ -1385,7 +1520,10 @@ class DuckDBStorageBackend:
                 order_clause = f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
 
                 # Combine all clauses
-                sql = f"SELECT {select_clause} FROM embeddings {where_clause} {order_clause}"
+                sql = (
+                    f"SELECT {select_clause} FROM {tables.embeddings} "
+                    f"{where_clause} {order_clause}"
+                )
 
             # Execute the query with a timeout
             try:
@@ -1398,7 +1536,10 @@ class DuckDBStorageBackend:
             except Exception as e:
                 log.warning(f"Vector search query failed, falling back to simpler query: {e}")
                 # Fall back to a simpler query if the optimized one fails
-                simple_sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+                simple_sql = (
+                    f"SELECT node_id, embedding FROM {tables.embeddings} "
+                    f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+                )
                 rows = self._conn.execute(simple_sql).fetchall()
                 # Format results without metadata or similarity scores
                 return [{"node_id": r[0], "embedding": r[1]} for r in rows]
@@ -1509,11 +1650,15 @@ class DuckDBStorageBackend:
 
         with self._lock:
             try:
-                self._conn.execute("DELETE FROM nodes")
-                self._conn.execute("DELETE FROM edges")
-                self._conn.execute("DELETE FROM embeddings")
-                self._conn.execute("DELETE FROM kg_entities")
-                self._conn.execute("DELETE FROM kg_relations")
+                tables_list = list(self._namespace_tables.values())
+                if not tables_list:
+                    tables_list = [self._ensure_namespace_tables(None)]
+                for tables in tables_list:
+                    self._conn.execute(f"DELETE FROM {tables.nodes}")
+                    self._conn.execute(f"DELETE FROM {tables.edges}")
+                    self._conn.execute(f"DELETE FROM {tables.embeddings}")
+                    self._conn.execute(f"DELETE FROM {tables.kg_entities}")
+                    self._conn.execute(f"DELETE FROM {tables.kg_relations}")
             except Exception as e:
                 raise StorageError("Failed to clear DuckDB data", cause=e)
 
