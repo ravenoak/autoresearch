@@ -50,6 +50,10 @@ Must     | Unit tests for logging utilities.          |
 | **F-25** | Provide an opt-in Textual dashboard (`autoresearch tui` and `search --tui`) that renders orchestration, metrics, and graph context when running in an interactive TTY; fallback preserves current Typer flow. | Should | Integration smoke tests for TTY/non-TTY launch; BDD dashboard scenarios. |
 | **F-26** | Enhance interactive CLI prompts with prompt-toolkit history, completions, and multi-line input in TTY contexts while defaulting to Typer prompts elsewhere. | Should | Unit tests for prompt selection; BDD enhanced prompt scenarios. |
 | **F-27** | Consolidate Rich-based layouts for monitor and metrics commands with deterministic plain-text fallbacks that match accessibility baselines in bare-mode or piped contexts. | Must | Unit tests for Rich helper fallbacks; BDD visualization scenarios. |
+| **F-28** | Workspace manifests version curated resources and citation policies for debates. | Must | `tests/unit/storage/test_workspace_manifest.py`; `tests/behavior/features/research_federation.feature`. |
+| **F-29** | Workspace-aware orchestration injects manifest context and enforces coverage gaps. | Must | `tests/unit/orchestration/test_workspace_orchestrator.py`; `tests/behavior/features/research_federation.feature`. |
+| **F-30** | CLI and desktop flows manage manifests, warn on fallbacks, and surface workspace metrics. | Should | `tests/unit/orchestration/test_workspace_orchestrator.py`; `tests/ui/desktop/test_desktop_integration.py`; `tests/behavior/features/research_federation.feature`. |
+| **F-31** | Scholarly connectors cache arXiv and Hugging Face papers with provenance for offline replay. | Should | `tests/behavior/features/research_federation.feature`; connector unit tests (planned). |
 
 ---
 

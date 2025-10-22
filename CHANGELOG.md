@@ -7,6 +7,8 @@ Reference issues by slugged filename (for example,
 
 ## [Unreleased]
 
+- Documented research federation requirements F-28–F-31, updated the RTM, and
+  aligned roadmap, CLI, and desktop guides with the staged specification.
 - Added an opt-in guard for the legacy Streamlit GUI. The CLI now requires the
   `AUTORESEARCH_ENABLE_STREAMLIT` environment variable and emits migration
   guidance pointing teams to the PySide6 desktop interface.
