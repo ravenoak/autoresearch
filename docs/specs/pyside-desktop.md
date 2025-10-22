@@ -13,6 +13,13 @@ The ResultsDisplay now pairs the narrative answer with a structured results
 table, allowing users to triage ranked search hits alongside citations and
 metrics without leaving the desktop shell.
 
+Workspace federation enhancements extend the session manager dock with a
+workspace panel once requirement **F-30** lands. The panel lists versioned
+manifests, highlights citation coverage gaps, and mirrors the
+`autoresearch workspace` CLI so analysts can curate manifests without leaving
+the desktop shell. When workspace support is unavailable the panel displays a
+fallback notice while preserving legacy session controls.
+
 Phase 1 wireframes capture the baseline layout and running-query feedback in
 [Figure 1](../diagrams/pyside6_layout.md#visual-references) so engineering,
 design, and product teams can validate keyboard-first submission, accessible

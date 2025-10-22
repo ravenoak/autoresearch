@@ -6,6 +6,12 @@ data in local databases so that searches and knowledge graphs remain on your mac
 The project is built around a modular Python package located under `src/autoresearch/`.
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
+The research federation initiative extends that foundation with versioned workspace
+manifests, workspace-aware orchestration, and scholarly paper caching. Once the
+milestones in [docs/specs/research_federation_enhancements.md](docs/specs/research_federation_enhancements.md)
+ship, the CLI exposes `autoresearch workspace` commands and the desktop UI surfaces a
+workspace panel for curating manifests and monitoring coverage.
+
 ## Desktop UI Architecture
 
 The PySide6 desktop interface in `src/autoresearch/ui/desktop/` is composed of small,

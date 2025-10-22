@@ -73,6 +73,39 @@ Technical work for 0.1.0 is complete with release artifacts built and
 validated. Final release engineering (git tagging, documentation updates) is in
 progress.
 
+## Research federation enhancements
+
+The staged federation roadmap follows
+[docs/specs/research_federation_enhancements.md](docs/specs/research_federation_enhancements.md)
+and maps to requirements F-28 through F-31. Delivery spans three incremental
+drops so workspace-aware tooling can reach production while retaining fallbacks
+for earlier flows:
+
+1. **Phase RF-1 — Manifest persistence (Complete)**
+   - Introduces versioned workspace manifests in DuckDB and persistence hooks in
+     `StorageManager.save_workspace_manifest`.
+   - Covers requirement **F-28** with unit coverage in
+     `tests/unit/storage/test_workspace_manifest.py`.
+   - Lands in **0.1.1** to unblock downstream orchestration work.
+2. **Phase RF-2 — Workspace orchestration (In progress)**
+   - Wraps the orchestrator with manifest injection and coverage enforcement,
+     ensuring contrarian and fact-checker roles cite required resources.
+   - Satisfies **F-29** with `WorkspaceOrchestrator` unit tests and behavior
+     scenarios in `tests/behavior/features/research_federation.feature`.
+   - Targets **0.1.1** with a beta tag after coverage telemetry stabilises.
+3. **Phase RF-3 — Federated UX and scholarly cache (Planned)**
+   - Adds `autoresearch workspace` CLI commands, the desktop workspace panel,
+     and scholarly connector caching for offline replay.
+   - Maps to **F-30** and **F-31**, validated through desktop integration tests
+     and the research federation behavior suite.
+   - Ships in **0.1.2** once the scholarly connector cache is populated and UX
+     fallbacks are verified.
+
+Each phase keeps pre-existing CLI and desktop behavior as a fallback when the
+workspace-aware orchestrator is disabled. The milestones align with
+`STATUS.md` tracking so that telemetry, cache management, and manifest versioning
+graduate together without blocking release operations.
+
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and

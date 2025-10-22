@@ -158,6 +158,26 @@ autoresearch search "query" > results.json
 autoresearch search "query" > results.json 2> logs.json
 ```
 
+### Workspace federation commands
+
+When requirement F-30 ships the CLI gains manifest-aware helpers documented in
+[docs/specs/research_federation_enhancements.md](docs/specs/research_federation_enhancements.md).
+Use them to curate workspace manifests and run scoped debates:
+
+```bash
+# Create or update a manifest from a resource list
+autoresearch workspace apply manifest.yaml
+
+# Inspect the latest manifest for a workspace
+autoresearch workspace show alignment-audit
+
+# Launch a debate scoped to the selected workspace
+autoresearch workspace debate alignment-audit "Audit retrieval coverage"
+```
+
+These commands fall back to the standard orchestration flow when workspace
+support is disabled, emitting a warning so scripts can detect the downgrade.
+
 ### Error Handling Improvements
 
 All error messages now include:

@@ -29,8 +29,8 @@
 | F-25 | Textual dashboard entrypoint with graceful fallback | `main/app.py`, `cli_utils.py`, `monitor/`, `ui/tui/` | `tests/behavior/features/terminal_dashboard.feature`, integration smoke tests (planned) |
 | F-26 | Enhanced interactive prompts with prompt-toolkit | `main/app.py`, `prompting/prompt_service.py` | `tests/behavior/features/enhanced_prompting.feature`, targeted unit tests (planned) |
 | F-27 | Rich layouts with deterministic bare-mode fallbacks | `cli_utils.py`, `monitor/visualization.py` | `tests/behavior/features/rich_monitor_layout.feature`, `tests/behavior/features/visualize_metrics_cli.feature` |
-| F-28 | Multi-repository federation with provenance labels | `search/`, `storage/`, `orchestration/` | `tests/behavior/features/research_federation.feature` |
-| F-29 | Cross-examination workspaces and debate manifests | `orchestration/workspaces.py` (planned), `ui/desktop/` | `tests/behavior/features/research_federation.feature` |
-| F-30 | Namespace-aware storage policies | `storage/`, `config.py`, `api.py` | `tests/behavior/features/research_federation.feature`, namespace unit tests (planned) |
-| F-31 | Scholarly connector ingestion and caching | `resources/scholarly/`, `search/` | `tests/behavior/features/research_federation.feature`, connector unit tests (planned) |
+| F-28 | Workspace manifests version curated resources and citation requirements | `storage.py`, `storage_backends.py` | `tests/unit/storage/test_workspace_manifest.py`, `tests/behavior/features/research_federation.feature` |
+| F-29 | Workspace-aware orchestration enforces citation coverage | `orchestration/workspace.py`, `main/app.py` | `tests/unit/orchestration/test_workspace_orchestrator.py`, `tests/behavior/features/research_federation.feature` |
+| F-30 | Workspace tooling across CLI and desktop surfaces manifest context | `main/app.py`, `ui/desktop/main_window.py` | `tests/ui/desktop/test_desktop_integration.py`, `tests/behavior/features/research_federation.feature` |
+| F-31 | Scholarly connectors cache papers with provenance for offline replay | `resources/scholarly/`, `storage.py` | `tests/behavior/features/research_federation.feature`, connector unit tests (planned) |
 
