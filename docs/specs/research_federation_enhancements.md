@@ -38,6 +38,25 @@ federation workflow.
 - When the workspace-aware orchestrator is unavailable, the CLI and UI fall
   back to the standard orchestration flow while emitting warnings.
 
+## Scholarly Connectors
+
+- `autoresearch.resources.scholarly` introduces fetchers for arXiv and
+  Hugging Face Papers. The fetchers normalise metadata into
+  `PaperMetadata`/`PaperDocument` structures with consistent identifiers,
+  author lists, and publication timestamps.
+- `ScholarlyCache` persists paper content to deterministic cache paths using
+  the combination of namespace and provider identifier. Sidecar metadata
+  records provenance (source URL, checksum, content type, retrieval time) and
+  optional embeddings for future search operations.
+- DuckDB stores cached papers in a `scholarly_papers` table managed through
+  `StorageManager.save_scholarly_paper`, enabling offline replay without
+  re-fetching content.
+- The CLI exposes `autoresearch workspace papers` commands for searching,
+  ingesting, listing, and attaching cached papers to manifests. Desktop users
+  gain equivalent menu actions under “Resources”.
+- Behaviour tests cover the offline replay scenario by seeding cached papers
+  and asserting provenance survives disconnect events.
+
 ## Behavioural Scenarios
 
 - Behaviour tests now include a scenario (tagged `@pending`) describing the
