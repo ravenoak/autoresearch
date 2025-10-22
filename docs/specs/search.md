@@ -65,6 +65,11 @@ StackExchange-style corpora and top-down LLM partitioning that emits 1–5 word
 summaries per branch, each capped at a maximum branching factor of roughly
 10–20 nodes.
 【F:docs/external_research_papers/arxiv.org/2510.13217v1.md†L680-L689】
+
+![Hierarchical traversal overview showing offline tree construction, online
+beam expansion with slate calibration, and the dynamic corpus fallback
+loop.](../images/hierarchical_retrieval_overview.svg)
+
 Adopt the BRIGHT defaults from Section 4.1—Gemini-2.5-flash as the traversal
 LLM, ``B = 2``, ``N = 20``, ``ℓ = 10``, and ``α = 0.5``—to ground initial
 implementations before tuning for project-specific corpora.
