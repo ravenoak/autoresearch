@@ -92,10 +92,13 @@ for earlier flows:
      ensuring contrarian and fact-checker roles cite required resources.
    - Satisfies **F-29** with `WorkspaceOrchestrator` unit tests and behavior
      scenarios in `tests/behavior/features/research_federation.feature`.
+   - Ships `autoresearch search manifest` subcommands so analysts can curate
+     multi-repository manifests without editing configuration files manually.
    - Targets **0.1.1** with a beta tag after coverage telemetry stabilises.
 3. **Phase RF-3 — Federated UX and scholarly cache (Planned)**
-   - Adds `autoresearch workspace` CLI commands, the desktop workspace panel,
-     and scholarly connector caching for offline replay.
+   - Expands the CLI surface with `autoresearch workspace` flows, extends the
+     desktop workspace panel, and layers in scholarly connector caching for
+     offline replay.
    - Maps to **F-30** and **F-31**, validated through desktop integration tests
      and the research federation behavior suite.
    - Ships in **0.1.2** once the scholarly connector cache is populated and UX

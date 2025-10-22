@@ -6,12 +6,14 @@ from tests.behavior.context import BehaviorContext
 import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, RepositoryManifestEntry
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 from docx import Document
 import pytest
 import importlib.util
+import tomli_w
 
 pytestmark = [pytest.mark.requires_git, pytest.mark.requires_parsers]
 
@@ -249,6 +251,161 @@ def check_manifest_provenance(bdd_context: BehaviorContext):
         assert provenance.get("repository") == result.get("repository")
         if "namespace" in provenance:
             assert provenance["namespace"]
+
+
+@given("a temporary manifest-aware configuration")
+def temporary_manifest_configuration(tmp_path, monkeypatch, bdd_context: BehaviorContext):
+    config_path = tmp_path / "autoresearch.toml"
+    config_payload = {
+        "core": {"loops": 1},
+        "search": {
+            "backends": ["local_git"],
+            "context_aware": {"enabled": False},
+            "local_git": {"history_depth": 50, "manifest": []},
+        },
+    }
+    config_path.write_text(tomli_w.dumps(config_payload), encoding="utf-8")
+    loader = ConfigLoader.new_for_tests(search_paths=[config_path])
+    monkeypatch.setattr("autoresearch.main.app._config_loader", loader, raising=False)
+    bdd_context["config_path"] = config_path
+    bdd_context["config_loader"] = loader
+
+
+@given("the following repositories are available for manifest CLI management:")
+def manifest_cli_repositories(tmp_path, table, bdd_context: BehaviorContext):
+    query = "shared-term"
+    repos: list[dict[str, object]] = []
+    for row in table:
+        slug = row["slug"]
+        namespace = row["namespace"]
+        repo_path = tmp_path / slug
+        repo_path.mkdir()
+        subprocess.run(["git", "init"], cwd=repo_path, check=True)
+        subprocess.run(["git", "config", "user.email", "you@example.com"], cwd=repo_path, check=True)
+        subprocess.run(["git", "config", "user.name", "Your Name"], cwd=repo_path, check=True)
+        readme = repo_path / "README.md"
+        readme.write_text(f"{slug} {query}\n", encoding="utf-8")
+        subprocess.run(["git", "add", "README.md"], cwd=repo_path, check=True)
+        subprocess.run(["git", "commit", "-m", f"Add {query}"], cwd=repo_path, check=True)
+        branch = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=repo_path,
+                text=True,
+            )
+            .strip()
+        )
+        repos.append(
+            {
+                "slug": slug,
+                "namespace": namespace,
+                "path": repo_path,
+                "branch": branch,
+            }
+        )
+    bdd_context["manifest_repos"] = repos
+    bdd_context["manifest_query"] = query
+
+
+@when("I add the repositories to the manifest via the CLI")
+def add_repositories_via_cli(cli_runner, cli_app, bdd_context: BehaviorContext):
+    for entry in bdd_context["manifest_repos"]:
+        args = [
+            "search",
+            "manifest",
+            "add",
+            str(entry["path"]),
+            "--slug",
+            entry["slug"],
+            "--branch",
+            entry["branch"],
+        ]
+        namespace = entry.get("namespace")
+        if namespace:
+            args.extend(["--namespace", namespace])
+        result = cli_runner.invoke(cli_app, args, catch_exceptions=False)
+        assert result.exit_code == 0, result.output
+
+
+@when(parsers.parse('I update manifest slug "{slug}" to namespace "{namespace}" via the CLI'))
+def update_manifest_via_cli(slug: str, namespace: str, cli_runner, cli_app) -> None:
+    result = cli_runner.invoke(
+        cli_app,
+        ["search", "manifest", "update", slug, "--namespace", namespace],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+
+
+@when(parsers.parse('I remove manifest slug "{slug}" via the CLI'))
+def remove_manifest_via_cli(slug: str, cli_runner, cli_app) -> None:
+    result = cli_runner.invoke(
+        cli_app, ["search", "manifest", "remove", slug], catch_exceptions=False
+    )
+    assert result.exit_code == 0, result.output
+
+
+@when("I list the manifest via the CLI")
+def list_manifest_via_cli(cli_runner, cli_app, bdd_context: BehaviorContext):
+    result = cli_runner.invoke(
+        cli_app, ["search", "manifest", "list"], catch_exceptions=False
+    )
+    assert result.exit_code == 0, result.output
+    bdd_context["manifest_cli_output"] = result.stdout
+
+
+@then("the manifest CLI output lists:")
+def verify_manifest_cli_output(table, bdd_context: BehaviorContext):
+    output = bdd_context.get("manifest_cli_output", "")
+    assert output, "Manifest CLI output was empty"
+    expected_slugs = {row["slug"] for row in table}
+    for row in table:
+        slug = row["slug"]
+        namespace = row["namespace"]
+        assert slug in output
+        if namespace:
+            assert namespace in output
+    removed = {
+        entry["slug"]
+        for entry in bdd_context.get("manifest_repos", [])
+        if entry["slug"] not in expected_slugs
+    }
+    for slug in removed:
+        assert slug not in output
+
+
+@then(parsers.parse('a manifest-backed search for "{query}" returns provenance from:'))
+def verify_manifest_provenance_from_cli(
+    query: str,
+    table,
+    monkeypatch,
+    bdd_context: BehaviorContext,
+):
+    loader: ConfigLoader = bdd_context["config_loader"]
+    cfg = loader.load_config().model_copy(update={"loops": 1})
+    cfg.search.backends = ["local_git"]
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(StorageManager, "connection", staticmethod(_noop_storage_connection))
+    results = Search.external_lookup(query, max_results=6)
+    expected = {(row["slug"], row["namespace"]) for row in table}
+    expected_slugs = {row["slug"] for row in table}
+    actual: set[tuple[str, str | None]] = set()
+    for result in results:
+        slug = result.get("repository")
+        provenance = result.get("provenance", {})
+        namespace = provenance.get("namespace")
+        if slug in expected_slugs:
+            actual.add((slug, namespace))
+    assert expected <= actual
+    removed = {
+        entry["slug"]
+        for entry in bdd_context.get("manifest_repos", [])
+        if entry["slug"] not in expected_slugs
+    }
+    for result in results:
+        assert result.get("repository") not in removed
+    ConfigLoader.reset_instance()
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for text files")

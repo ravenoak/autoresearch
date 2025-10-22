@@ -69,6 +69,8 @@ package "Output Formatting" {
 
 user -> CLI : search(query)
 CLI -> Orchestrator : run_query(query)
+CLI -> ConfigLoader : update_manifest()
+ConfigLoader -> GitBackend : load_manifest()
 
 user -> FastAPI : POST /query
 FastAPI -> Orchestrator : run_query(query)

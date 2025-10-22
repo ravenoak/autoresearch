@@ -12,6 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, cast
 
+import tomli_w
+import tomllib
+
 import click
 import typer
 
@@ -45,6 +48,7 @@ from ..cli_utils import (
     visualize_rdf_cli as _cli_visualize,
 )
 from ..config.loader import ConfigLoader
+from ..config.models import RepositoryManifestEntry
 from ..error_utils import format_error_for_cli, get_error_info
 from ..errors import CitationError, NotFoundError, StorageError
 from ..logging_utils import configure_logging
@@ -151,6 +155,264 @@ app.add_typer(backup_app, name="backup")
 
 evaluation_app = _evaluation_app
 app.add_typer(evaluation_app, name="evaluate")
+
+
+search_app = cast(
+    typer.Typer,
+    cast(Any, typer).Typer(
+        help="Run research queries and manage Git manifest fan-out.",
+        invoke_without_command=True,
+        pretty_exceptions_enable=False,
+        no_args_is_help=True,
+    ),
+)
+app.add_typer(search_app, name="search")
+
+manifest_app = cast(
+    typer.Typer,
+    cast(Any, typer).Typer(
+        help="Manage local Git manifest entries for multi-repo search.",
+        pretty_exceptions_enable=False,
+    ),
+)
+search_app.add_typer(manifest_app, name="manifest")
+
+
+def _resolve_config_target() -> Path:
+    """Return the configuration path that should be updated for manifest edits."""
+
+    for path in _config_loader.search_paths:
+        if path.exists():
+            return path
+    return _config_loader.search_paths[0]
+
+
+def _persist_manifest_entries(manifest: List[RepositoryManifestEntry]) -> Path:
+    """Write manifest updates to disk and refresh the cached configuration."""
+
+    target = _resolve_config_target()
+    try:
+        config_data = tomllib.loads(target.read_text()) if target.exists() else {}
+    except Exception as exc:  # pragma: no cover - defensive guard for malformed TOML
+        print_error(
+            f"Failed to read configuration at {target}: {exc}",
+            suggestion="Validate autoresearch.toml syntax before retrying.",
+        )
+        raise typer.Exit(code=1) from exc
+
+    if not isinstance(config_data, dict):
+        print_error(
+            f"Configuration at {target} must contain a TOML table to store manifests.",
+        )
+        raise typer.Exit(code=1)
+
+    search_section = config_data.setdefault("search", {})
+    if not isinstance(search_section, dict):
+        print_error("The [search] section must be a table to hold manifest entries.")
+        raise typer.Exit(code=1)
+
+    local_git_section = search_section.setdefault("local_git", {})
+    if not isinstance(local_git_section, dict):
+        print_error("The [search.local_git] section must be a table to hold manifests.")
+        raise typer.Exit(code=1)
+
+    local_git_section["manifest"] = [
+        entry.model_dump(mode="python") for entry in manifest
+    ]
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(target, "wb") as handle:
+        tomli_w.dump(config_data, handle)
+
+    current_config = _config_loader.load_config()
+    updated_local_git = current_config.search.local_git.model_copy(
+        update={"manifest": manifest}
+    )
+    updated_search = current_config.search.model_copy(
+        update={"local_git": updated_local_git}
+    )
+    new_config = current_config.model_copy(update={"search": updated_search})
+    _config_loader._config = new_config
+    try:
+        _config_loader.notify_observers(new_config)
+    except Exception as exc:  # pragma: no cover - observers are optional
+        print_warning(f"Config observer notification failed: {exc}")
+    return target
+
+
+def _format_manifest_entry(entry: RepositoryManifestEntry) -> str:
+    """Return a human-readable description of a manifest entry."""
+
+    branch_list = ", ".join(entry.branches)
+    namespace_hint = f" namespace={entry.namespace}" if entry.namespace else ""
+    return (
+        f"- [bold]{entry.slug}[/bold] -> {entry.path} "
+        f"(branches: {branch_list}){namespace_hint}"
+    )
+
+
+@manifest_app.command("list")
+def manifest_list() -> None:
+    """Display configured repository manifest entries."""
+
+    manifest = list(_config_loader.load_config().search.local_git.manifest)
+    console = get_console()
+    if not manifest:
+        console.print("No repository manifest entries are configured yet.")
+        return
+
+    console.print(format_success("Configured repository manifest:"))
+    for entry in manifest:
+        console.print(_format_manifest_entry(entry))
+
+
+@manifest_app.command("add")
+def manifest_add(
+    path: Path = typer.Argument(
+        ..., help="Filesystem path to the repository root.", exists=True
+    ),
+    slug: Optional[str] = typer.Option(
+        None,
+        "--slug",
+        help="Override the derived manifest slug (defaults to repo name).",
+    ),
+    branch: Optional[List[str]] = typer.Option(
+        None,
+        "--branch",
+        "-b",
+        help="Branch to index. Repeat to include multiple branches.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        help="Optional namespace applied to cached search results.",
+    ),
+    after: Optional[str] = typer.Option(
+        None,
+        "--after",
+        help="Insert the entry after the provided slug to control ordering.",
+    ),
+) -> None:
+    """Add a repository to the local Git search manifest."""
+
+    manifest = list(_config_loader.load_config().search.local_git.manifest)
+    entry_payload: dict[str, Any] = {"path": str(path)}
+    if slug:
+        entry_payload["slug"] = slug
+    if branch:
+        entry_payload["branches"] = branch
+    if namespace is not None:
+        entry_payload["namespace"] = namespace
+
+    entry = RepositoryManifestEntry(**entry_payload)
+    if any(existing.slug == entry.slug for existing in manifest):
+        print_error(
+            f"Manifest entry '{entry.slug}' already exists.",
+            suggestion="Use 'update' to modify an existing repository.",
+        )
+        raise typer.Exit(code=1)
+
+    if after:
+        for index, existing in enumerate(manifest):
+            if existing.slug == after:
+                manifest.insert(index + 1, entry)
+                break
+        else:
+            print_error(
+                f"Manifest slug '{after}' was not found.",
+                suggestion="List entries to discover available slugs.",
+            )
+            raise typer.Exit(code=1)
+    else:
+        manifest.append(entry)
+
+    target = _persist_manifest_entries(manifest)
+    print_success(f"Added manifest entry '{entry.slug}' in {target}")
+
+
+@manifest_app.command("update")
+def manifest_update(
+    slug: str = typer.Argument(..., help="Manifest slug to modify."),
+    path: Optional[Path] = typer.Option(
+        None, "--path", help="Replace the repository path for this entry."
+    ),
+    new_slug: Optional[str] = typer.Option(
+        None,
+        "--slug",
+        help="Rename the manifest slug used for provenance labels.",
+    ),
+    branch: Optional[List[str]] = typer.Option(
+        None,
+        "--branch",
+        "-b",
+        help="Replace the branch list. Repeat to supply multiple branches.",
+    ),
+    namespace: Optional[str] = typer.Option(
+        None,
+        "--namespace",
+        help="Set or replace the namespace attached to provenance data.",
+    ),
+    clear_namespace: bool = typer.Option(
+        False,
+        "--clear-namespace",
+        help="Remove the namespace from the manifest entry.",
+    ),
+) -> None:
+    """Update an existing manifest entry."""
+
+    manifest = list(_config_loader.load_config().search.local_git.manifest)
+    for index, existing in enumerate(manifest):
+        if existing.slug == slug:
+            break
+    else:
+        print_error(
+            f"Manifest entry '{slug}' does not exist.",
+            suggestion="List entries before attempting an update.",
+        )
+        raise typer.Exit(code=1)
+
+    updated_payload = manifest[index].model_dump()
+    if path is not None:
+        updated_payload["path"] = str(path)
+    if branch is not None:
+        updated_payload["branches"] = branch
+    if namespace is not None:
+        updated_payload["namespace"] = namespace
+    elif clear_namespace:
+        updated_payload["namespace"] = None
+    if new_slug is not None:
+        updated_payload["slug"] = new_slug
+
+    candidate = RepositoryManifestEntry.model_validate(updated_payload)
+    if any(i != index and entry.slug == candidate.slug for i, entry in enumerate(manifest)):
+        print_error(
+            f"Manifest slug '{candidate.slug}' is already assigned to another repository.",
+        )
+        raise typer.Exit(code=1)
+
+    manifest[index] = candidate
+    target = _persist_manifest_entries(manifest)
+    print_success(f"Updated manifest entry '{candidate.slug}' in {target}")
+
+
+@manifest_app.command("remove")
+def manifest_remove(slug: str = typer.Argument(..., help="Manifest slug to delete.")) -> None:
+    """Remove a repository from the manifest."""
+
+    manifest = list(_config_loader.load_config().search.local_git.manifest)
+    for index, entry in enumerate(manifest):
+        if entry.slug == slug:
+            break
+    else:
+        print_error(
+            f"Manifest entry '{slug}' does not exist.",
+            suggestion="List entries before removing them.",
+        )
+        raise typer.Exit(code=1)
+
+    removed = manifest.pop(index)
+    target = _persist_manifest_entries(manifest)
+    print_success(f"Removed manifest entry '{removed.slug}' from {target}")
 
 
 workspace_app = cast(
@@ -662,175 +924,38 @@ def start_watcher(
         call_on_close(_stop_watcher)
 
 
-@typed_command()
 def search(
-    query: str = typer.Argument(..., help="Natural-language query to process"),
-    output: Optional[str] = typer.Option(
-        None, "-o", "--output", help="Output format: json|markdown|plain"
-    ),
-    depth: Optional[str] = typer.Option(
-        None,
-        "--depth",
-        help=f"Depth of detail in CLI output ({depth_help_text()})",
-        callback=depth_option_callback,
-    ),
-    interactive: bool = typer.Option(
-        False,
-        "--interactive",
-        "-i",
-        help="Refine the query interactively between agent cycles",
-    ),
-    reasoning_mode: Optional[str] = typer.Option(
-        None,
-        "--reasoning-mode",
-        "--mode",
-        help=(
-            "Override reasoning mode for this run " "(auto, direct, dialectical, chain-of-thought)"
-        ),
-    ),
-    loops: Optional[int] = typer.Option(
-        None,
-        "--loops",
-        help="Number of reasoning cycles to run",
-    ),
-    ontology: Optional[str] = typer.Option(
-        None,
-        "--ontology",
-        help="Load an ontology file before executing the query",
-    ),
-    ontology_reasoner: Optional[str] = typer.Option(
-        None,
-        "--ontology-reasoner",
-        "--reasoner",
-        help="Ontology reasoner engine to apply",
-    ),
-    ontology_reasoning: bool = typer.Option(
-        False,
-        "--ontology-reasoning/--no-ontology-reasoning",
-        "--infer-relations",
-        help="Apply ontology reasoning before returning results",
-    ),
-    token_budget: Optional[int] = typer.Option(
-        None,
-        "--token-budget",
-        help="Maximum tokens available for this query",
-    ),
-    gate_policy_enabled: Optional[bool] = typer.Option(
-        None,
-        "--gate-policy-enabled",
-        help="Enable scout gate heuristics (true/false).",
-        show_default=False,
-    ),
-    gate_retrieval_overlap_threshold: Optional[float] = typer.Option(
-        None,
-        "--gate-overlap-threshold",
-        help="Minimum retrieval overlap that still triggers debate (0-1).",
-        show_default=False,
-    ),
-    gate_nli_conflict_threshold: Optional[float] = typer.Option(
-        None,
-        "--gate-conflict-threshold",
-        help="Contradiction probability threshold for debate escalation (0-1).",
-        show_default=False,
-    ),
-    gate_complexity_threshold: Optional[float] = typer.Option(
-        None,
-        "--gate-complexity-threshold",
-        help="Complexity score threshold for debate escalation (0-1).",
-        show_default=False,
-    ),
-    gate_user_overrides: Optional[str] = typer.Option(
-        None,
-        "--gate-overrides",
-        help='JSON overrides for the scout gate policy (e.g. \'{"decision": "force_exit"}\').',
-        show_default=False,
-    ),
-    adaptive_max_factor: Optional[int] = typer.Option(
-        None,
-        "--adaptive-max-factor",
-        help="Adaptive budgeting max multiplier for query tokens",
-    ),
-    adaptive_min_buffer: Optional[int] = typer.Option(
-        None,
-        "--adaptive-min-buffer",
-        help="Adaptive budgeting minimum extra tokens",
-    ),
-    circuit_breaker_threshold: Optional[int] = typer.Option(
-        None,
-        "--circuit-breaker-threshold",
-        help="Failures before an agent circuit opens",
-    ),
-    circuit_breaker_cooldown: Optional[int] = typer.Option(
-        None,
-        "--circuit-breaker-cooldown",
-        help="Circuit breaker cooldown period in seconds",
-    ),
-    agents: Optional[str] = typer.Option(
-        None,
-        "--agents",
-        help="Comma-separated list of agents to run",
-    ),
-    parallel: bool = typer.Option(
-        False,
-        "--parallel",
-        help="Run agent groups in parallel",
-    ),
-    agent_groups: Optional[str] = typer.Option(
-        None,
-        "--agent-groups",
-        help=(
-            "Agent groups to run in parallel. Provide a comma-separated list of agents. "
-            "Multiple groups can be separated by repeating the option when supported."
-        ),
-    ),
-    primus_start: Optional[int] = typer.Option(
-        None,
-        "--primus-start",
-        help="Index of the agent to begin the dialectical cycle",
-    ),
-    visualize: bool = typer.Option(
-        False,
-        "--visualize",
-        help="Render an inline knowledge graph after the query completes",
-    ),
-    tui: bool = typer.Option(
-        False,
-        "--tui",
-        help=(
-            "Display an interactive Textual dashboard while the query runs "
-            "(requires a TTY and Textual; see docs/tui_dashboard.md)."
-        ),
-    ),
-    graphml: Optional[Path] = typer.Option(
-        None,
-        "--graphml",
-        help="Write the knowledge graph as GraphML to this path (use '-' for stdout).",
-    ),
-    graph_json: Optional[Path] = typer.Option(
-        None,
-        "--graph-json",
-        help="Write the knowledge graph as Graph JSON to this path (use '-' for stdout).",
-    ),
-    show_sections: bool = typer.Option(
-        False,
-        "--show-sections",
-        help="Display available sections for the selected depth level.",
-    ),
-    include_sections: Optional[str] = typer.Option(
-        None,
-        "--include",
-        help="Comma-separated list of sections to include (e.g., 'metrics,reasoning').",
-    ),
-    exclude_sections: Optional[str] = typer.Option(
-        None,
-        "--exclude",
-        help="Comma-separated list of sections to exclude (e.g., 'raw_response,citations').",
-    ),
-    reset_sections: bool = typer.Option(
-        False,
-        "--reset-sections",
-        help="Reset all section customizations to depth defaults.",
-    ),
+    query: str,
+    output: Optional[str] = None,
+    depth: Optional[str] = None,
+    interactive: bool = False,
+    reasoning_mode: Optional[str] = None,
+    loops: Optional[int] = None,
+    ontology: Optional[str] = None,
+    ontology_reasoner: Optional[str] = None,
+    ontology_reasoning: bool = False,
+    token_budget: Optional[int] = None,
+    gate_policy_enabled: Optional[bool] = None,
+    gate_retrieval_overlap_threshold: Optional[float] = None,
+    gate_nli_conflict_threshold: Optional[float] = None,
+    gate_complexity_threshold: Optional[float] = None,
+    gate_user_overrides: Optional[str] = None,
+    adaptive_max_factor: Optional[int] = None,
+    adaptive_min_buffer: Optional[int] = None,
+    circuit_breaker_threshold: Optional[int] = None,
+    circuit_breaker_cooldown: Optional[int] = None,
+    agents: Optional[str] = None,
+    parallel: bool = False,
+    agent_groups: Optional[str] = None,
+    primus_start: Optional[int] = None,
+    visualize: bool = False,
+    tui: bool = False,
+    graphml: Optional[Path] = None,
+    graph_json: Optional[Path] = None,
+    show_sections: bool = False,
+    include_sections: Optional[str] = None,
+    exclude_sections: Optional[str] = None,
+    reset_sections: bool = False,
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -1324,6 +1449,221 @@ def search(
                 print_verbose(f"Traceback:\n{traceback.format_exc()}")
         else:
             print_info("Run with --verbose for more details")
+
+
+@search_app.callback(invoke_without_command=True)
+def search_callback(
+    ctx: typer.Context,
+    query: Optional[str] = typer.Argument(
+        None, help="Natural-language query to process"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "-o", "--output", help="Output format: json|markdown|plain"
+    ),
+    depth: Optional[str] = typer.Option(
+        None,
+        "--depth",
+        help=f"Depth of detail in CLI output ({depth_help_text()})",
+        callback=depth_option_callback,
+    ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Refine the query interactively between agent cycles",
+    ),
+    reasoning_mode: Optional[str] = typer.Option(
+        None,
+        "--reasoning-mode",
+        "--mode",
+        help=(
+            "Override reasoning mode for this run "
+            "(auto, direct, dialectical, chain-of-thought)"
+        ),
+    ),
+    loops: Optional[int] = typer.Option(
+        None,
+        "--loops",
+        help="Number of reasoning cycles to run",
+    ),
+    ontology: Optional[str] = typer.Option(
+        None,
+        "--ontology",
+        help="Load an ontology file before executing the query",
+    ),
+    ontology_reasoner: Optional[str] = typer.Option(
+        None,
+        "--ontology-reasoner",
+        "--reasoner",
+        help="Ontology reasoner engine to apply",
+    ),
+    ontology_reasoning: bool = typer.Option(
+        False,
+        "--ontology-reasoning/--no-ontology-reasoning",
+        "--infer-relations",
+        help="Apply ontology reasoning before returning results",
+    ),
+    token_budget: Optional[int] = typer.Option(
+        None,
+        "--token-budget",
+        help="Maximum tokens available for this query",
+    ),
+    gate_policy_enabled: Optional[bool] = typer.Option(
+        None,
+        "--gate-policy-enabled",
+        help="Enable scout gate heuristics (true/false).",
+        show_default=False,
+    ),
+    gate_retrieval_overlap_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-overlap-threshold",
+        help="Minimum retrieval overlap that still triggers debate (0-1).",
+        show_default=False,
+    ),
+    gate_nli_conflict_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-conflict-threshold",
+        help="Contradiction probability threshold for debate escalation (0-1).",
+        show_default=False,
+    ),
+    gate_complexity_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-complexity-threshold",
+        help="Complexity score threshold for debate escalation (0-1).",
+        show_default=False,
+    ),
+    gate_user_overrides: Optional[str] = typer.Option(
+        None,
+        "--gate-overrides",
+        help='JSON overrides for the scout gate policy (e.g. "{\"decision\": \"force_exit\"}").',
+        show_default=False,
+    ),
+    adaptive_max_factor: Optional[int] = typer.Option(
+        None,
+        "--adaptive-max-factor",
+        help="Adaptive budgeting max multiplier for query tokens",
+    ),
+    adaptive_min_buffer: Optional[int] = typer.Option(
+        None,
+        "--adaptive-min-buffer",
+        help="Adaptive budgeting minimum extra tokens",
+    ),
+    circuit_breaker_threshold: Optional[int] = typer.Option(
+        None,
+        "--circuit-breaker-threshold",
+        help="Failures before an agent circuit opens",
+    ),
+    circuit_breaker_cooldown: Optional[int] = typer.Option(
+        None,
+        "--circuit-breaker-cooldown",
+        help="Circuit breaker cooldown period in seconds",
+    ),
+    agents: Optional[str] = typer.Option(
+        None,
+        "--agents",
+        help="Comma-separated list of agents to run",
+    ),
+    parallel: bool = typer.Option(
+        False,
+        "--parallel",
+        help="Run agent groups in parallel",
+    ),
+    agent_groups: Optional[str] = typer.Option(
+        None,
+        "--agent-groups",
+        help=(
+            "Agent groups to run in parallel. Provide a comma-separated list of agents. "
+            "Multiple groups can be separated by repeating the option when supported."
+        ),
+    ),
+    primus_start: Optional[int] = typer.Option(
+        None,
+        "--primus-start",
+        help="Index of the agent to begin the dialectical cycle",
+    ),
+    visualize: bool = typer.Option(
+        False,
+        "--visualize",
+        help="Render an inline knowledge graph after the query completes",
+    ),
+    tui: bool = typer.Option(
+        False,
+        "--tui",
+        help=(
+            "Display an interactive Textual dashboard while the query runs "
+            "(requires a TTY and Textual; see docs/tui_dashboard.md)."
+        ),
+    ),
+    graphml: Optional[Path] = typer.Option(
+        None,
+        "--graphml",
+        help="Write the knowledge graph as GraphML to this path (use '-' for stdout).",
+    ),
+    graph_json: Optional[Path] = typer.Option(
+        None,
+        "--graph-json",
+        help="Write the knowledge graph as Graph JSON to this path (use '-' for stdout).",
+    ),
+    show_sections: bool = typer.Option(
+        False,
+        "--show-sections",
+        help="Display available sections for the selected depth level.",
+    ),
+    include_sections: Optional[str] = typer.Option(
+        None,
+        "--include",
+        help="Comma-separated list of sections to include (e.g., 'metrics,reasoning').",
+    ),
+    exclude_sections: Optional[str] = typer.Option(
+        None,
+        "--exclude",
+        help="Comma-separated list of sections to exclude (e.g., 'raw_response,citations').",
+    ),
+    reset_sections: bool = typer.Option(
+        False,
+        "--reset-sections",
+        help="Reset all section customizations to depth defaults.",
+    ),
+) -> None:
+    if ctx.invoked_subcommand:
+        return
+    if query is None:
+        typer.echo(ctx.get_help())
+        raise typer.Exit(code=0)
+
+    search(
+        query=query,
+        output=output,
+        depth=depth,
+        interactive=interactive,
+        reasoning_mode=reasoning_mode,
+        loops=loops,
+        ontology=ontology,
+        ontology_reasoner=ontology_reasoner,
+        ontology_reasoning=ontology_reasoning,
+        token_budget=token_budget,
+        gate_policy_enabled=gate_policy_enabled,
+        gate_retrieval_overlap_threshold=gate_retrieval_overlap_threshold,
+        gate_nli_conflict_threshold=gate_nli_conflict_threshold,
+        gate_complexity_threshold=gate_complexity_threshold,
+        gate_user_overrides=gate_user_overrides,
+        adaptive_max_factor=adaptive_max_factor,
+        adaptive_min_buffer=adaptive_min_buffer,
+        circuit_breaker_threshold=circuit_breaker_threshold,
+        circuit_breaker_cooldown=circuit_breaker_cooldown,
+        agents=agents,
+        parallel=parallel,
+        agent_groups=agent_groups,
+        primus_start=primus_start,
+        visualize=visualize,
+        tui=tui,
+        graphml=graphml,
+        graph_json=graph_json,
+        show_sections=show_sections,
+        include_sections=include_sections,
+        exclude_sections=exclude_sections,
+        reset_sections=reset_sections,
+    )
 
 
 # Add monitoring subcommands
@@ -2110,7 +2450,7 @@ if __name__ == "__main__":
         run_cli()
     except typer.BadParameter as e:
         print_error(str(e))
-        console.print("Run [cyan]autoresearch --help[/cyan] for more information.")
+        print_info("Run autoresearch --help for more information.", symbol=False)
         sys.exit(1)
     except typer.Exit:
         # Re-raise typer.Exit to preserve exit code

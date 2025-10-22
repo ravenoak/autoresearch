@@ -195,6 +195,33 @@ python scripts/optimize_search_weights.py \
 The script runs a simple grid search and writes the best-performing weights back
 to the `[search]` section of the given TOML file.
 
+### Local Git manifest fan-out
+
+The `local_git` backend supports multi-repository fan-out through
+`search.local_git.manifest`. Each entry is validated as a
+`RepositoryManifestEntry` with the following fields:
+
+- `path` – absolute or relative path to the repository root.
+- `slug` – provenance label applied to search results (auto-derived when blank).
+- `branches` – branches to scan for commits and diffs.
+- `namespace` – optional cache namespace used for result isolation.
+
+Use the CLI to manage these entries without editing the TOML file manually:
+
+```bash
+autoresearch search manifest list
+autoresearch search manifest add ./repos/core-engine --slug core \
+  --branch main --namespace audit.core
+autoresearch search manifest update core --branch main --branch release \
+  --namespace audit.core
+autoresearch search manifest remove legacy
+```
+
+Every command updates `autoresearch.toml` via the configuration loader, so
+changes propagate to running sessions and observers. Manifest entries are
+preserved in the order they were added, allowing deterministic provenance when
+multiple repositories contain overlapping files.
+
 ### Search Backends
 
 | Backend | Description | Required Keys |
