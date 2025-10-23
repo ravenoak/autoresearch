@@ -1,66 +1,47 @@
-#!/usr/bin/env python3
-"""
-Behavior tests for autoresearch in temporary directory setup.
+"""Integration smoke tests for CLI and configuration behavior."""
 
-This test file verifies that autoresearch works correctly when run from
-a temporary directory with its own configuration files.
-"""
+import importlib
+from typing import Any, Dict
 
-import subprocess
-import sys
-import os
-from pathlib import Path
+import pytest
+
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.models import QueryResponse
+from autoresearch.output_format import OutputFormatter
 
 
-def test_autoresearch_help() -> int:
-    """Test that autoresearch --help works."""
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "autoresearch", "--help"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode == 0 and "Usage:" in result.stdout:
-            print("✓ autoresearch --help works correctly")
-            return 0
-        else:
-            print(f"✗ autoresearch --help failed: {result.stderr}")
-            return 1
-    except Exception as e:
-        print(f"✗ autoresearch --help exception: {e}")
-        return 1
+@pytest.mark.integration
+def test_autoresearch_help(cli_runner, tmp_path, monkeypatch) -> None:
+    """The top-level CLI help should render without side effects."""
+    from autoresearch.main.app import app
+
+    monkeypatch.chdir(tmp_path)
+
+    result = cli_runner.invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "Autoresearch CLI entry point" in result.stdout
 
 
-def test_autoresearch_search_help() -> int:
-    """Test that autoresearch search --help works."""
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "autoresearch", "search", "--help"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode == 0 and "Run a search query" in result.stdout:
-            print("✓ autoresearch search --help works correctly")
-            return 0
-        else:
-            print(f"✗ autoresearch search --help failed: {result.stderr}")
-            return 1
-    except Exception as e:
-        print(f"✗ autoresearch search --help exception: {e}")
-        return 1
+@pytest.mark.integration
+def test_autoresearch_search_help(cli_runner, tmp_path, monkeypatch) -> None:
+    """The search command help output should remain available."""
+    from autoresearch.main.app import app
+
+    monkeypatch.chdir(tmp_path)
+
+    result = cli_runner.invoke(app, ["search", "--help"])
+
+    assert result.exit_code == 0
+    assert "Run research queries" in result.stdout
 
 
-def test_config_loading_from_temp_dir() -> int:
-    """Test that autoresearch can load config from temporary directory."""
-    # Create a simple test that just checks if the config loading works
-    # without actually running a full search (which needs API keys)
-    test_dir = "/tmp/autoresearch_behavior_test"
-    os.makedirs(test_dir, exist_ok=True)
-
-    # Create a minimal config
-    config_content = """
+@pytest.mark.integration
+def test_config_loader_reads_temp_dir(tmp_path, monkeypatch) -> None:
+    """Config loader should parse configuration data from an isolated directory."""
+    config_path = tmp_path / "autoresearch.toml"
+    config_path.write_text(
+        """
 [core]
 llm_backend = "lmstudio"
 loops = 1
@@ -69,90 +50,98 @@ default_model = "mistral"
 [search]
 backends = ["serper"]
 max_results_per_query = 1
-"""
+        """.strip()
+    )
 
-    config_path = Path(test_dir) / "autoresearch.toml"
-    config_path.write_text(config_content)
+    with ConfigLoader.temporary_instance(search_paths=[config_path]) as loader:
+        monkeypatch.setattr("autoresearch.main.app._config_loader", loader, raising=False)
+        config = loader.config
 
-    try:
-        # Test that config loading works by checking if we can import and initialize
-        # without errors (this will fail due to missing API keys but should not
-        # fail due to import issues)
-        from autoresearch.config.loader import ConfigLoader
-
-        # Try to load config from our test directory
-        loader = ConfigLoader([str(config_path)])
-        _ = loader.config  # Just test that loading doesn't fail
-
-        print("✓ Config loading works correctly")
-        return 0
-
-    except Exception as e:
-        # We expect this to fail due to missing API keys, but not due to import errors
-        if "No module named" in str(e) or "ImportError" in str(e):
-            print(f"✗ Config loading failed due to import error: {e}")
-            return 1
-        else:
-            print("✓ Config loading works (failed as expected due to missing API keys)")
-            return 0
+    assert config.llm_backend == "lmstudio"
+    assert config.default_model == "mistral"
+    assert config.search.backends == ["serper"]
 
 
-def test_search_command_initialization() -> int:
-    """Test that search command can initialize without crashing."""
-    try:
-        # This tests that all the imports work correctly for the search command
-        from autoresearch.main.app import search
+@pytest.mark.integration
+@pytest.mark.requires_llm
+def test_search_command_executes_with_stubbed_orchestrator(
+    cli_runner, tmp_path, monkeypatch
+) -> None:
+    """The search command should run end-to-end with orchestration patched."""
+    main_app = importlib.import_module("autoresearch.main.app")
 
-        # Try to call the search function with minimal arguments to test initialization
-        # We expect it to fail due to missing API keys, but not due to import errors
-        try:
-            # This should fail due to missing API keys but not import errors
-            search("test query")
-            print("✓ Search command initialization works")
-            return 0
-        except Exception as e:
-            if "No module named" in str(e) or "ImportError" in str(e):
-                print(f"✗ Search command initialization failed due to import error: {e}")
-                return 1
-            else:
-                print(
-                    "✓ Search command initialization works (failed as expected due to missing API keys)"
-                )
-                return 0
+    config_path = tmp_path / "autoresearch.toml"
+    config_path.write_text(
+        """
+[core]
+llm_backend = "lmstudio"
+loops = 1
+default_model = "mistral"
 
-    except ImportError as e:
-        print(f"✗ Search command import failed: {e}")
-        return 1
+[search]
+backends = ["serper"]
+max_results_per_query = 1
+        """.strip()
+    )
 
+    captured: Dict[str, Any] = {}
 
-def run_behavior_tests() -> int:
-    """Run all behavior tests."""
-    print("Running autoresearch behavior tests...\n")
+    def fake_format(
+        cls, result: QueryResponse, format_type: str = "markdown", depth: Any | None = None, section_overrides: Dict[str, Any] | None = None
+    ) -> None:
+        captured["result"] = result
+        captured["format_type"] = format_type
+        captured["depth"] = depth
+        captured["section_overrides"] = section_overrides
 
-    tests = [
-        test_autoresearch_help,
-        test_autoresearch_search_help,
-        test_config_loading_from_temp_dir,
-        test_search_command_initialization,
-    ]
+    class StubOrchestrator:
+        """Minimal orchestrator implementation for integration smoke tests."""
 
-    passed = 0
-    total = len(tests)
+        infer_relations = staticmethod(lambda: None)
 
-    for test in tests:
-        if test():
-            passed += 1
-        print()
+        def run_query(
+            self,
+            query: str,
+            config,
+            callbacks: Dict[str, Any] | None = None,
+            *,
+            visualize: bool = False,
+        ) -> QueryResponse:
+            if callbacks and "on_cycle_end" in callbacks:
+                callbacks["on_cycle_end"](0, object())
+            return QueryResponse(
+                query=query,
+                answer="stubbed response",
+                citations=[],
+                reasoning=[],
+                metrics={"loops": config.loops},
+            )
 
-    print(f"Results: {passed}/{total} behavior tests passed")
+        @staticmethod
+        def run_parallel_query(query: str, config, groups) -> QueryResponse:
+            raise AssertionError("Parallel execution is not expected in this smoke test")
 
-    if passed == total:
-        print("🎉 All behavior tests passed!")
-        return 0
-    else:
-        print("❌ Some behavior tests failed")
-        return 1
+    with ConfigLoader.temporary_instance(search_paths=[config_path]) as loader:
+        monkeypatch.setattr(main_app, "_config_loader", loader, raising=False)
+        monkeypatch.setattr(main_app, "Orchestrator", StubOrchestrator, raising=False)
+        monkeypatch.setattr(main_app.StorageManager, "setup", lambda: None, raising=False)
+        monkeypatch.setattr(main_app.StorageManager, "load_ontology", lambda *args, **kwargs: None, raising=False)
+        monkeypatch.setattr(OutputFormatter, "format", classmethod(fake_format), raising=False)
 
+        result = cli_runner.invoke(
+            main_app.app,
+            [
+                "search",
+                "--output",
+                "json",
+                "stub query",
+            ],
+            env={
+                "PYTEST_CURRENT_TEST": "tests/integration/test_behavior.py::test_search_command_executes_with_stubbed_orchestrator",
+            },
+        )
 
-if __name__ == "__main__":
-    sys.exit(run_behavior_tests())
+    assert result.exit_code == 0
+    assert captured["result"].answer == "stubbed response"
+    assert captured["format_type"] == "json"
+    assert captured["result"].query == "stub query"
