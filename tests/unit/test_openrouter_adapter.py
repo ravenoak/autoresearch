@@ -4,6 +4,7 @@ These tests focus on unit-level testing with mocking to verify all new functiona
 including retry logic, error handling, caching, and streaming support.
 """
 
+import itertools
 import os
 import time
 from unittest.mock import Mock, patch
@@ -131,7 +132,7 @@ class TestOpenRouterAdapterModelDiscovery:
         assert size1 == size2
         assert size1 > 0
 
-    def test_context_size_cache_expiry(self) -> None:
+    def test_context_size_cache_expiry(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that cache respects TTL."""
         # Set very short TTL for testing
         adapter = OpenRouterAdapter()
@@ -140,12 +141,11 @@ class TestOpenRouterAdapterModelDiscovery:
         model = "google/gemini-flash-1.5"
 
         # Get context size
+        times = itertools.chain([1000.0, 1001.5], itertools.repeat(1001.5))
+
+        monkeypatch.setattr("time.time", lambda: next(times))
+
         size1 = adapter.get_context_size(model)
-
-        # Wait for cache to expire
-        time.sleep(1.1)
-
-        # Should get fresh value (though in practice it will be the same)
         size2 = adapter.get_context_size(model)
 
         assert size1 == size2  # Same value, but from "fresh" lookup
@@ -203,15 +203,61 @@ class TestOpenRouterAdapterRetryLogic:
             assert result == "Success!"
             assert mock_post.call_count == 1
 
-    @pytest.mark.skip(reason="HTTP mocking complex - requires session-level mocking")
-    def test_retry_on_rate_limit(self) -> None:
-        """Retry On Rate Limit."""
-        # TODO: Implement proper session-level HTTP mocking
-        pass
+    def test_retry_on_rate_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test retry logic on rate limit errors using pooled session mocking."""
 
-        """Test retry logic on rate limit errors."""
-        # TODO: Implement proper session-level HTTP mocking
-        pass
+        rate_limit_response = Mock()
+        rate_limit_response.ok = False
+        rate_limit_response.status_code = 429
+        rate_limit_response.headers = {"Retry-After": "1.5"}
+        rate_limit_response.json.return_value = {
+            "error": {"message": "Rate limit exceeded"}
+        }
+
+        second_rate_limit = Mock()
+        second_rate_limit.ok = False
+        second_rate_limit.status_code = 429
+        second_rate_limit.headers = {}
+        second_rate_limit.json.return_value = {
+            "error": {"message": "Rate limit exceeded again"}
+        }
+
+        success_response = Mock()
+        success_response.ok = True
+        success_response.status_code = 200
+        success_response.headers = {}
+        success_response.raise_for_status.return_value = None
+        success_response.json.return_value = {
+            "choices": [{"message": {"content": "Recovered response"}}]
+        }
+
+        responses = iter([rate_limit_response, second_rate_limit, success_response])
+
+        mock_session = Mock()
+        mock_session.post.side_effect = lambda *args, **kwargs: next(responses)
+
+        from autoresearch.llm import pool as llm_pool
+        from autoresearch.llm import adapters as adapters_module
+
+        monkeypatch.setattr(llm_pool, "_session", None)
+        monkeypatch.setattr(llm_pool, "get_session", lambda: mock_session)
+        monkeypatch.setattr(adapters_module, "get_session", lambda: mock_session)
+
+        models_response = Mock()
+        models_response.raise_for_status.return_value = None
+        models_response.json.return_value = {"data": []}
+        monkeypatch.setattr("requests.get", lambda *args, **kwargs: models_response)
+
+        sleep_calls: list[float] = []
+        monkeypatch.setattr("time.sleep", lambda delay: sleep_calls.append(delay))
+
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
+            adapter = OpenRouterAdapter()
+            result = adapter.generate("Prompt", model="anthropic/claude-3-opus")
+
+        assert result == "Recovered response"
+        assert mock_session.post.call_count == 3
+        assert sleep_calls == [1.5, 2.0]
 
     @pytest.mark.skip(reason="HTTP mocking complex - requires session-level mocking")
     def test_max_retries_exceeded(self) -> None:

@@ -48,27 +48,28 @@ def test_synthesizer_reports_lm_errors_in_metadata(monkeypatch: pytest.MonkeyPat
 
     result = agent.execute(state, config)
 
-    # Debug: print the actual structure
-    print("Result keys:", list(result.keys()))
-    if "results" in result:
-        print("Results keys:", list(result["results"].keys()))
-    if "claims" in result:
-        print("Claims count:", len(result["claims"]))
-        if result["claims"]:
-            print("First claim keys:", list(result["claims"][0].keys()))
-            if "metadata" in result["claims"][0]:
-                print("Metadata keys:", list(result["claims"][0]["metadata"].keys()))
-                print("Metadata content:", result["claims"][0]["metadata"])
+    assert set(result) >= {"results", "claims", "metadata"}
 
     results_map = dict(cast(Mapping[str, Any], result["results"]))
     assert results_map["final_answer"].startswith("Synthesis unavailable due to LM error.")
+    assert results_map["synthesis"] == "Synthesis unavailable due to LM error."
 
     claims = cast(list[Mapping[str, Any]], result["claims"])
+    assert len(claims) == 1
     claim = dict(claims[0])
+    assert claim["type"] == "synthesis"
+    assert claim["content"] == "Synthesis unavailable due to LM error."
+
     lm_errors = cast(list[Mapping[str, Any]], claim["lm_errors"])
+    assert len(lm_errors) == 1
     recorded = dict(lm_errors[0])
     assert recorded["phase"] == "synthesis"
+    assert recorded["metadata"] is None
     assert "backend rejected prompt" in recorded["message"]
+
+    metadata_map = dict(cast(Mapping[str, Any], result["metadata"]))
+    errors_meta = cast(list[Mapping[str, Any]], metadata_map["lm_errors"])
+    assert any(error["phase"] == "synthesis" for error in errors_meta)
 
 
 def test_fact_checker_fallback_includes_error_provenance(
