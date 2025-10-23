@@ -4,7 +4,17 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **October 16, 2025**.
+[README](README.md). Last updated **October 23, 2025** after harmonising
+coverage, test-count, and release-status reporting across the documentation
+set.
+
+
+As of **October 23, 2025 05:41 UTC**, the latest coverage export reports
+**71.94 %** line coverage (15,786 of 21,943 lines) from the October 17, 2025
+17:14 UTC `coverage.xml` run, and the October 22, 2025 19:13 UTC pytest
+collection baseline enumerates **1,907 tests** with **167 deselected** during
+collection. Release engineering for **v0.1.0a1** remains paused until the suite
+is green.
 
 ## Deep Research enhancement program
 
@@ -69,9 +79,9 @@ hierarchical retrieval is staged for **0.1.1** once the prototype tree builder,
 calibration validation, and dynamic-corpus safeguards finish implementation and
 the telemetry plus GraphRAG fallback strategy prove stable against the
 LATTICE-derived targets.
-Technical work for 0.1.0 is complete with release artifacts built and
-validated. Final release engineering (git tagging, documentation updates) is in
-progress.
+Technical work for 0.1.0 is still being stabilised; verify and coverage runs
+remain red, so release artifacts have not been validated and git tagging is on
+hold.
 
 ## Research federation enhancements
 
@@ -112,12 +122,12 @@ graduate together without blocking release operations.
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
-[CHANGELOG.md](CHANGELOG.md) for recent updates. **v0.1.0a1** technical work
-is complete with final release engineering in progress. **0.1.0** is targeted for
-**December 15, 2025** across project documentation.
-As of **October 16, 2025**, release engineering is in progress with technical
-work complete and final release steps (git tagging, documentation updates)
-underway for v0.1.0a1 release.
+[CHANGELOG.md](CHANGELOG.md) for recent updates. As of **October 23, 2025
+05:41 UTC**, the v0.1.0a1 rehearsal remains paused: the latest coverage export
+reports 71.94 % (15,786 of 21,943 lines) from the October 17, 2025 17:14 UTC
+`coverage.xml`, and the October 22, 2025 19:13 UTC pytest collection baseline
+enumerates 1,907 tests with 167 deselected. Verify and coverage are still red,
+no `v0.1.0a1` tag exists, and the alpha ticket tracks the open checklist.
 coverage sweep are the next gates. The updated
 [preflight readiness plan](docs/v0.1.0a1_preflight_plan.md) marks PR-S1,
 PR-S2, and PR-R0 complete while prioritising lint cleanup and coverage reruns;
@@ -135,10 +145,10 @@ planner prompts, and retrieval upgrades land once the test suite is green.
 
 ## Milestones
 
-- 0.1.0a1 (2025-10-16, status: release engineering): Alpha preview with
-  technical work complete and final release steps in progress.
-- 0.1.0 (2025-12-15, status: planned): Finalized packaging, docs and CI
-  checks with all tests passing.
+- 0.1.0a1 (target 2025-10-16, status: blocked on verify/coverage): Alpha
+  preview awaiting a green suite and packaging artefact capture.
+- 0.1.0 (2025-12-15, status: planned): Finalised packaging, docs, and CI
+  checks once alpha tagging evidence is complete.
 - 0.1.1 (2026-02-15, status: planned): Bug fixes and documentation updates.
 - 0.2.0 (2026-05-15, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
@@ -171,12 +181,12 @@ for the alpha release checklist.
 
 ## 0.1.0a1 – Alpha preview
 
-This alpha release provides an early package for testing with technical work
-complete and release engineering in progress. Related issue
+This alpha release remains in preparation while the verification and coverage
+gates are red. Related issue
 ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
-the work. Tagging **0.1.0a1** requires completion of final release steps
-including git tagging and documentation updates. Technical work is complete
-with all tests passing and artifacts validated. 
+the work. Tagging **0.1.0a1** requires finishing verify, coverage, packaging,
+and documentation updates; no release artifacts or git tags have been published
+yet.
 Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
@@ -186,8 +196,9 @@ Key activities include:
 - [x] DuckDB extension fallback hardened for offline setups.
 - [x] Distributed coordination helpers restored
   ([restore-distributed-coordination simulation exports (archived)][restore-dist-archived]).
-- [x] `task verify` completes without resource tracker errors
-  ([resolve-resource-tracker-errors-in-verify (archived)][resolve-resource-archived]).
+- [ ] `task verify` runs cleanly without cache flake or adaptive rewrite
+  regressions (current blockers tracked in
+  [prepare-first-alpha-release]).
 - [x] Deprecation warnings removed from test runs
   ([resolve-deprecation-warnings-in-tests (archived)][resolve-deprecation-archived]).
 - [ ] Coverage and release packaging finalized for the alpha tag

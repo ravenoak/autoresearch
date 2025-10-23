@@ -1,18 +1,22 @@
 # V0.1.0 Release Readiness Assessment and Remediation Plan
 
-## Executive Summary: EMPIRICAL DATA UPDATE - October 17, 2025
+## Executive Summary: EMPIRICAL DATA UPDATE - October 23, 2025
 
-### Assessment Date: October 17, 2025 (Updated with Empirical Data)
+### Assessment Dates: October 17 and October 22–23, 2025 (Updated with Empirical
+Data)
 
 **UPDATED ASSESSMENT**: Project shows significant progress toward v0.1.0 readiness based on empirical data:
 
-**MEASURED METRICS** (October 17, 2025):
-- **Coverage**: 71.94% across 21,943 lines (comprehensive measurement, not 57 lines)
-- **Tests Collected**: 1,721 tests (close to documented 1,646)
+**MEASURED METRICS** (October 17–22, 2025):
+- **Coverage**: 71.94% across 21,943 lines (October 17, 2025 17:14 UTC
+  `coverage.xml` export)
+- **Pytest Collection**: 1,907 tests discovered (1,740 collected, 167 deselected)
+  in the October 22, 2025 19:13 UTC baseline
 - **xfail/skip Markers**: 35 total (reduced from 127 - 74% improvement)
 - **Type Safety**: ✅ Full mypy strict compliance (150 source files)
 - **Code Quality**: ✅ Zero critical linting errors (E9,F63,F7,F82)
-- **Release Status**: v0.1.0a1 tagged, v0.1.0 commit exists but not tagged
+- **Release Status**: v0.1.0a1 tag not created; release engineering paused until
+  verify and coverage succeed
 
 **REMAINING ISSUES**:
 1. **Documentation Inconsistencies**: Multiple contradictory release status claims
@@ -33,9 +37,10 @@
 ### 1.2 Test Collection Reality
 
 **Previous Finding**: 127 xfail/skip markers across 44 files
-**Empirical Reality** (October 17, 2025):
+**Empirical Reality** (October 22, 2025 19:13 UTC collection baseline):
 - **35 xfail/skip markers** (74% reduction from 127)
-- **1,721 tests collected** (close to 1,646 claimed)
+- **1,907 tests discovered** with **1,740 collected** and **167 deselected**
+  (exceeds the previously documented 1,646 figure)
 - **Specific flaky tests now pass**:
   - `test_interleaved_storage_paths_share_cache` ✅ PASSED
   - `test_external_lookup_adaptive_k_increases_fetch` ✅ PASSED
@@ -43,10 +48,12 @@
 ### 1.3 Release Status Reality
 
 **Previous Finding**: Documentation contradictions about release status
-**Empirical Reality** (October 17, 2025):
-- **v0.1.0a1 tag exists** ✅
-- **v0.1.0 commit exists** (9d8b4926) but no v0.1.0 tag
-- **Documentation inconsistent** (some claim v0.1.0 released, others v0.1.0a1)
+**Empirical Reality** (October 23, 2025):
+- **No v0.1.0a1 tag exists**; release engineering remains paused pending green
+  verify/coverage evidence.
+- **v0.1.0 commit exists** (9d8b4926) but no v0.1.0 tag.
+- **Documentation inconsistent** (some still claim v0.1.0 released, others
+  report alpha readiness).
 
 ## 2. UPDATED CRITICAL ISSUES
 
@@ -58,7 +65,7 @@
 - `CHANGELOG.md`: Claims "0.1.0 - 2025-10-17" but no v0.1.0 tag exists
 - `STATUS.md`: Claims v0.1.0a1 released but remediation plan shows issues
 - Coverage claims: 69.76% (documentation) vs 71.94% (measured)
-- Test counts: 1,646 (documentation) vs 1,721 (measured)
+- Test counts: 1,646 (documentation) vs 1,907 discovered / 1,740 collected
 
 **Acceptance Criteria**:
 - [ ] Audit ALL documentation for accuracy with empirical data
@@ -138,13 +145,15 @@
 **Effort**: 2 hours
 
 **Actions**:
-1. Update all documentation: 1,646 tests → 1,721 tests (measured October 17, 2025)
+1. Update all documentation: 1,646 tests → 1,907 discovered / 1,740 collected
+   (measured October 22, 2025 19:13 UTC)
 2. Document test categorization: unit, integration, behavior
 3. Explain 28% integration test deselection
 4. Document xfail/skip count (35 total)
 
 **Acceptance Criteria**:
-- [ ] Test counts updated to 1,721 with measurement date
+- [ ] Test counts updated to 1,907 discovered / 1,740 collected with
+  measurement date
 - [ ] All documents have consistent test count claims
 - [ ] Deselection percentages documented and explained
 
@@ -180,7 +189,8 @@
 - ✅ **Integration Tests**: 350 passed, 20 skipped, 145 deselected (28% deselection)
 - ✅ **Behavior Tests**: 41 passed, 215 skipped, 57 deselected
 - ✅ **Previously Flaky Tests**: Now pass consistently
-- ✅ **Documentation**: Updated with empirical data (71.94% coverage, 1,721 tests)
+- ✅ **Documentation**: Updated with empirical data (71.94% coverage, 1,907 tests
+  discovered / 1,740 collected)
 - ✅ **Build Process**: `uv run python -m build` works correctly
 
 **REMAINING GAPS**:
@@ -228,7 +238,8 @@
 
 ### Immediate Actions (This Week):
 
-1. **UPDATE DOCUMENTATION** with empirical data (coverage: 71.94%, tests: 1,721)
+1. **UPDATE DOCUMENTATION** with empirical data (coverage: 71.94%, pytest
+   collection: 1,907 discovered / 1,740 collected)
 2. **CLARIFY RELEASE STATUS** - v0.1.0a1 released, v0.1.0 preparation in progress
 3. **COMPLETE INTEGRATION TESTS** - reduce deselection to <10%
 4. **FINAL VERIFICATION** - run comprehensive test suite

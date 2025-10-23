@@ -1,23 +1,30 @@
-# v0.1.0 Issue Triage (October 22, 2025)
+# v0.1.0 Issue Triage (October 23, 2025)
 
 ## BLOCKERS (must fix for v0.1.0)
-**Priority**: These issues prevent core functionality or cause critical bugs that would make v0.1.0 unusable.
+**Priority**: These issues prevent core functionality or cause critical bugs
+that would make v0.1.0 unusable.
 
-**✅ TESTS PASSING** - Verification shows tests are working correctly:
+**Evidence snapshot (October 23, 2025 05:41 UTC):**
 
-**Test Results** (October 18, 2025):
-- **Integration Tests**: All 368 selected tests passing ✅
-- **API Authentication**: All 19 auth tests passing ✅
-- **Behavior Tests**: Agent orchestration tests passing ✅
-- **Backup Scheduler**: All tests passing ✅
-- **LRU Eviction**: All 27 tests passing ✅
+- `task verify` fails on the cache property Hypothesis flake recorded in
+  `baseline/logs/task-verify-20251009T180847Z.log`, so no green suite exists.
+- `task coverage` fails on the adaptive rewrite regression captured in
+  `baseline/logs/task-coverage-20251009T181039Z.log`, leaving coverage artefacts
+  stale at the October 17, 2025 17:14 UTC 71.94 % export (15,786 of 21,943
+  lines).
+- Pytest collection on October 22, 2025 (19:13 UTC) enumerates 1,907 tests with
+  167 deselected, reinforcing that verification still relies on deselection and
+  skip markers.
 
-**Previously Identified Issues** (resolved):
-- **fix-backup-scheduler-rotation-regressions.md** - ✅ RESOLVED (tests pass)
-- **investigate-lru-eviction-regression.md** - ✅ RESOLVED (all tests pass)
+**Active Blockers:**
 
-**Total Blockers**: 0
-**Estimated Effort**: 0 hours (tests passing)
+- Stabilise cache property Hypothesis coverage so `task verify` can complete
+  without flaking.
+- Repair adaptive rewrite expectations so `task coverage` can finish and refresh
+  artefacts.
+
+**Total Blockers**: 2
+**Estimated Effort**: 12–18 hours across cache and adaptive rewrite fixes
 
 ## HIGH PRIORITY (should fix if time permits)
 **Priority**: Significant impact but workarounds exist or issues don't block core functionality.
@@ -56,20 +63,24 @@
 
 ## Summary
 
-**Total Issues**: 20
+**Total Issues**: 15
 - Blockers: 2 (must fix)
 - High Priority: 3 (fix if time)
-- Medium Priority: 9 (defer if needed)
+- Medium Priority: 8 (defer if needed)
 - Low Priority: 2 (defer)
 
 **Release Strategy**:
-- Fix all blockers (2 issues, ~8-12 hours)
-- Attempt high priority if time permits (3 issues, ~12-20 hours)
-- Defer remaining 11 issues to v0.1.1 milestone
-- Timeline: Still achievable for November 15, 2025 target
+- Stabilise cache and adaptive rewrite blockers (~12-18 hours) before attempting
+  any additional scope.
+- Attempt high priority items if time permits (3 issues, ~12-20 hours).
+- Defer remaining 10 issues to the v0.1.1 milestone.
+- Timeline: November 15, 2025 target remains contingent on clearing verify and
+  coverage within the next sprint.
 
 **Risk Assessment**:
-- Blocker fixes are straightforward (scheduler and cache issues)
-- High priority issues have known solutions
-- No architectural blockers identified
-- Core functionality unaffected by deferred issues
+- Verify/coverage blockers remain outstanding (cache property flake and adaptive
+  rewrite regression).
+- High priority issues have known solutions but depend on green verify/coverage
+  evidence.
+- No architectural blockers identified; risk centres on test stability and
+  deselection reliance.
