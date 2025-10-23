@@ -7,3 +7,4 @@ omit =
 
 [report]
 include = src/autoresearch/*
+fail_under = 70

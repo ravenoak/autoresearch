@@ -33,6 +33,22 @@ Tests may require optional dependencies. Markers such as `requires_nlp` or
 `dev-minimal` and `test` extras by default. Set `EXTRAS` to include optional
 groups or add `gpu` packages.
 
+## Quality gates
+
+`task check` and `task verify` now run `uv run mypy --strict src tests`. The
+tasks respect the same `EXTRAS` argument that controls dependency syncing, so
+pass `EXTRAS="nlp parsers"` (for example) when you need strict typing coverage
+for those optional modules. When the extras are not installed the gate still
+runs against the baseline environment, which ensures contributors catch
+regressions even without heavy dependencies.
+
+Coverage runs enforce a minimum of 70% through `.coveragerc` and
+`task coverage`, which calls `coverage report --fail-under=70` after executing
+the targeted suites. If you enable more extras locally, rerun `task coverage`
+with matching `EXTRAS` values so the additional modules contribute to the
+coverage calculation. This keeps the fail-under threshold meaningful while the
+team reinstates full-extras coverage in CI.
+
 ## Deprecation warnings
 
 - Run `task verify:warnings` after syncing the `dev-minimal` and `test` extras

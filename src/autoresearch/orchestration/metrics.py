@@ -17,7 +17,7 @@ from dataclasses import replace
 from os import getenv
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, SupportsFloat
+from typing import TYPE_CHECKING, Any, SupportsFloat, cast
 
 from prometheus_client import Counter, Histogram
 from prometheus_client.metrics import MetricWrapperBase
@@ -51,10 +51,17 @@ log = logging.getLogger(__name__)
 def _safe_counter(name: str, description: str, registry: Any = None) -> Counter:
     """Safely create a Counter, checking if it already exists."""
     try:
-        # Try to get existing metric
         existing = REGISTRY._names_to_collectors.get(name)
-        if existing:
-            return existing[0]
+        if isinstance(existing, MetricWrapperBase):
+            if isinstance(existing, Counter):
+                return existing
+            return cast(Counter, existing)
+        if isinstance(existing, Iterable):
+            for collector in existing:
+                if isinstance(collector, Counter):
+                    return collector
+                if isinstance(collector, MetricWrapperBase):
+                    return cast(Counter, collector)
     except (AttributeError, KeyError):
         pass
 
@@ -65,10 +72,17 @@ def _safe_counter(name: str, description: str, registry: Any = None) -> Counter:
 def _safe_histogram(name: str, description: str, registry: Any = None) -> Histogram:
     """Safely create a Histogram, checking if it already exists."""
     try:
-        # Try to get existing metric
         existing = REGISTRY._names_to_collectors.get(name)
-        if existing:
-            return existing[0]
+        if isinstance(existing, MetricWrapperBase):
+            if isinstance(existing, Histogram):
+                return existing
+            return cast(Histogram, existing)
+        if isinstance(existing, Iterable):
+            for collector in existing:
+                if isinstance(collector, Histogram):
+                    return collector
+                if isinstance(collector, MetricWrapperBase):
+                    return cast(Histogram, collector)
     except (AttributeError, KeyError):
         pass
 
