@@ -9,13 +9,13 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **October 16, 2025** and
-confirms that the codebase has completed technical preparation for the **0.1.0a1** version defined
-in `autoresearch.__version__`. The project is in final release engineering for **0.1.0a1**
-after completing integration test fixes and documentation corrections.
-The final **0.1.0** milestone is targeted for **December 15, 2025**. See
-STATUS.md, ROADMAP.md, and CHANGELOG.md for current progress. Phase 3
-(stabilization/testing/documentation) is complete and Phase 4 (release engineering) is in progress.
+`2025-05-18`). This schedule was last updated on **October 23, 2025** after
+reconciling coverage, test-count, and release-status data. Verification and
+coverage remain red, so the **0.1.0a1** rehearsal is paused pending green
+evidence. The final **0.1.0** milestone is targeted for **December 15, 2025**.
+See STATUS.md, ROADMAP.md, and CHANGELOG.md for current progress. Phase 3
+(stabilization/testing/documentation) remains in progress while release
+engineering is blocked on refreshed evidence.
 
 ## Status
 
@@ -33,14 +33,20 @@ The project is in final release engineering for **v0.1.0a1** with the following 
 - **Ontology Reasoner Tests**: Flaky timeout tests stabilized
 
 ⚠️ **Current State:**
-- **Test Suite**: 1250 unit tests passing (113 deselected, 1 skipped, 13 xfailed)
-- **Coverage**: current coverage is **69.76%** (measured October 17, 2025)
-- **Integration Tests**: LM Studio timeout requires mocking fix
-- **Core Architecture**: Functional multi-agent orchestration with local storage
-- **Code Quality**: High standards maintained throughout remediation
-- **Documentation**: Previously contained false release claims, now corrected
+- **Test Suite**: Pytest collection on October 22, 2025 (19:13 UTC) enumerates
+  1,907 tests with 167 deselected; verification is blocked by cache and
+  adaptive rewrite regressions.
+- **Coverage**: 71.94 % (15,786 of 21,943 lines) from the October 17, 2025
+  17:14 UTC `coverage.xml` export.
+- **Integration Tests**: LM Studio timeout still requires mocking before the
+  deselected scenarios can run.
+- **Core Architecture**: Functional multi-agent orchestration with local
+  storage.
+- **Code Quality**: High standards maintained throughout remediation.
+- **Documentation**: Harmonised with the latest empirical data.
 
-**Next Steps**: Complete release engineering (git tagging, final documentation updates) and publish release artifacts.
+**Next Steps**: Complete release engineering (git tagging, final documentation
+updates) once verify and coverage succeed, then publish release artifacts.
 
 The October 9, 2025 21:50 UTC `uv run task release:alpha` rerun advanced through
 lint, mypy, verify, and coverage before failing on the
@@ -122,10 +128,12 @@ testing infrastructure solid. The project has addressed major technical issues
 and is completing integration test mocking and documentation verification.
 
 **Current Status:**
-- Core orchestration and multi-agent functionality working
-- Test suite passing with 1276 unit tests (67 skipped, 13 xfailed)
-- Sensitive data filtering and security features operational
-- Documentation corrections completed
+- Core orchestration and multi-agent functionality working.
+- Pytest collection enumerates 1,907 tests with 167 deselected; verification is
+  blocked by cache and adaptive rewrite regressions.
+- Sensitive data filtering and security features operational.
+- Documentation harmonised with the latest empirical coverage and collection
+  data.
 
 **Final Steps Before Release:**
 - Integration test mocking for external service dependencies
@@ -144,9 +152,9 @@ throughput gates in the benchmark and scheduler suites.
 
 ## Milestones
 
-- **0.1.0a1** (2025-10-16, status: released): Alpha preview published with
-  multi-agent orchestration, search, and knowledge graph functionality operational.
-- **0.1.0** (2025-12-15, status: ready): Deep Research phases 1–5 implemented;
+- **0.1.0a1** (target 2025-10-16, status: blocked on verify/coverage): Alpha
+  preview awaiting a green suite and packaging evidence.
+- **0.1.0** (2025-12-15, status: planned): Deep Research phases 1–5 implemented;
   hierarchical retrieval follows in **0.1.1**.
   - ✅ Adaptive gate and claim audits (Phase 1)
   - ✅ Planner coordinator react upgrade (Phase 2)
@@ -171,19 +179,20 @@ throughput gates in the benchmark and scheduler suites.
   tuning and stable interfaces
   (reach-stable-performance-and-interfaces).
 
-The alpha **0.1.0a1** release is planned for completion after addressing
-integration test issues and documentation corrections. The final **0.1.0** milestone
-is set for **December 15, 2025**.
+The alpha **0.1.0a1** release will complete once integration mocks land and the
+verify and coverage gates record green evidence. The final **0.1.0** milestone
+remains targeted for **December 15, 2025**.
 
 ### Alpha release checklist
 
 - [x] Confirm STATUS.md and this plan share the same test status before
   tagging.
 - [x] Ensure Task CLI available (restore-task-cli-availability).
-- [x] All unit tests pass (fix-task-verify-coverage-hang).
+- [ ] All unit tests pass; cache and adaptive rewrite regressions still block
+  `task verify` (fix-task-verify-coverage-hang).
 
-These tasks completed in order: environment bootstrap → packaging verification
-→ integration tests → test verification.
+These tasks must complete in order: environment bootstrap → packaging
+verification → integration tests → test verification.
 
 ### Prerequisites for tagging 0.1.0a1
 

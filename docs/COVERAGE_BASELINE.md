@@ -2,13 +2,17 @@
 
 ## Overview
 
-This document establishes the coverage baseline for the v0.1.0 release. Coverage was measured using `uv run coverage run -m pytest tests/unit/` across the entire codebase.
+This document establishes the coverage baseline for the v0.1.0 release.
+Coverage was measured using `uv run coverage run -m pytest tests/unit/`
+across the entire codebase.
 
 ## Key Metrics
 
-- **Total Coverage**: 69.76% (measured across 21,943 lines)
+- **Total Coverage**: 71.94% (15,786 of 21,943 lines, measured October 17, 2025
+  at 17:14 UTC)
 - **Test Files**: 148 source files analyzed
-- **Test Results**: 1,257 unit tests passing, 69 skipped, 25 deselected, 13 xfailed
+- **Test Collection**: 1,907 tests discovered with 1,740 collected and 167
+  deselected (October 22, 2025 19:13 UTC baseline)
 
 ## Coverage by Module
 
@@ -47,7 +51,7 @@ This document establishes the coverage baseline for the v0.1.0 release. Coverage
 ## Coverage Targets
 
 ### For v0.1.0 (Current)
-- ✅ **Maintain ≥68%** overall coverage (currently 69.76%)
+- ✅ **Maintain ≥68%** overall coverage (currently 71.94%)
 - ✅ **Maintain ≥80%** for core modules (orchestration, config, models)
 - ⚠️ **Accept current UI coverage** for initial release
 

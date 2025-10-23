@@ -7,6 +7,11 @@ Reference issues by slugged filename (for example,
 
 ## [Unreleased]
 
+- Harmonised STATUS.md, ROADMAP.md, release plans, and triage documentation so
+  each cites the October 17, 2025 17:14 UTC coverage export (71.94 %, 15,786 of
+  21,943 lines) and the October 22, 2025 19:13 UTC pytest collection baseline
+  (1,907 tests discovered; 1,740 collected; 167 deselected) while noting that
+  v0.1.0a1 remains pending a green verify/coverage sweep.
 - Documented research federation requirements F-28–F-31, updated the RTM, and
   aligned roadmap, CLI, and desktop guides with the staged specification.
 - Added an opt-in guard for the legacy Streamlit GUI. The CLI now requires the
@@ -18,7 +23,8 @@ Reference issues by slugged filename (for example,
 
 ## [0.1.0] - 2025-11-15
 
-**PREPARATION IN PROGRESS** - Final release engineering for stable v0.1.0 release.
+**PREPARATION IN PROGRESS** - Release engineering paused until verify and
+coverage succeed; the alpha tag remains pending.
 
 ### Overview
 - Multi-agent orchestration with dialectical reasoning
@@ -26,7 +32,8 @@ Reference issues by slugged filename (for example,
 - CLI, HTTP API, and Streamlit interfaces
 - Plugin-based search backends
 - Knowledge graph integration
-- Comprehensive test coverage (64% measured October 22, 2025)
+- Coverage evidence currently 71.94 % (15,786 of 21,943 lines) from the
+  October 17, 2025 17:14 UTC coverage export; verification remains incomplete.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -39,9 +46,13 @@ Reference issues by slugged filename (for example,
 
 ### Technical Quality
 - **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
-- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
-- **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests
+- **Code Quality**: Zero critical lint violations; verify/coverage reruns still
+  outstanding.
+- **Build Process**: Clean packaging with sdist and wheel generation.
+- **Coverage**: 71.94 % (15,786 of 21,943 lines) from the October 17, 2025
+  17:14 UTC coverage export.
+- **Testing**: Pytest collection enumerates 1,907 tests (1,740 collected; 167
+  deselected) as of October 22, 2025 19:13 UTC; suite not yet green.
 - Integration test deselection: 28% (145/513 tests) - acceptable for v0.1.0, target <15% for v0.1.1
 
 ### What's Changed Since v0.1.0a1
@@ -60,7 +71,8 @@ Reference issues by slugged filename (for example,
 
 ## [0.1.0a1] - 2025-10-16
 
-Initial alpha release of the autoresearch framework featuring multi-agent research orchestration, local-first architecture, and comprehensive APIs.
+Alpha release preparations for the autoresearch framework remain underway;
+the `v0.1.0a1` tag will be proposed once verify and coverage gates are green.
 
 ### Overview
 - Local-first orchestrator coordinating multiple agents for research
@@ -68,7 +80,9 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests.
+- Pytest collection enumerates 1,907 tests (1,740 collected; 167 deselected) as
+  of October 22, 2025 19:13 UTC; suite remains red while cache and adaptive
+  regressions are triaged.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -81,9 +95,13 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 
 ### Technical Quality
 - **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
-- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
-- **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,769 tests collected (measured October 22, 2025), comprehensive integration coverage
+- **Code Quality**: Zero critical lint violations; verify/coverage reruns still
+  outstanding.
+- **Build Process**: Clean packaging with sdist and wheel generation.
+- **Coverage**: 71.94 % (15,786 of 21,943 lines) from the October 17, 2025
+  17:14 UTC coverage export.
+- **Testing**: Pytest collection enumerates 1,907 tests (1,740 collected; 167
+  deselected) as of October 22, 2025 19:13 UTC; suite not yet green.
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments
@@ -121,7 +139,9 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests.
+- Pytest collection enumerates 1,907 tests (1,740 collected; 167 deselected) as
+  of October 22, 2025 19:13 UTC; suite remains red while cache and adaptive
+  regressions are triaged.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -133,10 +153,15 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
-- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
-- **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,769 tests collected (measured October 22, 2025), comprehensive integration coverage
+- **Type Safety**: Full mypy strict mode compliance across core modules
+  (captured October 9, 2025 logs).
+- **Code Quality**: Zero critical lint violations; verify/coverage reruns still
+  outstanding.
+- **Build Process**: Clean packaging with sdist and wheel generation.
+- **Coverage**: 71.94 % (15,786 of 21,943 lines) from the October 17, 2025
+  17:14 UTC coverage export.
+- **Testing**: Pytest collection enumerates 1,907 tests (1,740 collected; 167
+  deselected) as of October 22, 2025 19:13 UTC; suite not yet green.
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments
@@ -144,11 +169,12 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - Some xfailed tests remain for deprecated schema compatibility
 
 ### Testing Summary
-- **Unit Tests**: 1276 passed (67 skipped, 13 xfailed for schema compatibility)
-- **Integration Tests**: Core functionality tested with mocked external services
-- **Behavior Tests**: 41 end-to-end workflows verified
-- **Code Quality**: Zero linting errors, full type checking compliance
-- **Build Process**: Successful packaging and installation verification
+- **Collection**: 1,907 tests discovered; 1,740 collected; 167 deselected
+  (October 22, 2025 19:13 UTC baseline).
+- **Blocking Issues**: Cache property Hypothesis flake and adaptive rewrite
+  regression keep `task verify` and `task coverage` red.
+- **Next Steps**: Stabilise blocking tests, re-run verify/coverage, and capture
+  fresh artefacts before proposing the tag.
 
 [add-test-coverage]: issues/archive/add-test-coverage-for-optional-components.md
 [streamline-extras]: issues/archive/streamline-task-verify-extras.md

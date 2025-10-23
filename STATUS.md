@@ -1,48 +1,59 @@
 # Status
 
-## ✅ v0.1.0a1 Released
+## ⚠️ v0.1.0a1 release still in flight
 
-**RELEASE COMPLETE - Technical work completed and release artifacts published:**
+**Summary (October 23, 2025 05:41 UTC):**
 
-✅ **RELEASE COMPLETED:**
-- **Git tagging**: Created `v0.1.0a1` release tag (October 16, 2025)
-- **Package publishing**: Successfully built and published wheel and source distribution packages
-- **Documentation**: Updated to reflect completed release status
-- **Release verification**: All deliverables complete and validated
+- **Coverage:** 71.94 % (15,786 of 21,943 lines) recorded on October 17, 2025
+  at 17:14 UTC by the current `coverage.xml` export.
+- **Pytest collection:** 1,907 tests discovered with 1,740 collected and 167
+  deselected in the baseline captured on October 22, 2025 at 19:13 UTC
+  (`test_collection_baseline.txt`).
+- **Release readiness:** Verification and coverage stages remain red, no
+  `v0.1.0a1` tag exists, and release engineering is paused until the suite is
+  green.
 
-**Current Status**: v0.1.0a1 alpha release published and available. Core functionality operational with multi-agent orchestration, search, and knowledge graph features.
+**Near-term focus:**
 
-**v0.1.0 Preparation**: Final release engineering in progress for stable v0.1.0 release (target: November 15, 2025).
+- Stabilise the flaky cache and adaptive rewrite tests blocking `task verify`
+  and `task coverage` so fresh artefacts reflect the current regression state.
+- Re-run the alpha rehearsal once verify and coverage complete, then capture
+  packaging logs for the release dossier.
+- Continue documentation harmonisation so every status surface references the
+  same empirical coverage and collection data.
 
-current coverage is **60%** across 24,495 lines (measured October 22, 2025).
+**Known limitations:**
 
-**Known Limitations:**
-- Integration tests: 28% deselection rate due to external service mocking (target: <10%)
-- Test stability: 35 xfail/skip markers (down from 127 - 74% improvement)
-- Previously flaky tests now pass consistently (Hypothesis cache tests, adaptive rewrite)
-- Optional extras (NLP, UI, GPU) require additional dependencies and testing
+- Integration deselection rate remains high while external service mocks are
+  repaired.
+- Legacy cache properties still exhibit Hypothesis flakiness, preventing a
+  green suite.
+- Optional extras (NLP, UI, GPU) require additional dependency management
+  before they can participate in automated gates.
 
 **Phase 6 preview (targets 0.1.1):**
+
 - Prototype semantic tree builder, calibration validation harness, and
   dynamic-corpus safeguards must land before enabling hierarchical retrieval by
   default.
 - Log the planned traversal budget at ≈250 nodes per query (branching factor
   `B=2`, depth `N=20`) and note the ℓ = 10 resampling cadence applied during the
   calibration sweeps so reviewers can trace the tuning evidence.
-- Telemetry will track traversal depth, path scoring, calibration residuals, and
-  fallback triggers to GraphRAG when confidence drops below validated bands.
-- Action items include dynamic-corpus monitoring plus on-demand summary rebuilds
-  because the LATTICE paper observed static summaries can misguide traversal
-  decisions.
+- Telemetry will track traversal depth, path scoring, calibration residuals,
+  and fallback triggers to GraphRAG when confidence drops below validated
+  bands.
+- Action items include dynamic-corpus monitoring plus on-demand summary
+  rebuilds because the LATTICE paper observed static summaries can misguide
+  traversal decisions.
 - Establish a pre-flight checkpoint to validate Gemini 2.5-flash (or an
   equivalent frontier model) availability since all offline and online LATTICE
   stages depend on that capability.
 - Evaluation goals follow the ≈9 % Recall@100 and ≈5 % nDCG@10 BRIGHT gains
-  reported for LATTICE.
-  Target release window remains **0.1.1** once the prototype tree builder,
-  calibration validation harness, and dynamic-corpus safeguards prove stable.
-  See [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
-  and [LATTICE hierarchical retrieval findings]
+  reported for LATTICE. The target release window remains **0.1.1** once the
+  prototype tree builder, calibration validation harness, and dynamic-corpus
+  safeguards prove stable. See
+  [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md) and
+  [LATTICE hierarchical retrieval findings]
   (docs/external_research_papers/arxiv.org/2510.13217v1.md).
 
 ---
@@ -65,10 +76,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## October 22, 2025
-- **v0.1.0a1 RELEASED**: Alpha release successfully published on October 16, 2025.
-  All technical work completed, comprehensive testing validated, and release artifacts distributed.
-  **Current focus**: v0.1.0 stable release preparation with 57% coverage baseline established.
-  **Technical Status**: Mypy compliance at 212/249 errors resolved (UI framework limitations noted).
+- **v0.1.0a1 STILL PENDING**: Alpha release preparation continues; verify and
+  coverage remain red. Coverage evidence sits at 71.94 % (15,786 of 21,943
+  lines) from the October 17, 2025 17:14 UTC `coverage.xml`, and the October 22,
+  2025 19:13 UTC pytest collection enumerates 1,907 tests with 167 deselected.
+  **Current focus**: unblock cache and adaptive rewrite regressions so
+  documentation, verify, and coverage artefacts align. **Technical Status**:
+  strict mypy remains green while UI framework limitations hold legacy ignores.
 
 ## October 10, 2025
 - Ran `task check` at **23:59 UTC** and archived the fresh log at
