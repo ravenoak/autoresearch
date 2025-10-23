@@ -437,4 +437,3 @@ class KnowledgeGraphView(QWidget):
 
         self._layout_mode = layout
         self._render_graph()
-

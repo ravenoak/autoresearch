@@ -6,16 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, MutableMapping, Sequence, cast
 
-from ..config.models import ConfigModel, RepositoryManifestEntry
-
 from ..agents.registry import AgentFactory
+from ..config.models import ConfigModel, RepositoryManifestEntry
 from ..errors import CitationError
 from ..logging_utils import get_logger
 from ..models import QueryResponse
 from ..storage import StorageManager, WorkspaceManifest, WorkspaceResource
-from .workspace_context import use_workspace_hints
 from .orchestrator import Orchestrator
 from .types import CallbackMap
+from .workspace_context import use_workspace_hints
 
 log = get_logger(__name__)
 
@@ -70,7 +69,7 @@ class WorkspaceOrchestrator:
             hints = self._derive_manifest_hints(manifest, config)
 
         try:
-            if manifest_payload is not None:
+            if manifest_payload is not None and manifest is not None:
                 setattr(config, "workspace_manifest", manifest_payload)
                 setattr(config, "workspace_id", manifest.workspace_id)
                 setattr(config, "workspace_manifest_version", manifest.version)
@@ -121,7 +120,7 @@ class WorkspaceOrchestrator:
                 workspace_id=manifest.workspace_id,
                 manifest_id=manifest.manifest_id,
                 missing_resources=missing_resources,
-        )
+            )
 
         return response
 
@@ -317,7 +316,7 @@ class WorkspaceOrchestrator:
     ) -> dict[str, set[str]]:
         """Return resource identifiers cited by contrarian and fact-checker."""
 
-        payload = response.dict()
+        payload = response.model_dump()
         mentions = self._collect_mentions(payload)
 
         required_ids = {

@@ -10,7 +10,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from typing import Any, Callable, List, Mapping, Optional, Sequence, TypeVar, cast
 
 import tomli_w
 import tomllib
@@ -84,7 +84,7 @@ app = cast(
 
 scholarly_service = ScholarlyService()
 
-F = TypeVar("F", bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[[], Any])
 
 
 def _dispatch_gui_event(event: str, payload: Optional[Mapping[str, Any]] = None) -> None:
@@ -381,7 +381,7 @@ def manifest_add(
 
 @manifest_app.command("update")
 def manifest_update(
-    slug: str = typer.Argument(..., help="Manifest slug to modify."),
+    slug: str = typer.Argument(help="Manifest slug to modify."),
     path: Optional[Path] = typer.Option(
         None, "--path", help="Replace the repository path for this entry."
     ),
@@ -445,7 +445,7 @@ def manifest_update(
 
 
 @manifest_app.command("remove")
-def manifest_remove(slug: str = typer.Argument(..., help="Manifest slug to delete.")) -> None:
+def manifest_remove(slug: str = typer.Argument(help="Manifest slug to delete.")) -> None:
     """Remove a repository from the manifest."""
 
     manifest = list(_config_loader.load_config().search.local_git.manifest)
@@ -528,7 +528,7 @@ def workspace_command(*args: Any, **kwargs: Any) -> Callable[[F], F]:
 
 @workspace_command("create")
 def workspace_create(
-    name: str = typer.Argument(..., help="Human readable workspace name."),
+    name: str = typer.Argument(help="Human readable workspace name."),
     resource: List[str] = typer.Option(
         ...,  # noqa: B008
         "--resource",
@@ -556,7 +556,7 @@ def workspace_create(
 
 @workspace_command("select")
 def workspace_select(
-    workspace: str = typer.Argument(..., help="Workspace slug to inspect."),
+    workspace: str = typer.Argument(help="Workspace slug to inspect."),
     version: Optional[int] = typer.Option(None, "--version", help="Manifest version number."),
     manifest_id: Optional[str] = typer.Option(None, "--manifest-id", help="Specific manifest identifier."),
 ) -> None:
@@ -573,8 +573,8 @@ def workspace_select(
 
 @workspace_command("debate")
 def workspace_debate(
-    workspace: str = typer.Argument(..., help="Workspace slug to scope the debate."),
-    prompt: str = typer.Argument(..., help="Prompt to investigate."),
+    workspace: str = typer.Argument(help="Workspace slug to scope the debate."),
+    prompt: str = typer.Argument(help="Prompt to investigate."),
     version: Optional[int] = typer.Option(None, "--version", help="Manifest version override."),
     manifest_id: Optional[str] = typer.Option(None, "--manifest-id", help="Manifest identifier override."),
 ) -> None:
@@ -621,7 +621,7 @@ def workspace_debate(
 
 @workspace_papers_app.command("search")
 def workspace_papers_search(
-    query: str = typer.Argument(..., help="Query string to search across scholarly providers."),
+    query: str = typer.Argument(help="Query string to search across scholarly providers."),
     limit: int = typer.Option(5, "--limit", "-n", help="Maximum results per provider."),
     provider: list[str] = typer.Option(
         [],
@@ -690,8 +690,8 @@ def workspace_papers_list(
 
 @workspace_papers_app.command("ingest")
 def workspace_papers_ingest(
-    provider: str = typer.Argument(..., help="Provider identifier (arxiv, huggingface)."),
-    identifier: str = typer.Argument(..., help="Provider-specific paper identifier."),
+    provider: str = typer.Argument(help="Provider identifier (arxiv, huggingface)."),
+    identifier: str = typer.Argument(help="Provider-specific paper identifier."),
     workspace: Optional[str] = typer.Option(
         None,
         "--workspace",
@@ -747,9 +747,9 @@ def workspace_papers_ingest(
 
 @workspace_papers_app.command("attach")
 def workspace_papers_attach(
-    workspace: str = typer.Argument(..., help="Workspace slug to update."),
-    provider: str = typer.Argument(..., help="Provider identifier for the cached paper."),
-    paper_id: str = typer.Argument(..., help="Paper identifier scoped to the provider."),
+    workspace: str = typer.Argument(help="Workspace slug to update."),
+    provider: str = typer.Argument(help="Provider identifier for the cached paper."),
+    paper_id: str = typer.Argument(help="Paper identifier scoped to the provider."),
     citation_required: bool = typer.Option(
         True,
         "--citation-required/--optional",
@@ -897,8 +897,8 @@ def start_watcher(
         "--reset-sections",
         help="Reset all section customizations to depth defaults.",
     ),
-    namespace: Tuple[str, ...] = typer.Option(
-        (),
+    namespace: List[str] = typer.Option(
+        [],
         "--namespace",
         "-n",
         help=(
@@ -1203,7 +1203,7 @@ def search(
         loops = getattr(config, "loops", 1)
 
         def _run_serial_with_callbacks(
-            callbacks: Mapping[str, Callable[..., Any]] | None = None,
+            callbacks: Mapping[str, Callable[[], Any]] | None = None,
         ) -> QueryResponse:
             callback_map = dict(callbacks or {})
             return OrchestratorLocal().run_query(
@@ -1749,9 +1749,10 @@ def search_callback(
         typer.echo(ctx.get_help())
         raise typer.Exit(code=0)
 
-    namespace_override: str | dict[str, str] | None = None
-    if namespace:
-        namespace_override = _parse_namespace_override(namespace)
+    # TODO: Namespace support not yet implemented in search function
+    # namespace_override: str | dict[str, str] | None = None
+    # if namespace:
+    #     namespace_override = _parse_namespace_override(namespace)
 
     search(
         query=query,
@@ -1785,7 +1786,6 @@ def search_callback(
         include_sections=include_sections,
         exclude_sections=exclude_sections,
         reset_sections=reset_sections,
-        namespace=namespace_override,
     )
 
 
@@ -1796,7 +1796,7 @@ app.add_typer(monitor_app, name="monitor")
 @typed_command()
 def reverify(
     state_id: str = typer.Argument(
-        ..., help="State ID emitted after a previous `autoresearch search` run"
+        help="State ID emitted after a previous `autoresearch search` run"
     ),
     broaden_sources: bool = typer.Option(
         False,
@@ -2011,7 +2011,7 @@ def serve_a2a(
 @typed_command("completion")
 def completion(
     shell: str = typer.Argument(
-        ..., help="Shell to generate completion script for (bash, zsh, fish)"
+        help="Shell to generate completion script for (bash, zsh, fish)"
     ),
     output_file: Optional[str] = typer.Option(
         None, "--output", "-o", help="Output file to write completion script to"
@@ -2353,8 +2353,8 @@ def test_a2a(
 
 @typed_command("visualize")
 def visualize(
-    query: str = typer.Argument(..., help="Query to visualize"),
-    output: str = typer.Argument(..., help="Output PNG path for the visualization"),
+    query: str = typer.Argument(help="Query to visualize"),
+    output: str = typer.Argument(help="Output PNG path for the visualization"),
     layout: str = typer.Option(
         "spring",
         "--layout",
@@ -2409,7 +2409,7 @@ def visualize_rdf_cli(
 
 @typed_command("sparql")
 def sparql_query(
-    query: str = typer.Argument(..., help="SPARQL query to run"),
+    query: str = typer.Argument(help="SPARQL query to run"),
     ontology_reasoner: Optional[str] = typer.Option(
         None,
         "--ontology-reasoner",
@@ -2569,7 +2569,7 @@ def gui(
 
 if __name__ == "__main__":
     try:
-        run_cli = cast(Callable[..., Any], app)
+        run_cli = cast(Callable[[], Any], app)
         run_cli()
     except typer.BadParameter as e:
         print_error(str(e))

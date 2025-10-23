@@ -95,11 +95,11 @@ class SessionManager(QWidget):
         self._sessions[session_id] = entry
 
         item = QListWidgetItem(f"{title} ({entry.created_at.strftime('%H:%M:%S')})")
-        item.setData(Qt.UserRole, session_id)
+        item.setData(Qt.UserRole, session_id)  # type: ignore[attr-defined]
         self._list.addItem(item)
 
     def _emit_selection(self, item: QListWidgetItem) -> None:
-        session_id = item.data(Qt.UserRole)
+        session_id = item.data(Qt.UserRole)  # type: ignore[attr-defined]
         if session_id:
             self.session_selected.emit(str(session_id))
 
@@ -125,8 +125,8 @@ class SessionManager(QWidget):
 
         display = f"{title} (v{version})"
         item = QListWidgetItem(display)
-        item.setData(Qt.UserRole, workspace_id)
-        item.setData(Qt.UserRole + 1, manifest_id)
+        item.setData(Qt.UserRole, workspace_id)  # type: ignore[attr-defined]
+        item.setData(Qt.UserRole + 1, manifest_id)  # type: ignore[attr-defined]
         self._workspace_list.addItem(item)
 
     def clear_workspaces(self) -> None:
@@ -136,8 +136,8 @@ class SessionManager(QWidget):
         self._workspace_list.clear()
 
     def _emit_workspace_selection(self, item: QListWidgetItem) -> None:
-        workspace_id = item.data(Qt.UserRole)
-        manifest_id = item.data(Qt.UserRole + 1)
+        workspace_id = item.data(Qt.UserRole)  # type: ignore[attr-defined]
+        manifest_id = item.data(Qt.UserRole + 1)  # type: ignore[attr-defined]
         if workspace_id:
             entry = self._workspaces.get(str(workspace_id))
             version = entry.version if entry else 0
@@ -150,8 +150,8 @@ class SessionManager(QWidget):
         current_item = self._workspace_list.currentItem()
         if current_item is None:
             return
-        workspace_id = current_item.data(Qt.UserRole)
-        manifest_id = current_item.data(Qt.UserRole + 1)
+        workspace_id = current_item.data(Qt.UserRole)  # type: ignore[attr-defined]
+        manifest_id = current_item.data(Qt.UserRole + 1)  # type: ignore[attr-defined]
         if workspace_id:
             entry = self._workspaces.get(str(workspace_id))
             version = entry.version if entry else 0

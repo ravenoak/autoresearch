@@ -8,14 +8,13 @@ desktop interface and handles application initialization.
 from __future__ import annotations
 
 import sys
-from typing import Optional
 
 # Import before creating QApplication to avoid Qt-related issues
 try:
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication, QMessageBox
 except ImportError as e:
-    print(f"Error: PySide6 is not installed. Please install it with: uv add PySide6")
+    print("Error: PySide6 is not installed. Please install it with: uv add PySide6")
     print(f"Import error: {e}")
     sys.exit(1)
 

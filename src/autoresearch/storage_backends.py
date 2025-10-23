@@ -7,23 +7,22 @@ focuses on DuckDB as the primary backend for relational storage and vector searc
 
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
 import time
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from queue import Queue
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, cast
 
-import importlib.util
-import json
 import duckdb
 import rdflib
 from dotenv import dotenv_values
 from rdflib.plugin import Store, register
-
-from dataclasses import dataclass
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
@@ -276,9 +275,10 @@ class DuckDBStorageBackend:
             # Ensure required tables exist
             self._create_tables(skip_migrations)
 
-            # Create HNSW index if vector extension is enabled and available
-            if cfg.vector_extension and self._has_vss:
-                self.create_hnsw_index()
+        # Create HNSW index if vector extension is enabled and available
+        # (moved outside the lock to avoid deadlock in _ensure_namespace_tables)
+        if cfg.vector_extension and self._has_vss:
+            self.create_hnsw_index()
 
     def _create_tables(self, skip_migrations: bool = False) -> None:
         """Create the required tables in the DuckDB database.

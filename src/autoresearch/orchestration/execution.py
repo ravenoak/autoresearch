@@ -283,8 +283,10 @@ def _execute_agent(
                 metadata = result.get("metadata")
                 if isinstance(metadata, Mapping):
                     if "agent" not in metadata:
+                        result = dict(result)  # Make mutable
                         result["metadata"] = {**metadata, "agent": agent_name}
                 else:
+                    result = dict(result)  # Make mutable
                     result["metadata"] = {"agent": agent_name}
             state.update(result)
             _log_sources(agent_name, result)

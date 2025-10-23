@@ -183,6 +183,7 @@ def storage_namespaces(
     _config_loader._config = new_cfg
     typer.echo(f"Updated storage namespaces in {path}")
 
+
 @config_app.command("init")
 def config_init(
     config_dir: Optional[str] = typer.Option(

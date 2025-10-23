@@ -102,10 +102,10 @@ def validate_namespace_routes(routes: Mapping[str, str]) -> Mapping[str, str]:
             if current in seen:
                 raise StorageError("Namespace routing contains a cycle")
             seen.add(current)
-            target = routes.get(current)
-            if target is None or target == "self" or target == "project":
+            next_target: str | None = routes.get(current)
+            if next_target is None or next_target == "self" or next_target == "project":
                 break
-            current = target
+            current = next_target
     return routes
 
 

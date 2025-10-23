@@ -32,7 +32,7 @@ import json
 import os
 import time
 from collections import OrderedDict, defaultdict, deque
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import StrEnum
 from threading import RLock
@@ -44,32 +44,22 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
+    Protocol,
     Sequence,
     cast,
-    Protocol,
 )
 from uuid import uuid4
 
 import networkx as nx
-from networkx.readwrite import json_graph
 import rdflib
+from networkx.readwrite import json_graph
+
 from .config import ConfigLoader, StorageConfig
 from .config.models import NamespaceMergeConfig, NamespaceMergeStrategy
 from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
-from .storage_utils import (
-    DEFAULT_NAMESPACE_LABEL,
-    NamespaceTokens,
-    canonical_namespace,
-    graph_add,
-    graph_triples,
-    namespace_table_suffix,
-    normalise_workspace_slug,
-    resolve_namespace,
-    serialise_workspace_resource,
-)
 from .storage_backends import DuckDBStorageBackend, init_rdf_store
 from .storage_typing import (
     DuckDBConnectionProtocol,
@@ -82,10 +72,21 @@ from .storage_typing import (
     ensure_mutable_mapping,
     to_json_dict,
 )
+from .storage_utils import (
+    DEFAULT_NAMESPACE_LABEL,
+    NamespaceTokens,
+    canonical_namespace,
+    graph_add,
+    graph_triples,
+    namespace_table_suffix,
+    normalise_workspace_slug,
+    resolve_namespace,
+    serialise_workspace_resource,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .storage_backends import KuzuStorageBackend
     from .distributed.broker import PersistClaimMessage, StorageQueueProtocol
+    from .storage_backends import KuzuStorageBackend
 else:  # pragma: no cover - runtime typing compatibility
     from .distributed.broker import StorageQueueProtocol
 
@@ -193,6 +194,15 @@ class StorageDelegateProtocol(Protocol):
     ) -> list[ClaimAuditRecord]: ...
 
     @staticmethod
+    def update_knowledge_graph(
+        *,
+        entities: Sequence[JSONMapping] | None = None,
+        relations: Sequence[JSONMapping] | None = None,
+        triples: Sequence[tuple[str, str, str]] | None = None,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
+
+    @staticmethod
     def save_workspace_manifest(
         manifest: WorkspaceManifest | JSONMapping,
         *,
@@ -227,11 +237,43 @@ class StorageDelegateProtocol(Protocol):
         workspace_id: str | None = None,
     ) -> list[WorkspaceManifest]: ...
 
-    @staticmethod
     def merge_claim_groups(
         claims_by_namespace: Mapping[str, Sequence[JSONMapping]],
         policy: str | NamespaceMergeConfig | None = None,
     ) -> list[JSONDict]: ...
+
+    def persist_claim(
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
+
+    def update_claim(
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
+
+    def get_claim(
+        self,
+        claim_id: str,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> JSONDict: ...
+
+    def update_rdf_claim(
+        self,
+        claim: JSONDict,
+        partial_update: bool = False,
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
+
+    def create_hnsw_index(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
+
+    def refresh_vector_index(
+        namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
+    ) -> None: ...
 
 
 _delegate: StorageDelegateProtocol | None = None
@@ -548,7 +590,7 @@ class WorkspaceResource:
             kind=str(data["kind"]),
             reference=str(data["reference"]),
             citation_required=bool(data.get("citation_required", True)),
-            metadata=ensure_mutable_mapping(data.get("metadata", {})),
+            metadata=dict(ensure_mutable_mapping(data.get("metadata", {}))),
         )
 
 
@@ -617,7 +659,7 @@ class WorkspaceManifest:
             manifest_id=str(manifest_id_value),
             parent_manifest_id=str(parent_value) if parent_value else None,
             created_at=created_at,
-            annotations=annotations,
+            annotations=dict(annotations),
         )
 
 
@@ -1029,7 +1071,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             raise StorageError("RDF store not initialized")
         default_namespace, _, _ = StorageManager._namespace_settings()
         if namespace == default_namespace:
-            return cast(GraphProtocol, ctx.rdf_store)
+            return ctx.rdf_store
         existing = ctx.rdf_namespaces.get(namespace)
         if existing is not None:
             return existing
@@ -1073,7 +1115,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         """
         st = state or StorageManager.state
         ctx = context or st.context
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.setup(db_path, ctx)
         with st.lock:
             StorageManager.state = st
@@ -1090,7 +1132,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Close storage connections and optionally remove database files."""
         st = state or StorageManager.state
         ctx = context or st.context
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             _delegate.teardown(remove_db, ctx, st)
             return
         StorageManager.state = st
@@ -1111,7 +1153,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     ) -> ClaimAuditRecord:
         """Persist a claim audit entry across storage backends."""
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.record_claim_audit(audit, namespace)
 
         payload = (
@@ -1128,7 +1170,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     ) -> list[ClaimAuditRecord]:
         """Return persisted claim audits, optionally filtered by claim id."""
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.list_claim_audits(claim_id, namespace)
 
         StorageManager._ensure_storage_initialized()
@@ -1149,7 +1191,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     ) -> WorkspaceManifest:
         """Persist a workspace manifest version and return the stored record."""
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.save_workspace_manifest(manifest, increment_version=increment_version)
 
         payload = manifest.to_payload() if isinstance(manifest, WorkspaceManifest) else to_json_dict(manifest)
@@ -1166,7 +1208,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     ) -> WorkspaceManifest:
         """Return a persisted manifest matching ``workspace_id`` and version."""
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.get_workspace_manifest(workspace_id, version=version, manifest_id=manifest_id)
 
         StorageManager._ensure_storage_initialized()
@@ -1190,7 +1232,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     ) -> list[WorkspaceManifest]:
         """List manifests optionally scoped to a specific workspace."""
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.list_workspace_manifests(workspace_id)
 
         StorageManager._ensure_storage_initialized()
@@ -2091,7 +2133,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 payloads omit explicit namespace metadata.
         """
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.update_knowledge_graph(
                 entities=entities,
                 relations=relations,
@@ -2192,7 +2234,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                         )
                     )
 
-        with StorageManager.state.lock():
+        with StorageManager.state.lock:
             backend = StorageManager.context.db_backend
             kg_graph = StorageManager.context.kg_graph
             rdf_store = StorageManager.context.rdf_store
@@ -2266,7 +2308,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         if not claims_by_namespace:
             return []
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             merger = getattr(_delegate, "merge_claim_groups", None)
             if merger is not None:
                 return merger(claims_by_namespace, policy)
@@ -2404,8 +2446,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageError: If the claim is invalid (missing required fields or
                          incorrect types) or if storage is not initialized properly.
         """
-        if _delegate and _delegate is not StorageManager:
-            return _delegate.persist_claim(claim, partial_update)
+        if _delegate is not None:
+            return _delegate.persist_claim(claim, partial_update, namespace)
 
         namespace_label = StorageManager._derive_namespace(namespace, claim)
 
@@ -2572,8 +2614,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageError: If storage is not initialized or the backend update
                 fails.
         """
-        if _delegate and _delegate is not StorageManager:
-            return _delegate.update_claim(claim, partial_update)
+        if _delegate is not None:
+            return _delegate.update_claim(claim, partial_update, namespace)
 
         namespace_label = StorageManager._derive_namespace(namespace, claim)
 
@@ -2608,7 +2650,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
     ) -> JSONDict:
         """Retrieve a persisted claim from DuckDB."""
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.get_claim(claim_id, namespace)
 
         StorageManager._ensure_storage_initialized()
@@ -2659,7 +2701,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
     ) -> None:
         """Public wrapper around :func:`_update_rdf_claim`."""
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.update_rdf_claim(claim, partial_update, namespace)
 
         StorageManager._ensure_storage_initialized()
@@ -2682,7 +2724,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Raises:
             StorageError: If the index creation fails.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.create_hnsw_index(namespace)
 
         # Ensure storage is initialized
@@ -2702,7 +2744,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         namespace: NamespaceTokens | Mapping[str, str] | str | None = None,
     ) -> None:
         """Rebuild the vector index to include new embeddings."""
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.refresh_vector_index(namespace)
 
         StorageManager._ensure_storage_initialized()
@@ -2812,7 +2854,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 initialized.
             NotFoundError: If no embeddings are found in the database.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.vector_search(query_embedding, k, namespace)
 
         # Validate parameters
@@ -2862,7 +2904,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Raises:
             NotFoundError: If the graph cannot be initialized or remains None after initialization.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.get_graph()
         with StorageManager.state.lock:
             if StorageManager.context.graph is None:
@@ -2891,7 +2933,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 unavailable when ``create`` is ``True``.
         """
 
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             getter = cast(
                 Callable[[bool], nx.MultiDiGraph[Any] | None] | None,
                 getattr(_delegate, "get_knowledge_graph", None),
@@ -2962,7 +3004,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Args:
             node_id: The ID of the node to update.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.touch_node(node_id, namespace)
         state = StorageManager.state
         lru = state.lru
@@ -2999,7 +3041,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Raises:
             NotFoundError: If the connection cannot be initialized or remains None after initialization.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.get_duckdb_conn()
         with StorageManager.state.lock:
             if StorageManager.context.db_backend is None:
@@ -3015,7 +3057,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     @contextmanager
     def connection() -> Iterator[DuckDBConnection]:
         """Borrow a DuckDB connection from the pool."""
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             with _delegate.connection() as conn:
                 yield conn
             return
@@ -3045,7 +3087,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Raises:
             NotFoundError: If the RDF store cannot be initialized or remains None after initialization.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.get_rdf_store()
         with StorageManager.state.lock:
             if StorageManager.context.rdf_store is None:
@@ -3087,7 +3129,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         Returns:
             bool: True if the VSS extension is loaded and available, False otherwise.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.has_vss()
         with StorageManager.state.lock:
             if StorageManager.context.db_backend is None:
@@ -3113,7 +3155,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         Note: This operation cannot be undone and should be used with caution.
         """
-        if _delegate and _delegate is not StorageManager:
+        if _delegate is not None:
             return _delegate.clear_all()
         with StorageManager.state.lock:
             if StorageManager.context.graph is not None:

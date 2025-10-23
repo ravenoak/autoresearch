@@ -3,6 +3,7 @@ import functools
 import shutil  # noqa: F401 - used in monkeypatch
 import types
 from collections import defaultdict
+from collections.abc import Mapping
 from typing import Any
 from unittest.mock import MagicMock
 from urllib.parse import quote_plus
@@ -247,7 +248,7 @@ def _stubbed_search_environment(monkeypatch, request):
             rank_calls.append("instance" if target is search_instance else "other")
             return result_docs
 
-        def _stub_storage_lookup(subject, query, query_embedding, backend_results, max_results):
+        def _stub_storage_lookup(subject, query, query_embedding, backend_results, max_results, *, workspace_hints: Mapping[str, Any] | None = None, workspace_filters: Mapping[str, Any] | None = None):
             """Mirror storage lookup behaviour while allowing custom payloads."""
 
             target = _resolve_subject(subject)

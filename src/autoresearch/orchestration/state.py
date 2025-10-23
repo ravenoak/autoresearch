@@ -1512,12 +1512,23 @@ class QueryState(BaseModel):
         return messages
 
     def __getstate__(self) -> dict[str, Any]:
-        """Drop non-serializable members before pickling."""
+        """Drop non-serializable members before pickling.
 
-        state: dict[str, Any] = self.model_dump(mode="python")
-        state.pop("_lock", None)
+        Explicitly serialize only the public fields to avoid any Pydantic
+        internal state that might cause serialization issues with distributed
+        systems like Ray.
+        """
+        # Use model_dump to get the core data, but be explicit about exclusions
+        state: dict[str, Any] = self.model_dump(
+            mode="python",
+            exclude={"_lock"},  # Exclude the RLock which can't be serialized
+            exclude_unset=False,  # Include all fields to preserve state
+        )
+
+        # Additional cleanup of any remaining Pydantic internal state
         state.pop("__pydantic_private__", None)
         state.pop("_abc_impl", None)
+
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:

@@ -23,8 +23,10 @@ except ImportError:  # pragma: no cover - handled via accessibility fallback
     Figure = None  # type: ignore[assignment]
 
 if TYPE_CHECKING:  # pragma: no cover - static type checking only
-    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as _FigureCanvasQTAgg
-    from matplotlib.figure import Figure as _Figure
+    from matplotlib.backends.backend_qtagg import (  # noqa: F401
+        FigureCanvasQTAgg as _FigureCanvasQTAgg,
+    )
+    from matplotlib.figure import Figure as _Figure  # noqa: F401
 
 
 class MetricsDashboard(QWidget):

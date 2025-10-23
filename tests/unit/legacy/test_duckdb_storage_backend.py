@@ -302,7 +302,7 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=4):
+        with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=5):
             with patch.object(DuckDBStorageBackend, "update_schema_version") as mock_update_version:
                 backend = DuckDBStorageBackend()
                 backend.setup(db_path=":memory:")

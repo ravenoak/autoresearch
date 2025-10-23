@@ -744,20 +744,25 @@ class ContextConfig(BaseModel):
         default=512, ge=128, description="Tokens reserved for model response"
     )
 
-    accurate_counting: bool = Field(
-        default=True, description="Use tiktoken for accurate token counting (when available)"
-    )
 
-    max_chunks: int = Field(default=5, ge=1, le=20, description="Maximum chunks for large prompts")
+class FactCheckerConfig(BaseModel):
+    """Configuration for FactChecker agent."""
 
-    chunk_overlap: int = Field(default=100, ge=0, description="Token overlap between chunks")
+    enabled: bool = Field(default=True, description="Enable fact checking")
+    max_results_per_query: int = Field(default=5, ge=1, description="Maximum results per query")
+    max_variations: int = Field(default=2, ge=1, description="Maximum query variations to try")
+    broaden_sources: bool = Field(default=False, description="Enable source broadening")
+    max_retries: int = Field(default=1, ge=1, description="Maximum retry attempts")
+    retry_backoff: float = Field(default=0.0, ge=0.0, description="Backoff between retries")
+    max_claims: Optional[int] = Field(default=None, ge=1, description="Maximum claims to process")
 
-    cache_ttl_seconds: int = Field(
-        default=300, ge=60, description="TTL for cached context size info"
-    )
 
-    chars_per_token: int = Field(
-        default=4, ge=1, le=10, description="Character-to-token ratio for approximation"
+class VerificationConfig(BaseModel):
+    """Configuration for verification and fact-checking."""
+
+    fact_checker: FactCheckerConfig = Field(
+        default_factory=FactCheckerConfig,
+        description="FactChecker agent configuration"
     )
 
 
@@ -812,6 +817,7 @@ class ConfigModel(SupportsModelCopyMixin):
     storage: StorageConfig = Field(default_factory=StorageConfig)
     agent_config: Dict[str, AgentConfig] = Field(default_factory=dict)
     search: SearchConfig = Field(default_factory=SearchConfig)
+    verification: VerificationConfig = Field(default_factory=VerificationConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
     context: ContextConfig = Field(default_factory=ContextConfig)

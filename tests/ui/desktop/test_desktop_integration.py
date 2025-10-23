@@ -6,6 +6,13 @@ Spec: docs/specs/pyside-desktop.md
 from __future__ import annotations
 
 import pytest
+from PySide6.QtWidgets import QPushButton
+
+import autoresearch.ui.desktop.main_window as main_window_module
+import autoresearch.ui.desktop.results_display as results_display_module
+from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.reasoning import ReasoningMode
 
 QtCore = pytest.importorskip(
     "PySide6.QtCore",
@@ -24,14 +31,6 @@ pytest.importorskip(
 )
 
 Qt = QtCore.Qt
-
-from PySide6.QtWidgets import QPushButton
-
-from autoresearch.config.models import ConfigModel
-from autoresearch.models import QueryResponse
-from autoresearch.orchestration.reasoning import ReasoningMode
-import autoresearch.ui.desktop.main_window as main_window_module
-import autoresearch.ui.desktop.results_display as results_display_module
 
 pytestmark = pytest.mark.requires_ui
 

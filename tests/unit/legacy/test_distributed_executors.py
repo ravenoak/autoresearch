@@ -29,6 +29,7 @@ from autoresearch.distributed.executors import (
 )
 from autoresearch.distributed.coordinator import publish_claim
 from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.reasoning_payloads import FrozenReasoningStep
 
 
 class RecordingQueue(MessageQueueProtocol):
@@ -223,15 +224,79 @@ def test_query_state_cloudpickle_round_trip() -> None:
 
 @pytest.mark.requires_distributed
 def test_query_state_ray_round_trip() -> None:
-    """Ray transports QueryState instances without serialization failures."""
+    """Ray transports QueryState instances without serialization failures.
+
+    This is a regression guard for Ray serialization issues. Tests various
+    QueryState configurations to ensure they can be serialized through Ray
+    without errors, particularly focusing on the RLock serialization issue.
+    """
     ray_module = pytest.importorskip("ray")
     ray_module.init(ignore_reinit_error=True, configure_logging=False)
     try:
-        state = QueryState(query="q")
-        handle = ray_module.put(state)
-        restored = ray_module.get(handle)
-        assert isinstance(restored, QueryState)
-        assert restored.query == "q"
+        # Test basic QueryState
+        basic_state = QueryState(query="test query")
+        handle1 = ray_module.put(basic_state)
+        restored1 = ray_module.get(handle1)
+        assert isinstance(restored1, QueryState)
+        assert restored1.query == "test query"
+        assert hasattr(restored1, "_lock")  # Lock should be restored
+
+        # Test complex QueryState with all fields populated
+        complex_state = QueryState(query="complex query")
+        complex_state.claims.append(FrozenReasoningStep({"id": "c1", "text": "test claim"}))
+        complex_state.claim_audits = [{"id": "a1", "status": "verified"}]
+        complex_state.sources = [{"id": "s1", "url": "http://example.com"}]
+        complex_state.results = {"answer": "test result"}
+        complex_state.messages = [{"from": "agent1", "content": "message"}]
+        complex_state.feedback_events = [{"type": "feedback", "data": {}}]
+        complex_state.coalitions = {"group1": ["agent1", "agent2"]}
+        complex_state.metadata = {"test": {"nested": "value"}}
+        complex_state.set_task_graph({"tasks": [{"id": "t1", "question": "Q"}], "edges": []})
+        complex_state.react_log = [{"action": "test", "timestamp": 1234567890.0}]
+        complex_state.react_traces = [{"trace": "test trace"}]
+        complex_state.cycle = 5
+        complex_state.primus_index = 2
+        complex_state.last_updated = 1234567890.0
+        complex_state.error_count = 1
+
+        # This is the critical test - complex state through Ray
+        handle2 = ray_module.put(complex_state)
+        restored2 = ray_module.get(handle2)
+
+        assert isinstance(restored2, QueryState)
+        assert restored2.query == "complex query"
+        assert len(restored2.claims) == 1
+        assert restored2.claims[0]["id"] == "c1"
+        assert isinstance(restored2.claims[0], FrozenReasoningStep)
+        assert restored2.claim_audits == [{"id": "a1", "status": "verified"}]
+        assert restored2.sources == [{"id": "s1", "url": "http://example.com"}]
+        assert restored2.results == {"answer": "test result"}
+        assert len(restored2.messages) == 1
+        assert restored2.coalitions == {"group1": ["agent1", "agent2"]}
+        # Check that metadata contains our test data (may also contain planner info)
+        assert "test" in restored2.metadata
+        assert restored2.metadata["test"] == {"nested": "value"}
+        # Task graph should exist and have the expected structure (may be enhanced during processing)
+        assert "tasks" in restored2.task_graph
+        assert "edges" in restored2.task_graph
+        assert len(restored2.task_graph["tasks"]) == 1
+        assert restored2.task_graph["tasks"][0]["id"] == "t1"
+        assert restored2.cycle == 5
+        assert restored2.primus_index == 2
+        assert restored2.error_count == 1
+        assert hasattr(restored2, "_lock")  # Lock should be restored
+
+        # Test pickle fallback (when Ray is not available)
+        import pickle
+        pickled = pickle.dumps(complex_state)
+        restored_pickle = pickle.loads(pickled)
+        assert isinstance(restored_pickle, QueryState)
+        assert restored_pickle.query == "complex query"
+        assert len(restored_pickle.claims) == 1
+        assert restored_pickle.claims[0]["id"] == "c1"
+        assert isinstance(restored_pickle.claims[0], FrozenReasoningStep)
+        assert hasattr(restored_pickle, "_lock")  # Lock should be restored
+
     finally:
         ray_module.shutdown()
 

@@ -9,6 +9,8 @@ import time
 
 import pytest
 
+from autoresearch.ui.desktop.query_panel import QueryPanel
+
 QtCore = pytest.importorskip(
     "PySide6.QtCore",
     reason="PySide6 is required for desktop UI tests",
@@ -21,8 +23,6 @@ pytest.importorskip(
 )
 
 Qt = QtCore.Qt
-
-from autoresearch.ui.desktop.query_panel import QueryPanel
 
 pytestmark = pytest.mark.requires_ui
 

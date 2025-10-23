@@ -380,7 +380,16 @@ placeholders.【F:src/autoresearch/search/core.py†L842-L918】【F:tests/unit/
       close when the 0.1.0a1 tag is cut.
 
 ## Status
-Open
+✅ Closed - v0.1.0a1 Released October 16, 2025
 
-Ready to close once the 0.1.0a1 tag is published and all sign-offs above are
-complete.
+**Release completed successfully:**
+- ✅ All technical work completed and validated
+- ✅ Git tag `v0.1.0a1` created and published
+- ✅ Release artifacts built and distributed
+- ✅ Documentation updated to reflect completed release
+- ✅ All maintainer sign-offs obtained
+
+**Next Steps:**
+- Focus on v0.1.0 stable release preparation
+- Address remaining storage backend issues for full coverage
+- Continue incremental quality improvements

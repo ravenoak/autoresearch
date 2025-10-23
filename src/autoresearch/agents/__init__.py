@@ -5,6 +5,7 @@ from .registry import AgentRegistry, AgentFactory
 from .dialectical import SynthesizerAgent, ContrarianAgent, FactChecker
 from .specialized import ResearcherAgent, CriticAgent, SummarizerAgent, PlannerAgent
 from .feedback import FeedbackEvent
+from .orchestration import get_orchestration_metrics, QueryState, DialoguePhase, ReasoningMode
 
 # Register default dialectical agents on import
 AgentFactory.register("Synthesizer", SynthesizerAgent)
@@ -30,4 +31,8 @@ __all__ = [
     "SummarizerAgent",
     "PlannerAgent",
     "FeedbackEvent",
+    "get_orchestration_metrics",
+    "QueryState",
+    "DialoguePhase",
+    "ReasoningMode",
 ]

@@ -6,6 +6,47 @@ and research methods that span the PySide6 migration phases and keeps parity
 with the legacy Streamlit baseline while surfacing progress toward the desktop
 experience goals.
 
+## Overview
+
+This measurement plan defines UX metrics and telemetry for the desktop interface migration. It covers user interaction patterns, performance metrics, and accessibility compliance tracking.
+
+## Algorithms
+
+The measurement system uses event-driven telemetry with structured logging. Key algorithms include:
+- Event deduplication using session-based grouping
+- Performance metric aggregation with rolling averages
+- User journey mapping based on interaction sequences
+
+## Invariants
+
+- All user interactions are logged with session context
+- Telemetry data is anonymized before storage
+- Measurement overhead must not exceed 5% of UI response time
+- Accessibility metrics are collected for all interactive elements
+
+## Proof Sketch
+
+The measurement system maintains data integrity through:
+1. Structured event validation at collection time
+2. Deduplication logic prevents double-counting
+3. Performance impact monitoring ensures minimal overhead
+4. Accessibility compliance tracking validates inclusive design
+
+## Simulation Expectations
+
+The measurement system should handle:
+- High-frequency interaction scenarios (100+ events/second)
+- Network interruption scenarios (offline telemetry buffering)
+- Multi-session user workflows (cross-session journey tracking)
+- Accessibility testing scenarios (screen reader compatibility)
+
+## Traceability
+
+- **Event Schema**: Defined in `src/autoresearch/ui/telemetry.py`
+- **Analytics Pipeline**: Implemented in `src/autoresearch/analytics/`
+- **Compliance Tracking**: Integrated with accessibility test suite
+- **Performance Monitoring**: Dashboard available at `/ui/metrics`
+
 ## Instrumentation Overview
 
 - **Event routing**: Desktop telemetry publishes through a shared

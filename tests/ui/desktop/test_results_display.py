@@ -10,6 +10,9 @@ import time
 from types import SimpleNamespace
 
 import pytest
+from PySide6.QtWidgets import QLabel, QSplitter, QTextBrowser, QWidget
+
+import autoresearch.ui.desktop.results_display as results_display_module
 
 QtCore = pytest.importorskip(
     "PySide6.QtCore",
@@ -23,10 +26,6 @@ pytest.importorskip(
 )
 
 Qt = QtCore.Qt
-
-from PySide6.QtWidgets import QLabel, QSplitter, QTextBrowser, QWidget
-
-import autoresearch.ui.desktop.results_display as results_display_module
 
 pytestmark = pytest.mark.requires_ui
 
@@ -140,7 +139,7 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     assert display.copy_source_button.isEnabled()
 
     assert display.knowledge_graph_view is not None
-    assert display.knowledge_graph_view._graph_data is not None  # type: ignore[attr-defined]
+    assert display.knowledge_graph_view._graph_data is not None
 
     assert display.trace_view is not None
     trace_text = display.trace_view.toPlainText()
@@ -148,7 +147,7 @@ def test_results_display_renders_views_and_enables_citation_controls(qtbot) -> N
     assert "latency_s" in trace_text
 
     assert display.metrics_dashboard is not None
-    assert display.metrics_dashboard._metrics == result.metrics  # type: ignore[attr-defined]
+    assert display.metrics_dashboard._metrics == result.metrics
 
     assert display.search_results_model is not None
     assert display.search_results_model.rowCount() == 3
@@ -210,10 +209,10 @@ def test_results_display_handles_missing_citations_gracefully(qtbot) -> None:
     assert "No reasoning" in display.trace_view.toPlainText()
 
     assert display.metrics_dashboard is not None
-    assert display.metrics_dashboard._metrics == {}  # type: ignore[attr-defined]
+    assert display.metrics_dashboard._metrics == {}
 
     assert display.knowledge_graph_view is not None
-    assert display.knowledge_graph_view._graph_data is None  # type: ignore[attr-defined]
+    assert display.knowledge_graph_view._graph_data is None
 
     assert display.search_results_model is not None
     assert display.search_results_model.rowCount() >= 1
@@ -259,7 +258,7 @@ def test_results_display_loads_graph_from_storage(monkeypatch, qtbot) -> None:
     display.display_results(result)
 
     assert display.knowledge_graph_view is not None
-    graph_data = display.knowledge_graph_view._graph_data  # type: ignore[attr-defined]
+    graph_data = display.knowledge_graph_view._graph_data
     assert graph_data is not None
     assert graph_data["nodes"] == ["Source", "Target"]
     assert any(edge[:2] == ["Source", "Target"] for edge in graph_data["edges"])
@@ -284,7 +283,7 @@ def test_results_display_uses_graph_json_export(qtbot) -> None:
     display.display_results(result)
 
     assert display.knowledge_graph_view is not None
-    graph_data = display.knowledge_graph_view._graph_data  # type: ignore[attr-defined]
+    graph_data = display.knowledge_graph_view._graph_data
     assert graph_data == {"nodes": ["Earth", "Moon"], "edges": [["Earth", "Moon", "orbits"]]}
 
 
@@ -319,4 +318,4 @@ def test_results_display_falls_back_without_webengine(monkeypatch, qtbot) -> Non
 
     assert "Heading" in display.answer_view.toPlainText()
     assert display.metrics_dashboard is not None
-    assert display.metrics_dashboard._metrics == result.metrics  # type: ignore[attr-defined]
+    assert display.metrics_dashboard._metrics == result.metrics
