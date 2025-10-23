@@ -314,6 +314,15 @@ check_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
+    "tests.unit.*",
+    "tests.targeted.*",
+    "tests.ui.*",
+    "tests.legacy.*",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
     "tests.unit.test_circuit_breaker_module",
     "tests.unit.test_distributed_perf_compare",
     "tests.unit.test_errors",

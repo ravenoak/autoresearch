@@ -5,10 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence, SupportsFloat
 
 from ...storage_typing import JSONDict, ensure_mutable_mapping, to_json_dict
 
@@ -91,13 +92,18 @@ class PaperProvenance:
         """Construct a provenance record from persisted data."""
 
         data = to_json_dict(payload)
+        latency_raw = data.get("latency_ms")
+        latency_value: float | None = None
+        if latency_raw:
+            with suppress(TypeError, ValueError):
+                latency_value = float(latency_raw)
         return cls(
             source_url=str(data.get("source_url", "")),
             retrieved_at=float(data.get("retrieved_at", 0.0)),
             checksum=str(data.get("checksum", "")),
             content_type=str(data.get("content_type")) if data.get("content_type") else None,
             version=str(data.get("version")) if data.get("version") else None,
-            latency_ms=float(data.get("latency_ms")) if data.get("latency_ms") else None,
+            latency_ms=latency_value,
             provider_version=str(data.get("provider_version"))
             if data.get("provider_version")
             else None,
@@ -212,7 +218,7 @@ class PaperDocument:
     metadata: PaperMetadata
     body: str
     references: tuple[str, ...] = field(default_factory=tuple)
-    embedding: Sequence[float] | None = None
+    embedding: Sequence[SupportsFloat] | None = None
     contents: tuple["PaperContentVariant", ...] = field(default_factory=tuple)
     assets: tuple["PaperAsset", ...] = field(default_factory=tuple)
     provider_version: str | None = None
@@ -220,7 +226,8 @@ class PaperDocument:
 
     def __post_init__(self) -> None:
         if self.embedding is not None and not isinstance(self.embedding, tuple):
-            self.embedding = tuple(float(value) for value in self.embedding)
+            normalised = tuple(float(value) for value in self.embedding)
+            self.embedding = normalised
         if not self.contents:
             variant = PaperContentVariant.from_text(
                 self.body,

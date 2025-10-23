@@ -4,7 +4,7 @@ set:
   - e
 
 vars:
-  COVERAGE_MINIMUM: 0
+  COVERAGE_MINIMUM: 70
   ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers gpu"
   ALL_EXTRAS_NO_GPU: "nlp ui vss git distributed analysis llm parsers"
   VERIFY_BASE_EXTRAS: "dev-minimal test"
@@ -75,14 +75,26 @@ tasks:
       - uv run python scripts/ai_test_assistant.py {{.CLI_ARGS}}
     desc: "Analyze test suite quality and generate improvement suggestions"
   mypy-strict:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
-      - echo "Skipping mypy due to environment issues"
-    desc: "Run mypy in strict mode across src"
+      - |
+          set -eu
+          {{if .EXTRAS}}
+          echo "[mypy] running with optional extras: {{.EXTRAS}}"
+          {{else}}
+          echo "[mypy] running with baseline extras"
+          {{end}}
+          uv run mypy --strict src tests
+    desc: "Run mypy in strict mode across src and tests"
 
   mypy:strict-suite:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
-      - task mypy-strict
-    desc: "Run mypy in strict mode across src and tests"
+      - task mypy-strict EXTRAS="{{.EXTRAS}}"
+      - echo "[mypy] strict suite passed"
+    desc: "Run mypy strict suite with optional extras awareness"
 
   mypy:behavior:
     cmds:
@@ -103,13 +115,13 @@ tasks:
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
-      - echo "Skipping mypy due to environment issues"
+      - task mypy:strict-suite EXTRAS="{{.EXTRAS}}"
       - task lint-specs
       - task check-release-metadata
       - task code-review
       - uv run python scripts/check_spec_tests.py
       - |
-          uv run pytest -c /dev/null \
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest -c /dev/null \
             tests/unit/legacy/test_version.py \
             tests/unit/legacy/test_cli_help.py \
             tests/unit/test_collection_hygiene.py \
@@ -467,8 +479,7 @@ tasks:
           set -eu
           uv run flake8 src
           echo "[verify][lint] flake8 passed"
-      - echo "Skipping mypy due to environment issues"
-      - echo "[verify][mypy] strict suite passed"
+      - task mypy:strict-suite EXTRAS="{{.EXTRAS}}"
       - task lint-specs
       - echo "[verify][lint] spec lint passed"
       - task check-release-metadata
