@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from ...storage_typing import JSONDict, JSONMapping, ensure_mutable_mapping, to_json_dict
+from ...storage_typing import JSONDict, ensure_mutable_mapping, to_json_dict
 
 _NAMESPACE_PATTERN = re.compile(r"[^a-z0-9_-]+")
 _IDENTIFIER_PATTERN = re.compile(r"[^a-z0-9_.-]+", re.IGNORECASE)
@@ -458,6 +458,8 @@ __all__ = [
     "normalise_doi",
     "normalise_subjects",
 ]
+
+
 def normalise_doi(value: str | None) -> str | None:
     """Return a canonical DOI string or ``None`` when not provided."""
 

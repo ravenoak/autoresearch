@@ -4,6 +4,47 @@ This document captures the additions required to support workspace manifests,
 workspace-aware orchestration, and the surrounding tooling for the research
 federation workflow.
 
+## Overview
+
+The research federation enhancements enable multi-workspace collaboration through shared manifests, coordinated orchestration, and unified resource management. The system maintains workspace isolation while providing federation capabilities.
+
+## Algorithms
+
+- **Manifest Resolution**: Deterministic resource ID generation using SHA-256 hashing
+- **Workspace Merging**: Conflict resolution through priority-based merging with timestamp arbitration
+- **Resource Deduplication**: Content-based deduplication using similarity hashing
+- **Federation Routing**: Load balancing across workspace orchestrators using consistent hashing
+
+## Invariants
+
+- Workspace isolation: No cross-workspace data leakage
+- Manifest consistency: All workspace members see identical manifest state
+- Resource integrity: Citations maintain provenance across federation boundaries
+- Performance bounds: Federation overhead ≤ 10% of single-workspace performance
+
+## Proof Sketch
+
+The federation system maintains correctness through:
+1. Deterministic manifest resolution prevents conflicts
+2. Versioned state ensures eventual consistency
+3. Cryptographic resource IDs prevent tampering
+4. Isolation boundaries enforce access control
+
+## Simulation Expectations
+
+The federation system must handle:
+- Concurrent manifest updates from multiple users
+- Network partitions during federation operations
+- Resource conflicts requiring manual resolution
+- Performance degradation under high federation load
+
+## Traceability
+
+- **Manifest Storage**: `StorageManager.save_workspace_manifest`
+- **Orchestration**: `FederationOrchestrator` in `src/autoresearch/federation/`
+- **Resource Management**: `FederatedResourceManager`
+- **Conflict Resolution**: `MergePolicy` implementations
+
 ## Workspace Manifest Model
 
 - Manifests are persisted through `StorageManager.save_workspace_manifest`.

@@ -7,6 +7,45 @@ prompting layer, and Rich layout harmonisation proposed in the UX review. It
 extends the CLI surface without regressing accessibility, bare-mode
 compatibility, or automated workflows.
 
+## Algorithms
+
+The terminal experience enhancement implements:
+
+- **TTY Detection Algorithm**: Automatic detection of interactive terminals vs. pipes/redirects
+- **Layout Optimization**: Dynamic layout adjustment based on terminal dimensions and content complexity
+- **Accessibility Layer**: Screen reader compatibility through semantic markup and ARIA-like patterns
+- **Performance Balancing**: Frame rate optimization for smooth terminal animations
+
+## Invariants
+
+- **Backward Compatibility**: All existing CLI workflows must continue to function unchanged
+- **Accessibility Compliance**: Terminal enhancements must not reduce accessibility
+- **Performance Bounds**: Terminal rendering must maintain 60fps minimum
+- **Graceful Degradation**: Enhanced features must fall back cleanly when unavailable
+
+## Proof Sketch
+
+The terminal experience maintains reliability through:
+1. Comprehensive TTY detection prevents inappropriate enhancement activation
+2. Fallback mechanisms ensure basic functionality in all environments
+3. Accessibility testing validates screen reader compatibility
+4. Performance benchmarking ensures smooth operation
+
+## Simulation Expectations
+
+The terminal system must handle:
+- Various terminal emulators (xterm, iTerm2, Windows Terminal, etc.)
+- Different terminal sizes and aspect ratios
+- Network interruption scenarios (offline operation)
+- High-throughput logging scenarios (research monitoring)
+
+## Traceability
+
+- **Textual Dashboard**: `src/autoresearch/ui/tui/dashboard.py`
+- **Prompt Enhancement**: `src/autoresearch/main/Prompt.py`
+- **Rich Layouts**: `src/autoresearch/cli_utils.py`
+- **Accessibility**: `tests/ui/test_terminal_accessibility.py`
+
 ## Dialectical framing
 
 - **Thesis:** Invest in Textual, prompt-toolkit, and deeper Rich layouts to make

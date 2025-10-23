@@ -1,4 +1,4 @@
-# v0.1.0 Issue Triage (October 18, 2025)
+# v0.1.0 Issue Triage (October 22, 2025)
 
 ## BLOCKERS (must fix for v0.1.0)
 **Priority**: These issues prevent core functionality or cause critical bugs that would make v0.1.0 unusable.
@@ -32,7 +32,7 @@
 ## MEDIUM PRIORITY (nice to have for v0.1.0)
 **Priority**: Quality-of-life improvements that enhance the release but aren't critical.
 
-- **plan-repository-wide-strict-typing-gate-refresh.md** - Further improve type safety coverage
+- **plan-repository-wide-strict-typing-gate-refresh.md** - ✅ COMPLETED - Core typing issues resolved, mypy strict passes
 - **coordinate-deep-research-enhancement-initiative.md** - Advanced research features
 - **deliver-evidence-pipeline-2-0.md** - Evidence processing improvements
 - **evaluation-and-layered-ux-expansion.md** - UI/UX enhancements
@@ -42,8 +42,8 @@
 - **roll-out-layered-ux-and-model-routing.md** - Model routing improvements
 - **session-graph-rag-integration.md** - GraphRAG integration
 
-**Total Medium Priority**: 9
-**Estimated Effort**: 40-60 hours (defer most to v0.1.1)
+**Total Medium Priority**: 8 (typing completed)
+**Estimated Effort**: 35-50 hours (defer most to v0.1.1)
 
 ## LOW PRIORITY (defer to v0.1.1+)
 **Priority**: Enhancement requests and future features that don't impact v0.1.0.

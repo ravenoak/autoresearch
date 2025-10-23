@@ -9,7 +9,7 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from threading import Thread  # for thread-safety test
 from types import MethodType
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from unittest.mock import patch
 
 import numpy as np
@@ -964,6 +964,9 @@ def test_interleaved_storage_paths_share_cache(
                 query_embedding: np.ndarray | None,
                 backend_results: BackendResultMap,
                 max_results: int,
+                *,
+                workspace_hints: Mapping[str, Any] | None = None,
+                workspace_filters: Mapping[str, Any] | None = None,
             ) -> BackendResultMap:
                 del self, query_embedding, backend_results, max_results
                 docs: BackendResults = []

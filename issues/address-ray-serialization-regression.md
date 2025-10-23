@@ -21,7 +21,9 @@ spins up a local cluster during the unit phase.
   continue to run under `uv run task coverage`.
 
 ## Status
-**✅ READY FOR v0.1.0** - Ray serialization fixed and tested
+**✅ COMPLETED** - Ray serialization fully fixed and verified
+
+- 2025-10-22: Enhanced `QueryState` serialization robustness by improving the `__getstate__` method to use `exclude_unset=False` ensuring all field values are preserved during pickle serialization, including complex fields like `claims` and `metadata`. The comprehensive Ray round-trip test (`test_query_state_ray_round_trip`) now tests both basic and complex QueryState configurations with all fields populated, providing a robust regression guard against future serialization issues. Both Ray and pickle serialization now work correctly, preserving all state including the RLock which is properly stripped during serialization and restored during deserialization. 【F:src/autoresearch/orchestration/state.py†L1514-L1532】【F:tests/unit/legacy/test_distributed_executors.py†L225-L296】
 
 - 2025-09-25: `QueryState` now strips its private `RLock` during pickle and
   regenerates the lock on load, so Ray workers no longer abort on the

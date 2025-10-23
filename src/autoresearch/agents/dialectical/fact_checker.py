@@ -503,9 +503,9 @@ class FactChecker(Agent):
                 ]
                 for resource_id, entries in resource_sources.items()
             }
-            metadata_payload.setdefault("workspace_evidence", {}).update(
-                {"resources": resource_index}
-            )
+            workspace_evidence = metadata_payload.setdefault("workspace_evidence", {})
+            if isinstance(workspace_evidence, dict):
+                workspace_evidence.update({"resources": resource_index})
         if planner_snapshot:
             metadata_payload["planner_provenance"] = dict(planner_snapshot)
 

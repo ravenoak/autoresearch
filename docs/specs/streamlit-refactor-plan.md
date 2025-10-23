@@ -121,6 +121,46 @@ This plan ensures Streamlit users receive clear communication, defined support
 windows, and actionable migration paths while the PySide6 experience becomes
 the default interface.
 
+## Algorithms
+
+The migration follows a phased deprecation strategy:
+
+1. **Phase 1 (Proof-of-concept)**: Build PySide6 prototype alongside Streamlit
+2. **Phase 2 (Parallel support)**: Maintain both interfaces with feature parity
+3. **Phase 3 (Transition)**: Mark Streamlit as deprecated, promote PySide6
+4. **Phase 4 (Sunset)**: Disable Streamlit by default, require opt-in flag
+5. **Phase 5 (Removal)**: Remove Streamlit code entirely
+
+## Invariants
+
+- PySide6 feature parity maintained throughout phases 1-3
+- Streamlit compatibility preserved until phase 4
+- Migration warnings escalate in severity across phases
+- No breaking changes to existing Streamlit workflows until phase 4
+
+## Proof Sketch
+
+The phased approach ensures:
+
+1. **Gradual transition**: Users migrate at their own pace
+2. **Feature completeness**: PySide6 provides equivalent functionality
+3. **Communication clarity**: Each phase has clear messaging and timelines
+4. **Backward compatibility**: Existing deployments continue to work
+
+## Simulation Expectations
+
+- **Migration scenarios**: Test transitions between phases with realistic user data
+- **Communication effectiveness**: Validate warning messages drive migration
+- **Performance comparison**: Benchmark PySide6 vs Streamlit for key workflows
+- **Feature parity**: Verify all Streamlit capabilities available in PySide6
+
+## Traceability
+
+- [PySide6 migration timeline][pyside6-timeline]
+- [Streamlit to PySide6 migration guide](../guides/streamlit-to-pyside6.md)
+- [Streamlit UI specification](streamlit-ui.md)
+- [Desktop UI specification](pyside-desktop.md)
+
 [pyside6-timeline]: ../pyside6_migration_plan.md#migration-timeline
 [release-0-1-0a1]: ../../release_notes.md#010a1-planned
 [release-0-1-0-beta]: ../../release_plan.md#milestones

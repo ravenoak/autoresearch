@@ -6,14 +6,14 @@ import math
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, MutableMapping, Sequence
+from typing import Any, Callable, Generator, Mapping, MutableMapping, Sequence
 
-from ..cli_utils import VisualizationHooks
-from ..monitor import _collect_system_metrics
-from ..orchestration.state import QueryState
-from ..orchestration.types import CallbackMap
-from ..search.context import SearchContext
+from ...cli_utils import VisualizationHooks
 from ...models import QueryResponse
+from ...monitor import _collect_system_metrics
+from ...orchestration.state import QueryState
+from ...orchestration.types import CallbackMap
+from ...search.context import SearchContext
 
 
 class DashboardUnavailableError(RuntimeError):
@@ -155,7 +155,7 @@ def _format_metrics_table(
 def _subscribe_visualization_hooks(
     hooks: VisualizationHooks,
     callback: Callable[[], None],
-) -> None:
+) -> Generator[None, None, None]:
     """Attach a callback to visualization hooks and restore them afterwards."""
 
     original_visualize = hooks.visualize
@@ -173,13 +173,13 @@ def _subscribe_visualization_hooks(
         finally:
             callback()
 
-    hooks.visualize = _wrapped_visualize  # type: ignore[assignment]
-    hooks.visualize_query = _wrapped_visualize_query  # type: ignore[assignment]
+    hooks.visualize = _wrapped_visualize
+    hooks.visualize_query = _wrapped_visualize_query
     try:
         yield
     finally:
-        hooks.visualize = original_visualize  # type: ignore[assignment]
-        hooks.visualize_query = original_visualize_query  # type: ignore[assignment]
+        hooks.visualize = original_visualize
+        hooks.visualize_query = original_visualize_query
 
 
 class _DashboardAppBase:
@@ -264,7 +264,7 @@ def run_dashboard(
     state = _DashboardState(total_loops=total_loops)
     mixin = _DashboardAppBase(state)
 
-    class DashboardApp(App[QueryResponse | None]):
+    class DashboardApp(App[QueryResponse | None]):  # type: ignore[misc]
         """Textual application showing live orchestration telemetry."""
 
         CSS = """
@@ -431,4 +431,4 @@ def run_dashboard(
         ) from app.error
     if result is None:
         raise DashboardUnavailableError("Dashboard exited without producing a result.")
-    return result
+    return result  # type: ignore[no-any-return]

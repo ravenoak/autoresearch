@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, SupportsFloat
 
 from prometheus_client import Counter, Histogram
 from prometheus_client.metrics import MetricWrapperBase
+from prometheus_client.registry import REGISTRY
 
 from autoresearch.token_budget import (
     AgentUsageStats,
@@ -45,6 +46,34 @@ if TYPE_CHECKING:  # pragma: no cover
     from .state import QueryState
 
 log = logging.getLogger(__name__)
+
+
+def _safe_counter(name: str, description: str, registry: Any = None) -> Counter:
+    """Safely create a Counter, checking if it already exists."""
+    try:
+        # Try to get existing metric
+        existing = REGISTRY._names_to_collectors.get(name)
+        if existing:
+            return existing[0]
+    except (AttributeError, KeyError):
+        pass
+
+    # Create new counter
+    return Counter(name, description, registry=registry)
+
+
+def _safe_histogram(name: str, description: str, registry: Any = None) -> Histogram:
+    """Safely create a Histogram, checking if it already exists."""
+    try:
+        # Try to get existing metric
+        existing = REGISTRY._names_to_collectors.get(name)
+        if existing:
+            return existing[0]
+    except (AttributeError, KeyError):
+        pass
+
+    # Create new histogram
+    return Histogram(name, description, registry=registry)
 
 
 def _select_model_enhanced(config: "ConfigModel", agent_name: str) -> str:
@@ -203,43 +232,43 @@ def _get_intelligent_fallback(config: "ConfigModel", agent_name: str) -> str:
         return "mistral"  # Global conservative default
 
 
-QUERY_COUNTER = Counter("autoresearch_queries_total", "Total number of queries processed")
-ERROR_COUNTER = Counter("autoresearch_errors_total", "Total number of errors during processing")
-TOKENS_IN_COUNTER = Counter("autoresearch_tokens_in_total", "Total input tokens processed")
-TOKENS_OUT_COUNTER = Counter("autoresearch_tokens_out_total", "Total output tokens produced")
-EVICTION_COUNTER = Counter(
+QUERY_COUNTER = _safe_counter("autoresearch_queries_total", "Total number of queries processed")
+ERROR_COUNTER = _safe_counter("autoresearch_errors_total", "Total number of errors during processing")
+TOKENS_IN_COUNTER = _safe_counter("autoresearch_tokens_in_total", "Total input tokens processed")
+TOKENS_OUT_COUNTER = _safe_counter("autoresearch_tokens_out_total", "Total output tokens produced")
+EVICTION_COUNTER = _safe_counter(
     "autoresearch_duckdb_evictions_total",
     "Total nodes evicted from RAM to DuckDB",
 )
-KUZU_QUERY_COUNTER = Counter(
+KUZU_QUERY_COUNTER = _safe_counter(
     "autoresearch_kuzu_queries_total",
     "Total number of Kuzu queries executed",
 )
-KUZU_QUERY_TIME = Histogram(
+KUZU_QUERY_TIME = _safe_histogram(
     "autoresearch_kuzu_query_seconds",
     "Time spent executing Kuzu queries",
 )
-GRAPH_BUILD_COUNTER = Counter(
+GRAPH_BUILD_COUNTER = _safe_counter(
     "autoresearch_graph_ingestions_total",
     "Total knowledge graph ingestion runs captured",
 )
-GRAPH_ENTITY_COUNTER = Counter(
+GRAPH_ENTITY_COUNTER = _safe_counter(
     "autoresearch_graph_entities_total",
     "Total entities processed during graph ingestions",
 )
-GRAPH_RELATION_COUNTER = Counter(
+GRAPH_RELATION_COUNTER = _safe_counter(
     "autoresearch_graph_relations_total",
     "Total relations processed during graph ingestions",
 )
-GRAPH_CONTRADICTION_COUNTER = Counter(
+GRAPH_CONTRADICTION_COUNTER = _safe_counter(
     "autoresearch_graph_contradictions_total",
     "Total contradictions detected during graph ingestions",
 )
-GRAPH_NEIGHBOR_COUNTER = Counter(
+GRAPH_NEIGHBOR_COUNTER = _safe_counter(
     "autoresearch_graph_neighbor_edges_total",
     "Total neighbor edges exposed to the planner",
 )
-GRAPH_BUILD_SECONDS = Histogram(
+GRAPH_BUILD_SECONDS = _safe_histogram(
     "autoresearch_graph_ingestion_seconds",
     "Latency of knowledge graph ingestion runs",
 )

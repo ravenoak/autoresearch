@@ -6,10 +6,10 @@ to maintain compatibility with agent imports.
 """
 
 # Re-export orchestration components needed by agents
-from autoresearch.orchestration.metrics import get_orchestration_metrics
-from autoresearch.orchestration.state import QueryState
-from autoresearch.orchestration.phases import DialoguePhase
-from autoresearch.orchestration.reasoning import ReasoningMode
+from ..orchestration.metrics import get_orchestration_metrics
+from ..orchestration.state import QueryState
+from ..orchestration.phases import DialoguePhase
+from ..orchestration.reasoning import ReasoningMode
 
 __all__ = [
     "get_orchestration_metrics",

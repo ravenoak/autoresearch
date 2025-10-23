@@ -34,6 +34,7 @@ def test_arxiv_search_parses_metadata(httpx_mock) -> None:
         </entry>
         """
     )
+
     def _callback(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, text=_build_feed(entry))
 

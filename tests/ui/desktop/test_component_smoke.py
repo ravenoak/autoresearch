@@ -8,24 +8,6 @@ from typing import Any, Mapping
 import pytest
 
 import autoresearch.ui.desktop.main_window as main_window_module
-
-QtCore = pytest.importorskip(
-    "PySide6.QtCore",
-    reason="PySide6 is required for desktop UI smoke tests",
-    exc_type=ImportError,
-)
-QtWidgets = pytest.importorskip(
-    "PySide6.QtWidgets",
-    reason="PySide6 is required for desktop UI smoke tests",
-    exc_type=ImportError,
-)
-
-Qt = QtCore.Qt
-QListWidget = QtWidgets.QListWidget
-QPushButton = QtWidgets.QPushButton
-QLabel = QtWidgets.QLabel
-QMessageBox = QtWidgets.QMessageBox
-
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.reasoning import ReasoningMode
@@ -44,6 +26,23 @@ from autoresearch.ui.desktop.telemetry import (
     get_dispatcher,
     set_dispatcher,
 )
+
+QtCore = pytest.importorskip(
+    "PySide6.QtCore",
+    reason="PySide6 is required for desktop UI smoke tests",
+    exc_type=ImportError,
+)
+QtWidgets = pytest.importorskip(
+    "PySide6.QtWidgets",
+    reason="PySide6 is required for desktop UI smoke tests",
+    exc_type=ImportError,
+)
+
+Qt = QtCore.Qt
+QListWidget = QtWidgets.QListWidget
+QPushButton = QtWidgets.QPushButton
+QLabel = QtWidgets.QLabel
+QMessageBox = QtWidgets.QMessageBox
 
 pytestmark = pytest.mark.requires_ui
 
@@ -624,4 +623,3 @@ def test_main_window_cancel_decline_keeps_worker_running(
     assert window.progress_bar.isVisible()
     assert pool_ref["pool"].worker is not None
     assert not any(event == "ui.query.cancelled" for event, _ in telemetry_events)
-

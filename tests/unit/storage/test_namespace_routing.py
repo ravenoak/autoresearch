@@ -19,34 +19,36 @@ from autoresearch.storage_utils import (
 )
 
 
-def test_resolve_namespace_prefers_project_token():
+def test_resolve_namespace_prefers_project_token() -> None:
     tokens = NamespaceTokens(session="sess", workspace="work", project="proj")
     routes = {"session": "workspace", "workspace": "project"}
     assert resolve_namespace(tokens, routes, default_namespace="default") == "proj"
 
 
-def test_resolve_namespace_falls_back_to_workspace():
+def test_resolve_namespace_falls_back_to_workspace() -> None:
     tokens = NamespaceTokens(session="sess", workspace="work", project=None)
     routes = {"session": "workspace", "workspace": "self"}
     assert resolve_namespace(tokens, routes, default_namespace="default") == "work"
 
 
-def test_validate_namespace_routes_detects_cycle():
+def test_validate_namespace_routes_detects_cycle() -> None:
     with pytest.raises(StorageError):
         validate_namespace_routes({"session": "workspace", "workspace": "session"})
 
 
 def test_search_initialises_namespace_from_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = ConfigModel()
-    search_cfg = cfg.search.model_copy(update={"cache_namespace": {"workspace": "demo"}})
-    cfg = cfg.model_copy(update={"search": search_cfg})
+    search_cfg = ConfigModel().search
+    search_cfg.cache_namespace = {"workspace": "demo"}
+    cfg = ConfigModel()
+    cfg.search = search_cfg
 
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     search = Search(cache=SearchCache())
 
     assert search._cache_namespace == "demo"
-    assert getattr(search.cache, "namespace", search.cache._namespace) == "demo"  # type: ignore[attr-defined]
+    assert getattr(search.cache, "namespace", search.cache._namespace) == "demo"
 
 
 def test_scholarly_service_search_respects_namespace(monkeypatch: pytest.MonkeyPatch) -> None:

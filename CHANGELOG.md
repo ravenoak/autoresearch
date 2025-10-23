@@ -16,7 +16,7 @@ Reference issues by slugged filename (for example,
   fetchers feed into `ScholarlyCache`, `StorageManager` persists metadata to
   DuckDB, and new CLI/UI actions make cached papers available to workspaces.
 
-## [0.1.0] - Unreleased (Target: 2025-11-15)
+## [0.1.0] - 2025-11-15
 
 **PREPARATION IN PROGRESS** - Final release engineering for stable v0.1.0 release.
 
@@ -26,7 +26,7 @@ Reference issues by slugged filename (for example,
 - CLI, HTTP API, and Streamlit interfaces
 - Plugin-based search backends
 - Knowledge graph integration
-- Comprehensive test coverage (71.94% measured October 17, 2025)
+- Comprehensive test coverage (64% measured October 22, 2025)
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -38,10 +38,10 @@ Reference issues by slugged filename (for example,
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
-- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
+- **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
+- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior
+- **Testing**: 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests
 - Integration test deselection: 28% (145/513 tests) - acceptable for v0.1.0, target <15% for v0.1.1
 
 ### What's Changed Since v0.1.0a1
@@ -68,7 +68,7 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior.
+- Comprehensive test suite with 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -80,10 +80,10 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
-- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
+- **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
+- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,721 tests (measured October 17, 2025), comprehensive integration coverage
+- **Testing**: 1,769 tests collected (measured October 22, 2025), comprehensive integration coverage
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments
@@ -121,7 +121,7 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
 - Hybrid DuckDB and RDF knowledge graph with plugin-based search backends.
 - Prometheus metrics, interactive mode, and graph visualization utilities.
-- Comprehensive test suite with 1,721 tests (measured October 17, 2025): 937 unit, 350 integration, 41 behavior.
+- Comprehensive test suite with 1,769 tests collected (measured October 22, 2025): unit, integration, and behavior tests.
 
 ### Key Features
 - **Multi-Agent Orchestration**: Dialectical reasoning with contrarian, fact-checking, and summarization agents
@@ -133,10 +133,10 @@ Initial alpha release of the autoresearch framework featuring multi-agent resear
 - **Real-time Monitoring**: Prometheus metrics and structured logging
 
 ### Technical Quality
-- **Type Safety**: Full mypy strict mode compliance across 150 source files (measured October 17, 2025)
-- **Code Quality**: Zero linting violations, 71.94% test coverage (measured October 17, 2025)
+- **Type Safety**: Full mypy strict mode compliance across core modules (measured October 22, 2025)
+- **Code Quality**: Zero linting violations, 64% test coverage (measured October 22, 2025)
 - **Build Process**: Clean packaging with sdist and wheel generation
-- **Testing**: 1,721 tests (measured October 17, 2025), comprehensive integration coverage
+- **Testing**: 1,769 tests collected (measured October 22, 2025), comprehensive integration coverage
 
 ### Known Limitations
 - Integration tests require external service mocking for CI environments

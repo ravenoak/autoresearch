@@ -21,7 +21,7 @@ def test_vector_search_calls_backend(monkeypatch, query_embedding, k):
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     result = StorageManager.vector_search(query_embedding, k)
 
-    backend.vector_search.assert_called_once_with(query_embedding, k)
+    backend.vector_search.assert_called_once_with(query_embedding, k, '__default__')
     assert isinstance(result, list)
 
 
@@ -44,7 +44,7 @@ def test_vector_search_backend_receives_exact(monkeypatch, query_embedding, k):
 
     StorageManager.vector_search(query_embedding, k)
 
-    backend.vector_search.assert_called_once_with(query_embedding, k)
+    backend.vector_search.assert_called_once_with(query_embedding, k, '__default__')
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -88,7 +88,7 @@ def test_vector_search_malformed_embedding(monkeypatch, query_embedding, k):
     with pytest.raises(StorageError):
         StorageManager.vector_search(query_embedding, k)
 
-    backend.vector_search.assert_called_once_with(query_embedding, k)
+    backend.vector_search.assert_called_once_with(query_embedding, k, '__default__')
 
 
 @st.composite

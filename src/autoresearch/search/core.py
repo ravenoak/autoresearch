@@ -53,48 +53,46 @@ from typing import (
     ClassVar,
     Concatenate,
     Dict,
-    Mapping,
     Generic,
-    Iterator,
     Iterable,
+    Iterator,
     List,
     Literal,
+    Mapping,
+    NamedTuple,
     Optional,
     ParamSpec,
     Protocol,
     Sequence,
     Tuple,
-    NamedTuple,
+    TypeAlias,
     TypedDict,
     TypeVar,
     cast,
-    TypeAlias,
 )
+from urllib.parse import quote_plus
 from uuid import uuid4
 from weakref import WeakSet
-from urllib.parse import quote_plus
 
 import numpy as np
 import requests
 
-from ..cache import CacheKey, SearchCache, _SearchCacheView
-from ..cache import build_cache_key
-from ..cache import canonicalize_query_text
+from ..cache import CacheKey, SearchCache, _SearchCacheView, build_cache_key
 from ..cache import cache_results as _cache_results
-from ..cache import get_cache
+from ..cache import canonicalize_query_text, get_cache
 from ..cache import get_cached_results as _get_cached_results
 from ..config.loader import get_config
 from ..config.models import RepositoryManifestEntry
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
+from ..orchestration.workspace_context import get_active_workspace_hints
 from ..storage import StorageManager
 from ..storage_utils import DEFAULT_NAMESPACE_LABEL, NamespaceTokens
-from ..orchestration.workspace_context import get_active_workspace_hints
 from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from . import storage as search_storage
+from .cache import build_cache_slots
 from .context import SearchContext
 from .http import close_http_session, get_http_session
-from .cache import build_cache_slots
 
 # Re-export parser helpers so downstream imports stay stable.
 from .parsers import (  # noqa: F401
@@ -352,6 +350,10 @@ class LocalGitConfigProtocol(Protocol):
     repo_path: str
     branches: Sequence[str]
     history_depth: int
+
+    def iter_manifest(self) -> List[RepositoryManifestEntry]:
+        """Return effective manifest entries, including the legacy fallback."""
+        ...
 
 
 class QueryRewriteConfigProtocol(Protocol):
@@ -2635,7 +2637,8 @@ class Search:
         filter_payload: dict[str, Any] = {}
         if workspace_filters is not None and isinstance(workspace_filters, Mapping):
             filter_payload = {str(key): value for key, value in workspace_filters.items()}
-        cache_tokens = self._workspace_cache_tokens(active_hints, filter_payload)
+        # Workspace cache tokens computed but not yet used in this context
+        self._workspace_cache_tokens(active_hints, filter_payload)
 
         provided_executed_query: str | None = None
         provided_canonical_query: str | None = None
@@ -3897,7 +3900,7 @@ def _search_manifest_repository(
 
     repo = Repo(str(repo_root))
     try:
-        head_hash = repo.head.commit.hexsha  # type: ignore[assignment]
+        head_hash = repo.head.commit.hexsha
     except Exception:
         head_hash = ""
     head_identifier = _compose_commit_identifier(entry.slug, head_hash or None)

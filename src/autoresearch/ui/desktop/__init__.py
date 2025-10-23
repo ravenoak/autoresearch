@@ -26,14 +26,14 @@ for key, value in (
 ):
     os.environ.setdefault(key, value)
 
-from . import main
-from .config_editor import ConfigEditor
-from .export_manager import ExportManager
-from .knowledge_graph_view import KnowledgeGraphView
-from .main_window import AutoresearchMainWindow
-from .metrics_dashboard import MetricsDashboard
-from .results_table import SearchResultsModel, SearchResultsTableView
-from .session_manager import SessionManager
+from . import main  # noqa: E402
+from .config_editor import ConfigEditor  # noqa: E402
+from .export_manager import ExportManager  # noqa: E402
+from .knowledge_graph_view import KnowledgeGraphView  # noqa: E402
+from .main_window import AutoresearchMainWindow  # noqa: E402
+from .metrics_dashboard import MetricsDashboard  # noqa: E402
+from .results_table import SearchResultsModel, SearchResultsTableView  # noqa: E402
+from .session_manager import SessionManager  # noqa: E402
 
 __version__ = "0.1.0"
 __all__ = [

@@ -18,35 +18,36 @@ from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QDockWidget,
+    QHBoxLayout,
+    QInputDialog,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QProgressBar,
-    QHBoxLayout,
     QSplitter,
     QVBoxLayout,
     QWidget,
-    QMessageBox,
-    QInputDialog,
 )
+
+from .config_editor import ConfigEditor
+from .export_manager import ExportManager
 
 # Import desktop components first to avoid Qt-related issues
 from .query_panel import QueryPanel
 from .results_display import ResultsDisplay
-from .config_editor import ConfigEditor
 from .session_manager import SessionManager
-from .export_manager import ExportManager
 from .telemetry import telemetry
 
 try:
     # Import core Autoresearch components
-    from ...orchestration import Orchestrator, ReasoningMode, WorkspaceOrchestrator
     from ...config import ConfigLoader, ConfigModel
+    from ...errors import CitationError
     from ...models import QueryResponse
-    from ...output_format import OutputFormatter, OutputDepth
+    from ...orchestration import Orchestrator, ReasoningMode, WorkspaceOrchestrator
+    from ...orchestration.metrics import get_orchestration_metrics
+    from ...output_format import OutputDepth, OutputFormatter
     from ...resources.scholarly import ScholarlyService
     from ...storage import StorageManager
-    from ...orchestration.metrics import get_orchestration_metrics
-    from ...errors import CitationError
 except ImportError:
     # For standalone testing/development
     Orchestrator = None
@@ -860,7 +861,7 @@ class AutoresearchMainWindow(QMainWindow):
         self._refresh_status_metrics()
 
         # Run query in separate thread to keep UI responsive
-        from PySide6.QtCore import QThread, QThreadPool, QRunnable, QTimer
+        from PySide6.QtCore import QRunnable, QThreadPool, QTimer
 
         workspace_context: dict[str, Any] | None = None
         if self.workspace_orchestrator and self._active_workspace_id:
@@ -908,10 +909,10 @@ class AutoresearchMainWindow(QMainWindow):
                         lambda: self.parent.display_results(result, self.session_id),
                     )
 
-                except Exception as e:
+                except Exception as e:  # noqa: F841
                     QTimer.singleShot(
                         0,
-                        lambda: self.parent.display_error(e, self.session_id),
+                        lambda: self.parent.display_error(e, self.session_id),  # noqa: F821
                     )
 
         # Start the query worker

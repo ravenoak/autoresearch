@@ -20,7 +20,18 @@ readiness until sensible defaults are restored.
   or successor release notes.
 
 ## Status
-**⏳ DEFERRED TO v0.1.1** - Fact checker improvements for future release
+**✅ RESOLVED** - FactChecker validation issues fixed in v0.1.0
+
+**Updated Context:**
+- Added `VerificationConfig` and `FactCheckerConfig` models to `ConfigModel`
+- FactChecker now loads deterministic defaults from configuration
+- All reverification tests pass without validation errors
+- Configuration contract properly handles `verification.fact_checker` settings
+
+**Resolution Details:**
+- Added `verification` field to `ConfigModel` with proper FactChecker defaults
+- `_resolve_fact_checker_config` now finds configuration without errors
+- Tests confirm FactChecker loads defaults correctly when no explicit config provided
 
 ## Resolution
 - Reverification builds FactChecker kwargs from `ConfigModel.verification` and

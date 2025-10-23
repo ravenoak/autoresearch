@@ -27,12 +27,13 @@ class AgentResultMessage(TypedDict):
     pid: int
 
 
-class PersistClaimMessage(TypedDict):
+class PersistClaimMessage(TypedDict, total=False):
     """Request for the storage coordinator to persist a claim."""
 
     action: Literal["persist_claim"]
     claim: dict[str, Any]
     partial_update: bool
+    namespace: str
 
 
 class StopMessage(TypedDict):

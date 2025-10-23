@@ -75,6 +75,40 @@ continue to load; this scope is frozen and does not expand.
 - Route enhancements, UX revisions, and integration work through the PySide6
   desktop client described in [docs/specs/pyside-desktop.md][pyside6].
 
+## Algorithms
+
+The Streamlit UI follows a simple launch-and-display pattern:
+
+1. **Environment validation**: Check `AUTORESEARCH_ENABLE_STREAMLIT` flag
+2. **Migration warning**: Display deprecation notice if flag not set
+3. **Launch sequence**: Start Streamlit server with configured port
+4. **Widget rendering**: Display legacy data visualization components
+
+No complex algorithms are implemented; the module serves as a compatibility layer.
+
+## Invariants
+
+- Launch only occurs when `AUTORESEARCH_ENABLE_STREAMLIT` is truthy
+- Migration warnings always display when flag is absent
+- Existing widget APIs remain unchanged for backward compatibility
+- No new features or API changes are accepted
+
+## Proof Sketch
+
+The invariants hold because:
+
+1. **Flag enforcement**: CLI wrapper checks environment variable before import
+2. **Frozen scope**: Only security/stability patches accepted via PR review
+3. **Test coverage**: Regression suite validates existing behavior
+4. **Documentation**: Deprecation timeline clearly communicated
+
+## Simulation Expectations
+
+- **Environment scenarios**: Test with/without `AUTORESEARCH_ENABLE_STREAMLIT`
+- **Migration messaging**: Verify warning copy matches documentation
+- **Widget compatibility**: Ensure existing deployments load without errors
+- **Performance baseline**: No performance regressions in launch sequence
+
 ## Traceability
 
 - **Modules (archived legacy coverage)**

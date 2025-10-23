@@ -38,24 +38,24 @@ class SearchResultsModel(QAbstractTableModel):
         super().__init__(parent)
         self._rows: list[SearchResultRow] = []
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: D401 - Qt signature
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: D401 - Qt signature  # type: ignore[override]
         if parent.isValid():
             return 0
         return len(self._rows)
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: D401 - Qt signature
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: D401 - Qt signature  # type: ignore[override]
         if parent.isValid():
             return 0
         return len(self._HEADERS)
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # noqa: D401 - Qt signature
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # noqa: D401 - Qt signature  # type: ignore[override]
         if not index.isValid() or not (0 <= index.row() < len(self._rows)):
             return None
 
         row = self._rows[index.row()]
         column = index.column()
 
-        if role in {Qt.DisplayRole, Qt.EditRole}:
+        if role in {Qt.DisplayRole, Qt.EditRole}:  # type: ignore[attr-defined]
             if column == 0:
                 return row.rank
             if column == 1:
@@ -63,7 +63,7 @@ class SearchResultsModel(QAbstractTableModel):
             if column == 2:
                 return row.source
 
-        if role == Qt.ToolTipRole and column == 2 and row.source:
+        if role == Qt.ToolTipRole and column == 2 and row.source:  # type: ignore[attr-defined]
             return row.source
 
         return None
@@ -74,21 +74,21 @@ class SearchResultsModel(QAbstractTableModel):
         orientation: Qt.Orientation,
         role: int = Qt.DisplayRole,
     ) -> Any:  # noqa: D401 - Qt signature
-        if role != Qt.DisplayRole:
+        if role != Qt.DisplayRole:  # type: ignore[attr-defined]
             return None
 
-        if orientation == Qt.Horizontal and 0 <= section < len(self._HEADERS):
+        if orientation == Qt.Horizontal and 0 <= section < len(self._HEADERS):  # type: ignore[attr-defined]
             return self._HEADERS[section]
 
-        if orientation == Qt.Vertical and 0 <= section < len(self._rows):
+        if orientation == Qt.Vertical and 0 <= section < len(self._rows):  # type: ignore[attr-defined]
             return str(self._rows[section].rank)
 
         return None
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # noqa: D401 - Qt signature
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # noqa: D401 - Qt signature  # type: ignore[override]
         if not index.isValid():
-            return Qt.NoItemFlags
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return Qt.NoItemFlags  # type: ignore[attr-defined]
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled  # type: ignore[attr-defined]
 
     def set_results(self, results: Iterable[SearchResultRow]) -> None:
         """Replace the table contents with ``results``.
@@ -129,7 +129,7 @@ class SearchResultsTableView(QTableView):
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.setAlternatingRowColors(True)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # type: ignore[attr-defined]
         self.setTabKeyNavigation(True)
         self.setWordWrap(False)
         self.setAccessibleName("Structured search results")
@@ -148,12 +148,12 @@ class SearchResultsTableView(QTableView):
 
         self.setSortingEnabled(False)
 
-    def model(self) -> SearchResultsModel:  # type: ignore[override]
+    def model(self) -> SearchResultsModel:
         model = super().model()
         assert isinstance(model, SearchResultsModel)
         return model
 
-    def setModel(self, model: QAbstractTableModel) -> None:  # noqa: N802 - Qt override
+    def setModel(self, model: QAbstractTableModel) -> None:  # noqa: N802 - Qt override  # type: ignore[override]
         assert isinstance(model, SearchResultsModel)
         super().setModel(model)
         if model.rowCount():
