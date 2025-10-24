@@ -390,6 +390,20 @@ typer.Option = _compat_option
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow")
     config.addinivalue_line("markers", "requires_nlp: mark test requiring NLP extras")
+    raw_excludes = os.environ.get("AR_PYTEST_EXCLUDE", "")
+    if raw_excludes:
+        tokens = [
+            token
+            for chunk in raw_excludes.replace(",", " ").split()
+            if (token := chunk.strip())
+        ]
+        if tokens:
+            disjunction = " or ".join(tokens)
+            markexpr = config.option.markexpr or ""
+            if markexpr:
+                config.option.markexpr = f"({markexpr}) and not ({disjunction})"
+            else:
+                config.option.markexpr = f"not ({disjunction})"
 
 
 def reset_limiter_state() -> None:

@@ -33,6 +33,27 @@ Tests may require optional dependencies. Markers such as `requires_nlp` or
 `dev-minimal` and `test` extras by default. Set `EXTRAS` to include optional
 groups or add `gpu` packages.
 
+## Deselection policy
+
+- Baseline runs execute with `-m "not slow and not pending and not
+  legacy_streamlit"`. Optional extras are collected and then skipped at runtime
+  when dependencies are unavailable.
+- Set `AR_PYTEST_EXCLUDE="requires_ui requires_llm"` (space- or comma-separated)
+  to append `and not (...)` to the mark expression for temporary opt-outs. The
+  variable applies to direct pytest runs and Taskfile targets.
+- Current deselection counts from `uv run --extra test pytest --collect-only`
+  are:
+  - `tests/unit`: 2320 selected / 25 deselected (~1.1%).
+  - `tests/integration`: 367 selected / 145 deselected (~28.3%), all tagged
+    `slow`. We track reductions toward the <10% target by migrating long-running
+    cases into targeted suites.
+  - `tests/behavior`: 247 selected / 68 deselected (~21.6%), primarily slow
+    UX stories slated for performance trimming.
+
+  Previous totals deselected 34 unit, 150 integration, and 71 behavior tests;
+  removing the blanket `requires_ui` filter shifted those cases into runtime
+  skips while preserving optional coverage.
+
 ## Quality gates
 
 `task check` and `task verify` now run `uv run mypy --strict src tests`. The

@@ -63,7 +63,6 @@ max_results_per_query = 1
 
 
 @pytest.mark.integration
-@pytest.mark.requires_llm
 def test_search_command_executes_with_stubbed_orchestrator(
     cli_runner, tmp_path, monkeypatch
 ) -> None:
